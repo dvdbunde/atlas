@@ -4,7 +4,7 @@ PRDs define product goals, scope, stakeholders, and success criteria. Use this d
 
 ## Index
 
-- Add links to PRDs here. Use clear, descriptive filenames (e.g., `prd-feature-x.md`).
+- [ATLAS MVP PRD](./atlas-mvp-prd.md) — Case Management & Permit Processing Platform MVP (Citizens, Permit Officers, Administrators)
 
 ## Archive
 
