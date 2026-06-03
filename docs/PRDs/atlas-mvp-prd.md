@@ -76,7 +76,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 
 #### Use Cases
 
-**UC1: Citizen Submits Permit Application**
+### UC1: Citizen Submits Permit Application
 
 - Citizen logs into portal
 - Selects permit type from active list
@@ -85,7 +85,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Submits application
 - System generates confirmation number and sends email notification
 
-**UC2: Permit Officer Reviews Application**
+### UC2: Permit Officer Reviews Application
 
 - Officer logs into dashboard
 - Views queue of pending applications
@@ -94,7 +94,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Adds review notes
 - Approves or rejects with comments
 
-**UC3: Administrator Manages Permit Types**
+### UC3: Administrator Manages Permit Types
 
 - Admin accesses configuration panel
 - Creates new permit type with required fields
@@ -109,7 +109,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 #### Citizens
 
 | ID | Requirement | Priority |
-|----|-------------|----------|
+| ---- | ------------- | ---------- |
 | F-01 | Citizens can create a new permit application by selecting from active permit types | Must |
 | F-02 | Citizens can fill out permit application forms with validation (required fields, data formats) | Must |
 | F-03 | Citizens can upload supporting documents (PDF, JPG, PNG) up to 25MB per file | Must |
@@ -122,7 +122,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 #### Permit Officers
 
 | ID | Requirement | Priority |
-|----|-------------|----------|
+| ---- | ------------- | ---------- |
 | F-09 | Officers can view a dashboard of pending applications assigned to them or their department | Must |
 | F-10 | Officers can open application details including all form data and uploaded documents | Must |
 | F-11 | Officers can add internal review notes to applications (not visible to citizens) | Must |
@@ -135,7 +135,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 #### Administrators
 
 | ID | Requirement | Priority |
-|----|-------------|----------|
+| ---- | ------------- | ---------- |
 | F-17 | Administrators can create new permit types with configurable fields and requirements | Must |
 | F-18 | Administrators can edit existing permit type configurations (fields, requirements, fees) | Must |
 | F-19 | Administrators can activate/deactivate permit types (soft delete) | Must |
@@ -320,7 +320,7 @@ The following items are **explicitly out of scope** for the MVP release:
 #### High-Level Timeline (MVP)
 
 | Milestone | Target Date | Dependencies |
-|-----------|-------------|--------------|
+| ----------- | ------------- | -------------- |
 | **Requirements Finalized** | June 15, 2026 | PRD approval (this document) |
 | **Technical Spike & Architecture** | June 30, 2026 | Azure subscription access, Entra ID setup |
 | **UI/UX Mockups Approved** | July 15, 2026 | Stakeholder review (Citizens, Officers, Admins) |
@@ -342,7 +342,7 @@ The following items are **explicitly out of scope** for the MVP release:
 ### 11. Risks & Mitigations
 
 | Risk | Impact | Probability | Mitigation Strategy |
-|------|---------|-------------|---------------------|
+| ------ | --------- | ------------- | --------------------- |
 | **Azure subscription/quota delays** | High (blocks development) | Medium | Start Azure resource provisioning immediately; have backup subscription ready |
 | **Blazor performance issues with large forms** | Medium (UX degradation) | Medium | Prototype complex forms early (June); consider Blazor Server vs WASM tradeoffs |
 | **Entra ID configuration complexity** | High (officer access blocked) | Medium | Engage IT early; document configuration steps; have local auth fallback for testing |

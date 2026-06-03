@@ -15,12 +15,14 @@ ATLAS can be divided into four bounded contexts, each with its own domain model 
 **Core Domain:** The primary business domain for permit applications.
 
 **Ubiquitous Language:**
+
 - Application, PermitType, Document, Review, ApplicationStatus
 - Submit, Approve, Reject, RequestInfo
 - Citizen, Officer
 
 **Domain Model:**
-```
+
+```text
 Application (Aggregate Root)
 ├── Document [0..*]
 ├── Review [0..*]
@@ -32,12 +34,14 @@ PermitType (Aggregate Root)
 ```
 
 **Responsibilities:**
+
 - Manage permit application lifecycle
 - Enforce application business rules and invariants
 - Handle document uploads and validation
 - Process officer reviews and decisions
 
 **Key Use Cases:**
+
 - UC1: Citizen Submits Permit Application
 - UC2: Permit Officer Reviews Application
 - F-01 to F-16 (Citizen and Officer functional requirements)
@@ -49,12 +53,14 @@ PermitType (Aggregate Root)
 **Core Domain:** Authentication, authorization, and user lifecycle.
 
 **Ubiquitous Language:**
+
 - User, Role (Citizen/Officer/Admin), Account
 - Activate, Deactivate, ChangeRole
 - Authentication, Authorization
 
 **Domain Model:**
-```
+
+```text
 User (Aggregate Root)
 ├── Id, Email, FirstName, LastName
 ├── Role (UserRole)
@@ -62,12 +68,14 @@ User (Aggregate Root)
 ```
 
 **Responsibilities:**
+
 - User registration and profile management
 - Role assignment and permission enforcement
 - Account activation/deactivation
 - Integration with Microsoft Entra ID (Officers/Admins) and local accounts (Citizens)
 
 **Key Use Cases:**
+
 - F-21: Administrators can manage user accounts and assign roles
 - Authentication and authorization for all user types
 
@@ -78,12 +86,14 @@ User (Aggregate Root)
 **Core Domain:** Storage and retrieval of permit-related documents.
 
 **Ubiquitous Language:**
+
 - Document, Blob, ContentType, FileSize
 - Upload, Download, Delete
 - Storage, Container, BlobUrl
 
 **Domain Model:**
-```
+
+```text
 Document (Entity, part of Application aggregate)
 ├── Id, ApplicationId, FileName
 ├── ContentType, FileSize
@@ -91,12 +101,14 @@ Document (Entity, part of Application aggregate)
 ```
 
 **Responsibilities:**
+
 - Store documents in Azure Blob Storage
 - Generate secure access URLs (SAS tokens)
 - Validate file types and size limits (25MB per PRD F-03)
 - Handle document lifecycle (upload, download, delete on application rejection)
 
 **Integration Points:**
+
 - Uses Azure Blob Storage SDK
 - Generates SAS tokens for secure access
 - Enforces file type restrictions (PDF, JPG, PNG)
@@ -108,12 +120,14 @@ Document (Entity, part of Application aggregate)
 **Core Domain:** Immutable audit trail for compliance and investigation.
 
 **Ubiquitous Language:**
+
 - AuditLog, Action, EntityType, EntityId
 - Timestamp, IpAddress, Details
 - Compliance, Retention, Investigation
 
 **Domain Model:**
-```
+
+```text
 AuditLog (Entity, separate bounded context)
 ├── Id, UserId (optional)
 ├── Action, EntityType, EntityId
@@ -121,12 +135,14 @@ AuditLog (Entity, separate bounded context)
 ```
 
 **Responsibilities:**
+
 - Record all system actions immutably
 - Maintain 7-year retention for compliance (PRD requirement)
 - Provide audit trail for investigations
 - Support export to CSV/Excel (F-23)
 
 **Key Use Cases:**
+
 - F-20: Administrators can view complete audit history
 - F-23: Administrators can export audit data to CSV/Excel
 - Compliance with government data regulations
@@ -221,7 +237,7 @@ public class ApplicationSubmittedEventHandler : INotificationHandler<Application
 ## Context Boundaries Summary
 
 | Context | Aggregate Roots | Database Tables | External Dependencies |
-|---------|------------------|-----------------|----------------------|
+| --------- | ------------------ | ----------------- | ---------------------- |
 | **Permit Processing** | Application, PermitType | Applications, PermitTypes, Documents, Reviews | None (pure domain) |
 | **User Management** | User | Users | Microsoft Entra ID (Officers/Admins) |
 | **Document Management** | Document (entity) | Documents (metadata only) | Azure Blob Storage |

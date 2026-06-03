@@ -5,6 +5,7 @@ This directory contains the architecture and design documentation for the ATLAS 
 ## Architecture Overview
 
 ATLAS is built using:
+
 - **Clean Architecture** - Separation of concerns with Domain, Application, Infrastructure, and Presentation layers
 - **Domain-Driven Design (DDD)** - Rich domain models with aggregates, entities, and value objects
 - **CQRS (Command Query Responsibility Segregation)** - Separate models for reads and writes using MediatR
@@ -18,7 +19,7 @@ ATLAS is built using:
 Read the documents in the following order for best understanding:
 
 | # | Document | Description |
-|---|-----------|-------------|
+| --- | ----------- | ------------- |
 | 0 | [README.md](README.md) | This file - Design documentation index |
 | 1 | [01-context-diagram.md](01-context-diagram.md) | System Context Diagram - ATLAS and its external actors/systems |
 | 2 | [02-container-diagram.md](02-container-diagram.md) | Container Diagram - Internal containers and their interactions |
@@ -42,6 +43,7 @@ Key architectural decisions are documented as ADRs (Architecture Decision Record
 All diagrams use [Mermaid](https://mermaid.js.org/) syntax for version-controlled, renderable diagrams in VS Code and GitHub.
 
 ### Diagram Types Used
+
 - **C4 Context/Container Diagrams** - System and container-level views
 - **Class Diagrams** - Domain model and entity relationships
 - **Sequence Diagrams** - Data flow and process interactions

@@ -2,13 +2,14 @@
 
 ## Status
 
-**Accepted**
+### Accepted
 
 ## Context
 
 ATLAS needs to store two distinct types of data:
 
 ### 1. Structured/Relational Data
+
 - **Applications** - Permit applications with status, dates, notes
 - **Users** - Citizen, Officer, Admin user accounts
 - **PermitTypes** - Configurable permit categories with fields and requirements
@@ -16,10 +17,12 @@ ATLAS needs to store two distinct types of data:
 - **AuditLogs** - Immutable audit trail (7-year retention)
 
 ### 2. Unstructured Data (Documents)
+
 - **Uploaded Documents** - PDF, JPG, PNG files up to 25MB per file (PRD F-03)
 - **Multiple documents per application** - Citizens upload supporting evidence
 
 **Requirements:**
+
 - **ACID transactions** for relational data (application submission, status changes)
 - **Unlimited scale** for document storage (unlimited growth per PRD)
 - **Cost-effective** - Serverless options for variable workloads
@@ -29,7 +32,7 @@ ATLAS needs to store two distinct types of data:
 **Alternative storage options considered:**
 
 | Option | Pros | Cons |
-|--------|------|------|
+| -------- | ------ | ------ |
 | **Azure SQL Only** (store docs as VARBINARY) | Single storage, ACID transactions | 25MB files × 1000s = huge DB, backup/restore slow |
 | **Azure SQL + File System** | Simple document storage | No geo-redundancy, no CDN, server dependency |
 | **Cosmos DB Only** (NoSQL) | Unlimited scale, multi-model | Overkill for relational data, higher cost, no SQL queries |
@@ -44,7 +47,7 @@ We will use a **hybrid storage strategy**:
 
 ### Data Distribution
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                    Azure SQL Database                    │
 │  ┌──────────────┐  ┌─────────────┐  ┌────────────┐       │
@@ -72,7 +75,7 @@ We will use a **hybrid storage strategy**:
 ### Azure SQL Database Configuration
 
 | Property | Value | Rationale |
-|----------|-------|------------|
+| ---------- | ------- | ------------ |
 | **Tier** | Serverless (General Purpose) | Auto-pauses during low activity, cost-effective for government workloads |
 | **Hardware** | Gen5 (2-4 vCores) | Sufficient for MVP (500 concurrent users) |
 | **Region** | Canada Central | Data sovereignty compliance |
@@ -80,6 +83,7 @@ We will use a **hybrid storage strategy**:
 | **Geo-redundancy** | Zone-redundant | High availability (99.9% uptime SLA) |
 
 **EF Core Configuration:**
+
 ```csharp
 // Atlas.Infrastructure/Data/ApplicationDbContext.cs
 public class ApplicationDbContext : DbContext
@@ -103,7 +107,7 @@ public class ApplicationDbContext : DbContext
 ### Azure Blob Storage Configuration
 
 | Property | Value | Rationale |
-|----------|-------|------------|
+| ---------- | ------- | ------------ |
 | **Account Kind** | StorageV2 (General Purpose v2) | Supports blobs, queues, files |
 | **Performance** | Standard (HDD) | Cost-effective for documents, CDN optional |
 | **Replication** | RA-GRS (Read-access geo-redundant) | Disaster recovery (1-hour RPO per PRD) |
@@ -111,6 +115,7 @@ public class ApplicationDbContext : DbContext
 | **Container** | `permit-documents` | Organized by application ID |
 
 **Blob Storage Service:**
+
 ```csharp
 // Atlas.Infrastructure/Services/BlobStorageService.cs
 public class BlobStorageService : IBlobStorageService
@@ -170,7 +175,7 @@ public class Document : Entity<Guid>
 ### Mitigations
 
 | Challenge | Mitigation |
-|-----------|-------------|
+| ----------- | ------------- |
 | **Two storage systems** | Use Repository pattern to abstract storage details from Domain |
 | **Eventual consistency** | Document upload is atomic (SQL metadata + Blob upload in same transaction scope) |
 | **Backup coordination** | Use Azure Backup for SQL, Blob Storage point-in-time restore |
@@ -201,7 +206,7 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 ## Compliance with Requirements
 
 | Requirement | How Storage Strategy Addresses It |
-|-------------|--------------------------------------|
+| ------------- | -------------------------------------- |
 | 25MB document uploads (F-03) | Blob Storage handles large files, SQL stores metadata only |
 | 500 concurrent users | SQL Serverless auto-scales, Blob Storage unlimited |
 | 99.9% uptime SLA | Azure SQL SLA 99.9%, Blob Storage SLA 99.9% |

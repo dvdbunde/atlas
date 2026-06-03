@@ -122,7 +122,7 @@ classDiagram
 ## Relationships
 
 | From | To | Relationship | Description |
-|------|----|--------------|-------------|
+| ------ | ---- | -------------- | ------------- |
 | Application | PermitType | Many-to-One | Each application is for a specific permit type |
 | Application | User (Citizen) | Many-to-One | Each application is submitted by one citizen |
 | Application | Document | One-to-Many | An application can have multiple supporting documents |
@@ -136,23 +136,27 @@ classDiagram
 ## Value Objects
 
 ### ApplicationStatus (Enum)
-```
+
+```text
 Submitted → UnderReview → Approved
                      ↘ InfoRequested → Resubmitted → UnderReview
                      ↘ Rejected
 ```
 
 ### UserRole (Enum)
+
 - `Citizen` - Can submit and track applications
 - `Officer` - Can review and process applications
 - `Admin` - Can manage system configuration
 
 ### ReviewDecision (Enum)
+
 - `Approve` - Application approved
 - `Reject` - Application rejected with reason code
 - `RequestInfo` - Additional information requested
 
 ### FieldType (Enum)
+
 - `Text` - Free-text input
 - `Number` - Numeric input
 - `Date` - Date picker
@@ -173,7 +177,7 @@ Submitted → UnderReview → Approved
 ## Domain Events
 
 | Event | Trigger | Payload |
-|-------|---------|---------|
+| ------- | --------- | --------- |
 | `ApplicationSubmitted` | Citizen submits application | ApplicationId, CitizenId, PermitTypeId, Timestamp |
 | `ApplicationApproved` | Officer approves application | ApplicationId, OfficerId, Timestamp |
 | `ApplicationRejected` | Officer rejects application | ApplicationId, OfficerId, ReasonCode, Comments |

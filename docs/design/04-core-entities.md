@@ -11,7 +11,7 @@ This document defines the core entities in the ATLAS domain model. Each entity f
 The central entity representing a permit application in the system.
 
 | Property | Type | Description | Business Rules |
-|----------|------|-------------|----------------|
+| ---------- | ------ | ------------- | ---------------- |
 | `Id` | Guid | Unique identifier | Generated on creation, immutable |
 | `ApplicationNumber` | string | Human-readable reference number | Format: `PERMIT-{YYYY}{MM}{DD}-{####}` |
 | `Status` | ApplicationStatus | Current state of the application | See state machine below |
@@ -66,7 +66,7 @@ public class Application : Entity<Guid>
 
 **Status State Machine:**
 
-```
+```text
 [Draft] → Submit() → [Submitted] → Assign to Officer → [UnderReview]
                                                    ↓
                             Approve() → [Approved]
@@ -81,7 +81,7 @@ public class Application : Entity<Guid>
 Represents all system users (Citizens, Officers, Administrators).
 
 | Property | Type | Description | Business Rules |
-|----------|------|-------------|----------------|
+| ---------- | ------ | ------------- | ---------------- |
 | `Id` | Guid | Unique identifier | Generated on creation |
 | `Email` | string | User's email address | Must be valid email, unique in system |
 | `FirstName` | string | User's first name | Required, 1-50 characters |
@@ -121,7 +121,7 @@ public void Deactivate(Guid deactivatedByAdminId)
 Configurable permit categories defined by administrators.
 
 | Property | Type | Description | Business Rules |
-|----------|------|-------------|----------------|
+| ---------- | ------ | ------------- | ---------------- |
 | `Id` | Guid | Unique identifier | Generated on creation |
 | `Name` | string | Permit type name | Required, unique, 3-100 chars |
 | `Description` | string | Detailed description | Max 2000 characters |
@@ -167,7 +167,7 @@ public void Deactivate(Guid deactivatedByAdminId)
 Represents files uploaded in support of permit applications.
 
 | Property | Type | Description | Business Rules |
-|----------|------|-------------|----------------|
+| ---------- | ------ | ------------- | ---------------- |
 | `Id` | Guid | Unique identifier | Generated on upload |
 | `ApplicationId` | Guid | Parent application | Must be valid Application |
 | `FileName` | string | Original file name | Required, max 255 chars |
@@ -184,7 +184,7 @@ Represents files uploaded in support of permit applications.
 Represents an officer's review of an application.
 
 | Property | Type | Description | Business Rules |
-|----------|------|-------------|----------------|
+| ---------- | ------ | ------------- | ---------------- |
 | `Id` | Guid | Unique identifier | Generated on review |
 | `ApplicationId` | Guid | Reviewed application | Must be valid Application |
 | `OfficerId` | Guid | Reviewing officer | Must be User with Officer role |
@@ -201,7 +201,7 @@ Represents an officer's review of an application.
 Immutable record of all system actions for compliance (7-year retention per PRD).
 
 | Property | Type | Description | Business Rules |
-|----------|------|-------------|----------------|
+| ---------- | ------ | ------------- | ---------------- |
 | `Id` | Guid | Unique identifier | Generated on action |
 | `UserId` | Guid? | User who performed action | Null for system actions |
 | `Action` | string | Action performed | e.g., "APPLICATION_SUBMITTED" |
@@ -215,7 +215,7 @@ Immutable record of all system actions for compliance (7-year retention per PRD)
 
 ## Entity Relationships Summary
 
-```
+```text
 User (Citizen) "1" ── "0..*" Application
 User (Officer) "1" ── "0..*" Review
 Application "1" ── "1" PermitType

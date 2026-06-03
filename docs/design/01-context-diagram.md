@@ -36,7 +36,7 @@ C4Context
 ### Primary Actors
 
 | Actor | Description | Responsibilities |
-|-------|-------------|-----------------|
+| ------- | ------------- | ----------------- |
 | **Citizen** | Public user applying for permits | Submit applications, upload documents, track status, receive notifications |
 | **Permit Officer** | Government staff reviewing applications | Review applications, approve/reject, add internal notes, request additional info |
 | **Administrator** | System administrator | Manage permit types, configure system, view audit logs, manage users |
@@ -44,7 +44,7 @@ C4Context
 ### External Systems
 
 | System | Type | Purpose |
-|--------|------|---------|
+| -------- | ------ | --------- |
 | **Microsoft Entra ID** | Identity Provider | OAuth 2.0 authentication, role-based access control (RBAC) |
 | **Email Service** | Notification | Send status change notifications, confirmation emails |
 | **Azure SQL Database** | Data Store | Persistent storage for applications, users, permit types, audit logs |
@@ -52,7 +52,7 @@ C4Context
 
 ## Trust Boundaries
 
-```
+```text
 [Public Internet] ─────┐
                        │ HTTPS
 [Microsoft Entra ID] ──┼─── [ATLAS Application] ──── [Azure SQL Database]

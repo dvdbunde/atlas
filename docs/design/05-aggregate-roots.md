@@ -19,13 +19,14 @@ Based on the domain model, ATLAS has three primary aggregate roots:
 **Root Entity:** `Application`
 
 **Aggregate Members:**
+
 - `Document` (entities) - Supporting files for the application
 - `Review` (entities) - Officer reviews and decisions
 - `ApplicationStatus` (value object) - Current state
 
 **Aggregate Boundary:**
 
-```
+```text
 Application (Root)
 ├── Document [0..*]
 │   ├── Id
@@ -50,11 +51,13 @@ Application (Root)
 6. **Submitted date set on first submission** - Cannot be changed after submission
 
 **Access Patterns:**
+
 - External code can ONLY reference `Application` by its `Id`
 - `Document` and `Review` objects are accessed through the `Application` root
 - Example: `application.AddDocument(fileName, contentType, blobUrl)` NOT `new Document(...)`
 
 **CQRS Command Handlers:**
+
 ```csharp
 public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplicationCommand, Guid>
 {
@@ -77,12 +80,13 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
 **Root Entity:** `PermitType`
 
 **Aggregate Members:**
+
 - `PermitField` (value objects) - Configurable form fields
 - `DocumentRequirement` (value objects) - Document requirements
 
 **Aggregate Boundary:**
 
-```
+```text
 PermitType (Root)
 ├── PermitField [0..*]
 │   ├── Name
@@ -105,6 +109,7 @@ PermitType (Root)
 5. **Active permit types are visible to citizens** - `IsActive` controls visibility
 
 **Access Patterns:**
+
 - `PermitField` and `DocumentRequirement` are value objects accessed through `PermitType`
 - Modifications go through root methods: `permitType.AddField(...)`, `permitType.AddDocumentRequirement(...)`
 - No direct manipulation of internal collections from outside
@@ -116,11 +121,12 @@ PermitType (Root)
 **Root Entity:** `User`
 
 **Aggregate Members:**
+
 - None (simple entity with no child entities)
 
 **Aggregate Boundary:**
 
-```
+```text
 User (Root)
 ├── Id
 ├── Email
@@ -139,6 +145,7 @@ User (Root)
 4. **Email format must be valid** - Validated on creation/update
 
 **Access Patterns:**
+
 - `User` is a simple aggregate with no child entities
 - Direct property access is acceptable (no internal entities to protect)
 - Role changes go through `user.ChangeRole(newRole)` to enforce invariants
@@ -150,7 +157,7 @@ User (Root)
 ### Why These Aggregates?
 
 | Aggregate | Rationale |
-|-----------|------------|
+| ----------- | ------------ |
 | **Application** | Documents and Reviews only exist in context of an Application. They cannot be shared across applications. All status transitions must be atomic. |
 | **PermitType** | Fields and DocumentRequirements define the structure of a permit type. They are configuration data that only makes sense within the PermitType context. |
 | **User** | Simple entity with no child objects. Could be split into separate aggregates for Citizen, Officer, Admin but kept unified for MVP simplicity. |
@@ -158,7 +165,7 @@ User (Root)
 ### Aggregates NOT Used
 
 | Concept | Why Not an Aggregate? |
-|----------|----------------------|
+| ---------- | ---------------------- |
 | **AuditLog** | Read-only, immutable records. No business logic or invariants to enforce. Treated as a separate read model. |
 | **Review** | Belongs to Application aggregate - a review cannot exist without an application. |
 | **Document** | Belongs to Application aggregate - documents are always tied to a specific application. |

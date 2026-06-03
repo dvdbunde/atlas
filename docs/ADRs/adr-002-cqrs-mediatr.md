@@ -2,31 +2,35 @@
 
 ## Status
 
-**Accepted**
+### Accepted
 
 ## Context
 
 ATLAS has distinct read and write requirements:
 
 ### Write Operations (Commands)
+
 - Submit application (complex validation, domain logic)
 - Approve/reject application (state changes, business rules)
 - Create/update permit types (admin operations)
 - Upload documents (file handling, blob storage)
 
 ### Read Operations (Queries)
+
 - List applications by status (dashboard views)
 - Get application details (with documents, reviews)
 - Search/filter applications (officer dashboard)
 - Generate reports (future: analytics, audit logs)
 
 **Challenges with traditional CRUD:**
+
 1. **Mixed responsibilities** - Same model handles both reads and writes, leading to complex objects
 2. **Performance trade-offs** - Optimizing for reads (denormalization) hurts writes (normalization)
 3. **Blurred boundaries** - Hard to separate command and query logic in controllers
 4. **Testing complexity** - Query tests need different setup than command tests
 
 Alternative patterns considered:
+
 - **Traditional CRUD** - Single model for reads/writes, simpler but less flexible
 - **CQRS without MediatR** - Manual command/query separation, more boilerplate
 - **Event Sourcing** - Store all events, rebuild state (overkill for MVP)
@@ -37,7 +41,7 @@ We will implement **CQRS (Command Query Responsibility Segregation)** using **Me
 
 ### Pattern Overview
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                    Presentation Layer                    │
 │  Blazor Page → API Controller → MediatR → Handler        │
@@ -64,6 +68,7 @@ We will implement **CQRS (Command Query Responsibility Segregation)** using **Me
 ### MediatR Implementation
 
 **Commands (Write):**
+
 ```csharp
 // Command definition
 public class SubmitApplicationCommand : IRequest<Guid>
@@ -98,6 +103,7 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
 ```
 
 **Queries (Read):**
+
 ```csharp
 // Query definition
 public class GetApplicationsByStatusQuery : IRequest<List<ApplicationSummaryDto>>
@@ -201,7 +207,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 ## Compliance with Requirements
 
 | Requirement | How CQRS + MediatR Addresses It |
-|-------------|--------------------------------------|
+| ------------- | -------------------------------------- |
 | Domain logic (DDD) | Commands invoke domain methods (e.g., `application.Submit()`) |
 | Audit logging | Domain events published via MediatR → audit log handler |
 | Notifications | Domain events → notification handler (future extension) |

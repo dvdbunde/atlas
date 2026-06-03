@@ -73,6 +73,7 @@ sequenceDiagram
 ```
 
 **Key Data Transformations:**
+
 - Form data → `Application` entity (Domain Layer)
 - Uploaded files → Azure Blob Storage (BlobUrl stored in `Document` entity)
 - `SubmitApplicationCommand` → `ApplicationSubmittedEvent` (MediatR)
@@ -153,6 +154,7 @@ sequenceDiagram
 ```
 
 **Key Data Transformations:**
+
 - `ApproveApplicationCommand` → `application.Approve()` → `ApplicationApprovedEvent`
 - Officer notes stored in `Application.OfficerNotes` (not visible to citizens)
 - Status change triggers email notification via MediatR domain event
@@ -231,6 +233,7 @@ sequenceDiagram
 ```
 
 **Key Data Transformations:**
+
 - Form data → `PermitType` entity with `PermitField` and `DocumentRequirement` value objects
 - `CreatePermitTypeCommand` → `PermitTypeCreatedEvent` → `AuditLog` entry
 - Deactivation sets `IsActive=false` (soft delete, existing applications unaffected)
@@ -240,7 +243,7 @@ sequenceDiagram
 ## Data Flow Summary
 
 | Flow | Trigger | Key Data Stores | Domain Events |
-|------|----------|-----------------|---------------|
+| ------ | ---------- | ----------------- | --------------- |
 | **Citizen Submission** | Submit Application button | Azure SQL (Application), Blob Storage (Documents) | `ApplicationSubmittedEvent` |
 | **Officer Review** | Approve/Reject button | Azure SQL (Application, Review), Blob Storage (read) | `ApplicationApprovedEvent` / `ApplicationRejectedEvent` |
 | **Admin Permit Type** | Create/Update/Deactivate | Azure SQL (PermitType) | `PermitTypeCreatedEvent`, `PermitTypeDeactivatedEvent` |

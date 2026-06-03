@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted**
+### Accepted
 
 ## Context
 
@@ -26,7 +26,7 @@ We will adopt **Clean Architecture** as described by Robert C. Martin (Uncle Bob
 
 ### Architecture Layers (inside-out)
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │           Presentation Layer                    │
 │    (Blazor Web App, Controllers, ViewModels)    │
@@ -54,7 +54,7 @@ We will adopt **Clean Architecture** as described by Robert C. Martin (Uncle Bob
 
 ### Project Structure
 
-```
+```text
 src/
 ├── Atlas.Domain/              # Domain Layer (no external deps)
 │   ├── Entities/
@@ -115,7 +115,7 @@ src/
 ## Compliance with Requirements
 
 | Requirement | How Clean Architecture Addresses It |
-|-------------|-------------------------------------|
+| ------------- | ------------------------------------- |
 | 99.9% uptime | Infrastructure layer can implement caching, retries, circuit breakers |
 | Security (Entra ID, RBAC) | Authentication/authorization in Presentation layer, user context passed to Domain |
 | Azure SQL + Blob Storage | Data access abstracted in Infrastructure, Domain unaware of storage technology |

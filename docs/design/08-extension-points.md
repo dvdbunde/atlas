@@ -42,7 +42,7 @@ sequenceDiagram
 **Key Components to Add:**
 
 | Component | Layer | Responsibility |
-|-----------|-------|----------------|
+| ----------- | ------- | ---------------- |
 | `INotificationService` | Application Layer (interface) | Define notification contracts |
 | `NotificationTemplate` | Domain Layer (entity) | Template definition with variables |
 | `NotificationPreference` | Domain Layer (value object) | User's channel preferences |
@@ -50,6 +50,7 @@ sequenceDiagram
 | `NotificationLog` | Infrastructure Layer | Track delivery status and history |
 
 **Integration Pattern:**
+
 ```csharp
 // Application Layer - Command/Query side
 public class ApplicationApprovedEventHandler : INotificationHandler<ApplicationApprovedEvent>
@@ -73,7 +74,7 @@ public class ApplicationApprovedEventHandler : INotificationHandler<ApplicationA
 
 ## 2. Service Bus Integration
 
-### Current State (MVP)
+### Current State  (MVP)
 
 - Synchronous processing for all operations
 - Domain events handled in-process via MediatR
@@ -84,6 +85,7 @@ public class ApplicationApprovedEventHandler : INotificationHandler<ApplicationA
 **Future Capability:** Decouple long-running processes, batch jobs, and external system integrations using Azure Service Bus.
 
 **Use Cases:**
+
 - **Document Scanning** - Virus scan uploaded documents asynchronously
 - **Email Batching** - Batch notifications for digest emails
 - **Audit Log Export** - Async export to CSV/Excel (F-23)
@@ -105,12 +107,13 @@ graph LR
 **Implementation Approach:**
 
 | Scenario | Service Bus Pattern | Handler |
-|----------|---------------------|---------|
+| ---------- | --------------------- | --------- |
 | Document virus scan | Queue (competing consumers) | `DocumentScanWorker` |
 | Email batching | Topic (pub/sub) | `EmailBatchFunction` |
 | Audit export | Queue (single consumer) | `AuditExportWorker` |
 
 **Code Example:**
+
 ```csharp
 // Sending a message to Service Bus
 public class DocumentUploadedEventHandler : INotificationHandler<DocumentUploadedEvent>
@@ -139,7 +142,7 @@ public class DocumentUploadedEventHandler : INotificationHandler<DocumentUploade
 
 ## 3. Reporting & Analytics
 
-### Current State (MVP)
+### Current State   (MVP)
 
 - Basic audit log viewing (F-20)
 - No reporting or analytics capabilities
@@ -166,7 +169,7 @@ graph TB
 **Read Models to Create:**
 
 | Read Model | Purpose | Data Source |
-|------------|---------|-------------|
+| ------------ | --------- | ------------- |
 | `ApplicationSummaryView` | Dashboard lists, search results | Applications + PermitTypes |
 | `ApplicationDetailView` | Detail view (read-only) | Applications + Documents + Reviews |
 | `OfficerPerformanceView` | Officer productivity metrics | Reviews + Users |
@@ -174,6 +177,7 @@ graph TB
 | `AuditLogView` | Filtered audit log for export | AuditLogs |
 
 **Implementation Example:**
+
 ```csharp
 // Read Model Projector (updates denormalized views)
 public class ApplicationSubmittedEventHandler : INotificationHandler<ApplicationSubmittedEvent>
@@ -200,6 +204,7 @@ public class ApplicationSubmittedEventHandler : INotificationHandler<Application
 ```
 
 **Reporting Features:**
+
 - **Real-time dashboards** - Blazor components bound to read models
 - **Export to CSV/Excel** - F-23 requirement (Could priority)
 - **Scheduled reports** - Email reports to administrators weekly/monthly
@@ -211,7 +216,7 @@ public class ApplicationSubmittedEventHandler : INotificationHandler<Application
 
 ## 4. Workflow Engine
 
-### Current State (MVP)
+### Current State    (MVP)
 
 - Simple linear workflow: Submitted → UnderReview → Approved/Rejected
 - Single officer review per application
@@ -222,6 +227,7 @@ public class ApplicationSubmittedEventHandler : INotificationHandler<Application
 **Future Capability:** Configurable, multi-stage approval workflows with complex routing rules.
 
 **Business Scenarios:**
+
 - **Multi-Officer Approval** - Application requires reviews from Building + Planning + Zoning departments
 - **Conditional Approval** - Approve with conditions that citizen must satisfy
 - **Escalation Rules** - Auto-escalate if not reviewed within SLA (e.g., 8 days)
@@ -251,7 +257,7 @@ stateDiagram-v2
 **Workflow Definition:**
 
 | Stage | Actor | Action | Next State |
-|-------|--------|--------|------------|
+| ------- | -------- | -------- | ------------ |
 | 1 | Citizen | Submit | Submitted |
 | 2 | System | Route to Department | UnderReview (Building) |
 | 3 | Building Officer | Approve | UnderReview (Planning) |
@@ -301,7 +307,7 @@ public class Application : AggregateRoot<Guid>
 ## Extension Summary
 
 | Extension Point | Priority | Effort | Dependencies | Future ADR |
-|----------------|----------|--------|--------------|----------|
+| ---------------- | ---------- | -------- | -------------- | ---------- |
 | **Notifications** | Should (post-MVP) | Medium | Service Bus (optional) | `adr-004-notification-service.md` |
 | **Service Bus** | Could (post-MVP) | Medium | None (enables others) | `adr-005-service-bus-integration.md` |
 | **Reporting** | Could (post-MVP) | High | Read model database | `adr-006-reporting-read-models.md` |
