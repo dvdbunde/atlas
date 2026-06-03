@@ -185,3 +185,54 @@ Notes:
 - CI tasks (if added) should validate adherence to SSOT anchors where practical.
 
 <!-- © Capgemini 2025 -->
+
+## Getting Started
+
+### Prerequisites
+
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [Git](https://git-scm.com/)
+
+### Build
+
+`ash
+dotnet build
+`
+
+### Run Tests
+
+`ash
+dotnet test
+`
+
+### Run API
+
+`ash
+cd src/ATLAS.Api
+dotnet run
+`
+
+### Run Blazor UI
+
+`ash
+cd src/ATLAS.Blazor
+dotnet run
+`
+
+## Project Structure
+
+ATLAS follows Clean Architecture principles with 4 layers:
+
+- **Domain** (src/ATLAS.Domain) - Enterprise business rules and entities
+- **Application** (src/ATLAS.Application) - Application business rules, CQRS with MediatR
+- **Infrastructure** (src/ATLAS.Infrastructure) - External dependencies and data access
+- **Presentation** (src/ATLAS.Api, src/ATLAS.Blazor) - API and UI
+
+## Development Standards
+
+- **TDD**: Write failing tests first, then implement minimal code
+- **Clean Architecture**: Dependencies flow inward toward the Domain
+- **CQRS**: Commands and queries separated using MediatR
+- **Validation**: FluentValidation for business rules
+
+See [.github/copilot-instructions.md](.github/copilot-instructions.md) for detailed coding standards.
