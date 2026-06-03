@@ -102,9 +102,64 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Activates/deactivates permit types
 - Views audit log of all configuration changes
 
+### UC4: Citizen Views Application List (F-04)
+
+- Citizen logs into portal
+- Views list of their submitted applications
+- Sees application number, permit type, submission date, current status
+- Can click on any application to view details
+- List is sorted by submission date (newest first)
+
+### UC5: Citizen Downloads Documents (F-08)
+
+- Citizen opens application detail view
+- Scrolls to "Uploaded Documents" section
+- Clicks "Download" next to any document
+- System generates secure download link (SAS token, 1-hour expiration)
+- File downloads to citizen's device
+
+### UC6: Officer Filters & Searches Applications (F-14)
+
+- Officer logs into dashboard
+- Views pending application queue
+- Uses filter panel to filter by:
+  - Status (Pending, Under Review, Approved, Rejected)
+  - Date range (submission date from/to)
+  - Permit type (dropdown of active types)
+- Uses search bar to find by application number or citizen name
+- Results update in real-time as filters change
+
+### UC7: Officer Requests Additional Information (F-15)
+
+- Officer opens application in "Under Review" status
+- Clicks "Request Info" button
+- Enters message to citizen explaining what additional information/documents are needed
+- Submits request
+- Application status changes to "InfoRequested"
+- Citizen receives email notification with officer's message
+- Citizen can view requested info and update application (status → "Resubmitted")
+
+### UC8: Administrator Manages User Accounts (F-21)
+
+- Admin accesses "User Management" panel
+- Views list of all users (Citizens, Officers, Admins)
+- Can create new user account with role assignment
+- Can change user role (with audit trail)
+- Can activate/deactivate user accounts
+- Cannot modify their own role (prevents lockout)
+
+### UC9: Administrator Exports Audit Data (F-23)
+
+- Admin accesses "Audit Log" panel
+- Sets date range filter (from/to dates)
+- Optionally filters by user, action type, entity type
+- Clicks "Export to CSV" button
+- System generates CSV file with: timestamp, user, action, entity type, entity ID, details
+- For large exports (>10,000 records), system generates in background and emails download link
+
 ---
 
-### 5. Functional Requirements
+### 6. Application Assignment & Post-Submission Workflows
 
 #### Citizens
 
@@ -128,6 +183,15 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 | F-11 | Officers can add internal review notes to applications (not visible to citizens) | Must |
 | F-12 | Officers can approve applications with digital signature/confirmation | Must |
 | F-13 | Officers can reject applications with mandatory reason code and comments | Must |
+
+**Rejection Reason Codes (F-13):**
+
+- `IncompleteApplication` — Application form missing required fields
+- `MissingDocuments` — Required supporting documents not provided
+- `NonCompliant` — Application doesn't meet permit requirements
+- `InvalidProperty` — Property doesn't qualify for requested permit
+- `ZoningConflict` — Proposed use conflicts with zoning regulations
+- `Other` — Other reason (requires detailed comments)
 | F-14 | Officers can filter and search applications by status, date range, permit type | Should |
 | F-15 | Officers can request additional information from citizens (triggers status change) | Should |
 | F-16 | Officers can view application history and previous officer notes | Could |
@@ -152,6 +216,13 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Selecting permit type loads corresponding form fields
 - System validates permit type is active before allowing submission
 
+**F-02 Acceptance Criteria:**
+
+- Required fields show validation messages when left empty
+- Data format validation (email, phone, dates) shows clear error messages
+- Form prevents submission until all required fields are valid
+- Validation errors are displayed inline next to respective fields
+
 **F-03 Acceptance Criteria:**
 
 - System accepts PDF, JPG, PNG formats
@@ -159,11 +230,63 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Uploaded files are stored in Azure Blob Storage
 - System displays upload progress indicator
 
+**F-04 Acceptance Criteria:**
+
+- Citizens see only their own applications in the list
+- List displays: application number, permit type, submission date, current status
+- Applications are sorted by submission date (newest first)
+- Clicking an application navigates to detail view
+
 **F-05 Acceptance Criteria:**
 
 - Status history shows timestamp for each status change
+- Status flow: `Draft` → `Submitted` → `UnderReview` → `Approved` / `Rejected` / `InfoRequested` → `Resubmitted` → `UnderReview`
 - Status changes trigger email notifications (F-06)
 - Citizens cannot modify applications after "Under Review" status
+- Citizens can update applications in "InfoRequested" status
+- Draft applications are auto-deleted after 30 days of inactivity (F-07)
+
+**F-06 Acceptance Criteria:**
+
+- Email notification sent within 5 minutes of status change
+- Email contains: application number, new status, timestamp, next steps
+- Email uses configurable template (F-22)
+- Failed email delivery is logged but doesn't block status change
+
+**F-07 Acceptance Criteria:**
+
+- Citizens can save partial applications with "Draft" status
+- Draft applications can be resumed from citizen dashboard
+- Auto-save triggers every 30 seconds or on field change
+- Draft applications are deleted after 30 days of inactivity
+
+**F-08 Acceptance Criteria:**
+
+- Citizens can download documents they previously uploaded
+- Download link is available in application detail view
+- System generates SAS token with 1-hour expiration for secure download
+- Unsupported file types display "Preview not available" message
+
+**F-09 Acceptance Criteria:**
+
+- Officers see pending applications assigned to them or their department
+- Dashboard shows: application number, citizen name, permit type, submission date, current status
+- Applications are sorted by submission date (oldest first for FIFO processing)
+- Dashboard refreshes automatically every 5 minutes
+
+**F-10 Acceptance Criteria:**
+
+- Application detail view shows all form data in read-only mode
+- Uploaded documents are listed with download links
+- Officer notes section is separate from citizen-visible data
+- All previous review decisions and notes are visible
+
+**F-11 Acceptance Criteria:**
+
+- Officers can add internal notes visible only to other officers/admins
+- Notes support rich text formatting (basic: bold, italic, lists)
+- Notes are timestamped and show officer name
+- Notes cannot be edited or deleted after saving (audit requirement)
 
 **F-12 Acceptance Criteria:**
 
@@ -172,6 +295,55 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Application status changes to "Approved"
 - Citizen receives approval notification with details
 
+**F-13 Acceptance Criteria:**
+
+- Rejection requires selecting a reason code from predefined list
+- Officers must enter comments explaining the rejection reason
+- System validates that both reason code and comments are provided
+- Rejection reason codes: IncompleteApplication, MissingDocuments, NonCompliant, Other
+
+**F-14 Acceptance Criteria:**
+
+- Officers can filter applications by status (Pending, UnderReview, Approved, Rejected)
+- Officers can filter by date range (submission date from/to)
+- Officers can filter by permit type from dropdown
+- Search by application number or citizen name (partial match supported)
+
+**F-15 Acceptance Criteria:**
+
+- Officers can request additional information with mandatory message to citizen
+- Application status changes to "InfoRequested"
+- Citizen receives notification with officer's message
+- Citizen can view requested info and update application (status → Resubmitted)
+
+**F-16 Acceptance Criteria:**
+
+- Officers can view complete application history including all status changes
+- History shows all officer reviews with notes and decisions
+- Timeline view displays: date, action, officer name, details
+- History cannot be modified (read-only, audit compliance)
+
+**F-17 Acceptance Criteria:**
+
+- Admin can create permit type with: name, description, fee, active/inactive status
+- Admin can define custom form fields (name, type, required/optional)
+- Admin can specify document requirements (type, required/optional, max size)
+- New permit type appears in citizen dropdown only when activated
+
+**F-18 Acceptance Criteria:**
+
+- Admin can edit permit type name, description, fee
+- Admin can add/remove form fields from existing permit types
+- Admin can modify document requirements (add new, change required/optional)
+- Changes to active permit types don't affect existing applications
+
+**F-19 Acceptance Criteria:**
+
+- Admin can deactivate permit types (soft delete, not physical delete)
+- Deactivated permit types no longer appear in citizen dropdown
+- Existing applications with deactivated permit types remain accessible
+- System prevents deactivation if active applications exist for that permit type
+
 **F-20 Acceptance Criteria:**
 
 - Audit log captures: user ID, action type, timestamp, affected record ID, before/after values
@@ -179,9 +351,74 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Administrators can filter audit log by user, action type, date range
 - Audit log retention: 7 years (compliance requirement)
 
+**F-21 Acceptance Criteria:**
+
+- Admin can create new user accounts with role assignment (Citizen/Officer/Admin)
+- Admin can change user roles (with audit trail of role changes)
+- Admin can deactivate/activate user accounts
+- Admin cannot modify their own role (prevents lockout)
+
+**F-22 Acceptance Criteria:**
+
+- Admin can configure email notification templates (approval, rejection, info requested)
+- Admin can set system-wide document size limit (default 25MB per F-03)
+- Admin can configure session timeout duration (default 30 minutes)
+- Configuration changes are logged in audit trail
+
+**F-23 Acceptance Criteria:**
+
+- Admin can export audit log to CSV format
+- Export supports date range filtering
+- Exported file includes: timestamp, user, action, entity type, entity ID, details
+- Large exports (>10,000 records) are generated as background job with email notification
+
 ---
 
-### 6. Out of Scope
+### 6. Application Assignment & Post-Submission Workflows
+
+#### Application Assignment Process (F-09, F-10)
+
+**Assignment Flow:**
+
+1. Citizen submits application → Status: `Submitted`
+2. System assigns application to department based on `PermitType.Department`
+3. Department supervisor or system (round-robin) assigns to available officer
+4. Officer accepts assignment → Status: `UnderReview`
+5. Officer reviews and makes decision (Approve/Reject/RequestInfo)
+
+**Assignment Rules:**
+
+- Applications are visible to all officers in the department
+- Officers can self-assign available applications from department queue
+- System tracks `AssignedOfficerId` and `AssignedDate`
+- Reassigned applications retain history of all assignments
+
+#### Post-Rejection Workflow (F-13)
+
+**Rejection Outcomes:**
+
+1. **Hard Reject** — Application rejected, citizen must submit new application
+   - Status: `Rejected`
+   - Citizen receives rejection notification with reason code and comments
+   - Original application remains in history (read-only)
+   - Citizen can start new application (references original for context)
+
+2. **Soft Reject (Request Info)** — Officer requests additional information
+   - Status: `InfoRequested`
+   - Citizen receives notification with officer's message
+   - Citizen can update application and resubmit
+   - Status changes to `Resubmitted` → `UnderReview`
+   - Original submission data preserved (version history)
+
+**Reapplication Process:**
+
+- Rejected applications cannot be modified (new application required)
+- Citizens can reference rejected application number when reapplying
+- New application links to rejected application via `PreviousApplicationId`
+
+---
+
+### 7. Out of Scope
 
 The following items are **explicitly out of scope** for the MVP release:
 

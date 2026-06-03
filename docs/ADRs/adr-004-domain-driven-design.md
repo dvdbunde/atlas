@@ -40,10 +40,12 @@ We will adopt **Domain-Driven Design (DDD)** principles as described by Eric Eva
 
 Objects with identity continuity (tracked by ID across time):
 
-- `PermitApplication` - Core entity with unique application ID
+- `Application` - Core entity with unique application ID
 - `PermitType` - Configurable permit definitions
 - `Document` - Uploaded file metadata with blob reference
-- `ReviewNote` - Officer review comments linked to applications
+- `Review` - Officer review comments linked to applications
+- `User` - System users (Citizens, Officers, Administrators)
+- `AuditLog` - Immutable record of system actions (entity with identity for 7-year retention)
 
 #### 2. **Value Objects** (Domain Layer)
 
@@ -57,9 +59,9 @@ Immutable objects defined by their attributes (no identity):
 
 Clusters of entities/value objects treated as a unit for data changes:
 
-- **PermitApplication Aggregate Root** - Ensures application state transitions are valid
-- **PermitType Aggregate Root** - Manages configuration consistency
-- **OfficerReview Aggregate** - Groups review notes and decisions
+- **Application Aggregate Root** - Ensures application state transitions are valid. Contains `Document` and `Review` entities.
+- **PermitType Aggregate Root** - Manages configuration consistency. Contains `PermitField` and `DocumentRequirement` value objects.
+- **User Aggregate Root** - Manages user identity and role. Simple entity with no child entities.
 
 #### 4. **Domain Events** (Domain Layer)
 
@@ -68,15 +70,19 @@ Events that capture state changes for audit and extensibility:
 - `ApplicationSubmittedEvent`
 - `ApplicationApprovedEvent`
 - `ApplicationRejectedEvent`
+- `ApplicationInfoRequestedEvent`
 - `DocumentUploadedEvent`
+- `UserRoleChangedEvent`
 
 #### 5. **Repositories** (Application Layer Interfaces)
 
 Abstractions for persistence operations:
 
-- `IPermitApplicationRepository`
+- `IApplicationRepository`
 - `IPermitTypeRepository`
 - `IDocumentRepository`
+- `IUserRepository`
+- `IAuditLogRepository`
 
 #### 6. **Domain Services** (Domain Layer)
 
@@ -90,29 +96,36 @@ Logic that doesn't belong to a single entity:
 ```text
 src/Atlas.Domain/
 ├── Entities/
-│   ├── PermitApplication.cs
+│   ├── Application.cs
 │   ├── PermitType.cs
 │   ├── Document.cs
-│   └── ReviewNote.cs
+│   ├── Review.cs
+│   ├── User.cs
+│   └── AuditLog.cs
 ├── ValueObjects/
 │   ├── ApplicationStatus.cs
 │   ├── DocumentType.cs
-│   └── AuditEntry.cs
+│   ├── PermitField.cs
+│   └── DocumentRequirement.cs
 ├── Aggregates/
-│   ├── PermitApplicationAggregate.cs
+│   ├── ApplicationAggregate.cs
 │   ├── PermitTypeAggregate.cs
-│   └── OfficerReviewAggregate.cs
+│   └── UserAggregate.cs
 ├── Events/
 │   ├── ApplicationSubmittedEvent.cs
 │   ├── ApplicationApprovedEvent.cs
+│   ├── ApplicationRejectedEvent.cs
+│   ├── ApplicationInfoRequestedEvent.cs
 │   └── DocumentUploadedEvent.cs
 ├── Services/
 │   ├── ApplicationEligibilityService.cs
 │   └── AuditTrailService.cs
 └── Interfaces/
-    ├── IPermitApplicationRepository.cs
+    ├── IApplicationRepository.cs
     ├── IPermitTypeRepository.cs
-    └── IDocumentRepository.cs
+    ├── IDocumentRepository.cs
+    ├── IUserRepository.cs
+    └── IAuditLogRepository.cs
 ```
 
 ## Consequences
