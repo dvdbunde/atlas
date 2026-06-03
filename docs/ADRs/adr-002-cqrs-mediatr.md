@@ -216,8 +216,10 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
 ## References
 
-- [Previous ADR: Clean Architecture](adr-001-clean-architecture.md)
+- [ADR-001: Clean Architecture](adr-001-clean-architecture.md)
 - [CQRS Pattern - Martin Fowler](https://martinfowler.com/bliki/CQRS.html)
 - [MediatR Library](https://github.com/jbogard/MediatR)
 - [FluentValidation](https://fluentvalidation.net/)
-- [Next ADR: Data Storage Strategy](adr-003-azure-sql-blob.md)
+- [ADR-003: Data Storage Strategy](adr-003-azure-sql-blob.md)
+- [ADR-004: Domain-Driven Design](adr-004-domain-driven-design.md) (Domain Events)
+- [ADR-005: Blazor Web App](adr-005-blazor-web-app.md) (MediatR in Blazor components)

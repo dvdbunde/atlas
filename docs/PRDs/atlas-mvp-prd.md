@@ -300,7 +300,7 @@ The following items are **explicitly out of scope** for the MVP release:
 #### Business Constraints
 
 - **C-07**: MVP must launch by **Q3 2026** (fiscal year budget cycle)
-- **C-08**: System must comply with **government data sovereignty** requirements (data must remain in Canada Central region)
+- **C-08**: System must comply with **government data sovereignty** requirements (data must remain in West Europe region)
 - **C-09**: No budget for third-party SaaS integrations (payment, e-signature) in MVP
 - **C-10**: Staff training budget limited to 2 days maximum (simple UI required)
 
@@ -414,5 +414,3 @@ The following features are **out of scope for MVP** but identified for future re
 14. **Offline Mode** — Allow officers to review applications offline (sync when reconnected)
 
 ---
-
-<!-- © Capgemini 2025 -->

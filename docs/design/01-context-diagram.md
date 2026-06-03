@@ -67,7 +67,7 @@ C4Context
 - **Authentication**: Microsoft Entra ID with MFA for employees; local accounts for citizens (MVP)
 - **Authorization**: Role-based access control (Citizen, Officer, Admin)
 - **Encryption**: TLS 1.3 for data in transit; Azure Storage Service Encryption for data at rest
-- **Compliance**: Government data sovereignty (Canada Central region); 7-year audit retention
+- **Compliance**: Government data sovereignty (West Europe region); 7-year audit retention
 
 ## References
 

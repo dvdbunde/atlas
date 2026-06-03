@@ -33,10 +33,12 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
 This repository contains both the ATLAS application code and comprehensive documentation:
 
 ### Application Code
+
 - `src/` - Application source code (.NET 9, Blazor)
 - `infra/` - Azure infrastructure as code (Bicep/Terraform)
 
 ### Documentation & Planning
+
 - `docs/` - Product requirements, architecture, design documents, and engineering guidelines
   - [PRDs](docs/PRDs/) - Product Requirements Documents (e.g., [ATLAS MVP PRD](docs/PRDs/atlas-mvp-prd.md))
   - [ADRs](docs/ADRs/) - Architectural Decision Records
@@ -44,11 +46,13 @@ This repository contains both the ATLAS application code and comprehensive docum
   - [Engineering Guidelines](docs/engineering/) - Development process documentation
 
 ### Project Management
+
 - `plans/` - Project plans, roadmap, and task tracking
   - [ROADMAP.md](plans/ROADMAP.md) - Strategic planning and milestones
   - [TODO.md](plans/TODO.md) - Current task queue
 
 ### Development Configuration
+
 - `.github/` - GitHub configuration including Copilot customizations
   - [Agents](.github/agents/) - Custom AI agents for development tasks
   - [Instructions](.github/instructions/) - Coding standards and guidelines

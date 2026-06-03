@@ -126,4 +126,7 @@ src/
 
 - [Clean Architecture - Robert C. Martin](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [ATLAS PRD - Technology Stack](../PRDs/atlas-mvp-prd.md#technology-stack)
-- [Next ADR: CQRS with MediatR](adr-002-cqrs-mediatr.md)
+- [ADR-002: CQRS with MediatR](adr-002-cqrs-mediatr.md)
+- [ADR-004: Domain-Driven Design](adr-004-domain-driven-design.md)
+- [ADR-005: Blazor Web App](adr-005-blazor-web-app.md)
+- [ADR-008: Microsoft Entra ID Authentication](adr-008-microsoft-entra-id.md)

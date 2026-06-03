@@ -26,7 +26,7 @@ ATLAS needs to store two distinct types of data:
 - **ACID transactions** for relational data (application submission, status changes)
 - **Unlimited scale** for document storage (unlimited growth per PRD)
 - **Cost-effective** - Serverless options for variable workloads
-- **Compliance** - Data sovereignty (Canada Central), encryption at rest
+- **Compliance** - Data sovereignty (West Europe), encryption at rest
 - **Performance** - Fast queries for dashboards, quick document retrieval
 
 **Alternative storage options considered:**
@@ -78,7 +78,7 @@ We will use a **hybrid storage strategy**:
 | ---------- | ------- | ------------ |
 | **Tier** | Serverless (General Purpose) | Auto-pauses during low activity, cost-effective for government workloads |
 | **Hardware** | Gen5 (2-4 vCores) | Sufficient for MVP (500 concurrent users) |
-| **Region** | Canada Central | Data sovereignty compliance |
+| **Region** | West Europe | Data sovereignty compliance |
 | **Backup** | 7-day retention (default) | Meets PRD requirement for daily backups |
 | **Geo-redundancy** | Zone-redundant | High availability (99.9% uptime SLA) |
 
@@ -161,7 +161,7 @@ public class Document : Entity<Guid>
 2. **Cost-Effective** - Serverless SQL auto-pauses, Blob Storage pay-per-use
 3. **Scalability** - Blob Storage handles unlimited document growth, SQL scales vCores
 4. **Performance** - SQL optimized for queries, Blob optimized for file streaming
-5. **Compliance** - Canada Central region, encryption at rest, 7-year retention possible
+5. **Compliance** - West Europe region, encryption at rest, 7-year retention possible
 6. **Security** - SQL TDE (Transparent Data Encryption), Blob Storage Service Encryption
 7. **CDN Ready** - Blob Storage can be fronted by Azure CDN for global access
 
@@ -213,13 +213,16 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 | Daily backups, 30-day retention | SQL automatic backups, Blob Storage soft delete |
 | Geo-redundant (1-hour RPO) | RA-GRS replication for both SQL and Blob |
 | 7-year audit retention | SQL tables with retention policy, Blob Storage immutable storage |
-| Data sovereignty (Canada Central) | Both services deployed to Canada Central region |
+| Data sovereignty (West Europe) | Both services deployed to West Europe region |
 | Encryption at rest | SQL TDE, Blob Storage Service Encryption (AES-256) |
 
 ## References
 
-- [Previous ADR: Clean Architecture](adr-001-clean-architecture.md)
-- [Previous ADR: CQRS with MediatR](adr-002-cqrs-mediatr.md)
+- [ADR-001: Clean Architecture](adr-001-clean-architecture.md) (Infrastructure Layer)
+- [ADR-002: CQRS with MediatR](adr-002-cqrs-mediatr.md)
+- [ADR-006: GitHub Actions CI/CD](adr-006-github-actions.md) (EF Core Migrations in CI/CD)
+- [ADR-007: Bicep Infrastructure as Code](adr-007-bicep.md) (SQL + Blob Bicep Modules)
+- [ADR-008: Microsoft Entra ID Authentication](adr-008-microsoft-entra-id.md) (Entra ID Auth for SQL)
 - [ATLAS PRD - Non-Functional Requirements](../PRDs/atlas-mvp-prd.md#6-non-functional-requirements)
 - [Azure SQL Database Serverless](https://learn.microsoft.com/azure/azure-sql/database/serverless-tier-overview)
 - [Azure Blob Storage](https://learn.microsoft.com/azure/storage/blobs/)
