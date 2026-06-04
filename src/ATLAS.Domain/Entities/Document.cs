@@ -12,7 +12,8 @@ namespace ATLAS.Domain.Entities
         public DateTime UploadedDate { get; private set; }
         public Guid UploadedById { get; private set; }
 
-        public Document(Guid id, Guid applicationId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
+        // Make constructor internal to enforce aggregate boundary
+        internal Document(Guid id, Guid applicationId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Document ID cannot be empty", nameof(id));
@@ -51,7 +52,7 @@ namespace ATLAS.Domain.Entities
             UploadedById = uploadedById;
         }
 
-        protected Document()
+        internal protected Document()
         {
         }
     }

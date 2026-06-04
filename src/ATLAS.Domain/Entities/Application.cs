@@ -43,10 +43,16 @@ namespace ATLAS.Domain.Entities
         {
         }
 
-        public void Submit()
+      public void Submit()
         {
             if (Status != ApplicationStatus.Draft)
                 throw new DomainException("Only draft applications can be submitted");
+
+            if (PermitTypeId == Guid.Empty)
+                throw new DomainException("Cannot submit application without a permit type");
+
+            // Note: Actual permit type validation (exists, is active) happens in command handler
+            // Domain layer shouldn't have infrastructure dependencies
 
             Status = ApplicationStatus.Submitted;
             SubmittedDate = DateTime.UtcNow;
@@ -58,7 +64,8 @@ namespace ATLAS.Domain.Entities
             if (Status != ApplicationStatus.Submitted)
                 throw new DomainException("Can only start review for submitted applications");
 
-            Status = ApplicationStatus.UnderReview;
+            Status = ApplicationStatus.UnderReview;            
+            AddDomainEvent(new ApplicationUnderReviewEvent(Id, officerId));
         }
 
         public void Approve(Guid officerId, string comments)
@@ -96,16 +103,16 @@ namespace ATLAS.Domain.Entities
             AddDomainEvent(new ApplicationInfoRequestedEvent(Id, officerId, message));
         }
 
-        public void Resubmit(string updatedNotes)
+        public void Resubmit()
         {
             if (Status != ApplicationStatus.InfoRequested)
-                throw new DomainException("Only applications with info requested can be resubmitted");
+                throw new DomainException("Can only resubmit applications that have requested info");
 
-            Status = ApplicationStatus.Resubmitted;
-            CitizenNotes += $"[RESUBMITTED {DateTime.UtcNow}]: {updatedNotes}";
+            Status = ApplicationStatus.UnderReview;
+            AddDomainEvent(new ApplicationResubmittedEvent(Id, CitizenId));
         }
 
-        public void AddDocument(Guid documentId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
+        public Document AddDocument(Guid documentId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
         {
             if (Status == ApplicationStatus.Approved || Status == ApplicationStatus.Rejected)
                 throw new DomainException("Cannot add documents to approved or rejected applications");
@@ -113,16 +120,21 @@ namespace ATLAS.Domain.Entities
             var document = new Document(documentId, Id, fileName, contentType, fileSize, blobUrl, uploadedById);
             _documents.Add(document);
             AddDomainEvent(new DocumentUploadedEvent(documentId, Id, uploadedById, fileName));
+
+            return document;
         }
 
-        public void AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen)
+        public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen)
         {
             if (Status != ApplicationStatus.UnderReview)
                 throw new DomainException("Can only add reviews for applications under review");
 
             var review = new Review(reviewId, Id, officerId, decision, comments, isVisibleToCitizen);
             _reviews.Add(review);
+
+            return review;
         }
+        
 
         private static string GenerateApplicationNumber()
         {

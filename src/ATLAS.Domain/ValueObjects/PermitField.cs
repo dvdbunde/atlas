@@ -21,7 +21,7 @@ namespace ATLAS.Domain.ValueObjects
             Type = type;
             IsRequired = isRequired;
             DefaultValue = defaultValue;
-        }
+        }        
 
         // Value objects use value equality
         public override bool Equals(object obj)

@@ -41,7 +41,7 @@ namespace ATLAS.Domain.Tests.Aggregates
             // Arrange
             var application = new Application(_citizenId, _permitTypeId, "Test notes");
             var aggregate = new ApplicationAggregate(application);
-            var document = new Document(Guid.NewGuid(), application.Id, "test.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
+            var document = application.AddDocument(Guid.NewGuid(), "test.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
 
             // Act
             aggregate.AddDocument(document);
@@ -61,7 +61,7 @@ namespace ATLAS.Domain.Tests.Aggregates
             application.Approve(_officerId, "Approved");
             
             var aggregate = new ApplicationAggregate(application);
-            var document = new Document(Guid.NewGuid(), application.Id, "test.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
+            var document = application.AddDocument(Guid.NewGuid(), "test.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() => 
@@ -78,7 +78,7 @@ namespace ATLAS.Domain.Tests.Aggregates
             application.StartReview(_officerId);
             
             var aggregate = new ApplicationAggregate(application);
-            var review = new Review(Guid.NewGuid(), application.Id, _officerId, ReviewDecision.Approve, "Approved", true);
+            var review = application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Approve, "Approved", true);
 
             // Act
             aggregate.AddReview(review);
@@ -94,7 +94,7 @@ namespace ATLAS.Domain.Tests.Aggregates
             // Arrange
             var application = new Application(_citizenId, _permitTypeId, "Test notes");
             var aggregate = new ApplicationAggregate(application);
-            var review = new Review(Guid.NewGuid(), application.Id, _officerId, ReviewDecision.Approve, "Approved", true);
+            var review = application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Approve, "Approved", true);
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() => 
@@ -122,7 +122,7 @@ namespace ATLAS.Domain.Tests.Aggregates
             application.StartReview(_officerId);
             
             var aggregate = new ApplicationAggregate(application);
-            var review = new Review(Guid.NewGuid(), application.Id, _officerId, ReviewDecision.Reject, "Rejected", true);
+            var review = application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Reject, "Rejected", true);
             aggregate.AddReview(review);
 
             // Act & Assert

@@ -14,9 +14,9 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldInitializeWithValidValues()
         {
             // Arrange & Act
-            var document = new Document(
-                _documentId, 
-                _applicationId, 
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
+            var document = application.AddDocument(
+                _documentId,                 
                 "application.pdf", 
                 "application/pdf", 
                 1024 * 1024, // 1MB
@@ -38,10 +38,10 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldThrowException_WhenIdIsEmpty()
         {
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Document(
+                application.AddDocument(
                     Guid.Empty, 
-                    _applicationId, 
                     "file.pdf", 
                     "application/pdf", 
                     1024, 
@@ -54,10 +54,10 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldThrowException_WhenFileNameIsEmpty()
         {
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Document(
+                application.AddDocument(
                     _documentId, 
-                    _applicationId, 
                     "", 
                     "application/pdf", 
                     1024, 
@@ -73,10 +73,10 @@ namespace ATLAS.Domain.Tests.Entities
             var longFileName = new string('A', 300); // 300 chars
 
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Document(
+                application.AddDocument(
                     _documentId, 
-                    _applicationId, 
                     longFileName, 
                     "application/pdf", 
                     1024, 
@@ -92,10 +92,10 @@ namespace ATLAS.Domain.Tests.Entities
             var largeFileSize = 26L * 1024 * 1024; // 26MB
 
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Document(
+                application.AddDocument(
                     _documentId, 
-                    _applicationId, 
                     "file.pdf", 
                     "application/pdf", 
                     largeFileSize, 
@@ -108,10 +108,10 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldThrowException_WhenBlobUrlIsEmpty()
         {
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes"); 
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Document(
+                application.AddDocument(
                     _documentId, 
-                    _applicationId, 
                     "file.pdf", 
                     "application/pdf", 
                     1024, 

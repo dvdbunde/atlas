@@ -12,7 +12,8 @@ namespace ATLAS.Domain.Entities
         public DateTime ReviewedDate { get; private set; }
         public bool IsVisibleToCitizen { get; private set; }
 
-        public Review(Guid id, Guid applicationId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen)
+        // Make constructor internal to enforce aggregate boundary
+        internal Review(Guid id, Guid applicationId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Review ID cannot be empty", nameof(id));
@@ -33,7 +34,7 @@ namespace ATLAS.Domain.Entities
             IsVisibleToCitizen = isVisibleToCitizen;
         }
 
-        protected Review()
+        internal protected Review()
         {
         }
     }

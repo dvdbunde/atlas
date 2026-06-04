@@ -14,9 +14,9 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldInitializeWithValidValues()
         {
             // Arrange & Act
-            var review = new Review(
-                _reviewId, 
-                _applicationId, 
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
+            var review = application.AddReview(
+                _reviewId,                 
                 _officerId, 
                 ReviewDecision.Approve, 
                 "Approved - meets all requirements", 
@@ -36,9 +36,9 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldSetReasonCode_WhenDecisionIsReject()
         {
             // Arrange & Act
-            var review = new Review(
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
+            var review = application.AddReview(
                 _reviewId, 
-                _applicationId, 
                 _officerId, 
                 ReviewDecision.Reject,                 
                 "Missing required documents", 
@@ -54,10 +54,10 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldThrowException_WhenIdIsEmpty()
         {
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Review(
+                application.AddReview(
                     Guid.Empty, 
-                    _applicationId, 
                     _officerId, 
                     ReviewDecision.Approve, 
                     "Approved", 
@@ -69,10 +69,10 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldThrowException_WhenApplicationIdIsEmpty()
         {
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Review(
-                    _reviewId, 
-                    Guid.Empty, 
+                application.AddReview(
+                    _reviewId,                     
                     _officerId, 
                     ReviewDecision.Approve, 
                     "Approved", 
@@ -84,10 +84,10 @@ namespace ATLAS.Domain.Tests.Entities
         public void Create_ShouldThrowException_WhenOfficerIdIsEmpty()
         {
             // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
-                new Review(
+                application.AddReview(
                     _reviewId, 
-                    _applicationId, 
                     Guid.Empty, 
                     ReviewDecision.Approve, 
                     "Approved", 
