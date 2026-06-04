@@ -1,5 +1,13 @@
 namespace ATLAS.Infrastructure;
 
+using ATLAS.Application;
+using ATLAS.Domain.Entities;
+using ATLAS.Domain.Interfaces;
+using ATLAS.Infrastructure.Data;
+using ATLAS.Infrastructure.Repositories;
+using FluentValidation;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,32 +37,25 @@ public static class ServiceCollectionExtensions
             throw new ArgumentNullException(nameof(configuration));
         }
         
-        // Register database context (when implemented)
-        // services.AddDbContext<ApplicationDbContext>(options =>
-        // {
-        //     options.UseSqlServer(
-        //         configuration.GetConnectionString("DefaultConnection"),
-        //         sqlOptions => sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
-        // });
+        // Register database context
+        services.AddDbContext<ApplicationDbContext>(options =>
+        {
+            options.UseSqlServer(
+                configuration.GetConnectionString("DefaultConnection"),
+                sqlOptions => sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
+        });
         
-        // Register repositories (when implemented)
-        // services.AddScoped<IApplicationRepository, ApplicationRepository>();
-        // services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
-        // services.AddScoped<IDocumentRepository, DocumentRepository>();
-        // services.AddScoped<IReviewRepository, ReviewRepository>();
+        // Register repositories
+        services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         
-        // Register Unit of Work (when implemented)
-        // services.AddScoped<IUnitOfWork, UnitOfWork>();
+        // Register Unit of Work
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         
-        // Register external service clients (when implemented)
-        // services.AddHttpClient<ISomeExternalService, SomeExternalService>();
-        
-        // Register caching (when implemented)
-        // services.AddMemoryCache();
-        // services.AddDistributedMemoryCache();
-        
-        // Register background services (when implemented)
-        // services.AddHostedService<SomeBackgroundService>();
+        // Register MediatR (CQRS handlers are in Application layer)
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly));
         
         return services;
     }

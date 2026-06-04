@@ -7,7 +7,7 @@ namespace ATLAS.Domain.Entities
         public Guid ApplicationId { get; private set; }
         public Guid OfficerId { get; private set; }
         public ReviewDecision Decision { get; private set; }
-        public string ReasonCode { get; private set; }
+        public string? ReasonCode { get; private set; }
         public string Comments { get; private set; }
         public DateTime ReviewedDate { get; private set; }
         public bool IsVisibleToCitizen { get; private set; }

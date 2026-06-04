@@ -1,6 +1,6 @@
 ---
 title: "ADR-009: Use Azure Key Vault for Secrets Management"
-status: "Proposed"
+status: "Partially Implemented"
 date: "2026-06-03"
 authors: "David (Product Owner), Engineering Team"
 tags: ["security", "infrastructure", "azure", "key-vault"]
@@ -12,7 +12,13 @@ superseded_by: ""
 
 ## Status
 
-### Proposed
+### Partially Implemented
+
+**Implementation Notes:**
+- Development uses user-secrets for local development
+- Azure Key Vault packages installed but not fully configured
+- Full Azure Key Vault integration deferred to Milestone 9 (Production Hardening)
+- Connection strings currently retrieved from configuration (not Key Vault)
 
 ## Context
 

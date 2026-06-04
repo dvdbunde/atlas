@@ -1,4 +1,4 @@
-namespace ATLAS.Domain.ValueObjects
+namespace ATLAS.Domain.Enums
 {
     public enum DocumentType
     {

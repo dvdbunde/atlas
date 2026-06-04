@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ATLAS.Domain.ValueObjects;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.Events;
 
 namespace ATLAS.Domain.Entities
@@ -66,6 +66,16 @@ namespace ATLAS.Domain.Entities
 
             Status = ApplicationStatus.UnderReview;            
             AddDomainEvent(new ApplicationUnderReviewEvent(Id, officerId));
+        }
+
+        public void AssignToOfficer(Guid officerId)
+        {
+            if (Status != ApplicationStatus.Submitted && Status != ApplicationStatus.UnderReview)
+                throw new DomainException("Can only assign officer to submitted or under-review applications");
+
+            // Note: Officer assignment is tracked via Review entities
+            // This method validates the state transition is valid
+            AddDomainEvent(new ApplicationAssignedToOfficerEvent(Id, officerId));
         }
 
         public void Approve(Guid officerId, string comments)
