@@ -1,0 +1,24 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Atlas.Domain.Interfaces;
+
+namespace ATLAS.Domain.Interfaces
+{
+    public interface IApplicationRepository : IRepository<Entities.Application>
+    {
+        // Inherited from IRepository<Application>:
+        // Task<Application?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        // Task<IEnumerable<Application>> GetAllAsync(CancellationToken cancellationToken = default);
+        // Task AddAsync(Application entity, CancellationToken cancellationToken = default);
+        // Task UpdateAsync(Application entity, CancellationToken cancellationToken = default);
+        // Task DeleteAsync(Application entity, CancellationToken cancellationToken = default);
+
+        // Specialized methods:
+        Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Entities.Application>> GetByCitizenIdAsync(Guid citizenId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Entities.Application>> GetByStatusAsync(ValueObjects.ApplicationStatus status, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Entities.Application>> GetByOfficerIdAsync(Guid officerId, CancellationToken cancellationToken = default);
+    }
+}
