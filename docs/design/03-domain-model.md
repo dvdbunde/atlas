@@ -181,6 +181,8 @@ Submitted → UnderReview → Approved
 | `ApplicationSubmitted` | Citizen submits application | ApplicationId, CitizenId, PermitTypeId, Timestamp |
 | `ApplicationApproved` | Officer approves application | ApplicationId, OfficerId, Timestamp |
 | `ApplicationRejected` | Officer rejects application | ApplicationId, OfficerId, ReasonCode, Comments |
+| `ApplicationAssignedToOfficerEvent` | Officer assigned to application | ApplicationId, OfficerId, OccurredOn |
+| `ApplicationUnderReviewEvent` | Application status changes to UnderReview | ApplicationId, Timestamp |
 | `DocumentUploaded` | User uploads document | DocumentId, ApplicationId, UserId, FileName |
 | `PermitTypeCreated` | Admin creates permit type | PermitTypeId, AdminId, Name |
 | `AuditLogCreated` | Any system action | Action, UserId, EntityType, EntityId |

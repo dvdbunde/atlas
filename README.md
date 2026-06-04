@@ -21,6 +21,27 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
 - **Microsoft Entra ID** (authentication & authorization)
 - **Azure App Service** (hosting)
 
+## Project Status
+
+**Current Milestone**: Milestone 3 - Database Persistence ✅ COMPLETE (92%)
+
+**Completed Features**:
+
+- ✅ Clean Architecture foundation (Milestone 1)
+- ✅ Domain model with DDD patterns (Milestone 2)
+- ✅ Entity Framework Core with Azure SQL Database
+- ✅ CQRS pattern with MediatR
+- ✅ Repository pattern implementation
+- ✅ FluentValidation for command validation
+- ✅ 97% test pass rate (38/39 Infrastructure, 11/11 Application, 2/2 Integration)
+
+**In Progress**:
+
+- ⚠️ 1 test failing (concurrency test with InMemory provider)
+- ⚠️ Azure Key Vault integration simplified for development
+
+**Next Milestone**: Milestone 4 - Identity & Authentication (see [TODO.md](plans/TODO.md) for details)
+
 ## Who this is for
 
 - **Developers** contributing to the ATLAS platform

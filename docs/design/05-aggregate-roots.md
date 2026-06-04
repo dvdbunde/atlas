@@ -58,9 +58,10 @@ Application (Root)
 - `Document` and `Review` objects are accessed through the `Application` root
 - Example: `application.AddDocument(fileName, contentType, blobUrl)` NOT `new Document(...)`
 
-**CQRS Command Handlers:**
+**CQRS Command Handlers (Milestone 3 Updates):**
 
 ```csharp
+// Submit application (existing)
 public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplicationCommand, Guid>
 {
     private readonly IRepository<Application> _applicationRepository;
@@ -71,6 +72,34 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
         application.Submit();  // Enforces invariants
         await _applicationRepository.UpdateAsync(application);
         return application.Id;
+    }
+}
+
+// Assign to officer (NEW in M3)
+public class AssignToOfficerCommandHandler : IRequestHandler<AssignToOfficerCommand, Unit>
+{
+    private readonly IApplicationRepository _applicationRepository;
+
+    public async Task<Unit> Handle(AssignToOfficerCommand request, CancellationToken cancellationToken)
+    {
+        var application = await _applicationRepository.GetByIdAsync(request.ApplicationId);
+        application.AssignToOfficer(request.OfficerId);
+        await _applicationRepository.UpdateAsync(application);
+        return Unit.Value;
+    }
+}
+
+// Upload document (NEW in M3)
+public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentCommand, Guid>
+{
+    private readonly IApplicationRepository _applicationRepository;
+
+    public async Task<Guid> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
+    {
+        var application = await _applicationRepository.GetByIdAsync(request.ApplicationId);
+        var documentId = application.AddDocument(request.FileName, request.ContentType, request.BlobUrl, request.UploadedById);
+        await _applicationRepository.UpdateAsync(application);
+        return documentId;
     }
 }
 ```
