@@ -196,7 +196,7 @@ flowchart TD
   - `AuditLog` (maps to ADR-004 entity, 7-year retention)
 - Database migrations for initial schema
 - Repository implementations (ADR-004):
-  - `IPermitApplicationRepository` → `PermitApplicationRepository`
+  - `IApplicationRepository` → `ApplicationRepository`
   - `IPermitTypeRepository` → `PermitTypeRepository`
   - `IDocumentRepository` → `DocumentRepository`
 - CQRS command/query handlers using MediatR (ADR-002)
@@ -209,7 +209,8 @@ flowchart TD
 - ✅ Repository interfaces defined in Application layer, implemented in Infrastructure
 - ✅ All CQRS handlers implement proper error handling (ADR-002)
 - ✅ Integration tests pass with InMemory provider (≥85% coverage for integrations)
-- ✅ Database schema matches domain model (no anemic entities)- ✅ Azure Key Vault integration for connection strings (ADR-009)
+- ✅ Database schema matches domain model (no anemic entities)
+- ✅ Azure Key Vault integration for connection strings (ADR-009)
 **Dependencies**: Milestone 2 (Domain Model)
 
 **Estimated Effort**: 13 SP (6.5 developer days)
@@ -283,7 +284,7 @@ flowchart TD
 
 **PRD Mapping**: F-01, F-02, F-04, F-05, F-06, F-07 (draft applications)
 
-**References**: ADR-002 (CQRS), ADR-004 (Domain Model - `PermitApplication`)
+**References**: ADR-002 (CQRS), ADR-004 (Domain Model - `Application`)
 
 ---
 
@@ -306,7 +307,7 @@ flowchart TD
 
 - ✅ Citizens can upload PDF/JPG/PNG files up to 25MB
 - ✅ Invalid file types rejected with clear error message
-- ✅ Documents linked to `PermitApplication` (ADR-004 entity) in database
+- ✅ Documents linked to `Application` (ADR-004 entity) in database
 - ✅ Citizens can download previously uploaded documents (F-08)
 - ✅ Blob storage uses private containers with SAS tokens (ADR-003)
 - ✅ 100% coverage for file validation and security paths
@@ -330,13 +331,13 @@ flowchart TD
 
 - Officer dashboard with pending application queue (F-09, F-14)
 - Application detail view with all form data and documents (F-10)
-- Review notes component using `ReviewNote` entity (F-11, ADR-004)
+- Review notes component using `Review` entity (F-11, ADR-004)
 - Approve/Reject actions using domain methods (F-12, F-13):
-  - `PermitApplication.Approve()` (ADR-004)
-  - `PermitApplication.Reject()` (ADR-004)
+  - `Application.Approve()` (ADR-004)
+  - `Application.Reject()` (ADR-004)
 - Status change to "Under Review" when officer opens application
 - CQRS commands using MediatR (ADR-002):
-  - `AddReviewNoteCommand` (creates `ReviewNote` per ADR-004)
+  - `AddReviewCommand` (creates `Review` per ADR-004)
   - `ApproveApplicationCommand`
   - `RejectApplicationCommand`
 - Email notifications to citizens on status change (F-06)
@@ -344,8 +345,8 @@ flowchart TD
 **Acceptance Criteria**:
 
 - ✅ Officers see only applications matching their department/assignment (F-09)
-- ✅ Officers can add internal notes using `ReviewNote` entity (F-11, ADR-004)
-- ✅ Approve action changes status via `PermitApplication.Approve()` (F-12, ADR-004)
+- ✅ Officers can add internal notes using `Review` entity (F-11, ADR-004)
+- ✅ Approve action changes status via `Application.Approve()` (F-12, ADR-004)
 - ✅ Reject action requires reason code and comments (F-13)
 - ✅ `ApplicationApprovedEvent` or `ApplicationRejectedEvent` raised (ADR-004)
 - ✅ Application history shows all status changes with officer name
@@ -357,7 +358,7 @@ flowchart TD
 
 **PRD Mapping**: F-09, F-10, F-11, F-12, F-13, F-14, F-15, F-16
 
-**References**: ADR-002 (CQRS), ADR-004 (Domain Model - `PermitApplication`, `ReviewNote`, Domain Events)
+**References**: ADR-002 (CQRS), ADR-004 (Domain Model - `Application`, `Review`, Domain Events)
 
 ---
 
@@ -367,7 +368,7 @@ flowchart TD
 
 **Deliverables**:
 
-- `AuditEntry` value object implementation (ADR-004)
+- `AuditLog` value object implementation (ADR-004)
 - Audit log entity and repository
 - Domain event handlers that persist audit entries:
   - Handles `ApplicationSubmittedEvent` (ADR-004)
@@ -383,7 +384,7 @@ flowchart TD
 
 **Acceptance Criteria**:
 
-- ✅ Every state change creates `AuditEntry` (ADR-004 value object)
+- ✅ Every state change creates `AuditLog` (ADR-004 value object)
 - ✅ Audit entries are immutable (no update/delete per PRD F-20)
 - ✅ Administrators can filter audit log by date range, user, action type (F-20)
 - ✅ Audit log export generates valid CSV file (F-23)
@@ -397,7 +398,7 @@ flowchart TD
 
 **PRD Mapping**: F-20, F-23
 
-**References**: ADR-004 (Domain Events, `AuditEntry` Value Object)
+**References**: ADR-004 (Domain Events, `AuditLog` Value Object)
 
 ---
 

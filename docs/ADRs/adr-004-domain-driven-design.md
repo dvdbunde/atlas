@@ -53,7 +53,7 @@ Immutable objects defined by their attributes (no identity):
 
 - `ApplicationStatus` - Value object (Submitted, UnderReview, Approved, Rejected)
 - `DocumentType` - Enumeration of accepted file types
-- `AuditEntry` - Immutable record of system actions
+- `AuditLog` - Immutable record of system actions
 
 #### 3. **Aggregates** (Domain Layer)
 
@@ -172,7 +172,7 @@ src/Atlas.Domain/
 
 ## Implementation Notes
 
-- **IMP-001**: Start with PermitApplication aggregate as the core bounded context
+- **IMP-001**: Start with Application aggregate as the core bounded context
 - **IMP-002**: Define aggregate boundaries carefully - avoid large aggregates that load too much data
 - **IMP-003**: Use domain events for audit trail (PRD F-20) and future extensibility (notifications, reporting)
 - **IMP-004**: Implement value objects as immutable types with validation in constructors
@@ -182,8 +182,8 @@ src/Atlas.Domain/
 
 | Requirement | How DDD Addresses It |
 | ----------- | --------------------- |
-| PRD F-01: Submit permit application | PermitApplication entity encapsulates submission logic |
-| PRD F-12: Approve application | PermitApplication.Approve() method enforces business rules |
+| PRD F-01: Submit permit application | Application entity encapsulates submission logic |
+| PRD F-12: Approve application | Application.Approve() method enforces business rules |
 | PRD F-20: Audit history | Domain events provide immutable audit trail |
 | PRD C-01: .NET 9 | DDD patterns implemented using C# 12/.NET 9 features |
 | ADR-001: Clean Architecture | DDD layers align with Clean Architecture layers |

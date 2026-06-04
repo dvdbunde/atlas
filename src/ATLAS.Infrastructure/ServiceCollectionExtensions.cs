@@ -38,10 +38,10 @@ public static class ServiceCollectionExtensions
         // });
         
         // Register repositories (when implemented)
-        // services.AddScoped<IPermitApplicationRepository, PermitApplicationRepository>();
+        // services.AddScoped<IApplicationRepository, ApplicationRepository>();
         // services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
         // services.AddScoped<IDocumentRepository, DocumentRepository>();
-        // services.AddScoped<IReviewNoteRepository, ReviewNoteRepository>();
+        // services.AddScoped<IReviewRepository, ReviewRepository>();
         
         // Register Unit of Work (when implemented)
         // services.AddScoped<IUnitOfWork, UnitOfWork>();

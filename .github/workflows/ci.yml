@@ -1,0 +1,84 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore ATLAS.slnx
+
+      - name: Build solution
+        run: dotnet build ATLAS.slnx --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: dotnet test ATLAS.slnx --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory ./test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./test-results/**/*.trx
+
+  secrets-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run GitGuardian Secrets Scan
+        uses: GitGuardian/gitguardian-action@v1
+        with:
+          path: .
+          output-format: sarif
+          output-file: gitguardian-results.sarif
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+
+      - name: Upload GitGuardian results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitguardian-results.sarif
+
+  dependency-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list package --vulnerable --project src/ATLAS.API/ATLAS.API.csproj || true
+          dotnet list package --vulnerable --project src/ATLAS.Application/ATLAS.Application.csproj || true
+          dotnet list package --vulnerable --project src/ATLAS.Domain/ATLAS.Domain.csproj || true
+          dotnet list package --vulnerable --project src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj || true
+          dotnet list package --vulnerable --project src/ATLAS.Blazor/ATLAS.Blazor.csproj || true
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/dotnet@master
+        with:
+          args: test
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+# © Capgemini 2025
