@@ -374,8 +374,8 @@ To complete M2 successfully, the implementation must:
 
 1. ✅ Create `Application.cs`, `PermitType.cs`, `Document.cs`, `Review.cs`, `User.cs`, `AuditLog.cs` entities
 2. ✅ Create value objects: `ApplicationStatus.cs`, `DocumentType.cs`, `PermitField.cs`, `DocumentRequirement.cs` |
-3. ✅ Create aggregates: `ApplicationAggregate.cs`, `PermitTypeAggregate.cs`, `UserAggregate.cs` |
-4. ✅ Create domain events: `ApplicationSubmittedEvent.cs`, `ApplicationApprovedEvent.cs`, `ApplicationRejectedEvent.cs`, `ApplicationInfoRequestedEvent.cs`, `DocumentUploadedEvent.cs`, `UserRoleChangedEvent.cs` |
+3. ✅ Create aggregate: `ApplicationAggregate.cs` (PermitType and User ARE the aggregate roots - no separate classes needed) |
+4. ✅ Create domain events: `ApplicationSubmittedEvent.cs`, `ApplicationApprovedEvent.cs`, `ApplicationRejectedEvent.cs`, `ApplicationInfoRequestedEvent.cs`, `ApplicationUnderReviewEvent.cs`, `ApplicationResubmittedEvent.cs`, `DocumentUploadedEvent.cs`, `PermitTypeDeactivatedEvent.cs`, `UserRoleChangedEvent.cs` |
 5. ✅ Write unit tests with **≥95% coverage** per Quality Policy |
 6. ✅ Ensure **100% test coverage** for error paths and security logic |
 7. ✅ No dependencies on external frameworks in Domain layer |

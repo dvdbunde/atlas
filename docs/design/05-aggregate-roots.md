@@ -10,13 +10,15 @@ An **Aggregate** is a cluster of associated objects treated as a unit for data c
 
 ## ATLAS Aggregate Roots
 
-Based on the domain model, ATLAS has three primary aggregate roots:
+Based on the domain model, ATLAS has three aggregate roots. Note: `PermitType` and `User` ARE the aggregate roots themselves - they don't need separate aggregate classes. Only `Application` requires an aggregate class to enforce complex invariants.
 
 ---
 
 ### 1. Application Aggregate
 
 **Root Entity:** `Application`
+
+**Aggregate Class:** `ApplicationAggregate` (enforces invariants for Application and its child entities)
 
 **Aggregate Members:**
 
@@ -75,9 +77,9 @@ public class SubmitApplicationCommandHandler : IRequestHandler<SubmitApplication
 
 ---
 
-### 2. PermitType Aggregate
+### 2. PermitType Aggregate Root
 
-**Root Entity:** `PermitType`
+**Root Entity:** `PermitType` (IS the aggregate root - no separate aggregate class needed)
 
 **Aggregate Members:**
 
@@ -102,23 +104,24 @@ PermitType (Root)
 
 **Invariants Enforced by PermitType Root:**
 
-1. **Field names must be unique** - Cannot have duplicate field names
-2. **Document types must be unique** - Cannot have duplicate document requirements
-3. **Cannot deactivate if active applications exist** - Business rule (checked in handler)
-4. **Fee must be non-negative** - `Fee >= 0`
+1. **Field names must be unique** - Cannot have duplicate field names (enforced in `AddField()`)
+2. **Document types must be unique** - Cannot have duplicate document requirements (enforced in `AddDocumentRequirement()`)
+3. **Cannot deactivate if active applications exist** - Business rule (checked in command handler)
+4. **Fee must be non-negative** - `Fee >= 0` (enforced in constructor)
 5. **Active permit types are visible to citizens** - `IsActive` controls visibility
 
 **Access Patterns:**
 
+- `PermitType` IS the aggregate root - no separate aggregate class
 - `PermitField` and `DocumentRequirement` are value objects accessed through `PermitType`
 - Modifications go through root methods: `permitType.AddField(...)`, `permitType.AddDocumentRequirement(...)`
 - No direct manipulation of internal collections from outside
 
 ---
 
-### 3. User Aggregate
+### 3. User Aggregate Root
 
-**Root Entity:** `User`
+**Root Entity:** `User` (IS the aggregate root - no separate aggregate class needed)
 
 **Aggregate Members:**
 
@@ -146,6 +149,7 @@ User (Root)
 
 **Access Patterns:**
 
+- `User` IS the aggregate root - no separate aggregate class needed
 - `User` is a simple aggregate with no child entities
 - Direct property access is acceptable (no internal entities to protect)
 - Role changes go through `user.ChangeRole(newRole)` to enforce invariants
@@ -158,9 +162,9 @@ User (Root)
 
 | Aggregate | Rationale |
 | ----------- | ------------ |
-| **Application** | Documents and Reviews only exist in context of an Application. They cannot be shared across applications. All status transitions must be atomic. |
-| **PermitType** | Fields and DocumentRequirements define the structure of a permit type. They are configuration data that only makes sense within the PermitType context. |
-| **User** | Simple entity with no child objects. Could be split into separate aggregates for Citizen, Officer, Admin but kept unified for MVP simplicity. |
+| **Application** | Documents and Reviews only exist in context of an Application. They cannot be shared across applications. All status transitions must be atomic. Requires `ApplicationAggregate` class to enforce complex invariants. |
+| **PermitType** | Fields and DocumentRequirements define the structure of a permit type. They are configuration data that only makes sense within the PermitType context. `PermitType` IS the aggregate root - no separate aggregate class needed. |
+| **User** | Simple entity with no child objects. Could be split into separate aggregates for Citizen, Officer, Admin but kept unified for MVP simplicity. `User` IS the aggregate root - no separate aggregate class needed. |
 
 ### Aggregates NOT Used
 

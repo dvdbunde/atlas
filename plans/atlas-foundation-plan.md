@@ -43,9 +43,9 @@ This roadmap outlines the implementation plan for ATLAS MVP as defined in [atlas
 
 **Aggregates** (Domain Layer):
 
-- `ApplicationAggregate` - Ensures application state transitions are valid. Contains `Document` and `Review` entities.
-- `PermitTypeAggregate` - Manages configuration consistency. Contains `PermitField` and `DocumentRequirement` value objects.
-- `UserAggregate` - Manages user identity and role. Simple entity with no child entities.
+- `ApplicationAggregate` - Ensures application state transitions are valid. Contains `Document` and `Review` entities. Uses `ApplicationAggregate` class to enforce complex invariants.
+- `PermitType` - IS the aggregate root (no separate aggregate class needed). Contains `PermitField` and `DocumentRequirement` value objects.
+- `User` - IS the aggregate root (no separate aggregate class needed). Simple entity with no child entities.
 
 **Domain Events** (Domain Layer):
 
@@ -157,7 +157,7 @@ flowchart TD
 - `User` entity for system users (Citizens, Officers, Administrators)
 - `AuditLog` entity for immutable audit trail (7-year retention)
 - Value objects: `ApplicationStatus`, `DocumentType`, `PermitField`, `DocumentRequirement`
-- Aggregates: `ApplicationAggregate` (contains Document, Review), `PermitTypeAggregate`, `UserAggregate`
+- Aggregates: `ApplicationAggregate` (contains Document, Review), `PermitType` (root), `User` (root)
 - Domain events: `ApplicationSubmittedEvent`, `ApplicationApprovedEvent`, `ApplicationRejectedEvent`, `ApplicationInfoRequestedEvent`, `DocumentUploadedEvent`, `UserRoleChangedEvent`
 - Unit tests for all domain logic (≥95% coverage per Quality Policy)
 

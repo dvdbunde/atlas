@@ -59,9 +59,9 @@ Immutable objects defined by their attributes (no identity):
 
 Clusters of entities/value objects treated as a unit for data changes:
 
-- **Application Aggregate Root** - Ensures application state transitions are valid. Contains `Document` and `Review` entities.
-- **PermitType Aggregate Root** - Manages configuration consistency. Contains `PermitField` and `DocumentRequirement` value objects.
-- **User Aggregate Root** - Manages user identity and role. Simple entity with no child entities.
+- **Application Aggregate Root** - Ensures application state transitions are valid. Contains `Document` and `Review` entities. Uses `ApplicationAggregate` class to enforce complex invariants.
+- **PermitType Aggregate Root** - `PermitType` IS the aggregate root (no separate aggregate class needed). Contains `PermitField` and `DocumentRequirement` value objects.
+- **User Aggregate Root** - `User` IS the aggregate root (no separate aggregate class needed). Simple entity with no child entities.
 
 #### 4. **Domain Events** (Domain Layer)
 
@@ -71,7 +71,10 @@ Events that capture state changes for audit and extensibility:
 - `ApplicationApprovedEvent`
 - `ApplicationRejectedEvent`
 - `ApplicationInfoRequestedEvent`
+- `ApplicationUnderReviewEvent`
+- `ApplicationResubmittedEvent`
 - `DocumentUploadedEvent`
+- `PermitTypeDeactivatedEvent`
 - `UserRoleChangedEvent`
 
 #### 5. **Repositories** (Application Layer Interfaces)
@@ -94,7 +97,7 @@ Logic that doesn't belong to a single entity:
 ### Project Structure Alignment
 
 ```text
-src/Atlas.Domain/
+src/ATLAS.Domain/
 ├── Entities/
 │   ├── Application.cs
 │   ├── PermitType.cs
@@ -108,15 +111,16 @@ src/Atlas.Domain/
 │   ├── PermitField.cs
 │   └── DocumentRequirement.cs
 ├── Aggregates/
-│   ├── ApplicationAggregate.cs
-│   ├── PermitTypeAggregate.cs
-│   └── UserAggregate.cs
+│   └── ApplicationAggregate.cs
 ├── Events/
 │   ├── ApplicationSubmittedEvent.cs
 │   ├── ApplicationApprovedEvent.cs
 │   ├── ApplicationRejectedEvent.cs
 │   ├── ApplicationInfoRequestedEvent.cs
-│   └── DocumentUploadedEvent.cs
+│   ├── ApplicationUnderReviewEvent.cs
+│   ├── ApplicationResubmittedEvent.cs
+│   ├── DocumentUploadedEvent.cs
+│   └── PermitTypeDeactivatedEvent.cs
 ├── Services/
 │   ├── ApplicationEligibilityService.cs
 │   └── AuditTrailService.cs
