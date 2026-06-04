@@ -12,8 +12,12 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.HasKey(a => a.Id);
             builder.Property(a => a.Id).HasDefaultValueSql("NEWID()");
             builder.Property(a => a.ApplicationNumber).IsRequired().HasMaxLength(50);
+            builder.Property(a => a.PermitTypeId).IsRequired();
+            builder.Property(a => a.Status).IsRequired();
             builder.Property(a => a.CitizenNotes).HasMaxLength(2000);
             builder.Property(a => a.OfficerNotes).HasMaxLength(2000);
+            builder.Property(a => a.SubmittedDate).IsRequired(false);
+            builder.Property(a => a.ReviewedDate).IsRequired(false);
             builder.HasOne<PermitType>().WithMany().HasForeignKey("PermitTypeId").IsRequired();
             builder.HasOne<User>().WithMany().HasForeignKey(a => a.CitizenId).IsRequired();
             
@@ -30,7 +34,7 @@ namespace ATLAS.Infrastructure.Data.Configurations
             {
                 review.HasKey(r => r.Id);
                 review.Property(r => r.Decision).IsRequired();
-                review.Property(r => r.ReasonCode).HasMaxLength(50);
+                review.Property(r => r.ReasonCode).HasMaxLength(50).IsRequired(false);
                 review.Property(r => r.Comments).HasMaxLength(2000);
                 review.HasOne<User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired();
             });

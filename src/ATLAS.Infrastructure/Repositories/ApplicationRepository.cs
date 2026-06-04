@@ -4,6 +4,7 @@ using ATLAS.Domain.Interfaces;
 using ATLAS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Entities = ATLAS.Domain.Entities;
 
 namespace ATLAS.Infrastructure.Repositories
 {
@@ -68,6 +69,50 @@ namespace ATLAS.Infrastructure.Repositories
         {
             return await _context.Applications
                 .Where(a => a.Reviews.Any(r => r.OfficerId == officerId))
+                .ToListAsync(cancellationToken);
+        }
+
+        // Document access methods (Documents are owned by Application aggregate)
+        public async Task<Document?> GetDocumentByIdAsync(Guid documentId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Applications
+                .SelectMany(a => a.Documents)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == documentId, cancellationToken);
+        }
+
+        public async Task<IEnumerable<Document>> GetDocumentsByApplicationIdAsync(Guid applicationId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Applications
+                .Where(a => a.Id == applicationId)
+                .SelectMany(a => a.Documents)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<bool> DocumentExistsAsync(Guid documentId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Applications
+                .SelectMany(a => a.Documents)
+                .AsNoTracking()
+                .AnyAsync(d => d.Id == documentId, cancellationToken);
+        }
+
+        // Review access methods (Reviews are owned by Application aggregate)
+        public async Task<Review?> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Applications
+                .SelectMany(a => a.Reviews)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == reviewId, cancellationToken);
+        }
+
+        public async Task<IEnumerable<Review>> GetReviewsByApplicationIdAsync(Guid applicationId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Applications
+                .Where(a => a.Id == applicationId)
+                .SelectMany(a => a.Reviews)
+                .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
     }

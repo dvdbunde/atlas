@@ -46,7 +46,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         
         // Register Unit of Work
