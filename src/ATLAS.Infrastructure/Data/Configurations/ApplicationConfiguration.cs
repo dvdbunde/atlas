@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ATLAS.Domain.Entities;
+using Entities = ATLAS.Domain.Entities;
 using ATLAS.Domain.ValueObjects;
 
 namespace ATLAS.Infrastructure.Data.Configurations
 {
-    public class ApplicationConfiguration : IEntityTypeConfiguration<Application>
+    public class ApplicationConfiguration : IEntityTypeConfiguration<Entities.Application>
     {
-        public void Configure(EntityTypeBuilder<Application> builder)
+        public void Configure(EntityTypeBuilder<Entities.Application> builder)
         {
             builder.HasKey(a => a.Id);
             builder.Property(a => a.Id).HasDefaultValueSql("NEWID()");
@@ -18,8 +18,8 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.Property(a => a.OfficerNotes).HasMaxLength(2000);
             builder.Property(a => a.SubmittedDate).IsRequired(false);
             builder.Property(a => a.ReviewedDate).IsRequired(false);
-            builder.HasOne<PermitType>().WithMany().HasForeignKey("PermitTypeId").IsRequired();
-            builder.HasOne<User>().WithMany().HasForeignKey(a => a.CitizenId).IsRequired();
+            builder.HasOne<Entities.PermitType>().WithMany().HasForeignKey("PermitTypeId").IsRequired();
+            builder.HasOne<Entities.User>().WithMany().HasForeignKey(a => a.CitizenId).IsRequired();
             
             // Map value objects as owned entities
             builder.OwnsMany(a => a.Documents, doc =>
@@ -36,7 +36,7 @@ namespace ATLAS.Infrastructure.Data.Configurations
                 review.Property(r => r.Decision).IsRequired();
                 review.Property(r => r.ReasonCode).HasMaxLength(50).IsRequired(false);
                 review.Property(r => r.Comments).HasMaxLength(2000);
-                review.HasOne<User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired();
+                review.HasOne<Entities.User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired();
             });
         }
     }

@@ -29,7 +29,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task GetDocumentByIdAsync_WhenDocumentExists_ShouldReturnDocument()
         {
             // Arrange
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var documentId = Guid.NewGuid();
             application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             
@@ -48,7 +48,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task GetDocumentsByApplicationIdAsync_WhenApplicationHasDocuments_ShouldReturnDocuments()
         {
             // Arrange
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var documentId = Guid.NewGuid();
             application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             
@@ -67,7 +67,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task GetReviewByIdAsync_WhenReviewExists_ShouldReturnReview()
         {
             // Arrange
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var reviewId = Guid.NewGuid();
             var review = application.AddReview(reviewId, Guid.NewGuid(), ReviewDecision.Approve, "Approved comment", true, null);
             

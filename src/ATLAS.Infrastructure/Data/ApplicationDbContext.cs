@@ -1,4 +1,4 @@
-using ATLAS.Domain.Entities;
+using Entities = ATLAS.Domain.Entities;
 using ATLAS.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -12,10 +12,10 @@ namespace ATLAS.Infrastructure.Data
         {
         }
 
-        public DbSet<Application> Applications { get; set; }
-        public DbSet<PermitType> PermitTypes { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<Entities.Application> Applications { get; set; }
+        public DbSet<Entities.PermitType> PermitTypes { get; set; }
+        public DbSet<Entities.User> Users { get; set; }
+        public DbSet<Entities.AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

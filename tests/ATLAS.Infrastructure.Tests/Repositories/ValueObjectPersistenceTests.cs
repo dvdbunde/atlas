@@ -79,8 +79,8 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task ApplicationStatus_Enum_ShouldPersistAndRetrieve()
         {
             // Arrange
-            var application1 = new Application(Guid.NewGuid(), Guid.NewGuid(), "Draft app");
-            var application2 = new Application(Guid.NewGuid(), Guid.NewGuid(), "Submitted app");
+            var application1 = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Draft app");
+            var application2 = new Domain.Entities. Application(Guid.NewGuid(), Guid.NewGuid(), "Submitted app");
             application2.Submit(); // Changes status to Submitted
 
             _context.Applications.AddRange(application1, application2);
@@ -98,8 +98,8 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task ReviewDecision_Enum_ShouldPersistAndRetrieve()
         {
             // Arrange - Create separate applications for each review to avoid "already has final review" error
-            var application1 = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes 1");
-            var application2 = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes 2");
+            var application1 = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes 1");
+            var application2 = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes 2");
             
             application1.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
             application2.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, "Incomplete");

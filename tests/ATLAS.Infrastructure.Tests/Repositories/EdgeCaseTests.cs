@@ -32,7 +32,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task Application_WithInvalidStateTransition_ShouldNotPersistInvalidState()
         {
             // Arrange - Try to approve without submitting first (invalid state transition)
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             
             // Act & Assert - Domain logic prevents invalid state transitions
             // This is enforced in domain layer, not repository, but we verify persistence works correctly
@@ -47,7 +47,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task Document_WithNullBlobUrl_ShouldNotPersist()
         {
             // Arrange - Domain entity prevents null blob URL
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             
             // Act & Assert - Domain constructor validates blob URL
             Assert.Throws<ArgumentException>(() => 
@@ -58,7 +58,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task Review_WithNullReasonCodeForReject_ShouldStillPersist()
         {
             // Arrange - Reject decision typically needs reason code, but domain handles this
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var reviewId = Guid.NewGuid();
             
             // Domain method sets default reason code if null for Reject
@@ -98,7 +98,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange - Application requires valid PermitTypeId
             // Act & Assert - Domain constructor validates PermitTypeId
-            Assert.Throws<ArgumentException>(() => new Application(Guid.NewGuid(), Guid.Empty, "Test"));
+            Assert.Throws<ArgumentException>(() => new Domain.Entities.Application(Guid.NewGuid(), Guid.Empty, "Test"));
         }
 
         [Fact]

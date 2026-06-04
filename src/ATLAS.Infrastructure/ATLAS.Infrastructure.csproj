@@ -2,9 +2,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ATLAS.Domain\ATLAS.Domain.csproj" />
+    <ProjectReference Include="..\ATLAS.Application\ATLAS.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.4.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.*">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

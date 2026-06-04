@@ -33,7 +33,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
             
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test Notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test Notes");
             
             // Act - Save
             using (var context = new ApplicationDbContext(options))

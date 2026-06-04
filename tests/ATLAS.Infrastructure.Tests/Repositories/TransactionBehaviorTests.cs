@@ -38,7 +38,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task UnitOfWork_SaveChangesAsync_ShouldPersistAllChanges()
         {
             // Arrange
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var permitType = new PermitType("Test Permit", "Description", 100m);
             var user = new User("test@email.com", "Test", "User", UserRole.Citizen);
 
@@ -80,7 +80,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task Repository_UpdateAsync_ShouldUpdateExistingEntity()
         {
             // Arrange
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Original notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Original notes");
             await _unitOfWork.Applications.AddAsync(application);
             await _unitOfWork.SaveChangesAsync();
 

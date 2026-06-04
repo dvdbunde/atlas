@@ -1,9 +1,11 @@
 namespace ATLAS.Infrastructure;
 
+using ATLAS.Application;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.Repositories;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +52,9 @@ public static class ServiceCollectionExtensions
         
         // Register Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        
+        // Register MediatR (CQRS handlers are in Application layer)
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly));
         
         return services;
     }

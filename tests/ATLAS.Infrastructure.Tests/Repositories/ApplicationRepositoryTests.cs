@@ -22,7 +22,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Test Notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test Notes");
             context.Applications.Add(application);
             await context.SaveChangesAsync();
 
@@ -55,7 +55,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "New Application");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "New Application");
             var repository = new ApplicationRepository(context);
 
             // Act
