@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using ATLAS.Domain.Entities;
-using ATLAS.Domain.ValueObjects;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Domain.Aggregates
 {

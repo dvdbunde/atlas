@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using ATLAS.Domain.ValueObjects;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.Events;
 
 namespace ATLAS.Domain.Entities

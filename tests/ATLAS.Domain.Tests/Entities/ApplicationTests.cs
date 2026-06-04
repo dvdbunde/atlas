@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Xunit;
 using ATLAS.Domain.Entities;
-using ATLAS.Domain.ValueObjects;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.Events;
 
 namespace ATLAS.Domain.Tests.Entities

@@ -18,7 +18,7 @@ namespace ATLAS.Domain.Interfaces
         // Specialized methods:
         Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IEnumerable<Entities.Application>> GetByCitizenIdAsync(Guid citizenId, CancellationToken cancellationToken = default);
-        Task<IEnumerable<Entities.Application>> GetByStatusAsync(ValueObjects.ApplicationStatus status, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Entities.Application>> GetByStatusAsync(Enums.ApplicationStatus status, CancellationToken cancellationToken = default);
         Task<IEnumerable<Entities.Application>> GetByOfficerIdAsync(Guid officerId, CancellationToken cancellationToken = default);
     }
 }
