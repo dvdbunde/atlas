@@ -70,7 +70,11 @@ namespace ATLAS.Domain.Entities
             if (!IsActive)
                 return;
 
+            // Note: Business rule "Cannot deactivate if active applications exist" 
+            // is checked in command handler (infrastructure concern)
+            
             IsActive = false;
+            AddDomainEvent(new PermitTypeDeactivatedEvent(Id, deactivatedByAdminId));
         }
     }
 }

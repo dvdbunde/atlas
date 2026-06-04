@@ -124,12 +124,16 @@ namespace ATLAS.Domain.Entities
             return document;
         }
 
-        public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen)
+        public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
         {
             if (Status != ApplicationStatus.UnderReview)
                 throw new DomainException("Can only add reviews for applications under review");
 
-            var review = new Review(reviewId, Id, officerId, decision, comments, isVisibleToCitizen);
+            // Invariant: Only one active review at a time
+            if (_reviews.Any(r => r.Decision == ReviewDecision.Approve || r.Decision == ReviewDecision.Reject))
+                throw new DomainException("Application already has a final review");
+
+            var review = new Review(reviewId, Id, officerId, decision, comments, isVisibleToCitizen, reasonCode);
             _reviews.Add(review);
 
             return review;

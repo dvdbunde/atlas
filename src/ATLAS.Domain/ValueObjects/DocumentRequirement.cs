@@ -26,17 +26,26 @@ namespace ATLAS.Domain.ValueObjects
             MaxFileSizeBytes = maxFileSizeBytes;
         }
 
-        // Value objects use value equality
+        // Value objects use value equality - check all properties
         public override bool Equals(object obj)
         {
             if (obj is not DocumentRequirement other)
                 return false;
-            return DocumentType == other.DocumentType && IsRequired == other.IsRequired;
+            
+            return DocumentType == other.DocumentType && 
+                   IsRequired == other.IsRequired &&
+                   AllowedExtensions.SequenceEqual(other.AllowedExtensions) &&
+                   MaxFileSizeBytes == other.MaxFileSizeBytes;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(DocumentType, IsRequired);
+            var hash = HashCode.Combine(DocumentType, IsRequired, MaxFileSizeBytes);
+            
+            foreach (var ext in AllowedExtensions)
+                hash = HashCode.Combine(hash, ext.GetHashCode());
+            
+            return hash;
         }
     }
 }

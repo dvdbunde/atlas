@@ -7,14 +7,25 @@ namespace ATLAS.Domain.Tests.Entities
     public class ReviewTests
     {
         private readonly Guid _reviewId = Guid.NewGuid();
-        private readonly Guid _applicationId = Guid.NewGuid();
+        private readonly Guid _citizenId = Guid.NewGuid();
+        private readonly Guid _permitTypeId = Guid.NewGuid();
         private readonly Guid _officerId = Guid.NewGuid();
+
+        private Application CreateApplicationUnderReview()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Initial notes");
+            application.Submit();
+            application.StartReview(_officerId);
+            return application;
+        }
 
         [Fact]
         public void Create_ShouldInitializeWithValidValues()
         {
-            // Arrange & Act
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act
             var review = application.AddReview(
                 _reviewId,                 
                 _officerId, 
@@ -24,7 +35,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Assert
             Assert.Equal(_reviewId, review.Id);
-            Assert.Equal(_applicationId, review.ApplicationId);
+            Assert.Equal(application.Id, review.ApplicationId);
             Assert.Equal(_officerId, review.OfficerId);
             Assert.Equal(ReviewDecision.Approve, review.Decision);
             Assert.Equal("Approved - meets all requirements", review.Comments);
@@ -35,8 +46,10 @@ namespace ATLAS.Domain.Tests.Entities
         [Fact]
         public void Create_ShouldSetReasonCode_WhenDecisionIsReject()
         {
-            // Arrange & Act
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act
             var review = application.AddReview(
                 _reviewId, 
                 _officerId, 
@@ -53,8 +66,10 @@ namespace ATLAS.Domain.Tests.Entities
         [Fact]
         public void Create_ShouldThrowException_WhenIdIsEmpty()
         {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
             // Act & Assert
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddReview(
                     Guid.Empty, 
@@ -66,25 +81,12 @@ namespace ATLAS.Domain.Tests.Entities
         }
 
         [Fact]
-        public void Create_ShouldThrowException_WhenApplicationIdIsEmpty()
-        {
-            // Act & Assert
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
-            var exception = Assert.Throws<ArgumentException>(() => 
-                application.AddReview(
-                    _reviewId,                     
-                    _officerId, 
-                    ReviewDecision.Approve, 
-                    "Approved", 
-                    true));
-            Assert.Contains("Application ID cannot be empty", exception.Message);
-        }
-
-        [Fact]
         public void Create_ShouldThrowException_WhenOfficerIdIsEmpty()
         {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
             // Act & Assert
-            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddReview(
                     _reviewId, 
@@ -93,6 +95,23 @@ namespace ATLAS.Domain.Tests.Entities
                     "Approved", 
                     true));
             Assert.Contains("Officer ID cannot be empty", exception.Message);
+        }
+
+        [Fact]
+        public void Create_ShouldThrowException_WhenNotUnderReview()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Initial notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => 
+                application.AddReview(
+                    _reviewId, 
+                    _officerId, 
+                    ReviewDecision.Approve, 
+                    "Approved", 
+                    true));
+            Assert.Contains("Can only add reviews for applications under review", exception.Message);
         }
     }
 }

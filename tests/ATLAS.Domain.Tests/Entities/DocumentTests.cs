@@ -25,7 +25,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Assert
             Assert.Equal(_documentId, document.Id);
-            Assert.Equal(_applicationId, document.ApplicationId);
+            Assert.Equal(application.Id, document.ApplicationId);
             Assert.Equal("application.pdf", document.FileName);
             Assert.Equal("application/pdf", document.ContentType);
             Assert.Equal(1024 * 1024, document.FileSize);
