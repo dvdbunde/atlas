@@ -11,6 +11,9 @@ namespace ATLAS.Application.DTOs
         public DateTime? SubmittedDate { get; set; }
         public Guid CitizenId { get; set; }
         public Guid PermitTypeId { get; set; }
+        // NEW: Missing fields from PRD
+        public string? CitizenName { get; set; }
+        public string? PermitTypeName { get; set; }
     }
 
     public class ApplicationDetailDto : ApplicationSummaryDto
@@ -20,6 +23,8 @@ namespace ATLAS.Application.DTOs
         public string OfficerNotes { get; set; } = string.Empty;
         public List<DocumentDto> Documents { get; set; } = new();
         public List<ReviewDto> Reviews { get; set; } = new();
+        // NEW: Missing fields from PRD
+        public string? OfficerName { get; set; }
     }
 
     public class DocumentDto
@@ -38,7 +43,7 @@ namespace ATLAS.Application.DTOs
         public Guid OfficerId { get; set; }
         public int Decision { get; set; }
         public string? ReasonCode { get; set; }
-        public string Comments { get; set; } = string.Empty;
+        public string? Comments { get; set; }
         public DateTime ReviewedDate { get; set; }
         public bool IsVisibleToCitizen { get; set; }
     }

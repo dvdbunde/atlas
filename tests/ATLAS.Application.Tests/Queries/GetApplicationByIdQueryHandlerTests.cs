@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Queries;
-using Entities = ATLAS.Domain.Entities;
+using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 using Moq;
@@ -20,14 +20,14 @@ namespace ATLAS.Application.Tests.Queries
         public GetApplicationByIdQueryHandlerTests()
         {
             _mockRepository = new Mock<IApplicationRepository>();
-            _handler = new GetApplicationByIdQueryHandler(_mockRepository.Object);
+            _handler = new GetApplicationByIdQueryHandler(_mockRepository.Object, new Mock<IUserRepository>().Object, new Mock<IPermitTypeRepository>().Object);
         }
 
         [Fact]
         public async Task Handle_ValidId_ShouldReturnApplicationDetailDto()
         {
             // Arrange
-            var application = new Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             application.Submit(); // This sets Status to Submitted and generates ApplicationNumber
             
             _mockRepository.Setup(r => r.GetByIdAsync(application.Id, It.IsAny<CancellationToken>()))
@@ -51,7 +51,7 @@ namespace ATLAS.Application.Tests.Queries
             // Arrange
             var applicationId = Guid.NewGuid();
             _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Entities.Application)null);
+                .ReturnsAsync((Domain.Entities.Application)null);
 
             var query = new GetApplicationByIdQuery { ApplicationId = applicationId };
 

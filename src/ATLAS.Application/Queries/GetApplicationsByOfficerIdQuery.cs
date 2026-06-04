@@ -1,26 +1,28 @@
 using MediatR;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
+using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 
 namespace ATLAS.Application.Queries
 {
-    public class GetApplicationsByStatusQuery : IRequest<List<ApplicationSummaryDto>>
+    public class GetApplicationsByOfficerIdQuery : IRequest<List<ApplicationSummaryDto>>
     {
-        public ApplicationStatus? Status { get; set; }
+        public Guid OfficerId { get; set; }
     }
 
-    public class GetApplicationsByStatusQueryHandler : IRequestHandler<GetApplicationsByStatusQuery, List<ApplicationSummaryDto>>
+    public class GetApplicationsByOfficerIdQueryHandler : IRequestHandler<GetApplicationsByOfficerIdQuery, List<ApplicationSummaryDto>>
     {
         private readonly IApplicationRepository _applicationRepository;
         private readonly IUserRepository _userRepository;
         private readonly IPermitTypeRepository _permitTypeRepository;
 
-        public GetApplicationsByStatusQueryHandler(
+        public GetApplicationsByOfficerIdQueryHandler(
             IApplicationRepository applicationRepository,
             IUserRepository userRepository,
             IPermitTypeRepository permitTypeRepository)
@@ -30,15 +32,13 @@ namespace ATLAS.Application.Queries
             _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
         }
 
-        public async Task<List<ApplicationSummaryDto>> Handle(GetApplicationsByStatusQuery request, CancellationToken cancellationToken)
+        public async Task<List<ApplicationSummaryDto>> Handle(GetApplicationsByOfficerIdQuery request, CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var applications = request.Status.HasValue 
-                ? await _applicationRepository.GetByStatusAsync(request.Status.Value, cancellationToken)
-                : await _applicationRepository.GetAllAsync(cancellationToken);
-
+            var applications = await _applicationRepository.GetByOfficerIdAsync(request.OfficerId, cancellationToken);
+            
             var dtos = new List<ApplicationSummaryDto>();
             
             foreach (var app in applications)

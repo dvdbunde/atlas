@@ -102,9 +102,9 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             await _applicationRepo.AddAsync(application);
             await _context.SaveChangesAsync();
 
-            // Act - Delete aggregate root
-            var retrieved = await _applicationRepo.GetByIdAsync(application.Id);
-            await _applicationRepo.DeleteAsync(retrieved);
+            // Act - Delete aggregate root (use original object to avoid tracking conflict)
+            _context.Entry(application).State = EntityState.Detached; // Detach to avoid tracking conflict
+            await _applicationRepo.DeleteAsync(application);
             await _context.SaveChangesAsync();
 
             // Assert - Owned entities should be cascade deleted

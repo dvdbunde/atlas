@@ -84,7 +84,10 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             await _unitOfWork.Applications.AddAsync(application);
             await _unitOfWork.SaveChangesAsync();
 
-            // Act - Use domain method to update
+            // Detach the original entity to avoid tracking conflict
+            _context.Entry(application).State = EntityState.Detached;
+
+            // Act - Retrieve and update
             var retrieved = await _unitOfWork.Applications.GetByIdAsync(application.Id);
             // Note: CitizenNotes is private set, so we can't directly modify it
             // In real scenario, we'd use domain methods like Submit(), Approve(), etc.

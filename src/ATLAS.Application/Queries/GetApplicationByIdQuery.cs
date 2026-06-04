@@ -1,5 +1,6 @@
 using MediatR;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
@@ -14,11 +15,18 @@ namespace ATLAS.Application.Queries
 
     public class GetApplicationByIdQueryHandler : IRequestHandler<GetApplicationByIdQuery, ApplicationDetailDto?>
     {
-        private readonly IApplicationRepository _repository;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IPermitTypeRepository _permitTypeRepository;
 
-        public GetApplicationByIdQueryHandler(IApplicationRepository repository)
+        public GetApplicationByIdQueryHandler(
+            IApplicationRepository applicationRepository,
+            IUserRepository userRepository,
+            IPermitTypeRepository permitTypeRepository)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
         }
 
         public async Task<ApplicationDetailDto?> Handle(GetApplicationByIdQuery request, CancellationToken cancellationToken)
@@ -26,10 +34,23 @@ namespace ATLAS.Application.Queries
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var application = await _repository.GetByIdAsync(request.ApplicationId, cancellationToken);
+            var application = await _applicationRepository.GetByIdAsync(request.ApplicationId, cancellationToken);
             
             if (application == null)
                 return null;
+
+            // Fetch related data for DTO fields
+            var citizen = await _userRepository.GetByIdAsync(application.CitizenId, cancellationToken);
+            var permitType = await _permitTypeRepository.GetByIdAsync(application.PermitTypeId, cancellationToken);
+            
+            // Get officer name from the latest review (if any)
+            var latestReview = application.Reviews.OrderByDescending(r => r.ReviewedDate).FirstOrDefault();
+            string? officerName = null;
+            if (latestReview != null)
+            {
+                var officer = await _userRepository.GetByIdAsync(latestReview.OfficerId, cancellationToken);
+                officerName = officer?.GetFullName();
+            }
 
             return new ApplicationDetailDto
             {
@@ -39,6 +60,9 @@ namespace ATLAS.Application.Queries
                 SubmittedDate = application.SubmittedDate,
                 CitizenId = application.CitizenId,
                 PermitTypeId = application.PermitTypeId,
+                CitizenName = citizen?.GetFullName() ?? "Unknown",
+                PermitTypeName = permitType?.Name ?? "Unknown",
+                OfficerName = officerName ?? "Not assigned",
                 ReviewedDate = application.ReviewedDate,
                 CitizenNotes = application.CitizenNotes,
                 OfficerNotes = application.OfficerNotes,

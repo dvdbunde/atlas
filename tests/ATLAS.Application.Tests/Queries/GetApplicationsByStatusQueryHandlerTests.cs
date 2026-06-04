@@ -22,7 +22,7 @@ namespace ATLAS.Application.Tests.Queries
         public GetApplicationsByStatusQueryHandlerTests()
         {
             _mockRepository = new Mock<IApplicationRepository>();
-            _handler = new GetApplicationsByStatusQueryHandler(_mockRepository.Object);
+            _handler = new GetApplicationsByStatusQueryHandler(_mockRepository.Object, new Mock<IUserRepository>().Object, new Mock<IPermitTypeRepository>().Object);
         }
 
         [Fact]

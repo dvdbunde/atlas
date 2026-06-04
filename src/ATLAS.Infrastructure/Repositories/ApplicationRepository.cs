@@ -19,12 +19,14 @@ namespace ATLAS.Infrastructure.Repositories
         public async Task<Entities.Application?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Applications
+                .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
 
         public async Task<IEnumerable<Entities.Application>> GetByCitizenIdAsync(Guid citizenId, CancellationToken cancellationToken = default)
         {
             return await _context.Applications
+                .AsNoTracking()
                 .Where(a => a.CitizenId == citizenId)
                 .ToListAsync(cancellationToken);
         }
@@ -32,6 +34,7 @@ namespace ATLAS.Infrastructure.Repositories
         public async Task<IEnumerable<Entities.Application>> GetByStatusAsync(ApplicationStatus status, CancellationToken cancellationToken = default)
         {
             return await _context.Applications
+                .AsNoTracking()
                 .Where(a => a.Status == status)
                 .ToListAsync(cancellationToken);
         }
@@ -67,6 +70,7 @@ namespace ATLAS.Infrastructure.Repositories
         public async Task<IEnumerable<Entities.Application>> GetByOfficerIdAsync(Guid officerId, CancellationToken cancellationToken = default)
         {
             return await _context.Applications
+                .AsNoTracking()
                 .Where(a => a.Reviews.Any(r => r.OfficerId == officerId))
                 .ToListAsync(cancellationToken);
         }
