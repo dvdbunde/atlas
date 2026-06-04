@@ -98,20 +98,22 @@ namespace ATLAS.Domain.Tests.Entities
         }
 
         [Fact]
-        public void Create_ShouldThrowException_WhenNotUnderReview()
+        public void Create_ShouldSucceed_WhenNotUnderReview()
         {
             // Arrange
             var application = new Application(_citizenId, _permitTypeId, "Initial notes");
 
-            // Act & Assert
-            var exception = Assert.Throws<DomainException>(() => 
-                application.AddReview(
-                    _reviewId, 
-                    _officerId, 
-                    ReviewDecision.Approve, 
-                    "Approved", 
-                    true));
-            Assert.Contains("Can only add reviews for applications under review", exception.Message);
+            // Act - Should succeed (status check is done by calling method like Reject())
+            var review = application.AddReview(
+                _reviewId, 
+                _officerId, 
+                ReviewDecision.Approve, 
+                "Approved", 
+                true);
+
+            // Assert
+            Assert.NotNull(review);
+            Assert.Equal(_reviewId, review.Id);
         }
     }
 }

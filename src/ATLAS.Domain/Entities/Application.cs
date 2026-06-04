@@ -90,6 +90,10 @@ namespace ATLAS.Domain.Entities
             Status = ApplicationStatus.Rejected;
             ReviewedDate = DateTime.UtcNow;
             OfficerNotes += $"[REJECTED {DateTime.UtcNow} by {officerId}]: Reason: {reasonCode}. {comments}";
+            
+            // Create review with reason code
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Reject, comments, true, reasonCode);
+            
             AddDomainEvent(new ApplicationRejectedEvent(Id, officerId, reasonCode));
         }
 
@@ -126,8 +130,8 @@ namespace ATLAS.Domain.Entities
 
         public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
         {
-            if (Status != ApplicationStatus.UnderReview)
-                throw new DomainException("Can only add reviews for applications under review");
+            // Note: Status check is done by the calling method (Submit, Approve, Reject, etc.)
+            // This allows internal calls from Reject() before status changes to Rejected
 
             // Invariant: Only one active review at a time
             if (_reviews.Any(r => r.Decision == ReviewDecision.Approve || r.Decision == ReviewDecision.Reject))

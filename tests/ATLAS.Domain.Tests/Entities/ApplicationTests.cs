@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using Xunit;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.ValueObjects;
+using ATLAS.Domain.Events;
 
 namespace ATLAS.Domain.Tests.Entities
 {
@@ -25,6 +27,8 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Null(application.SubmittedDate);
             Assert.Null(application.ReviewedDate);
         }
+
+        #region Submit Tests
 
         [Fact]
         public void Submit_ShouldTransitionFromDraftToSubmitted()
@@ -52,5 +56,349 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<DomainException>(() => application.Submit());
             Assert.Equal("Only draft applications can be submitted", exception.Message);
         }
+
+        [Fact]
+        public void Create_ShouldThrowException_WhenPermitTypeIdEmpty()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => 
+                new Application(_citizenId, Guid.Empty, "Test notes"));
+            Assert.Contains("Permit type ID cannot be empty", exception.Message);
+        }
+
+        [Fact]
+        public void Submit_ShouldRaiseApplicationSubmittedEvent()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.ClearDomainEvents(); // Clear initial events
+
+            // Act
+            application.Submit();
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var submittedEvent = Assert.IsType<ApplicationSubmittedEvent>(domainEvent);
+            Assert.Equal(application.Id, submittedEvent.ApplicationId);
+            Assert.Equal(_citizenId, submittedEvent.CitizenId);
+            Assert.Equal(_permitTypeId, submittedEvent.PermitTypeId);
+        }
+
+        #endregion
+
+        #region StartReview Tests
+
+        [Fact]
+        public void StartReview_ShouldTransitionFromSubmittedToUnderReview()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+
+            // Act
+            application.StartReview(_officerId);
+
+            // Assert
+            Assert.Equal(ApplicationStatus.UnderReview, application.Status);
+        }
+
+        [Fact]
+        public void StartReview_ShouldThrowException_WhenNotSubmitted()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => application.StartReview(_officerId));
+            Assert.Contains("submitted applications", exception.Message);
+        }
+
+        [Fact]
+        public void StartReview_ShouldRaiseApplicationUnderReviewEvent()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.ClearDomainEvents();
+
+            // Act
+            application.StartReview(_officerId);
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var reviewEvent = Assert.IsType<ApplicationUnderReviewEvent>(domainEvent);
+            Assert.Equal(application.Id, reviewEvent.ApplicationId);
+            Assert.Equal(_officerId, reviewEvent.OfficerId);
+        }
+
+        #endregion
+
+        #region Approve Tests
+
+        [Fact]
+        public void Approve_ShouldTransitionFromUnderReviewToApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act
+            application.Approve(_officerId, "Approved - meets all requirements");
+
+            // Assert
+            Assert.Equal(ApplicationStatus.Approved, application.Status);
+            Assert.NotNull(application.ReviewedDate);
+        }
+
+        [Fact]
+        public void Approve_ShouldThrowException_WhenNotUnderReview()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+
+            // Act & Assert - Status is Submitted, not UnderReview
+            var exception = Assert.Throws<DomainException>(() => 
+                application.Approve(_officerId, "Approved"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void Approve_ShouldRaiseApplicationApprovedEvent()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.ClearDomainEvents();
+
+            // Act
+            application.Approve(_officerId, "Approved");
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var approvedEvent = Assert.IsType<ApplicationApprovedEvent>(domainEvent);
+            Assert.Equal(application.Id, approvedEvent.ApplicationId);
+            Assert.Equal(_officerId, approvedEvent.OfficerId);
+        }
+
+        #endregion
+
+        #region Reject Tests
+
+        [Fact]
+        public void Reject_ShouldTransitionFromUnderReviewToRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act
+            application.Reject(_officerId, "IncompleteApplication", "Missing documents");
+
+            // Assert
+            Assert.Equal(ApplicationStatus.Rejected, application.Status);
+            Assert.NotNull(application.ReviewedDate);
+        }
+
+        [Fact]
+        public void Reject_ShouldThrowException_WhenNotUnderReview()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => 
+                application.Reject(_officerId, "Reason", "Comments"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void Reject_ShouldThrowException_WhenReasonCodeEmpty()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => 
+                application.Reject(_officerId, "", "Comments"));
+            Assert.Contains("reason code", exception.Message);
+        }
+
+        [Fact]
+        public void Reject_ShouldRaiseApplicationRejectedEvent()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.ClearDomainEvents();
+
+            // Act
+            application.Reject(_officerId, "IncompleteApplication", "Missing documents");
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var rejectedEvent = Assert.IsType<ApplicationRejectedEvent>(domainEvent);
+            Assert.Equal(application.Id, rejectedEvent.ApplicationId);
+            Assert.Equal(_officerId, rejectedEvent.OfficerId);
+            Assert.Equal("IncompleteApplication", rejectedEvent.ReasonCode);
+        }
+
+        [Fact]
+        public void Reject_ShouldCreateReviewWithReasonCode()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act
+            application.Reject(_officerId, "IncompleteApplication", "Missing documents");
+
+            // Assert
+            var review = Assert.Single(application.Reviews);
+            Assert.Equal("IncompleteApplication", review.ReasonCode);
+            Assert.Equal(ReviewDecision.Reject, review.Decision);
+        }
+
+        #endregion
+
+        #region RequestInfo Tests
+
+        [Fact]
+        public void RequestInfo_ShouldTransitionFromUnderReviewToInfoRequested()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act
+            application.RequestInfo(_officerId, "Please provide additional documentation");
+
+            // Assert
+            Assert.Equal(ApplicationStatus.InfoRequested, application.Status);
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldThrowException_WhenNotUnderReview()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => 
+                application.RequestInfo(_officerId, "Info"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldRaiseApplicationInfoRequestedEvent()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.ClearDomainEvents();
+
+            // Act
+            application.RequestInfo(_officerId, "Please provide more info");
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var infoEvent = Assert.IsType<ApplicationInfoRequestedEvent>(domainEvent);
+            Assert.Equal(application.Id, infoEvent.ApplicationId);
+            Assert.Equal(_officerId, infoEvent.OfficerId);
+        }
+
+        #endregion
+
+        #region Resubmit Tests
+
+        [Fact]
+        public void Resubmit_ShouldTransitionFromInfoRequestedToUnderReview()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.RequestInfo(_officerId, "Please provide more info");
+
+            // Act
+            application.Resubmit();
+
+            // Assert
+            Assert.Equal(ApplicationStatus.UnderReview, application.Status);
+        }
+
+        [Fact]
+        public void Resubmit_ShouldThrowException_WhenNotInfoRequested()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => application.Resubmit());
+            Assert.Contains("requested info", exception.Message);
+        }
+
+        [Fact]
+        public void Resubmit_ShouldRaiseApplicationResubmittedEvent()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.RequestInfo(_officerId, "Please provide more info");
+            application.ClearDomainEvents();
+
+            // Act
+            application.Resubmit();
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var resubmittedEvent = Assert.IsType<ApplicationResubmittedEvent>(domainEvent);
+            Assert.Equal(application.Id, resubmittedEvent.ApplicationId);
+            Assert.Equal(_citizenId, resubmittedEvent.CitizenId);
+        }
+
+        #endregion
+
+        #region Invalid State Transitions
+
+        [Fact]
+        public void Approve_ShouldThrowException_WhenDraft()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => 
+                application.Approve(_officerId, "Approved"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void Reject_ShouldThrowException_WhenDraft()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => 
+                application.Reject(_officerId, "Reason", "Comments"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void Submit_ShouldThrowException_WhenApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() => application.Submit());
+            Assert.Contains("draft", exception.Message);
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private Application CreateApplicationUnderReview()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.StartReview(_officerId);
+            return application;
+        }
+
+        #endregion
     }
 }

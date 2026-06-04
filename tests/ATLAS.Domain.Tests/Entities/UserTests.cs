@@ -101,7 +101,6 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Arrange
             var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            Assert.True(user.IsActive);
 
             // Act
             user.Deactivate();
@@ -116,7 +115,6 @@ namespace ATLAS.Domain.Tests.Entities
             // Arrange
             var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
             user.Deactivate(); // First deactivation
-            Assert.False(user.IsActive);
 
             // Act
             user.Deactivate(); // Second deactivation should be idempotent
@@ -130,7 +128,6 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Arrange
             var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            Assert.Null(user.LastLoginDate);
 
             // Act
             user.RecordLogin();

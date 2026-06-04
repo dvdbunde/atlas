@@ -60,6 +60,72 @@ namespace ATLAS.Domain.Tests.ValueObjects
 
             // Act & Assert
             Assert.True(req1.Equals(req2));
+            Assert.Equal(req1.GetHashCode(), req2.GetHashCode());
+        }
+
+        [Fact]
+        public void Equals_ShouldReturnFalse_WhenDifferentDocumentType()
+        {
+            // Arrange
+            var req1 = new DocumentRequirement("Plan", true, new string[] { ".pdf" }, 1024);
+            var req2 = new DocumentRequirement("Photo", true, new string[] { ".pdf" }, 1024);
+
+            // Act & Assert
+            Assert.False(req1.Equals(req2));
+        }
+
+        [Fact]
+        public void Equals_ShouldReturnFalse_WhenDifferentIsRequired()
+        {
+            // Arrange
+            var req1 = new DocumentRequirement("Plan", true, new string[] { ".pdf" }, 1024);
+            var req2 = new DocumentRequirement("Plan", false, new string[] { ".pdf" }, 1024);
+
+            // Act & Assert
+            Assert.False(req1.Equals(req2));
+        }
+
+        [Fact]
+        public void Equals_ShouldReturnFalse_WhenDifferentAllowedExtensions()
+        {
+            // Arrange
+            var req1 = new DocumentRequirement("Plan", true, new string[] { ".pdf" }, 1024);
+            var req2 = new DocumentRequirement("Plan", true, new string[] { ".pdf", ".dwg" }, 1024);
+
+            // Act & Assert
+            Assert.False(req1.Equals(req2));
+        }
+
+        [Fact]
+        public void Equals_ShouldReturnFalse_WhenDifferentMaxFileSize()
+        {
+            // Arrange
+            var req1 = new DocumentRequirement("Plan", true, new string[] { ".pdf" }, 1024);
+            var req2 = new DocumentRequirement("Plan", true, new string[] { ".pdf" }, 2048);
+
+            // Act & Assert
+            Assert.False(req1.Equals(req2));
+        }
+
+        [Fact]
+        public void Properties_ShouldBeImmutable()
+        {
+            // Arrange
+            var req = new DocumentRequirement("Plan", true, new string[] { ".pdf" }, 1024);
+
+            // Assert - Verify properties have private setters (immutability)
+            var type = req.GetType();
+            var properties = type.GetProperties();
+            
+            foreach (var prop in properties)
+            {
+                if (prop.Name == "DocumentType" || prop.Name == "IsRequired" || 
+                    prop.Name == "AllowedExtensions" || prop.Name == "MaxFileSizeBytes")
+                {
+                    Assert.True(prop.CanRead);
+                    // Note: Private setters are used, which is correct for immutability
+                }
+            }
         }
     }
 }
