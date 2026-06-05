@@ -1,19 +1,19 @@
 using System;
+using MediatR;
 
 namespace ATLAS.Domain.Events
 {
-    /// <summary>
-    /// Domain event raised when a citizen resubmits an application after info was requested.
-    /// </summary>
-    public class ApplicationResubmittedEvent
+    public class ApplicationResubmittedEvent : INotification
     {
         public Guid ApplicationId { get; }
         public Guid CitizenId { get; }
+        public DateTime Timestamp { get; }
 
         public ApplicationResubmittedEvent(Guid applicationId, Guid citizenId)
         {
             ApplicationId = applicationId;
             CitizenId = citizenId;
+            Timestamp = DateTime.UtcNow;
         }
     }
 }

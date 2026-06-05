@@ -1,11 +1,9 @@
 using System;
+using MediatR;
 
 namespace ATLAS.Domain.Events
 {
-    /// <summary>
-    /// Domain event raised when a permit type is deactivated.
-    /// </summary>
-    public class PermitTypeDeactivatedEvent
+    public class PermitTypeDeactivatedEvent : INotification
     {
         public Guid PermitTypeId { get; }
         public Guid DeactivatedByAdminId { get; }

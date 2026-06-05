@@ -1,9 +1,10 @@
 using System;
 using ATLAS.Domain.ValueObjects;
+using MediatR;
 
 namespace ATLAS.Domain.Events
 {
-    public class PermitTypeFieldAddedEvent
+    public class PermitTypeFieldAddedEvent : INotification
     {
         public Guid PermitTypeId { get; }
         public string FieldName { get; }

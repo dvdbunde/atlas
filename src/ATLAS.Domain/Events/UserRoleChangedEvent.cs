@@ -1,9 +1,10 @@
 using System;
 using ATLAS.Domain.Entities;
+using MediatR;
 
 namespace ATLAS.Domain.Events
 {
-    public class UserRoleChangedEvent
+    public class UserRoleChangedEvent : INotification
     {
         public Guid UserId { get; }
         public UserRole OldRole { get; }
@@ -17,5 +18,5 @@ namespace ATLAS.Domain.Events
             NewRole = newRole;
             Timestamp = DateTime.UtcNow;
         }
-    } 
+    }
 }

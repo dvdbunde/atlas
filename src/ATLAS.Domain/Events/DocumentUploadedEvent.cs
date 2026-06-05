@@ -1,20 +1,21 @@
 using System;
+using MediatR;
 
 namespace ATLAS.Domain.Events
 {
-    public class DocumentUploadedEvent
+    public class DocumentUploadedEvent : INotification
     {
         public Guid DocumentId { get; }
         public Guid ApplicationId { get; }
-        public Guid UserId { get; }
+        public Guid UploadedById { get; }
         public string FileName { get; }
         public DateTime Timestamp { get; }
 
-        public DocumentUploadedEvent(Guid documentId, Guid applicationId, Guid userId, string fileName)
+        public DocumentUploadedEvent(Guid documentId, Guid applicationId, Guid uploadedById, string fileName)
         {
             DocumentId = documentId;
             ApplicationId = applicationId;
-            UserId = userId;
+            UploadedById = uploadedById;
             FileName = fileName;
             Timestamp = DateTime.UtcNow;
         }
