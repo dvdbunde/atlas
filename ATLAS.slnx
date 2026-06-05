@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/ATLAS.Api/ATLAS.Api.csproj" />
+    <Project Path="src/ATLAS.API/ATLAS.Api.csproj" />
     <Project Path="src/ATLAS.Application/ATLAS.Application.csproj" />
     <Project Path="src/ATLAS.Blazor/ATLAS.Blazor.csproj" />
     <Project Path="src/ATLAS.Domain/ATLAS.Domain.csproj" />

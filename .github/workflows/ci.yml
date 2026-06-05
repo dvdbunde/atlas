@@ -16,13 +16,16 @@ jobs:
       - name: Setup .NET 9 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '9.0.314'  # ← Use exact version
 
       - name: Restore dependencies
         run: dotnet restore ATLAS.slnx
 
       - name: Build solution
         run: dotnet build ATLAS.slnx --no-restore --configuration Release
+
+      - name: Create test results directory
+        run: mkdir -p ./test-results
 
       - name: Run unit tests
         run: dotnet test ATLAS.slnx --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory ./test-results
@@ -64,11 +67,11 @@ jobs:
       - name: Setup .NET 9 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '9.0.314'  # ← Use exact version
 
       - name: Check for vulnerable packages
         run: |
-          dotnet list package --vulnerable --project src/ATLAS.API/ATLAS.API.csproj || true
+          dotnet list package --vulnerable --project src/ATLAS.API/ATLAS.Api.csproj || true
           dotnet list package --vulnerable --project src/ATLAS.Application/ATLAS.Application.csproj || true
           dotnet list package --vulnerable --project src/ATLAS.Domain/ATLAS.Domain.csproj || true
           dotnet list package --vulnerable --project src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj || true
@@ -80,5 +83,3 @@ jobs:
           args: test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-# © Capgemini 2025
