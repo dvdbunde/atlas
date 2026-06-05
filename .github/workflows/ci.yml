@@ -67,15 +67,15 @@ jobs:
       - name: Setup .NET 9 SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.314'  # ← Use exact version
+          dotnet-version: '9.0.314'
 
       - name: Check for vulnerable packages
         run: |
-          dotnet list package --vulnerable --project src/ATLAS.API/ATLAS.Api.csproj || true
-          dotnet list package --vulnerable --project src/ATLAS.Application/ATLAS.Application.csproj || true
-          dotnet list package --vulnerable --project src/ATLAS.Domain/ATLAS.Domain.csproj || true
-          dotnet list package --vulnerable --project src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj || true
-          dotnet list package --vulnerable --project src/ATLAS.Blazor/ATLAS.Blazor.csproj || true
+          dotnet list src/ATLAS.API/ATLAS.Api.csproj package --vulnerable || true
+          dotnet list src/ATLAS.Application/ATLAS.Application.csproj package --vulnerable || true
+          dotnet list src/ATLAS.Domain/ATLAS.Domain.csproj package --vulnerable || true
+          dotnet list src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj package --vulnerable || true
+          dotnet list src/ATLAS.Blazor/ATLAS.Blazor.csproj package --vulnerable || true
 
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/dotnet@master
