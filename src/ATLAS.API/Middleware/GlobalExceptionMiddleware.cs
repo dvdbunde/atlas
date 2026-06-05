@@ -1,0 +1,104 @@
+using System;
+using System.Net;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+
+namespace ATLAS.API.Middleware
+{
+    // Custom class that extends ProblemDetails with Errors property
+    public class ValidationProblemDetails : ProblemDetails
+    {
+        public System.Collections.Generic.Dictionary<string, string[]> Errors { get; set; } = new();
+    }
+
+    public class GlobalExceptionMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly ILogger<GlobalExceptionMiddleware> _logger;
+        
+        public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
+        {
+            _next = next;
+            _logger = logger;
+        }
+        
+        public async Task InvokeAsync(HttpContext context)
+        {
+            try
+            {
+                await _next(context);
+            }
+            catch (Exception ex)
+            {
+                await HandleExceptionAsync(context, ex);
+            }
+        }
+        
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        {
+            HttpStatusCode statusCode = HttpStatusCode.InternalServerError;
+            object response;
+            
+            // Map domain exceptions to 400 Bad Request
+            if (exception is ATLAS.Domain.DomainException)
+            {
+                statusCode = HttpStatusCode.BadRequest;
+                response = new ProblemDetails
+                {
+                    Title = "Domain Validation Error",
+                    Status = (int)statusCode,
+                    Detail = exception.Message
+                };
+            }
+            // Map validation exceptions to 400 Bad Request
+            else if (exception is FluentValidation.ValidationException)
+            {
+                statusCode = HttpStatusCode.BadRequest;
+                var validationEx = (FluentValidation.ValidationException)exception;
+                response = new ValidationProblemDetails
+                {
+                    Title = "Validation Failed",
+                    Status = (int)statusCode,
+                    Detail = "One or more validation errors occurred",
+                    Errors = validationEx.Errors
+                        .GroupBy(e => e.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
+                };
+            }
+            // Map not found to 404
+            else if (exception is KeyNotFoundException)
+            {
+                statusCode = HttpStatusCode.NotFound;
+                response = new ProblemDetails
+                {
+                    Title = "Resource Not Found",
+                    Status = (int)statusCode,
+                    Detail = exception.Message
+                };
+            }
+            // Unhandled exceptions → 500
+            else
+            {
+                _logger.LogError(exception, "Unhandled exception");
+                response = new ProblemDetails
+                {
+                    Title = "Internal Server Error",
+                    Status = (int)statusCode,
+                    Detail = "An unexpected error occurred. Please contact support."
+                };
+            }
+            
+            context.Response.StatusCode = (int)statusCode;
+            context.Response.ContentType = "application/json";
+            
+            var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+            
+            await context.Response.WriteAsync(jsonResponse);
+        }
+    }
+}

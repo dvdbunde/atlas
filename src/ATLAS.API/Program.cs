@@ -24,6 +24,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ATLAS.API.Middleware.GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
 
 var summaries = new[]
