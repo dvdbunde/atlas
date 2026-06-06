@@ -68,7 +68,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore ATLAS.slnx
 
-      - name: Check for vulnerable packages
+      - name: Check for vulnerable packages (dotnet list)
         run: |
           dotnet list src/ATLAS.API/ATLAS.Api.csproj package --vulnerable || true
           dotnet list src/ATLAS.Application/ATLAS.Application.csproj package --vulnerable || true
@@ -76,8 +76,15 @@ jobs:
           dotnet list src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj package --vulnerable || true
           dotnet list src/ATLAS.Blazor/ATLAS.Blazor.csproj package --vulnerable || true
 
+      - name: Setup Node.js (for Snyk CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/dotnet@master
+        run: snyk test --all-projects
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        # No 'args' - uses default 'snyk test' command
