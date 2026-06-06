@@ -65,6 +65,9 @@ jobs:
         with:
           dotnet-version: '9.0.314'
 
+      - name: Restore dependencies
+        run: dotnet restore ATLAS.slnx
+
       - name: Check for vulnerable packages
         run: |
           dotnet list src/ATLAS.API/ATLAS.Api.csproj package --vulnerable || true
@@ -75,7 +78,6 @@ jobs:
 
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/dotnet@master
-        with:
-          args: test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        # No 'args' - uses default 'snyk test' command
