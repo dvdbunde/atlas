@@ -1,8 +1,9 @@
 using System;
+using MediatR;
 
 namespace ATLAS.Domain.Events
 {
-    public class ApplicationSubmittedEvent
+    public class ApplicationSubmittedEvent : INotification
     {
         public Guid ApplicationId { get; }
         public Guid CitizenId { get; }

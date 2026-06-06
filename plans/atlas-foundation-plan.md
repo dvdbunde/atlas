@@ -462,7 +462,7 @@ flowchart TD
 ## Summary
 
 | Milestone | Name | Effort (SP) | Effort (Days) | Dependencies | Key ADRs Referenced |
-|-----------|------|-------------|---------------|-------------|----------------------|
+| ----------- | ------ | ------------- | --------------- | ------------- | ---------------------- |
 | M1 | Solution Foundation | 5 | 2.5 | None | ADR-001, ADR-006, ADR-007 |
 | M2 | Domain Model | 13 | 6.5 | M1 | **ADR-004** (primary) |
 | M3 | Database Persistence | 13 | 6.5 | M2 | ADR-002, ADR-003, ADR-004 |

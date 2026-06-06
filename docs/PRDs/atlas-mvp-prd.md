@@ -374,7 +374,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 
 ---
 
-### 6. Application Assignment & Post-Submission Workflows
+### 6. Application Assignment &  Post-Submission Workflows
 
 #### Application Assignment Process (F-09, F-10)
 

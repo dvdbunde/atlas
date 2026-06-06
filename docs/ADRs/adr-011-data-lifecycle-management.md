@@ -58,7 +58,7 @@ We will implement **tiered data retention policies** using a combination of:
 ### Retention Policy Table
 
 | Data Type | Retention Period | Storage Location | Purge Method | Notes |
-|-----------|-------------------|-------------------|--------------|-------|
+| ----------- | ------------------- | ------------------- | -------------- | ------- |
 | **Audit Logs** | 7 years (mandatory) | Azure SQL (`AuditLog` table) | No delete (immutable) | Compliance requirement (F-20) |
 | **Approved Applications** | 7 years after approval | Azure SQL + Blob Storage | Purge after 7 years | Government Records Act |
 | **Rejected Applications** | 7 years after rejection | Azure SQL + Blob Storage | Purge after 7 years | Government Records Act |

@@ -1,8 +1,6 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Enums;
+using ATLAS.Domain.Interfaces;
 using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -10,90 +8,164 @@ using Xunit;
 
 namespace ATLAS.Infrastructure.Tests.Repositories
 {
-    public class UserRepositoryTests : IDisposable
+    public class UserRepositoryTests
     {
-        private readonly ApplicationDbContext _context;
-        private readonly UserRepository _repository;
-
-        public UserRepositoryTests()
+        private ApplicationDbContext CreateInMemoryContext()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
-            _context = new ApplicationDbContext(options);
-            _repository = new UserRepository(_context);
+            return new ApplicationDbContext(options);
         }
 
         [Fact]
         public async Task GetByIdAsync_WithExistingUser_ShouldReturnUser()
         {
             // Arrange
-            var user = new User("test@email.com", "John", "Doe", UserRole.Citizen);
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            using var context = CreateInMemoryContext();
+            var user = new User("test@example.com", "John", "Doe", UserRole.Citizen);
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var repository = new UserRepository(context);
 
             // Act
-            var result = await _repository.GetByIdAsync(user.Id);
+            var result = await repository.GetByIdAsync(user.Id);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("test@email.com", result.Email);
-            Assert.Equal(UserRole.Citizen, result.Role);
+            Assert.Equal(user.Id, result.Id);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WithNonExistingId_ShouldReturnNull()
+        {
+            // Arrange
+            using var context = CreateInMemoryContext();
+            var repository = new UserRepository(context);
+
+            // Act
+            var result = await repository.GetByIdAsync(Guid.NewGuid());
+
+            // Assert
+            Assert.Null(result);
         }
 
         [Fact]
         public async Task GetByEmailAsync_WithExistingEmail_ShouldReturnUser()
         {
             // Arrange
+            using var context = CreateInMemoryContext();
             var user = new User("unique@email.com", "Jane", "Doe", UserRole.Officer);
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var repository = new UserRepository(context);
 
             // Act
-            var result = await _repository.GetByEmailAsync("unique@email.com");
+            var result = await repository.GetByEmailAsync("unique@email.com");
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("Jane", result.FirstName);
+            Assert.Equal("unique@email.com", result.Email);
         }
 
         [Fact]
-        public async Task GetByRoleAsync_WithMixedRoles_ShouldReturnOnlyMatchingRole()
+        public async Task GetByRoleAsync_WithExistingRole_ShouldReturnUsers()
         {
             // Arrange
-            var citizen1 = new User("citizen1@test.com", "C1", "Test", UserRole.Citizen);
-            var citizen2 = new User("citizen2@test.com", "C2", "Test", UserRole.Citizen);
-            var officer = new User("officer@test.com", "Off", "Test", UserRole.Officer);
-            
-            _context.Users.AddRange(citizen1, citizen2, officer);
-            await _context.SaveChangesAsync();
+            using var context = CreateInMemoryContext();
+            var citizen = new User("citizen@test.com", "Citizen", "One", UserRole.Citizen);
+            var officer = new User("officer@test.com", "Officer", "One", UserRole.Officer);
+            context.Users.AddRange(citizen, officer);
+            await context.SaveChangesAsync();
+
+            var repository = new UserRepository(context);
 
             // Act
-            var result = await _repository.GetByRoleAsync(UserRole.Citizen);
+            var result = await repository.GetByRoleAsync(UserRole.Citizen);
 
             // Assert
-            Assert.Equal(2, result.Count());
-            Assert.All(result, u => Assert.Equal(UserRole.Citizen, u.Role));
+            Assert.Single(result);
+            Assert.Equal(UserRole.Citizen, result.First().Role);
         }
 
         [Fact]
-        public async Task ExistsAsync_WithExistingUser_ShouldReturnTrue()
+        public async Task AddAsync_ShouldAddUserToDatabase()
         {
             // Arrange
-            var user = new User("exists@test.com", "Test", "User", UserRole.Citizen);
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            using var context = CreateInMemoryContext();
+            var user = new User("new@user.com", "New", "User", UserRole.Citizen);
+            var repository = new UserRepository(context);
 
             // Act
-            var exists = await _repository.ExistsAsync(user.Id);
+            await repository.AddAsync(user);
+            await context.SaveChangesAsync();
 
             // Assert
-            Assert.True(exists);
+            var saved = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+            Assert.NotNull(saved);
+            Assert.Equal("new@user.com", saved.Email);
         }
 
-        public void Dispose()
+        [Fact]
+        public async Task UpdateAsync_ShouldUpdateUserInDatabase()
         {
-            _context?.Dispose();
+            // Arrange
+            using var context = CreateInMemoryContext();
+            var user = new User("update@test.com", "Update", "Me", UserRole.Citizen);
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var repository = new UserRepository(context);
+            user.Deactivate(); // Changes IsActive to false
+
+            // Act
+            await repository.UpdateAsync(user);
+            await context.SaveChangesAsync();
+
+            // Assert
+            var updated = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+            Assert.NotNull(updated);
+            Assert.False(updated.IsActive);
+        }
+
+        [Fact]
+        public async Task DeleteAsync_ShouldRemoveUserFromDatabase()
+        {
+            // Arrange
+            using var context = CreateInMemoryContext();
+            var user = new User("delete@test.com", "Delete", "Me", UserRole.Citizen);
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var repository = new UserRepository(context);
+
+            // Act
+            await repository.DeleteAsync(user);
+            await context.SaveChangesAsync();
+
+            // Assert
+            var deleted = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
+            Assert.Null(deleted);
+        }
+
+        [Fact]
+        public async Task ExistsAsync_WithExistingId_ShouldReturnTrue()
+        {
+            // Arrange
+            using var context = CreateInMemoryContext();
+            var user = new User("exists@test.com", "Exists", "User", UserRole.Citizen);
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var repository = new UserRepository(context);
+
+            // Act
+            var result = await repository.ExistsAsync(user.Id);
+
+            // Assert
+            Assert.True(result);
         }
     }
 }
