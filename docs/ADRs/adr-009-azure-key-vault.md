@@ -15,6 +15,7 @@ superseded_by: ""
 ### Partially Implemented
 
 **Implementation Notes:**
+
 - Development uses user-secrets for local development
 - Azure Key Vault packages installed but not fully configured
 - Full Azure Key Vault integration deferred to Milestone 9 (Production Hardening)
@@ -69,7 +70,7 @@ flowchart TD
 ### Secrets to Store in Key Vault
 
 | Secret Name | Purpose | Access Required |
-|-------------|---------|-----------------|
+| ------------- | --------- | ----------------- |
 | `SqlConnectionString` | Azure SQL Database connection | ATLAS.Blazor (App Service) |
 | `BlobStorageConnectionString` | Azure Blob Storage access | ATLAS.Blazor (App Service) |
 | `EntraID-ClientSecret` | Microsoft Entra ID app authentication | ATLAS.Blazor (App Service) |
