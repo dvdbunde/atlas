@@ -18,7 +18,7 @@
 
       "generateDtoTypes": true,
 
-      "output": "Contracts/Generated/AtlasContracts.g.cs",
+      "output": "DTOs/Generated/AtlasContracts.g.cs",
 
       "generateOptionalParameters": true,
       "generateNullableReferenceTypes": true,
