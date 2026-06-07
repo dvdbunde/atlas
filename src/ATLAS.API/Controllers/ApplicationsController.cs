@@ -7,6 +7,7 @@ using ATLAS.Application.DTOs;
 using ATLAS.Domain;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
+using ATLAS.API.Requests;
 
 namespace ATLAS.API.Controllers
 {
@@ -57,9 +58,17 @@ namespace ATLAS.API.Controllers
         [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<Guid>> SubmitApplication(
-            [FromBody] SubmitApplicationCommand command,
+            [FromBody] SubmitApplicationRequest request,
             CancellationToken cancellationToken)
         {
+            // Map API Request → MediatR Command
+            var command = new SubmitApplicationCommand
+            {
+                CitizenId = request.CitizenId,
+                PermitTypeId = request.PermitTypeId,
+                CitizenNotes = request.CitizenNotes
+            };
+            
             try
             {
                 var applicationId = await _mediator.Send(command, cancellationToken);
@@ -110,10 +119,16 @@ namespace ATLAS.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<bool>> ApproveApplication(
             [FromRoute] Guid id,
-            [FromBody] ApproveApplicationCommand command,
+            [FromBody] ApproveApplicationRequest request,
             CancellationToken cancellationToken)
         {
-            command.ApplicationId = id;
+            // Map API Request → MediatR Command
+            var command = new ApproveApplicationCommand
+            {
+                ApplicationId = id,
+                OfficerId = request.OfficerId,
+                Comments = request.Comments
+            };
             
             try
             {
@@ -144,10 +159,16 @@ namespace ATLAS.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<bool>> RejectApplication(
             [FromRoute] Guid id,
-            [FromBody] RejectApplicationCommand command,
+            [FromBody] RejectApplicationRequest request,
             CancellationToken cancellationToken)
         {
-            command.ApplicationId = id;
+            // Map API Request → MediatR Command
+            var command = new RejectApplicationCommand
+            {
+                ApplicationId = id,
+                ReasonCode = request.ReasonCode,
+                Comments = request.Comments
+            };
             
             try
             {
@@ -178,10 +199,16 @@ namespace ATLAS.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<bool>> RequestInfo(
             [FromRoute] Guid id,
-            [FromBody] RequestInfoCommand command,
+            [FromBody] RequestInfoRequest request,
             CancellationToken cancellationToken)
         {
-            command.ApplicationId = id;
+            // Map API Request → MediatR Command
+            var command = new RequestInfoCommand
+            {
+                ApplicationId = id,
+                Message = request.Message,
+                OfficerId = request.OfficerId
+            };
             
             try
             {
@@ -212,10 +239,15 @@ namespace ATLAS.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<bool>> AssignToOfficer(
             [FromRoute] Guid id,
-            [FromBody] AssignToOfficerCommand command,
+            [FromBody] AssignToOfficerRequest request,
             CancellationToken cancellationToken)
         {
-            command.ApplicationId = id;
+            // Map API Request → MediatR Command
+            var command = new AssignToOfficerCommand
+            {
+                ApplicationId = id,
+                OfficerId = request.OfficerId
+            };
             
             try
             {

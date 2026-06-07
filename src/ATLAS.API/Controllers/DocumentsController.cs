@@ -5,6 +5,7 @@ using ATLAS.Application.Commands;
 using ATLAS.Application.Queries;
 using Microsoft.AspNetCore.Http;
 using ATLAS.Domain;
+using ATLAS.API.Requests;
 
 namespace ATLAS.API.Controllers
 {
@@ -27,10 +28,19 @@ namespace ATLAS.API.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<bool>> UploadDocument(
             [FromRoute] Guid applicationId,
-            [FromBody] UploadDocumentCommand command,
+            [FromBody] UploadDocumentRequest request,
             CancellationToken cancellationToken)
         {
-            command.ApplicationId = applicationId;
+            // Map API Request → MediatR Command
+            var command = new UploadDocumentCommand
+            {
+                ApplicationId = applicationId,
+                FileName = request.FileName,
+                ContentType = request.ContentType,
+                FileSize = request.FileSize,
+                BlobUrl = request.BlobUrl,
+                UploadedById = request.UploadedById
+            };
 
             try
             {

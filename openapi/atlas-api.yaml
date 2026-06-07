@@ -107,7 +107,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubmitApplicationCommand'
+              $ref: '#/components/schemas/SubmitApplicationRequest'
             examples:
               standardApplication:
                 summary: Standard permit application
@@ -182,7 +182,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ApproveApplicationCommand'
+              $ref: '#/components/schemas/ApproveApplicationRequest'
       responses:
         '200':
           description: Application approved successfully
@@ -220,7 +220,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RejectApplicationCommand'
+              $ref: '#/components/schemas/RejectApplicationRequest'
       responses:
         '200':
           description: Application rejected successfully
@@ -258,7 +258,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestInfoCommand'
+              $ref: '#/components/schemas/RequestInfoRequest'
       responses:
         '200':
           description: Information request sent successfully
@@ -296,7 +296,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignToOfficerCommand'
+              $ref: '#/components/schemas/AssignToOfficerRequest'
       responses:
         '200':
           description: Application assigned successfully
@@ -334,7 +334,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UploadDocumentCommand'
+              $ref: '#/components/schemas/UploadDocumentRequest'
       responses:
         '200':
           description: Document uploaded successfully
@@ -421,7 +421,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePermitTypeCommand'
+              $ref: '#/components/schemas/CreatePermitTypeRequest'
       responses:
         '201':
           description: Permit type created successfully
@@ -487,7 +487,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdatePermitTypeCommand'
+              $ref: '#/components/schemas/UpdatePermitTypeRequest'
       responses:
         '200':
           description: Permit type updated successfully
@@ -571,7 +571,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateUserCommand'
+              $ref: '#/components/schemas/CreateUserRequest'
       responses:
         '201':
           description: User created successfully
@@ -637,7 +637,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateUserRoleCommand'
+              $ref: '#/components/schemas/UpdateUserRoleRequest'
       responses:
         '200':
           description: User role updated successfully
@@ -970,7 +970,7 @@ components:
                   type: string
           required: [errors]
     
-    SubmitApplicationCommand:
+    SubmitApplicationRequest:
       type: object
       properties:
         citizenId:
@@ -984,18 +984,21 @@ components:
           default: ''
       required: [citizenId, permitTypeId]
     
-    ApproveApplicationCommand:
+    ApproveApplicationRequest:
       type: object
       properties:
         applicationId:
           type: string
           format: uuid
-        officerNotes:
+        officerId:
+          type: string        
+          format: uuid
+        comments:
           type: string
-          nullable: true
+          default: ''
       required: [applicationId]
     
-    RejectApplicationCommand:
+    RejectApplicationRequest:
       type: object
       properties:
         applicationId:
@@ -1008,21 +1011,20 @@ components:
           nullable: true
       required: [applicationId, reasonCode]
     
-    RequestInfoCommand:
+    RequestInfoRequest:
       type: object
       properties:
         applicationId:
           type: string
           format: uuid
-        requestMessage:
+        officerId:
           type: string
-        requestedDocuments:
-          type: array
-          items:
-            type: string
-      required: [applicationId, requestMessage]
+          format: uuid
+        message:
+          type: string        
+      required: [applicationId, message]
     
-    AssignToOfficerCommand:
+    AssignToOfficerRequest:
       type: object
       properties:
         applicationId:
@@ -1033,7 +1035,7 @@ components:
           format: uuid
       required: [applicationId, officerId]
     
-    UploadDocumentCommand:
+    UploadDocumentRequest:
       type: object
       properties:
         applicationId:
@@ -1046,9 +1048,15 @@ components:
         fileSize:
           type: integer
           format: int64
+        blobUrl:
+          type: string
+          format: uri
+        uploadedById:
+          type: string        
+          format: uuid
       required: [applicationId, fileName, contentType, fileSize]
     
-    CreatePermitTypeCommand:
+    CreatePermitTypeRequest:
       type: object
       properties:
         name:
@@ -1057,13 +1065,10 @@ components:
           type: string
         fee:
           type: number
-          format: decimal
-        isActive:
-          type: boolean
-          default: true
+          format: decimal        
       required: [name, description, fee]
     
-    UpdatePermitTypeCommand:
+    UpdatePermitTypeRequest:
       type: object
       properties:
         permitTypeId:
@@ -1078,9 +1083,16 @@ components:
           format: decimal
         isActive:
           type: boolean
+        estimatedProcessingDays:
+          type: integer
+          format: int32
+        deactivatedByAdminId:
+          type: string
+          format: uuid
+          nullable: true
       required: [permitTypeId]
     
-    CreateUserCommand:
+    CreateUserRequest:
       type: object
       properties:
         email:
@@ -1094,23 +1106,17 @@ components:
           type: string
         department:
           type: string
-          nullable: true
-        password:
-          type: string
-          format: password
-      required: [email, firstName, lastName, role, password]
+          nullable: true        
+      required: [email, firstName, lastName, role]
     
-    UpdateUserRoleCommand:
+    UpdateUserRoleRequest:
       type: object
       properties:
         userId:
           type: string
           format: uuid
         role:
-          type: string
-        department:
-          type: string
-          nullable: true
+          type: string        
       required: [userId, role]
   
   responses:

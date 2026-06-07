@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Queries;
 using ATLAS.Application.Commands;
+using ATLAS.API.Requests;
 
 namespace ATLAS.API.Controllers
 {
@@ -51,9 +52,17 @@ namespace ATLAS.API.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
         public async Task<ActionResult<Guid>> CreatePermitType(
-            [FromBody] CreatePermitTypeCommand command,
+            [FromBody] CreatePermitTypeRequest request,
             CancellationToken cancellationToken)
         {
+            // Map API Request → MediatR Command
+            var command = new CreatePermitTypeCommand
+            {
+                Name = request.Name,
+                Description = request.Description,
+                Fee = request.Fee                
+            };
+
             var permitTypeId = await _mediator.Send(command, cancellationToken);
             return CreatedAtAction(nameof(GetPermitTypeById), new { id = permitTypeId }, permitTypeId);
         }
@@ -64,10 +73,20 @@ namespace ATLAS.API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<bool>> UpdatePermitType(
             [FromRoute] Guid id,
-            [FromBody] UpdatePermitTypeCommand command,
+            [FromBody] UpdatePermitTypeRequest request,
             CancellationToken cancellationToken)
         {
-            command.PermitTypeId = id;
+            // Map API Request → MediatR Command
+            var command = new UpdatePermitTypeCommand
+            {
+                PermitTypeId = id,
+                Name = request.Name,
+                Description = request.Description,
+                EstimatedProcessingDays = request.EstimatedProcessingDays,
+                IsActive = request.IsActive,
+                DeactivatedByAdminId = request.DeactivatedByAdminId
+            };
+
             var result = await _mediator.Send(command, cancellationToken);
             return result ? Ok(result) : NotFound();
         }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Queries;
 using ATLAS.Application.Commands;
+using ATLAS.API.Requests;
 
 namespace ATLAS.API.Controllers
 {
@@ -52,9 +53,19 @@ namespace ATLAS.API.Controllers
         [AllowAnonymous]  // Registration is open
         [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
         public async Task<ActionResult<Guid>> CreateUser(
-            [FromBody] CreateUserCommand command,
+            [FromBody] CreateUserRequest request,
             CancellationToken cancellationToken)
         {
+            // Map API Request → MediatR Command
+            var command = new CreateUserCommand
+            {
+                Email = request.Email,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Role = request.Role,
+                Department = request.Department                
+            };
+
             var userId = await _mediator.Send(command, cancellationToken);
             return CreatedAtAction(nameof(GetUserById), new { id = userId }, userId);
         }
@@ -65,10 +76,16 @@ namespace ATLAS.API.Controllers
         [HttpPut("{id}/role")]
         public async Task<ActionResult<bool>> UpdateUserRole(
             [FromRoute] Guid id,
-            [FromBody] UpdateUserRoleCommand command,
+            [FromBody] UpdateUserRoleRequest request,
             CancellationToken cancellationToken)
         {
-            command.UserId = id;
+            // Map API Request → MediatR Command
+            var command = new UpdateUserRoleCommand
+            {
+                UserId = id,
+                Role = request.Role                
+            };
+
             var result = await _mediator.Send(command, cancellationToken);
             return result ? Ok(result) : NotFound();
         }
