@@ -1,0 +1,1154 @@
+openapi: 3.1.0
+info:
+  title: ATLAS API
+  description: |
+    API for ATLAS (Automated Tracking & Licensing Application System)
+    Manages permit applications, documents, users, and audit logs.
+  version: 1.0.0
+  contact:
+    name: ATLAS Development Team
+    email: dev@atlas.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://localhost:5001
+    description: Development server
+  - url: https://api.atlas.example.com
+    description: Production server
+
+security:
+  - EntraID: ['User.Read']
+
+tags:
+  - name: Applications
+    description: Permit application management
+  - name: Documents
+    description: Document upload and download
+  - name: PermitTypes
+    description: Permit type configuration
+  - name: Users
+    description: User account management
+  - name: AuditLogs
+    description: Audit trail and compliance
+
+paths:
+  /api/applications:
+    get:
+      tags: [Applications]
+      summary: Get all applications
+      description: Retrieve a list of applications with optional filtering
+      operationId: getApplications
+      parameters:
+        - name: citizenId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by citizen ID
+        - name: officerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by assigned officer ID
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Filter by application status
+        - name: permitTypeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by permit type ID
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter by submission date (from)
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter by submission date (to)
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search term for application number or citizen name
+      responses:
+        '200':
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationSummaryDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen', 'Officer', 'Admin']
+    
+    post:
+      tags: [Applications]
+      summary: Submit new application
+      description: Submit a new permit application
+      operationId: submitApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitApplicationCommand'
+            examples:
+              standardApplication:
+                summary: Standard permit application
+                value:
+                  citizenId: '12345678-1234-1234-1234-123456789012'
+                  permitTypeId: '87654321-4321-4321-4321-210987654321'
+                  citizenNotes: 'Need permit for business operations'
+      responses:
+        '201':
+          description: Application created successfully
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+              example: '11111111-2222-3333-4444-555555555555'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen', 'Officer', 'Admin']
+
+  /api/applications/{id}:
+    get:
+      tags: [Applications]
+      summary: Get application by ID
+      description: Retrieve detailed information about a specific application
+      operationId: getApplicationById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Application details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationDetailDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen', 'Officer', 'Admin']
+
+  /api/applications/{id}/approve:
+    post:
+      tags: [Applications]
+      summary: Approve application
+      description: Approve a pending permit application
+      operationId: approveApplication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveApplicationCommand'
+      responses:
+        '200':
+          description: Application approved successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']
+
+  /api/applications/{id}/reject:
+    post:
+      tags: [Applications]
+      summary: Reject application
+      description: Reject a pending permit application
+      operationId: rejectApplication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectApplicationCommand'
+      responses:
+        '200':
+          description: Application rejected successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']
+
+  /api/applications/{id}/request-info:
+    post:
+      tags: [Applications]
+      summary: Request additional information
+      description: Request additional information from citizen for a pending application
+      operationId: requestInfo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestInfoCommand'
+      responses:
+        '200':
+          description: Information request sent successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']
+
+  /api/applications/{id}/assign:
+    post:
+      tags: [Applications]
+      summary: Assign application to officer
+      description: Assign a pending application to a specific officer
+      operationId: assignToOfficer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignToOfficerCommand'
+      responses:
+        '200':
+          description: Application assigned successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']
+
+  /api/applications/{applicationId}/documents:
+    post:
+      tags: [Documents]
+      summary: Upload document
+      description: Upload a document for an application
+      operationId: uploadDocument
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadDocumentCommand'
+      responses:
+        '200':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen', 'Officer', 'Admin']
+
+  /api/documents/{documentId}/download:
+    get:
+      tags: [Documents]
+      summary: Download document
+      description: Download a document from Azure Blob Storage
+      operationId: downloadDocument
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Document ID
+      responses:
+        '200':
+          description: Document file stream
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen', 'Officer', 'Admin']
+
+  /api/permittypes:
+    get:
+      tags: [PermitTypes]
+      summary: Get all permit types
+      description: Retrieve list of permit types, optionally including inactive ones
+      operationId: getPermitTypes
+      parameters:
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include inactive permit types in results
+      responses:
+        '200':
+          description: List of permit types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermitTypeDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+    
+    post:
+      tags: [PermitTypes]
+      summary: Create permit type
+      description: Create a new permit type
+      operationId: createPermitType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePermitTypeCommand'
+      responses:
+        '201':
+          description: Permit type created successfully
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/permittypes/{id}:
+    get:
+      tags: [PermitTypes]
+      summary: Get permit type by ID
+      description: Retrieve details of a specific permit type
+      operationId: getPermitTypeById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permit type ID
+      responses:
+        '200':
+          description: Permit type details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermitTypeDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+    
+    put:
+      tags: [PermitTypes]
+      summary: Update permit type
+      description: Update an existing permit type
+      operationId: updatePermitType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permit type ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePermitTypeCommand'
+      responses:
+        '200':
+          description: Permit type updated successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+    
+    delete:
+      tags: [PermitTypes]
+      summary: Deactivate permit type
+      description: Deactivate a permit type (soft delete)
+      operationId: deactivatePermitType
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Permit type ID
+      responses:
+        '200':
+          description: Permit type deactivated successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/users:
+    get:
+      tags: [Users]
+      summary: Get all users
+      description: Retrieve list of users with optional role filtering
+      operationId: getUsers
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+          description: Filter by user role
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+    
+    post:
+      tags: [Users]
+      summary: Create user account
+      description: Register a new user account
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserCommand'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: string
+                format: uuid
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security: []
+
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      description: Retrieve details of a specific user
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/users/{id}/role:
+    put:
+      tags: [Users]
+      summary: Update user role
+      description: Update the role of an existing user
+      operationId: updateUserRole
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRoleCommand'
+      responses:
+        '200':
+          description: User role updated successfully
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/auditlogs:
+    get:
+      tags: [AuditLogs]
+      summary: Get audit logs
+      description: Retrieve audit logs with optional filtering
+      operationId: getAuditLogs
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by user ID
+        - name: actionType
+          in: query
+          schema:
+            type: string
+          description: Filter by action type
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter by date (from)
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter by date (to)
+        - name: recordId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by record ID
+      responses:
+        '200':
+          description: List of audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLogDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/auditlogs/export:
+    get:
+      tags: [AuditLogs]
+      summary: Export audit logs to CSV
+      description: Export filtered audit logs to CSV format
+      operationId: exportAuditLogs
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by user ID
+        - name: actionType
+          in: query
+          schema:
+            type: string
+          description: Filter by action type
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter by date (from)
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter by date (to)
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+components:
+  schemas:
+    ApplicationSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '12345678-1234-1234-1234-123456789012'
+        applicationNumber:
+          type: string
+          example: 'APP-2026-0001'
+        status:
+          type: integer
+          format: int32
+          description: Application status code
+          example: 1
+        submittedDate:
+          type: string
+          format: date-time
+          nullable: true
+        citizenId:
+          type: string
+          format: uuid
+        permitTypeId:
+          type: string
+          format: uuid
+        citizenName:
+          type: string
+          nullable: true
+          example: 'John Doe'
+        permitTypeName:
+          type: string
+          nullable: true
+          example: 'Business Permit'
+      required: [id, applicationNumber, status, citizenId, permitTypeId]
+    
+    ApplicationDetailDto:
+      allOf:
+        - $ref: '#/components/schemas/ApplicationSummaryDto'
+        - type: object
+          properties:
+            reviewedDate:
+              type: string
+              format: date-time
+              nullable: true
+            citizenNotes:
+              type: string
+              default: ''
+            officerNotes:
+              type: string
+              default: ''
+            documents:
+              type: array
+              items:
+                $ref: '#/components/schemas/DocumentDto'
+            reviews:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReviewDto'
+            officerName:
+              type: string
+              nullable: true
+              example: 'Jane Smith'
+          required: [citizenNotes, officerNotes, documents, reviews]
+    
+    DocumentDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+          example: 'permit-application.pdf'
+        contentType:
+          type: string
+          example: 'application/pdf'
+        fileSize:
+          type: integer
+          format: int64
+          example: 2048576
+        blobUrl:
+          type: string
+          format: uri
+          example: 'https://atlasstorage.blob.core.windows.net/documents/permit-application.pdf'
+        uploadedDate:
+          type: string
+          format: date-time
+      required: [id, fileName, contentType, fileSize, blobUrl, uploadedDate]
+    
+    ReviewDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        officerId:
+          type: string
+          format: uuid
+        decision:
+          type: integer
+          format: int32
+          description: 1=Approved, 2=Rejected
+          enum: [1, 2]
+        reasonCode:
+          type: string
+          nullable: true
+          example: 'INCOMPLETE_DOCUMENTATION'
+        comments:
+          type: string
+          nullable: true
+        reviewedDate:
+          type: string
+          format: date-time
+        isVisibleToCitizen:
+          type: boolean
+          default: false
+      required: [id, officerId, decision, reviewedDate, isVisibleToCitizen]
+    
+    PermitTypeDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: 'Business Permit'
+        description:
+          type: string
+          example: 'Permit for business operations'
+        fee:
+          type: number
+          format: decimal
+          example: 150.00
+        isActive:
+          type: boolean
+          default: true
+      required: [id, name, description, fee, isActive]
+    
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          example: 'user@example.com'
+        firstName:
+          type: string
+          example: 'John'
+        lastName:
+          type: string
+          example: 'Doe'
+        role:
+          type: string
+          example: 'Citizen'
+        department:
+          type: string
+          nullable: true
+          example: 'Permits Office'
+        isActive:
+          type: boolean
+          default: true
+      required: [id, email, firstName, lastName, role, isActive]
+    
+    AuditLogDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        actionType:
+          type: string
+          example: 'APPLICATION_SUBMITTED'
+        timestamp:
+          type: string
+          format: date-time
+        recordId:
+          type: string
+          format: uuid
+        details:
+          type: string
+          nullable: true
+      required: [id, actionType, timestamp, recordId]
+    
+    ProblemDetails:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+      required: [title, status]
+    
+    ValidationProblemDetails:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+          required: [errors]
+    
+    SubmitApplicationCommand:
+      type: object
+      properties:
+        citizenId:
+          type: string
+          format: uuid
+        permitTypeId:
+          type: string
+          format: uuid
+        citizenNotes:
+          type: string
+          default: ''
+      required: [citizenId, permitTypeId]
+    
+    ApproveApplicationCommand:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        officerNotes:
+          type: string
+          nullable: true
+      required: [applicationId]
+    
+    RejectApplicationCommand:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        reasonCode:
+          type: string
+        comments:
+          type: string
+          nullable: true
+      required: [applicationId, reasonCode]
+    
+    RequestInfoCommand:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        requestMessage:
+          type: string
+        requestedDocuments:
+          type: array
+          items:
+            type: string
+      required: [applicationId, requestMessage]
+    
+    AssignToOfficerCommand:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        officerId:
+          type: string
+          format: uuid
+      required: [applicationId, officerId]
+    
+    UploadDocumentCommand:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        contentType:
+          type: string
+        fileSize:
+          type: integer
+          format: int64
+      required: [applicationId, fileName, contentType, fileSize]
+    
+    CreatePermitTypeCommand:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        fee:
+          type: number
+          format: decimal
+        isActive:
+          type: boolean
+          default: true
+      required: [name, description, fee]
+    
+    UpdatePermitTypeCommand:
+      type: object
+      properties:
+        permitTypeId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        fee:
+          type: number
+          format: decimal
+        isActive:
+          type: boolean
+      required: [permitTypeId]
+    
+    CreateUserCommand:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+          nullable: true
+        password:
+          type: string
+          format: password
+      required: [email, firstName, lastName, role, password]
+    
+    UpdateUserRoleCommand:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+        department:
+          type: string
+          nullable: true
+      required: [userId, role]
+  
+  responses:
+    Unauthorized:
+      description: Unauthorized - Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationProblemDetails'
+  
+  securitySchemes:
+    EntraID:
+      type: oauth2
+      description: Microsoft Entra ID (Azure AD) authentication
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
+          scopes:
+            User.Read: Read user profile
+            Citizen: Citizen role access
+            Officer: Officer role access
+            Admin: Admin role access
