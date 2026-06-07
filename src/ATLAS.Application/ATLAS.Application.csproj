@@ -7,6 +7,7 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="MediatR" Version="12.4.*" />
+    <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="14.1.0" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -14,6 +15,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  
+  <!--
+  <Target Name="GenerateOpenApiDtos" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet nswag run nswag-dtos.json" />
+  </Target>
+  -->
 
 </Project>
 
