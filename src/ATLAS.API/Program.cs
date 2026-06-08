@@ -2,6 +2,7 @@ using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Infrastructure;
 using ATLAS.Infrastructure;
 using FluentValidation;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,16 @@ builder.Services.AddControllers(options =>
 {
     options.Conventions.Add(new GeneratedControllerAuthorizationConvention());
 });*/
+
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+    { 
+        Title = "ATLAS API", 
+        Version = "v1" 
+    });
+});
 
 builder.Services.AddControllers();
 
@@ -45,6 +56,11 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "ATLAS API v1");
+    });
     app.MapOpenApi(); // Or UseSwagger/UseSwaggerUI
 }
 
