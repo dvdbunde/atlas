@@ -65,6 +65,7 @@ This repository contains both the ATLAS application code and comprehensive docum
   - [ADRs](docs/ADRs/) - Architectural Decision Records
   - [Design Docs](docs/design/) - Technical design specifications
   - [Engineering Guidelines](docs/engineering/) - Development process documentation
+    - [Contract Governance](docs/engineering/contract-governance.md) - Contract-first development workflow
 
 ### Project Management
 
@@ -88,6 +89,21 @@ This repository contains both the ATLAS application code and comprehensive docum
 5. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) and [TODO.md](plans/TODO.md) for current priorities
 
 ## Development Workflow
+
+### Contract-First Development
+
+ATLAS follows **contract-first development** for API changes. The OpenAPI specification (`openapi/atlas-api.yaml`) is the **single source of truth**.
+
+**Key principles:**
+- All API changes MUST start with `openapi/atlas-api.yaml`
+- Generated files (`GeneratedControllers.g.cs`, `AtlasContracts.g.cs`) are NEVER edited manually
+- Run `dotnet build` to regenerate artifacts before committing
+- Use `scripts/validate-contract.ps1` to validate contract locally
+
+**Documentation:**
+- [Contract Governance](docs/engineering/contract-governance.md) - Complete guide
+- [PR Template](.github/PULL_REQUEST_TEMPLATE.md) - Contract checklist
+- [CI Workflow](.github/workflows/contract-validation.yml) - Automated validation
 
 ### Branching Strategy
 
@@ -166,6 +182,15 @@ Authoritative single sources of truth (SSOT) for key policies and templates. Pre
 - **Core policies and workflow**
   - Copilot instructions (SSOT): `.github/copilot-instructions.md`
     - Quality & Coverage Policy: `.github/copilot-instructions.md#quality-policy`
+
+- **Contract Governance**
+  - Contract Governance (SSOT): `docs/engineering/contract-governance.md`
+    - Contract-first development workflow: `docs/engineering/contract-governance.md#principles`
+    - Versioning strategy: `docs/engineering/contract-governance.md#versioning-strategy`
+    - Forbidden practices: `docs/engineering/contract-governance.md#forbidden-practices`
+  - OpenAPI Specification (SSOT): `openapi/atlas-api.yaml`
+  - Validation script: `scripts/validate-contract.ps1`
+  - CI Workflow: `.github/workflows/contract-validation.yml`
 
 - **Engineering guidelines**
   - Code review checklist (SSOT): `docs/engineering/code-review-guidelines.md#code-review-checklist`

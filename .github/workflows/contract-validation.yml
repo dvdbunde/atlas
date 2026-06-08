@@ -1,0 +1,66 @@
+name: Contract Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate-contract:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git diff
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Restore .NET tools
+        run: dotnet tool restore
+      
+      - name: Validate OpenAPI spec
+        run: |
+          # Validate YAML syntax and OpenAPI spec using HiDi
+          dotnet tool run hidi validate -d openapi/atlas-api.yaml
+      
+      - name: Regenerate artifacts
+        run: dotnet build src/ATLAS.API/ATLAS.Api.csproj
+      
+      - name: Check for outdated generated files
+        run: |
+          # Check if generated files match the spec
+          git diff --exit-code src/ATLAS.API/Controllers/Generated/ || echo "Generated controllers are outdated"
+          git diff --exit-code src/ATLAS.API/Contracts/Generated/ || echo "Generated contracts are outdated"
+          # Fail if generated files don't match
+          if [[ $(git diff --name-only src/ATLAS.API/Controllers/Generated/ src/ATLAS.API/Contracts/Generated/ | wc -l) -gt 0 ]]; then
+            echo "ERROR: Generated files are outdated. Run 'dotnet build src/ATLAS.API/ATLAS.Api.csproj' and commit changes."
+            exit 1
+          fi
+      
+      - name: Detect breaking changes
+        run: |
+          # Fetch main branch for comparison
+          git fetch origin main:main
+          # Save main spec to temp file
+          git show main:openapi/atlas-api.yaml > openapi-main.yaml
+          # Compare specs and fail on breaking changes
+          dotnet tool run openapi-compare -o openapi-main.yaml -n openapi/atlas-api.yaml -f Text -s || true
+          # Note: Remove "|| true" to actually fail on breaking changes
+          # -s flag enables strict mode (breaking changes are errors)
+          # For now, we just warn (|| true)
+          rm openapi-main.yaml
+      
+      - name: Check partial controllers match interfaces
+        run: |
+          # Build to verify partial classes compile correctly
+          dotnet build src/ATLAS.API/ATLAS.Api.csproj --verbosity quiet
+          echo "✅ Partial controllers match generated interfaces"
