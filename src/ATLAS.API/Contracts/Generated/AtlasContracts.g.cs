@@ -488,9 +488,6 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string Description { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("fee")]
-        public decimal Fee { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = default!;
 

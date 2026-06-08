@@ -1077,10 +1077,7 @@ components:
         name:
           type: string
         description:
-          type: string
-        fee:
-          type: number
-          format: decimal
+          type: string        
         isActive:
           type: boolean
         estimatedProcessingDays:
