@@ -78,15 +78,23 @@ namespace ATLAS.API.Middleware
                     Detail = exception.Message
                 };
             }
-            // Unhandled exceptions → 500
+            // Unhandled exceptions → 500 (with detailed error in Development)
             else
             {
                 _logger.LogError(exception, "Unhandled exception");
+                
+                // In Development, show the actual exception details
+                var detail = "An unexpected error occurred. Please contact support.";
+                if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+                {
+                    detail = $"{exception.GetType().Name}: {exception.Message}\n{exception.StackTrace}";
+                }
+                
                 response = new ProblemDetails
                 {
                     Title = "Internal Server Error",
                     Status = (int)statusCode,
-                    Detail = "An unexpected error occurred. Please contact support."
+                    Detail = detail
                 };
             }
             

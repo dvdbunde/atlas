@@ -28,7 +28,7 @@ namespace ATLAS.API.Controllers.Generated
             _implementation = this;  // ← ADD THIS LINE
         }
 
-        public async Task<ICollection<ApplicationSummaryResponse>> ApplicationsGetAsync(
+        public async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> ApplicationsGetAsync(
             Guid? citizenId = null,
             Guid? officerId = null,
             string? status = null,
@@ -57,7 +57,7 @@ namespace ATLAS.API.Controllers.Generated
             return response;
         }
 
-        public async Task<Guid> ApplicationsPostAsync(SubmitApplicationRequest body)
+        public async Task<ActionResult<Guid>> ApplicationsPostAsync(SubmitApplicationRequest body)
         {
             var command = new SubmitApplicationCommand
             {
@@ -69,14 +69,14 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<ApplicationDetailResponse> ApplicationsGetAsync(Guid id)
+        public async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGetAsync(Guid id)
         {
             var query = new GetApplicationByIdQuery { ApplicationId = id };
             var result = await _mediator.Send(query, default);
             return result?.ToResponse();
         }
 
-        public async Task<bool> ApproveAsync(Guid id, ApproveApplicationRequest body)
+        public async Task<ActionResult<bool>> ApproveAsync(Guid id, ApproveApplicationRequest body)
         {
             var command = new ApproveApplicationCommand
             {
@@ -88,7 +88,7 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<bool> RejectAsync(Guid id, RejectApplicationRequest body)
+        public async Task<ActionResult<bool>> RejectAsync(Guid id, RejectApplicationRequest body)
         {
             var command = new RejectApplicationCommand
             {
@@ -100,7 +100,7 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<bool> RequestInfoAsync(Guid id, RequestInfoRequest body)
+        public async Task<ActionResult<bool>> RequestInfoAsync(Guid id, RequestInfoRequest body)
         {
             var command = new RequestInfoCommand
             {
@@ -112,7 +112,7 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<bool> AssignAsync(Guid id, AssignToOfficerRequest body)
+        public async Task<ActionResult<bool>> AssignAsync(Guid id, AssignToOfficerRequest body)
         {
             var command = new AssignToOfficerCommand
             {

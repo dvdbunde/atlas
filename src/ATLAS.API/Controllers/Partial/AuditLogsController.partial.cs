@@ -26,7 +26,7 @@ namespace ATLAS.API.Controllers.Generated
             _implementation = this;
         }
 
-        public async Task<ICollection<AuditLogResponse>> AuditlogsAsync(
+        public async Task<ActionResult<ICollection<AuditLogResponse>>> AuditlogsAsync(
             Guid? userId = null,
             string? actionType = null,
             DateTimeOffset? dateFrom = null,
@@ -47,10 +47,10 @@ namespace ATLAS.API.Controllers.Generated
             {
                 response.Add(dto.ToResponse());
             }
-            return response;
+            return Ok(response);
         }
 
-        public async Task<string> ExportAsync(
+        public async Task<ActionResult<string>> ExportAsync(
             Guid? userId = null,
             string? actionType = null,
             DateTimeOffset? dateFrom = null,
@@ -58,8 +58,7 @@ namespace ATLAS.API.Controllers.Generated
         {
             // TODO: Implement CSV export
             // Return 501 Not Implemented
-            HttpContext.Response.StatusCode = 501;
-            return "CSV export not yet implemented";
+            return StatusCode(501);
         }
     }
 }

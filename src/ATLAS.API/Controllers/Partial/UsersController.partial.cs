@@ -27,7 +27,7 @@ namespace ATLAS.API.Controllers.Generated
             _implementation = this;
         }
 
-        public async Task<ICollection<UserResponse>> UsersGetAsync(string? role = null)
+        public async Task<ActionResult<ICollection<UserResponse>>> UsersGetAsync(string? role = null)
         {
             var query = new GetUsersQuery { Role = role };
             var results = await _mediator.Send(query, default);
@@ -36,10 +36,10 @@ namespace ATLAS.API.Controllers.Generated
             {
                 response.Add(dto.ToResponse());
             }
-            return response;
+            return Ok(response);
         }
 
-        public async Task<Guid> UsersPostAsync(CreateUserRequest body)
+        public async Task<ActionResult<Guid>> UsersPostAsync(CreateUserRequest body)
         {
             var command = new CreateUserCommand
             {
@@ -49,24 +49,28 @@ namespace ATLAS.API.Controllers.Generated
                 Role = body.Role,
                 Department = body.Department
             };
-            return await _mediator.Send(command, default);
+            var userId = await _mediator.Send(command, default);
+            return CreatedAtAction(nameof(UsersGetAsync), new { id = userId }, userId);
         }
 
-        public async Task<UserResponse> UsersGetAsync(Guid id)
+        public async Task<ActionResult<UserResponse>> UsersGetAsync(Guid id)
         {
             var query = new GetUserByIdQuery { UserId = id };
             var result = await _mediator.Send(query, default);
-            return result?.ToResponse();
+            if (result == null)
+                return NotFound();
+            return Ok(result.ToResponse());
         }
 
-        public async Task<bool> RoleAsync(Guid id, UpdateUserRoleRequest body)
+        public async Task<ActionResult<bool>> RoleAsync(Guid id, UpdateUserRoleRequest body)
         {
             var command = new UpdateUserRoleCommand
             {
                 UserId = id,
                 Role = body.Role
             };
-            return await _mediator.Send(command, default);
+            var result = await _mediator.Send(command, default);
+            return Ok(result);
         }
     }
 }

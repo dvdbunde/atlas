@@ -25,35 +25,25 @@
       "ATLAS.API.Contracts.Generated"
     ],
     "operationGenerationMode": "MultipleClientsFromFirstTagAndPathSegments",
-    "routeNamingStrategy": "OperationId"
+    "routeNamingStrategy": "OperationId",
+    "useActionResultType": true 
   },
 
     "openApiToCSharpClient": {
       "className": "AtlasContracts",
-
       "namespace": "ATLAS.API.Contracts.Generated",
-
       "output": "Contracts/Generated/AtlasContracts.g.cs",
-
       "generateClientClasses": false,
       "generateClientInterfaces": false,
-
       "generateDtoTypes": true,
-
       "generateJsonMethods": false,
-
       "generateDataAnnotations": false,
-
       "generateNullableReferenceTypes": true,
-
       "generateOptionalParameters": true,
-
       "dateType": "DateOnly",
       "dateTimeType": "DateTimeOffset",
       "timeType": "TimeOnly",
-
       "classStyle": "Poco",
-
       "jsonLibrary": "SystemTextJson"
     }
   }

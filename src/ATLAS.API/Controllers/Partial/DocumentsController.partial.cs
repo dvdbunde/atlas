@@ -18,13 +18,14 @@ namespace ATLAS.API.Controllers.Generated
     {
         private readonly IMediator _mediator;
 
-        [ActivatorUtilitiesConstructor]       
+        [ActivatorUtilitiesConstructor]
         public DocumentsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-            _implementation = this;  // ← ADD THIS LINE
+            _implementation = this;
         }
-        public async Task<bool> DocumentsAsync(
+
+        public async Task<ActionResult<bool>> DocumentsAsync(
             Guid applicationId,
             UploadDocumentRequest body)
         {
@@ -38,16 +39,15 @@ namespace ATLAS.API.Controllers.Generated
                 UploadedById = body.UploadedById
             };
 
-            return await _mediator.Send(command, default);
+            var result = await _mediator.Send(command, default);
+            return Ok(result);
         }
 
-        public async Task<FileResult> DownloadAsync(
-            Guid documentId)
+        public async Task<IActionResult> DownloadAsync(Guid documentId)
         {
             // TODO: Implement document download
             // Return 501 Not Implemented
-            HttpContext.Response.StatusCode = 501;
-            return File(Array.Empty<byte>(), "application/octet-stream");
+            return StatusCode(501);
         }
     }
 }

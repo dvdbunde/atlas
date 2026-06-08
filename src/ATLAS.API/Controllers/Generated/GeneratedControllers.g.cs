@@ -56,7 +56,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>List of applications</returns>
 
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ApplicationSummaryResponse>> ApplicationsGetAsync(System.Guid? citizenId = null, System.Guid? officerId = null, string? status = null, System.Guid? permitTypeId = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, string? search = null);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> ApplicationsGetAsync(System.Guid? citizenId = null, System.Guid? officerId = null, string? status = null, System.Guid? permitTypeId = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, string? search = null);
 
         /// <summary>
         /// Submit new application
@@ -68,7 +68,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Application created successfully</returns>
 
-        System.Threading.Tasks.Task<System.Guid> ApplicationsPostAsync(SubmitApplicationRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> ApplicationsPostAsync(SubmitApplicationRequest body);
 
         /// <summary>
         /// Get application by ID
@@ -82,7 +82,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Application details</returns>
 
-        System.Threading.Tasks.Task<ApplicationDetailResponse> ApplicationsGetAsync(System.Guid id);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationDetailResponse>> ApplicationsGetAsync(System.Guid id);
 
         /// <summary>
         /// Approve application
@@ -97,7 +97,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Application approved successfully</returns>
 
-        System.Threading.Tasks.Task<bool> ApproveAsync(System.Guid id, ApproveApplicationRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> ApproveAsync(System.Guid id, ApproveApplicationRequest body);
 
         /// <summary>
         /// Reject application
@@ -112,7 +112,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Application rejected successfully</returns>
 
-        System.Threading.Tasks.Task<bool> RejectAsync(System.Guid id, RejectApplicationRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> RejectAsync(System.Guid id, RejectApplicationRequest body);
 
         /// <summary>
         /// Request additional information
@@ -127,7 +127,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Information request sent successfully</returns>
 
-        System.Threading.Tasks.Task<bool> RequestInfoAsync(System.Guid id, RequestInfoRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> RequestInfoAsync(System.Guid id, RequestInfoRequest body);
 
         /// <summary>
         /// Assign application to officer
@@ -142,7 +142,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Application assigned successfully</returns>
 
-        System.Threading.Tasks.Task<bool> AssignAsync(System.Guid id, AssignToOfficerRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> AssignAsync(System.Guid id, AssignToOfficerRequest body);
 
     }
 
@@ -171,7 +171,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="search">Search term for application number or citizen name</param>
         /// <returns>List of applications</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications", Name = "getApplications")]
-        public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ApplicationSummaryResponse>> ApplicationsGet([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? citizenId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? officerId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? status = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? search = null)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> ApplicationsGet([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? citizenId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? officerId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? status = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? search = null)
         {
 
             return _implementation.ApplicationsGetAsync(citizenId, officerId, status, permitTypeId, dateFrom, dateTo, search);
@@ -185,7 +185,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Application created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications", Name = "submitApplication")]
-        public System.Threading.Tasks.Task<System.Guid> ApplicationsPost([Microsoft.AspNetCore.Mvc.FromBody] SubmitApplicationRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> ApplicationsPost([Microsoft.AspNetCore.Mvc.FromBody] SubmitApplicationRequest body)
         {
 
             return _implementation.ApplicationsPostAsync(body);
@@ -200,7 +200,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}", Name = "getApplicationById")]
-        public System.Threading.Tasks.Task<ApplicationDetailResponse> ApplicationsGet(System.Guid id)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationDetailResponse>> ApplicationsGet(System.Guid id)
         {
 
             return _implementation.ApplicationsGetAsync(id);
@@ -215,7 +215,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application approved successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/approve", Name = "approveApplication")]
-        public System.Threading.Tasks.Task<bool> Approve(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] ApproveApplicationRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Approve(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] ApproveApplicationRequest body)
         {
 
             return _implementation.ApproveAsync(id, body);
@@ -230,7 +230,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application rejected successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/reject", Name = "rejectApplication")]
-        public System.Threading.Tasks.Task<bool> Reject(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RejectApplicationRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Reject(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RejectApplicationRequest body)
         {
 
             return _implementation.RejectAsync(id, body);
@@ -245,7 +245,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Information request sent successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/request-info", Name = "requestInfo")]
-        public System.Threading.Tasks.Task<bool> RequestInfo(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RequestInfoRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> RequestInfo(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RequestInfoRequest body)
         {
 
             return _implementation.RequestInfoAsync(id, body);
@@ -260,7 +260,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application assigned successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/assign", Name = "assignToOfficer")]
-        public System.Threading.Tasks.Task<bool> Assign(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignToOfficerRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Assign(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignToOfficerRequest body)
         {
 
             return _implementation.AssignAsync(id, body);
@@ -285,7 +285,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Document uploaded successfully</returns>
 
-        System.Threading.Tasks.Task<bool> DocumentsAsync(System.Guid applicationId, UploadDocumentRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> DocumentsAsync(System.Guid applicationId, UploadDocumentRequest body);
 
         /// <summary>
         /// Download document
@@ -299,7 +299,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Document file stream</returns>
 
-        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.FileResult> DownloadAsync(System.Guid documentId);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DownloadAsync(System.Guid documentId);
 
     }
 
@@ -322,7 +322,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="applicationId">Application ID</param>
         /// <returns>Document uploaded successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents", Name = "uploadDocument")]
-        public System.Threading.Tasks.Task<bool> Documents(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Documents(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body)
         {
 
             return _implementation.DocumentsAsync(applicationId, body);
@@ -337,7 +337,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="documentId">Document ID</param>
         /// <returns>Document file stream</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/documents/{documentId}/download", Name = "downloadDocument")]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.FileResult> Download(System.Guid documentId)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Download(System.Guid documentId)
         {
 
             return _implementation.DownloadAsync(documentId);
@@ -361,7 +361,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>List of permit types</returns>
 
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<PermitTypeResponse>> PermittypesGetAsync(bool includeInactive);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeResponse>>> PermittypesGetAsync(bool includeInactive);
 
         /// <summary>
         /// Create permit type
@@ -373,7 +373,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Permit type created successfully</returns>
 
-        System.Threading.Tasks.Task<System.Guid> PermittypesPostAsync(CreatePermitTypeRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> PermittypesPostAsync(CreatePermitTypeRequest body);
 
         /// <summary>
         /// Get permit type by ID
@@ -387,7 +387,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Permit type details</returns>
 
-        System.Threading.Tasks.Task<PermitTypeResponse> PermittypesGetAsync(System.Guid id);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<PermitTypeResponse>> PermittypesGetAsync(System.Guid id);
 
         /// <summary>
         /// Update permit type
@@ -402,7 +402,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Permit type updated successfully</returns>
 
-        System.Threading.Tasks.Task<bool> PermittypesPutAsync(System.Guid id, UpdatePermitTypeRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesPutAsync(System.Guid id, UpdatePermitTypeRequest body);
 
         /// <summary>
         /// Deactivate permit type
@@ -416,7 +416,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>Permit type deactivated successfully</returns>
 
-        System.Threading.Tasks.Task<bool> PermittypesDeleteAsync(System.Guid id);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesDeleteAsync(System.Guid id);
 
     }
 
@@ -439,7 +439,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="includeInactive">Include inactive permit types in results</param>
         /// <returns>List of permit types</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permittypes", Name = "getPermitTypes")]
-        public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<PermitTypeResponse>> PermittypesGet([Microsoft.AspNetCore.Mvc.FromQuery] bool? includeInactive = null)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeResponse>>> PermittypesGet([Microsoft.AspNetCore.Mvc.FromQuery] bool? includeInactive = null)
         {
 
             return _implementation.PermittypesGetAsync(includeInactive ?? false);
@@ -453,7 +453,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Permit type created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/permittypes", Name = "createPermitType")]
-        public System.Threading.Tasks.Task<System.Guid> PermittypesPost([Microsoft.AspNetCore.Mvc.FromBody] CreatePermitTypeRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> PermittypesPost([Microsoft.AspNetCore.Mvc.FromBody] CreatePermitTypeRequest body)
         {
 
             return _implementation.PermittypesPostAsync(body);
@@ -468,7 +468,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Permit type ID</param>
         /// <returns>Permit type details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "getPermitTypeById")]
-        public System.Threading.Tasks.Task<PermitTypeResponse> PermittypesGet(System.Guid id)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<PermitTypeResponse>> PermittypesGet(System.Guid id)
         {
 
             return _implementation.PermittypesGetAsync(id);
@@ -483,7 +483,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Permit type ID</param>
         /// <returns>Permit type updated successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "updatePermitType")]
-        public System.Threading.Tasks.Task<bool> PermittypesPut(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdatePermitTypeRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesPut(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdatePermitTypeRequest body)
         {
 
             return _implementation.PermittypesPutAsync(id, body);
@@ -498,7 +498,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Permit type ID</param>
         /// <returns>Permit type deactivated successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "deactivatePermitType")]
-        public System.Threading.Tasks.Task<bool> PermittypesDelete(System.Guid id)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesDelete(System.Guid id)
         {
 
             return _implementation.PermittypesDeleteAsync(id);
@@ -522,7 +522,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>List of users</returns>
 
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<UserResponse>> UsersGetAsync(string? role = null);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<UserResponse>>> UsersGetAsync(string? role = null);
 
         /// <summary>
         /// Create user account
@@ -534,7 +534,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>User created successfully</returns>
 
-        System.Threading.Tasks.Task<System.Guid> UsersPostAsync(CreateUserRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> UsersPostAsync(CreateUserRequest body);
 
         /// <summary>
         /// Get user by ID
@@ -548,7 +548,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>User details</returns>
 
-        System.Threading.Tasks.Task<UserResponse> UsersGetAsync(System.Guid id);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserResponse>> UsersGetAsync(System.Guid id);
 
         /// <summary>
         /// Update user role
@@ -563,7 +563,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>User role updated successfully</returns>
 
-        System.Threading.Tasks.Task<bool> RoleAsync(System.Guid id, UpdateUserRoleRequest body);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> RoleAsync(System.Guid id, UpdateUserRoleRequest body);
 
     }
 
@@ -586,7 +586,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="role">Filter by user role</param>
         /// <returns>List of users</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/users", Name = "getUsers")]
-        public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<UserResponse>> UsersGet([Microsoft.AspNetCore.Mvc.FromQuery] string? role = null)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<UserResponse>>> UsersGet([Microsoft.AspNetCore.Mvc.FromQuery] string? role = null)
         {
 
             return _implementation.UsersGetAsync(role);
@@ -600,7 +600,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>User created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/users", Name = "createUser")]
-        public System.Threading.Tasks.Task<System.Guid> UsersPost([Microsoft.AspNetCore.Mvc.FromBody] CreateUserRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> UsersPost([Microsoft.AspNetCore.Mvc.FromBody] CreateUserRequest body)
         {
 
             return _implementation.UsersPostAsync(body);
@@ -615,7 +615,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">User ID</param>
         /// <returns>User details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/users/{id}", Name = "getUserById")]
-        public System.Threading.Tasks.Task<UserResponse> UsersGet(System.Guid id)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserResponse>> UsersGet(System.Guid id)
         {
 
             return _implementation.UsersGetAsync(id);
@@ -630,7 +630,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">User ID</param>
         /// <returns>User role updated successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/users/{id}/role", Name = "updateUserRole")]
-        public System.Threading.Tasks.Task<bool> Role(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdateUserRoleRequest body)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Role(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdateUserRoleRequest body)
         {
 
             return _implementation.RoleAsync(id, body);
@@ -662,7 +662,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>List of audit logs</returns>
 
-        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AuditLogResponse>> AuditlogsAsync(System.Guid? userId = null, string? actionType = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, System.Guid? recordId = null);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> AuditlogsAsync(System.Guid? userId = null, string? actionType = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null, System.Guid? recordId = null);
 
         /// <summary>
         /// Export audit logs to CSV
@@ -682,7 +682,7 @@ namespace ATLAS.API.Controllers.Generated
 
         /// <returns>CSV file</returns>
 
-        System.Threading.Tasks.Task<string> ExportAsync(System.Guid? userId = null, string? actionType = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null);
+        System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> ExportAsync(System.Guid? userId = null, string? actionType = null, System.DateTimeOffset? dateFrom = null, System.DateTimeOffset? dateTo = null);
 
     }
 
@@ -709,7 +709,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="recordId">Filter by record ID</param>
         /// <returns>List of audit logs</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs", Name = "getAuditLogs")]
-        public System.Threading.Tasks.Task<System.Collections.Generic.ICollection<AuditLogResponse>> Auditlogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? actionType = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? recordId = null)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> Auditlogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? actionType = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? recordId = null)
         {
 
             return _implementation.AuditlogsAsync(userId, actionType, dateFrom, dateTo, recordId);
@@ -727,7 +727,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="dateTo">Filter by date (to)</param>
         /// <returns>CSV file</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs/export", Name = "exportAuditLogs")]
-        public System.Threading.Tasks.Task<string> Export([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? actionType = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null)
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> Export([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? actionType = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null)
         {
 
             return _implementation.ExportAsync(userId, actionType, dateFrom, dateTo);
