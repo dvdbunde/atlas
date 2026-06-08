@@ -89,7 +89,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ApplicationSummaryDto'
+                  $ref: '#/components/schemas/ApplicationSummaryResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -153,7 +153,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApplicationDetailDto'
+                $ref: '#/components/schemas/ApplicationDetailResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -403,7 +403,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PermitTypeDto'
+                  $ref: '#/components/schemas/PermitTypeResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -459,7 +459,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PermitTypeDto'
+                $ref: '#/components/schemas/PermitTypeResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -553,7 +553,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/UserDto'
+                  $ref: '#/components/schemas/UserResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -608,7 +608,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserDto'
+                $ref: '#/components/schemas/UserResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -698,7 +698,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AuditLogDto'
+                  $ref: '#/components/schemas/AuditLogResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -752,7 +752,7 @@ paths:
 
 components:
   schemas:
-    ApplicationSummaryDto:
+    ApplicationSummaryResponse:
       type: object
       properties:
         id:
@@ -786,10 +786,10 @@ components:
           nullable: true
           example: 'Business Permit'
       required: [id, applicationNumber, status, citizenId, permitTypeId]
-    
-    ApplicationDetailDto:
+      
+    ApplicationDetailResponse:
       allOf:
-        - $ref: '#/components/schemas/ApplicationSummaryDto'
+        - $ref: '#/components/schemas/ApplicationSummaryResponse'
         - type: object
           properties:
             reviewedDate:
@@ -805,18 +805,18 @@ components:
             documents:
               type: array
               items:
-                $ref: '#/components/schemas/DocumentDto'
+                $ref: '#/components/schemas/DocumentResponse'
             reviews:
               type: array
               items:
-                $ref: '#/components/schemas/ReviewDto'
+                $ref: '#/components/schemas/ReviewResponse'
             officerName:
               type: string
               nullable: true
               example: 'Jane Smith'
           required: [citizenNotes, officerNotes, documents, reviews]
     
-    DocumentDto:
+    DocumentResponse:
       type: object
       properties:
         id:
@@ -841,7 +841,7 @@ components:
           format: date-time
       required: [id, fileName, contentType, fileSize, blobUrl, uploadedDate]
     
-    ReviewDto:
+    ReviewResponse:
       type: object
       properties:
         id:
@@ -870,7 +870,7 @@ components:
           default: false
       required: [id, officerId, decision, reviewedDate, isVisibleToCitizen]
     
-    PermitTypeDto:
+    PermitTypeResponse:
       type: object
       properties:
         id:
@@ -891,7 +891,7 @@ components:
           default: true
       required: [id, name, description, fee, isActive]
     
-    UserDto:
+    UserResponse:
       type: object
       properties:
         id:
@@ -919,7 +919,7 @@ components:
           default: true
       required: [id, email, firstName, lastName, role, isActive]
     
-    AuditLogDto:
+    AuditLogResponse:
       type: object
       properties:
         id:

@@ -26,12 +26,10 @@
     <ProjectReference Include="..\ATLAS.Application\ATLAS.Application.csproj" />
     <ProjectReference Include="..\ATLAS.Infrastructure\ATLAS.Infrastructure.csproj" />
   </ItemGroup>
-  
-  <!--
+    
   <Target Name="GenerateOpenApiControllers" BeforeTargets="BeforeBuild">
-    <Exec Command="dotnet nswag run nswag-controllers.json" />
-  </Target>
-  -->
+    <Exec Command="nswag run nswag.json" />
+  </Target> 
 
 </Project>
 
