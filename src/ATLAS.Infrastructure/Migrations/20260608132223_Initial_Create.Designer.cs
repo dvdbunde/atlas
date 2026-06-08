@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ATLAS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260604170209_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260608132223_Initial_Create")]
+    partial class Initial_Create
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -298,7 +298,6 @@ namespace ATLAS.Infrastructure.Migrations
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("ReasonCode")
-                                .IsRequired()
                                 .HasMaxLength(50)
                                 .HasColumnType("nvarchar(50)");
 
@@ -319,7 +318,7 @@ namespace ATLAS.Infrastructure.Migrations
                             b1.HasOne("ATLAS.Domain.Entities.User", null)
                                 .WithMany()
                                 .HasForeignKey("OfficerId")
-                                .OnDelete(DeleteBehavior.Cascade)
+                                .OnDelete(DeleteBehavior.Restrict)
                                 .IsRequired();
                         });
 

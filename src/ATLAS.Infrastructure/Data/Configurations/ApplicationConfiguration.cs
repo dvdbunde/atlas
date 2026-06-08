@@ -36,7 +36,8 @@ namespace ATLAS.Infrastructure.Data.Configurations
                 review.Property(r => r.Decision).IsRequired();
                 review.Property(r => r.ReasonCode).HasMaxLength(50).IsRequired(false);
                 review.Property(r => r.Comments).HasMaxLength(2000);
-                review.HasOne<Entities.User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired();
+                review.HasOne<Entities.User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

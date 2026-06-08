@@ -295,7 +295,6 @@ namespace ATLAS.Infrastructure.Migrations
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<string>("ReasonCode")
-                                .IsRequired()
                                 .HasMaxLength(50)
                                 .HasColumnType("nvarchar(50)");
 
@@ -316,7 +315,7 @@ namespace ATLAS.Infrastructure.Migrations
                             b1.HasOne("ATLAS.Domain.Entities.User", null)
                                 .WithMany()
                                 .HasForeignKey("OfficerId")
-                                .OnDelete(DeleteBehavior.Cascade)
+                                .OnDelete(DeleteBehavior.Restrict)
                                 .IsRequired();
                         });
 
