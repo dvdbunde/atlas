@@ -14,7 +14,7 @@ namespace ATLAS.API.Infrastructure
         public void Apply(ControllerModel controller)
         {
             // Skip non-generated controllers (they have their own attributes)
-            if (!controller.ControllerType.FullName?.Contains("Generated") == true)
+            if (controller.ControllerType.FullName?.Contains("Generated") != true)
             {
                 return;
             }

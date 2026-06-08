@@ -12,17 +12,18 @@ using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers
+namespace ATLAS.API.Controllers.Generated
 {
     public partial class DocumentsController : ControllerBase, IDocumentsController
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]       
         public DocumentsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _implementation = this;  // ← ADD THIS LINE
         }
-
         public async Task<bool> DocumentsAsync(
             Guid applicationId,
             UploadDocumentRequest body)
@@ -44,7 +45,9 @@ namespace ATLAS.API.Controllers
             Guid documentId)
         {
             // TODO: Implement document download
-            throw new System.NotImplementedException("Document download not yet implemented");
+            // Return 501 Not Implemented
+            HttpContext.Response.StatusCode = 501;
+            return File(Array.Empty<byte>(), "application/octet-stream");
         }
     }
 }

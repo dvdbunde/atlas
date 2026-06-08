@@ -13,15 +13,17 @@ using ATLAS.Application.Queries;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers
+namespace ATLAS.API.Controllers.Generated
 {
     public partial class AuditLogsController : ControllerBase, IAuditLogsController
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public AuditLogsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _implementation = this;
         }
 
         public async Task<ICollection<AuditLogResponse>> AuditlogsAsync(
@@ -55,7 +57,9 @@ namespace ATLAS.API.Controllers
             DateTimeOffset? dateTo = null)
         {
             // TODO: Implement CSV export
-            throw new System.NotImplementedException("CSV export not yet implemented");
+            // Return 501 Not Implemented
+            HttpContext.Response.StatusCode = 501;
+            return "CSV export not yet implemented";
         }
     }
 }

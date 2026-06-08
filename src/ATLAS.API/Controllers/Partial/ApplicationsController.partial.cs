@@ -14,15 +14,18 @@ using ATLAS.Application.Queries;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers
+namespace ATLAS.API.Controllers.Generated
 {
+    [ActivatorUtilitiesConstructor]
     public partial class ApplicationsController : ControllerBase, IApplicationsController
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public ApplicationsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _implementation = this;  // ← ADD THIS LINE
         }
 
         public async Task<ICollection<ApplicationSummaryResponse>> ApplicationsGetAsync(

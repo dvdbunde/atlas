@@ -1,3 +1,4 @@
+using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Infrastructure;
 using ATLAS.Infrastructure;
 using FluentValidation;
@@ -16,16 +17,19 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddValidatorsFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
 
 // 🚨 NEW: Authorization conventions for generated controllers
+/*
 builder.Services.AddControllers(options =>
 {
     options.Conventions.Add(new GeneratedControllerAuthorizationConvention());
-});
+});*/
+
+builder.Services.AddControllers();
 
 // 🚨 NEW: Authentication/Authorization
 // TODO: Configure JWT Bearer authentication for Entra ID
 // builder.Services.AddAuthentication().AddJwtBearer(); // Requires Microsoft.AspNetCore.Authentication.JwtBearer package
-builder.Services.AddAuthentication(); // Placeholder - configure when Entra ID is set up
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthentication(); // Placeholder - configure when Entra ID is set up
+//builder.Services.AddAuthorization();
 
 // 🚨 NEW: CORS for Blazor frontend
 builder.Services.AddCors(options =>
@@ -46,11 +50,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowBlazor"); // 🚨 NEW
-app.UseAuthentication(); // 🚨 NEW
-app.UseAuthorization(); // 🚨 NEW
+//app.UseAuthentication(); // 🚨 NEW
+//app.UseAuthorization(); // 🚨 NEW
 app.UseMiddleware<ATLAS.API.Middleware.GlobalExceptionMiddleware>();
 
-// 🚨 REMOVED: Weather forecast template code
+app.MapControllers();
 
 app.Run();
 

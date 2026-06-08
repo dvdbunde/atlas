@@ -14,15 +14,17 @@ using ATLAS.Application.Queries;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers
+namespace ATLAS.API.Controllers.Generated
 {
     public partial class UsersController : ControllerBase, IUsersController
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public UsersController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _implementation = this;
         }
 
         public async Task<ICollection<UserResponse>> UsersGetAsync(string? role = null)

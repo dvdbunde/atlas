@@ -13,15 +13,17 @@ using ATLAS.Application.Commands;
 using ATLAS.Application.Queries;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers
+namespace ATLAS.API.Controllers.Generated
 {
     public partial class PermitTypesController : ControllerBase, IPermitTypesController
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public PermitTypesController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _implementation = this;
         }
 
         public async Task<ICollection<PermitTypeResponse>> PermittypesGetAsync(bool includeInactive)
