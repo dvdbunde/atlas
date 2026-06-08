@@ -95,12 +95,14 @@ This repository contains both the ATLAS application code and comprehensive docum
 ATLAS follows **contract-first development** for API changes. The OpenAPI specification (`openapi/atlas-api.yaml`) is the **single source of truth**.
 
 **Key principles:**
+
 - All API changes MUST start with `openapi/atlas-api.yaml`
 - Generated files (`GeneratedControllers.g.cs`, `AtlasContracts.g.cs`) are NEVER edited manually
 - Run `dotnet build` to regenerate artifacts before committing
 - Use `scripts/validate-contract.ps1` to validate contract locally
 
 **Documentation:**
+
 - [Contract Governance](docs/engineering/contract-governance.md) - Complete guide
 - [PR Template](.github/PULL_REQUEST_TEMPLATE.md) - Contract checklist
 - [CI Workflow](.github/workflows/contract-validation.yml) - Automated validation

@@ -30,7 +30,7 @@ flowchart TD
 ### 2. Artifact Ownership
 
 | Artifact | Owner | Regenerated? |
-|----------|--------|---------------|
+| ---------- | -------- | --------------- |
 | `openapi/atlas-api.yaml` | **Developers** | Never |
 | `GeneratedControllers.g.cs` | NSwag | **Yes** (on build) |
 | `AtlasContracts.g.cs` | NSwag | **Yes** (on build) |
@@ -40,12 +40,14 @@ flowchart TD
 ### 3. Rules
 
 ✅ **DO:**
+
 - Update `openapi/atlas-api.yaml` FIRST
 - Run `dotnet build` to regenerate artifacts
 - Commit YAML + generated files TOGETHER
 - Use `scripts/validate-contract.ps1` before pushing
 
 ❌ **DON'T:**
+
 - Edit `GeneratedControllers.g.cs` manually
 - Edit `AtlasContracts.g.cs` manually
 - Commit generated files without YAML changes
@@ -91,6 +93,7 @@ git commit -m "feat: add my new endpoint"
 ### Regeneration Process
 
 **Automatic** (on build):
+
 ```xml
 <!-- src/ATLAS.API/ATLAS.Api.csproj -->
 <Target Name="GenerateOpenApiControllers" BeforeTargets="BeforeBuild">
@@ -99,6 +102,7 @@ git commit -m "feat: add my new endpoint"
 ```
 
 **Manual** (if needed):
+
 ```bash
 dotnet build src/ATLAS.API/ATLAS.Api.csproj
 ```
@@ -123,6 +127,7 @@ dotnet build src/ATLAS.API/ATLAS.Api.csproj
 ### PR Template
 
 The PR template (`.github/PULL_REQUEST_TEMPLATE.md`) includes:
+
 - Contract changes checklist
 - Regeneration checklist
 - Manual implementation checklist
@@ -141,7 +146,7 @@ The PR template (`.github/PULL_REQUEST_TEMPLATE.md`) includes:
 **Validation Steps:**
 
 | Step | Tool | Purpose |
-|------|------|----------|
+| ------ | ------ | ---------- |
 | **YAML Validation** | `Microsoft.OpenApi.Tools` | Ensure spec is valid YAML/OpenAPI 3.1 |
 | **Regeneration Check** | `git diff` | Ensure generated files match spec |
 | **Breaking Change Detection** | `Microsoft.OpenApi.Tools` (`openapi diff`) | Fail PR if breaking change detected |
@@ -157,6 +162,7 @@ The PR template (`.github/PULL_REQUEST_TEMPLATE.md`) includes:
 ```
 
 **Checks:**
+
 1. Regenerates artifacts
 2. Checks for outdated generated files
 3. Validates OpenAPI spec (if tool installed)
@@ -180,7 +186,7 @@ info:
 ### Version Increment Rules
 
 | Change Type | Version Bump | Example |
-|-------------|---------------|---------|
+| ------------- | --------------- | --------- |
 | **Breaking change** | **MAJOR** (x.0.0) | Remove endpoint, change response type |
 | **New feature** | **MINOR** (1.x.0) | Add new endpoint, new optional parameter |
 | **Bug fix** | **PATCH** (1.0.x) | Fix typo in description |
@@ -190,11 +196,13 @@ info:
 **Tool:** `Microsoft.OpenApi.Tools` (`openapi diff`)
 
 **Install:**
+
 ```bash
 dotnet tool install --global Microsoft.OpenApi.Tools
 ```
 
 **Usage:**
+
 ```bash
 # Compare against main branch
 openapi diff openapi/atlas-api.yaml \
@@ -203,6 +211,7 @@ openapi diff openapi/atlas-api.yaml \
 ```
 
 **Breaking changes include:**
+
 - Removing an endpoint
 - Changing an endpoint's path
 - Changing an endpoint's HTTP method
@@ -210,6 +219,7 @@ openapi diff openapi/atlas-api.yaml \
 - Changing a request/response type
 
 **Non-breaking changes:**
+
 - Adding a new endpoint
 - Adding a new optional parameter
 - Adding a new response field
@@ -219,23 +229,23 @@ openapi diff openapi/atlas-api.yaml \
 
 ## Forbidden Practices
 
-❌ **Edit `GeneratedControllers.g.cs` manually**  
-❌ **Edit `AtlasContracts.g.cs` manually**  
-❌ **Commit generated files without YAML changes**  
-❌ **Skip `dotnet build` before committing**  
-❌ **Make breaking changes without major version bump**  
-❌ **Ignore CI validation failures**  
+❌ **Edit `GeneratedControllers.g.cs` manually**
+❌ **Edit `AtlasContracts.g.cs` manually**
+❌ **Commit generated files without YAML changes**
+❌ **Skip `dotnet build` before committing**
+❌ **Make breaking changes without major version bump**
+❌ **Ignore CI validation failures**
 
 ---
 
 ## Recommended Practices
 
-✅ **Always update YAML first**  
-✅ **Always run `dotnet build` before committing**  
-✅ **Always commit YAML + generated files together**  
-✅ **Always check CI validation passes**  
-✅ **Always document breaking changes in PR description**  
-✅ **Always use `openapi diff` to detect breaking changes**  
+✅ **Always update YAML first**
+✅ **Always run `dotnet build` before committing**
+✅ **Always commit YAML + generated files together**
+✅ **Always check CI validation passes**
+✅ **Always document breaking changes in PR description**
+✅ **Always use `openapi diff` to detect breaking changes**
 
 ---
 
@@ -246,6 +256,7 @@ openapi diff openapi/atlas-api.yaml \
 **Error:** `ERROR: Generated files are outdated!`
 
 **Fix:**
+
 ```bash
 dotnet build src/ATLAS.API/ATLAS.Api.csproj
 git add src/ATLAS.API/Controllers/Generated/ \
@@ -258,6 +269,7 @@ git commit -m "chore: regenerate API artifacts"
 **Error:** `NSwag.MSBuild.ExitCodeException`
 
 **Fix:**
+
 1. Check `openapi/atlas-api.yaml` syntax
 2. Validate YAML: `openapi validate openapi/atlas-api.yaml`
 3. Check `nswag.json` configuration
@@ -267,6 +279,7 @@ git commit -m "chore: regenerate API artifacts"
 **Error:** `CS0535: 'Controller' does not implement interface member`
 
 **Fix:**
+
 1. Run `dotnet build` to regenerate interface
 2. Update partial controller to implement new/changed methods
 3. Check method signatures match exactly
@@ -276,6 +289,7 @@ git commit -m "chore: regenerate API artifacts"
 **Error:** `ERROR: Breaking changes detected!`
 
 **Options:**
+
 1. **Revert breaking change** (recommended)
 2. **Bump major version** (if breaking change is intentional)
 3. **Document breaking change** in PR description
@@ -295,5 +309,5 @@ git commit -m "chore: regenerate API artifacts"
 
 ---
 
-**Last Updated:** 2026-06-08  
+**Last Updated:** 2026-06-08
 **Maintained By:** ATLAS Engineering Team
