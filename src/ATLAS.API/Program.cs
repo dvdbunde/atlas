@@ -1,11 +1,10 @@
+using ATLAS.API.Infrastructure;
 using ATLAS.Infrastructure;
 using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMediatR(cfg => 
 {
@@ -16,43 +15,43 @@ builder.Services.AddMediatR(cfg =>
 // Register FluentValidation validators from Application layer
 builder.Services.AddValidatorsFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
 
+// 🚨 NEW: Authorization conventions for generated controllers
+builder.Services.AddControllers(options =>
+{
+    options.Conventions.Add(new GeneratedControllerAuthorizationConvention());
+});
+
+// 🚨 NEW: Authentication/Authorization
+// TODO: Configure JWT Bearer authentication for Entra ID
+// builder.Services.AddAuthentication().AddJwtBearer(); // Requires Microsoft.AspNetCore.Authentication.JwtBearer package
+builder.Services.AddAuthentication(); // Placeholder - configure when Entra ID is set up
+builder.Services.AddAuthorization();
+
+// 🚨 NEW: CORS for Blazor frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowBlazor",
+        policy => policy.WithOrigins("https://localhost:5001")
+                      .AllowAnyMethod()
+                      .AllowAnyHeader());
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi(); // Or UseSwagger/UseSwaggerUI
 }
 
-app.UseMiddleware<ATLAS.API.Middleware.GlobalExceptionMiddleware>();
 app.UseHttpsRedirection();
+app.UseCors("AllowBlazor"); // 🚨 NEW
+app.UseAuthentication(); // 🚨 NEW
+app.UseAuthorization(); // 🚨 NEW
+app.UseMiddleware<ATLAS.API.Middleware.GlobalExceptionMiddleware>();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+// 🚨 REMOVED: Weather forecast template code
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-
-// Make Program class accessible for integration tests
 public partial class Program { }
-
