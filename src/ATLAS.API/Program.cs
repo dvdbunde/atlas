@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using ATLAS.API.Controllers.Generated;
+using ATLAS.API.Controllers;
 using ATLAS.API.Infrastructure;
 using ATLAS.Infrastructure;
 using FluentValidation;
@@ -40,15 +40,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddControllers();
-
-
-/*
-builder.Services.AddScoped<IApplicationsController, ApplicationsController>();
-builder.Services.AddScoped<IDocumentsController, DocumentsController>();
-builder.Services.AddScoped<IPermitTypesController, PermitTypesController>();
-builder.Services.AddScoped<IUsersController, UsersController>();
-builder.Services.AddScoped<IAuditLogsController, AuditLogsController>();
-*/
 
 // 🚨 NEW: Authentication/Authorization
 // TODO: Configure JWT Bearer authentication for Entra ID

@@ -13,20 +13,21 @@ using ATLAS.Application.Queries;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers.Generated
+namespace ATLAS.API.Controllers
 {
-    public partial class AuditLogsController : ControllerBase, IAuditLogsController
+    [ApiController]    
+    [Produces("application/json")]
+    public sealed class AuditLogsController : AuditLogsControllerBase
     {
         private readonly IMediator _mediator;
 
         [ActivatorUtilitiesConstructor]
         public AuditLogsController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-            _implementation = this;
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        public async Task<ActionResult<ICollection<AuditLogResponse>>> AuditlogsAsync(
+        public override async Task<ActionResult<ICollection<AuditLogResponse>>> Auditlogs(
             Guid? userId = null,
             string? actionType = null,
             DateTimeOffset? dateFrom = null,
@@ -50,7 +51,7 @@ namespace ATLAS.API.Controllers.Generated
             return Ok(response);
         }
 
-        public async Task<ActionResult<string>> ExportAsync(
+        public override async Task<ActionResult<string>> Export(
             Guid? userId = null,
             string? actionType = null,
             DateTimeOffset? dateFrom = null,

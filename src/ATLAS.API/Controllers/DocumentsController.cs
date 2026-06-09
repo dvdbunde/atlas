@@ -12,9 +12,11 @@ using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers.Generated
+namespace ATLAS.API.Controllers
 {
-    public partial class DocumentsController : ControllerBase, IDocumentsController
+    [ApiController]    
+    [Produces("application/json")]
+    public sealed class DocumentsController : DocumentsControllerBase
     {
         private readonly IMediator _mediator;
 
@@ -22,10 +24,9 @@ namespace ATLAS.API.Controllers.Generated
         public DocumentsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-            _implementation = this;
         }
 
-        public async Task<ActionResult<bool>> DocumentsAsync(
+        public override async Task<ActionResult<bool>> Documents(
             Guid applicationId,
             UploadDocumentRequest body)
         {
@@ -41,9 +42,9 @@ namespace ATLAS.API.Controllers.Generated
 
             var result = await _mediator.Send(command, default);
             return Ok(result);
-        }
+        }     
 
-        public async Task<IActionResult> DownloadAsync(Guid documentId)
+        public override async Task<IActionResult> Download(Guid documentId)
         {
             // TODO: Implement document download
             // Return 501 Not Implemented

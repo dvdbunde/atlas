@@ -11,7 +11,7 @@
   "codeGenerators": {
 
     "openApiToCSharpController": {
-    "controllerStyle": "Partial",
+    "controllerStyle": "Abstract",    
     "className": "{controller}",
     "namespace": "ATLAS.API.Controllers.Generated",
     "output": "Controllers/Generated/GeneratedControllers.g.cs",

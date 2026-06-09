@@ -14,21 +14,21 @@ using ATLAS.Application.Queries;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ATLAS.API.Controllers.Generated
+namespace ATLAS.API.Controllers
 {
-    [ActivatorUtilitiesConstructor]
-    public partial class ApplicationsController : ControllerBase, IApplicationsController
+    [ApiController]    
+    [Produces("application/json")]
+    public sealed class ApplicationsController : ApplicationsControllerBase
     {
         private readonly IMediator _mediator;
 
         [ActivatorUtilitiesConstructor]
         public ApplicationsController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-            _implementation = this;  // ← ADD THIS LINE
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));         
         }
 
-        public async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> ApplicationsGetAsync(
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> ApplicationsGet(
             Guid? citizenId = null,
             Guid? officerId = null,
             string? status = null,
@@ -57,7 +57,8 @@ namespace ATLAS.API.Controllers.Generated
             return response;
         }
 
-        public async Task<ActionResult<Guid>> ApplicationsPostAsync(SubmitApplicationRequest body)
+        public override async Task<ActionResult<Guid>> ApplicationsPost(
+            SubmitApplicationRequest body)
         {
             var command = new SubmitApplicationCommand
             {
@@ -69,14 +70,16 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGetAsync(Guid id)
+        public override async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGet(
+            Guid id)
         {
             var query = new GetApplicationByIdQuery { ApplicationId = id };
             var result = await _mediator.Send(query, default);
             return result?.ToResponse();
         }
 
-        public async Task<ActionResult<bool>> ApproveAsync(Guid id, ApproveApplicationRequest body)
+        public override async Task<ActionResult<bool>> Approve(
+            Guid id, ApproveApplicationRequest body)
         {
             var command = new ApproveApplicationCommand
             {
@@ -88,7 +91,8 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<ActionResult<bool>> RejectAsync(Guid id, RejectApplicationRequest body)
+        public override async Task<ActionResult<bool>> Reject(
+            Guid id, RejectApplicationRequest body)
         {
             var command = new RejectApplicationCommand
             {
@@ -100,7 +104,8 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<ActionResult<bool>> RequestInfoAsync(Guid id, RequestInfoRequest body)
+        public override async Task<ActionResult<bool>> RequestInfo(
+            Guid id, RequestInfoRequest body)
         {
             var command = new RequestInfoCommand
             {
@@ -112,7 +117,8 @@ namespace ATLAS.API.Controllers.Generated
             return await _mediator.Send(command, default);
         }
 
-        public async Task<ActionResult<bool>> AssignAsync(Guid id, AssignToOfficerRequest body)
+        public override async Task<ActionResult<bool>> Assign(
+            Guid id, AssignToOfficerRequest body)
         {
             var command = new AssignToOfficerCommand
             {
