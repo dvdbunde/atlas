@@ -35,7 +35,7 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        [Fact (Skip = "Implementation pending")]
+        [Fact]
         public async Task CreateUser_Should_Return201Created()
         {
             // Arrange

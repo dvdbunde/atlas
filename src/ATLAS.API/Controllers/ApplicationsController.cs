@@ -67,7 +67,13 @@ namespace ATLAS.API.Controllers
                 CitizenNotes = body.CitizenNotes
             };
 
-            return await _mediator.Send(command, default);
+             var applicationId = await _mediator.Send(command, default);
+    
+            // 🆕 Return 201 Created with location header
+            return CreatedAtAction(
+                nameof(ApplicationsGet), 
+                new { id = applicationId }, 
+                applicationId);    
         }
 
         public override async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGet(
@@ -75,7 +81,13 @@ namespace ATLAS.API.Controllers
         {
             var query = new GetApplicationByIdQuery { ApplicationId = id };
             var result = await _mediator.Send(query, default);
-            return result?.ToResponse();
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return result.ToResponse();
         }
 
         public override async Task<ActionResult<bool>> Approve(
@@ -88,20 +100,35 @@ namespace ATLAS.API.Controllers
                 Comments = body.Comments
             };
 
-            return await _mediator.Send(command, default);
+            var result = await _mediator.Send(command, default);    
+    
+            if (!result)
+            {
+                return NotFound(); // ← 404 if application not found
+            }
+            
+            return Ok(true); // ← 200 OK with true            
         }
 
         public override async Task<ActionResult<bool>> Reject(
             Guid id, RejectApplicationRequest body)
         {
             var command = new RejectApplicationCommand
-            {
+            {                
                 ApplicationId = id,
+                OfficerId = body.OfficerId,
                 ReasonCode = body.ReasonCode,
                 Comments = body.Comments
             };
 
-            return await _mediator.Send(command, default);
+            var result = await _mediator.Send(command, default);
+
+            if (!result)
+            {
+                return NotFound();
+            }
+    
+            return Ok(true);            
         }
 
         public override async Task<ActionResult<bool>> RequestInfo(
@@ -114,7 +141,14 @@ namespace ATLAS.API.Controllers
                 Message = body.Message
             };
 
-            return await _mediator.Send(command, default);
+            var result = await _mediator.Send(command, default);
+    
+            if (!result)
+            {
+                return NotFound();
+            }
+            
+            return Ok(true);
         }
 
         public override async Task<ActionResult<bool>> Assign(
@@ -126,7 +160,14 @@ namespace ATLAS.API.Controllers
                 OfficerId = body.OfficerId
             };
 
-            return await _mediator.Send(command, default);
+            var result = await _mediator.Send(command, default);
+    
+            if (!result)
+            {
+                return NotFound();
+            }
+            
+            return Ok(true);
         }
     }
 }

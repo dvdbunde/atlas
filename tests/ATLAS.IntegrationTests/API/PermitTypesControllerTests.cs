@@ -35,7 +35,7 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        [Fact (Skip = "Implementation pending")]
+        [Fact]
         public async Task CreatePermitType_Should_Return201Created()
         {
             // Arrange
@@ -109,7 +109,7 @@ namespace ATLAS.IntegrationTests.API
         }
 
         [Fact]
-        public async Task DeactivatePermitType_Should_Return200OK()
+        public async Task DeactivatePermitType_Should_ReturnNoContent()
         {
             // Arrange - Use seeded permit type ID
             var permitTypeId = TestData.BuildingPermitTypeId;
@@ -118,7 +118,7 @@ namespace ATLAS.IntegrationTests.API
             var response = await _client.DeleteAsync($"/api/permittypes/{permitTypeId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
     }
 }

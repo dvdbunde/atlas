@@ -14,6 +14,9 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using ATLAS.Domain.Interfaces;
+using ATLAS.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Http;
 
 namespace ATLAS.IntegrationTests;
 
@@ -45,6 +48,10 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
                 options.UseInMemoryDatabase("ATLAS_Test_DB");
             });
 
+
+            // Call a test-specific infrastructure registration
+            services.AddInfrastructureForTesting();
+        
             // Bypass authentication for integration tests
             services.AddAuthentication(options =>
             {
@@ -62,14 +69,19 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
                     .RequireAssertion(_ => true) // Always succeed
                     .Build();
             });
+
+            // Add logging
+            services.AddLogging(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Debug);
+            });
         });
 
-        // Ensure the app uses authentication/authorization
-        builder.Configure(app =>
-        {
-            app.UseAuthentication();
-            app.UseAuthorization();
-        });
+        // 🆕 ENABLE DETAILED LOGGING
+        builder.UseSetting("Logging:LogLevel:Microsoft.AspNetCore", "Debug");
+        builder.UseSetting("Logging:LogLevel:Microsoft.AspNetCore.Routing", "Trace");
+        builder.UseSetting("Logging:Console:IncludeScopes", "true");
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -123,7 +135,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         application1.AddDocument(Guid.NewGuid(),"building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
         application1.Submit();
         application1.StartReview(officer.Id);
-        application1.Approve(officer.Id, "Approved - meets all requirements");
+        //application1.Approve(officer.Id, "Approved - meets all requirements");
         
         var application2 = new  ATLAS.Domain.Entities.Application(citizen.Id, eventPermit.Id, "Annual community event permit");
         application2.AddDocument(Guid.NewGuid(), "event_layout.pdf", "application/pdf", 3072, "https://blob.test.com/event_layout.pdf", citizen.Id);    
@@ -194,5 +206,33 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
         var result = AuthenticateResult.Success(ticket);
         return Task.FromResult(result);
+    }
+}
+
+
+// Extension method for test infrastructure
+public static class TestServiceCollectionExtensions
+{
+    public static IServiceCollection AddInfrastructureForTesting(this IServiceCollection services)
+    {       
+        // Register repositories
+        services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        
+        // Register Unit of Work
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Register MediatR from ALL layers
+        services.AddMediatR(cfg => 
+        {
+            cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); // API layer (contains Controllers)
+            cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly); // Application layer (contains handlers)
+            cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly); // Infrastructure layer (contains event handlers)
+        });
+
+        
+        return services;
     }
 }

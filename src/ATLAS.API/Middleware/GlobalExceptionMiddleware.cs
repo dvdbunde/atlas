@@ -85,7 +85,8 @@ namespace ATLAS.API.Middleware
                 
                 // In Development, show the actual exception details
                 var detail = "An unexpected error occurred. Please contact support.";
-                if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+                if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ||
+                context.RequestServices.GetRequiredService<IWebHostEnvironment>().EnvironmentName == "Testing")
                 {
                     detail = $"{exception.GetType().Name}: {exception.Message}\n{exception.StackTrace}";
                 }

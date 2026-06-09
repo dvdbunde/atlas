@@ -1,7 +1,12 @@
+using ATLAS.API.Contracts.Generated;
+using ATLAS.Domain.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ATLAS.IntegrationTests.API
 {
@@ -9,11 +14,14 @@ namespace ATLAS.IntegrationTests.API
     {
         private readonly HttpClient _client;
 
-        public ApplicationsControllerTests(CustomWebApplicationFactory<Program> factory)
+        private readonly ITestOutputHelper _output;
+
+        public ApplicationsControllerTests(CustomWebApplicationFactory<Program> factory, ITestOutputHelper output)
         {
             _client = factory.CreateClient();
+            _output = output;
         }
-
+        
         [Fact]
         public async Task GetApplications_Should_Return200OK()
         {
@@ -90,7 +98,7 @@ namespace ATLAS.IntegrationTests.API
         {
             // Arrange - Use seeded application and officer IDs
             var applicationId = TestData.Application1Id;
-            var request = new { officerId = TestData.OfficerUserId, comments = "Approved" };
+            var request = new ApproveApplicationRequest { ApplicationId = applicationId, OfficerId = TestData.OfficerUserId, Comments = "Approved" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,
@@ -107,8 +115,15 @@ namespace ATLAS.IntegrationTests.API
         public async Task RejectApplication_Should_Return200OK()
         {
             // Arrange - Use seeded application (submitted, can be rejected)
-            var applicationId = TestData.Application2Id;
-            var request = new { reasonCode = "INCOMPLETE_DOCUMENTATION", comments = "Rejected" };
+            var applicationId = TestData.Application1Id;
+            var request = new RejectApplicationRequest 
+            { 
+                ApplicationId = applicationId,
+                OfficerId = TestData.OfficerUserId,  // ← Add this
+                ReasonCode = "INCOMPLETE_DOCUMENTATION", 
+                Comments = "Rejected" 
+            };
+            
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,
@@ -116,6 +131,10 @@ namespace ATLAS.IntegrationTests.API
 
             // Act
             var response = await _client.PostAsync($"/api/applications/{applicationId}/reject", content);
+            
+             var responseContent = await response.Content.ReadAsStringAsync();
+            _output.WriteLine($"Status: {response.StatusCode}");
+            _output.WriteLine($"Content: {responseContent}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -125,15 +144,15 @@ namespace ATLAS.IntegrationTests.API
         public async Task RequestInfo_Should_Return200OK()
         {
             // Arrange - Use seeded application (submitted, can request info)
-            var applicationId = TestData.Application2Id;
-            var request = new { officerId = TestData.OfficerUserId, message = "Please provide additional information" };
+            var applicationId = TestData.Application1Id;
+            var request = new RequestInfoRequest {ApplicationId = applicationId, OfficerId = TestData.OfficerUserId, Message  = "Please provide additional information" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,
                 "application/json");
 
             // Act
-            var response = await _client.PostAsync($"/api/applications/{applicationId}/request-info", content);
+            var response = await _client.PostAsync($"/api/applications/{applicationId}/request-info", content);      
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -143,7 +162,7 @@ namespace ATLAS.IntegrationTests.API
         public async Task AssignToOfficer_Should_Return200OK()
         {
             // Arrange - Use seeded application (not submitted yet)
-            var applicationId = TestData.Application3Id;
+            var applicationId = TestData.Application2Id;
             var request = new { officerId = TestData.OfficerUserId };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
@@ -152,6 +171,10 @@ namespace ATLAS.IntegrationTests.API
 
             // Act
             var response = await _client.PostAsync($"/api/applications/{applicationId}/assign", content);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            _output.WriteLine($"Status: {response.StatusCode}");
+            _output.WriteLine($"Content: {responseContent}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);

@@ -1004,6 +1004,9 @@ components:
         applicationId:
           type: string
           format: uuid
+        officerId:
+          type: string        
+          format: uuid
         reasonCode:
           type: string
         comments:

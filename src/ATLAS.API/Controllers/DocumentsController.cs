@@ -40,8 +40,13 @@ namespace ATLAS.API.Controllers
                 UploadedById = body.UploadedById
             };
 
-            var result = await _mediator.Send(command, default);
-            return Ok(result);
+            var result = await _mediator.Send(command, default);                        
+            if (!result)
+            {
+                return NotFound(); // ← Application not found
+            }
+    
+            return NoContent(); // ← 204 for successful upload
         }     
 
         public override async Task<IActionResult> Download(Guid documentId)

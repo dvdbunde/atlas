@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ATLAS.IntegrationTests.API
 {
@@ -9,13 +10,16 @@ namespace ATLAS.IntegrationTests.API
     {
         private readonly HttpClient _client;
 
-        public DocumentsControllerTests(CustomWebApplicationFactory<Program> factory)
+        private readonly ITestOutputHelper _output;
+
+        public DocumentsControllerTests(CustomWebApplicationFactory<Program> factory, ITestOutputHelper output)
         {
             _client = factory.CreateClient();
+            _output = output;
         }
-
+        
         [Fact]
-        public async Task UploadDocument_Should_Return200OK()
+        public async Task UploadDocument_Should_ReturnNoContent()
         {
             // Arrange - Use seeded application ID
             var applicationId = TestData.Application1Id;
@@ -34,10 +38,10 @@ namespace ATLAS.IntegrationTests.API
                 "application/json");
 
             // Act
-            var response = await _client.PostAsync($"/api/applications/{applicationId}/documents", content);
+            var response = await _client.PostAsync($"/api/applications/{applicationId}/documents", content);            
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         [Fact]

@@ -72,15 +72,27 @@ namespace ATLAS.API.Controllers
                 DeactivatedByAdminId = body.DeactivatedByAdminId ?? Guid.Empty,
                 EstimatedProcessingDays = body.EstimatedProcessingDays
             };
+
             var result = await _mediator.Send(command, default);
-            return Ok(result);
+
+            if (!result)
+            {
+                return NotFound(); // ← Permit type not found
+            }
+            
+            return Ok(true);
         }
 
         public override async Task<ActionResult<bool>> PermittypesDelete(Guid id)
         {
             var command = new DeactivatePermitTypeCommand { PermitTypeId = id };
             var result = await _mediator.Send(command, default);
-            return Ok(result);
+            if (!result)
+            {
+                return NotFound(); // ← Permit type not found
+            }
+            
+            return NoContent(); // ← 204 for successful DELETE
         }       
     }
 }

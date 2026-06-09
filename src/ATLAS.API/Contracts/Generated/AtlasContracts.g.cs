@@ -356,6 +356,9 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("officerId")]
+        public System.Guid OfficerId { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("reasonCode")]
         public string ReasonCode { get; set; } = default!;
 

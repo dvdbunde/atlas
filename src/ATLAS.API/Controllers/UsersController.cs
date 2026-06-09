@@ -71,7 +71,13 @@ namespace ATLAS.API.Controllers
                 Role = body.Role
             };
             var result = await _mediator.Send(command, default);
-            return Ok(result);
+            
+            if (!result)
+            {
+                return NotFound(); // ← User not found
+            }
+    
+            return Ok(true);
         }
     }
 }
