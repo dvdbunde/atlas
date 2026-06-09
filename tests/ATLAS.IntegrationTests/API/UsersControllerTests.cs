@@ -2,14 +2,15 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http;
 using Xunit;
+using ATLAS.IntegrationTests;
 
 namespace ATLAS.IntegrationTests.API
 {
-    public class UsersControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public UsersControllerTests(WebApplicationFactory<Program> factory)
+        public UsersControllerTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }
@@ -57,11 +58,11 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        [Fact (Skip = "Implementation pending")]
+        [Fact]
         public async Task GetUserById_WithValidId_Should_Return200OK()
         {
-            // Arrange
-            var userId = Guid.NewGuid();
+            // Arrange - Use seeded citizen ID
+            var userId = TestData.CitizenUserId;
 
             // Act
             var response = await _client.GetAsync($"/api/users/{userId}");
@@ -86,8 +87,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task UpdateUserRole_Should_Return200OK()
         {
-            // Arrange
-            var userId = Guid.NewGuid();
+            // Arrange - Use seeded officer ID
+            var userId = TestData.OfficerUserId;
             var request = new { role = "Officer" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),

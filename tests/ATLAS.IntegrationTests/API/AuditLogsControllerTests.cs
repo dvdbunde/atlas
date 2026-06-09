@@ -5,11 +5,11 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.API
 {
-    public class AuditLogsControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class AuditLogsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public AuditLogsControllerTests(WebApplicationFactory<Program> factory)
+        public AuditLogsControllerTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }

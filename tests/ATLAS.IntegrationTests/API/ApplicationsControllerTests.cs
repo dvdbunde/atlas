@@ -5,11 +5,11 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.API
 {
-    public class ApplicationsControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class ApplicationsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public ApplicationsControllerTests(WebApplicationFactory<Program> factory)
+        public ApplicationsControllerTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }
@@ -27,8 +27,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task GetApplications_WithCitizenId_Should_Return200OK()
         {
-            // Arrange
-            var citizenId = Guid.NewGuid();
+            // Arrange - Use seeded citizen ID
+            var citizenId = TestData.CitizenUserId;
 
             // Act
             var response = await _client.GetAsync($"/api/applications?citizenId={citizenId}");
@@ -37,14 +37,14 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        [Fact (Skip = "Implementation pending")]
+        [Fact]
         public async Task SubmitApplication_Should_Return201Created()
         {
-            // Arrange
+            // Arrange - Use seeded data
             var request = new
             {
-                citizenId = Guid.NewGuid(),
-                permitTypeId = Guid.NewGuid(),
+                citizenId = TestData.CitizenUserId,
+                permitTypeId = TestData.BuildingPermitTypeId,
                 citizenNotes = "Test application"
             };
             var content = new StringContent(
@@ -59,11 +59,11 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        [Fact (Skip = "Implementation pending")]
+        [Fact]
         public async Task GetApplicationById_WithValidId_Should_Return200OK()
         {
-            // Arrange
-            var applicationId = Guid.NewGuid();
+            // Arrange - Use seeded application ID
+            var applicationId = TestData.Application1Id;
 
             // Act
             var response = await _client.GetAsync($"/api/applications/{applicationId}");
@@ -72,10 +72,10 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
-        [Fact (Skip = "Implementation pending")]
+        [Fact]
         public async Task GetApplicationById_WithInvalidId_Should_Return404NotFound()
         {
-            // Arrange
+            // Arrange - Use non-existent ID
             var applicationId = Guid.NewGuid();
 
             // Act
@@ -88,9 +88,9 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task ApproveApplication_Should_Return200OK()
         {
-            // Arrange
-            var applicationId = Guid.NewGuid();
-            var request = new { officerId = Guid.NewGuid(), comments = "Approved" };
+            // Arrange - Use seeded application and officer IDs
+            var applicationId = TestData.Application1Id;
+            var request = new { officerId = TestData.OfficerUserId, comments = "Approved" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,
@@ -106,8 +106,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task RejectApplication_Should_Return200OK()
         {
-            // Arrange
-            var applicationId = Guid.NewGuid();
+            // Arrange - Use seeded application (submitted, can be rejected)
+            var applicationId = TestData.Application2Id;
             var request = new { reasonCode = "INCOMPLETE_DOCUMENTATION", comments = "Rejected" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
@@ -124,9 +124,9 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task RequestInfo_Should_Return200OK()
         {
-            // Arrange
-            var applicationId = Guid.NewGuid();
-            var request = new { officerId = Guid.NewGuid(), message = "Please provide additional information" };
+            // Arrange - Use seeded application (submitted, can request info)
+            var applicationId = TestData.Application2Id;
+            var request = new { officerId = TestData.OfficerUserId, message = "Please provide additional information" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,
@@ -142,9 +142,9 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task AssignToOfficer_Should_Return200OK()
         {
-            // Arrange
-            var applicationId = Guid.NewGuid();
-            var request = new { officerId = Guid.NewGuid() };
+            // Arrange - Use seeded application (not submitted yet)
+            var applicationId = TestData.Application3Id;
+            var request = new { officerId = TestData.OfficerUserId };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,

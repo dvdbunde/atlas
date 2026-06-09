@@ -5,11 +5,11 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.API
 {
-    public class DocumentsControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public DocumentsControllerTests(WebApplicationFactory<Program> factory)
+        public DocumentsControllerTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }
@@ -17,8 +17,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task UploadDocument_Should_Return200OK()
         {
-            // Arrange
-            var applicationId = Guid.NewGuid();
+            // Arrange - Use seeded application ID
+            var applicationId = TestData.Application1Id;
             var request = new
             {
                 applicationId = applicationId.ToString(),
@@ -26,7 +26,7 @@ namespace ATLAS.IntegrationTests.API
                 contentType = "application/pdf",
                 fileSize = 1024,
                 blobUrl = "https://example.com/test.pdf",
-                uploadedById = Guid.NewGuid()
+                uploadedById = TestData.CitizenUserId
             };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
@@ -43,8 +43,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task DownloadDocument_Should_Return501NotImplemented()
         {
-            // Arrange
-            var documentId = Guid.NewGuid();
+            // Arrange - Use seeded document ID
+            var documentId = TestData.Document1Id;
 
             // Act
             var response = await _client.GetAsync($"/api/documents/{documentId}/download");

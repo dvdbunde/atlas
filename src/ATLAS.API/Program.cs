@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Infrastructure;
 using ATLAS.Infrastructure;
@@ -7,7 +8,11 @@ using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddInfrastructure(builder.Configuration);
+// Only register SQL Server if not in test environment (tests use InMemory)
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddInfrastructure(builder.Configuration);
+}
 builder.Services.AddMediatR(cfg => 
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);    
@@ -35,6 +40,15 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddControllers();
+
+
+/*
+builder.Services.AddScoped<IApplicationsController, ApplicationsController>();
+builder.Services.AddScoped<IDocumentsController, DocumentsController>();
+builder.Services.AddScoped<IPermitTypesController, PermitTypesController>();
+builder.Services.AddScoped<IUsersController, UsersController>();
+builder.Services.AddScoped<IAuditLogsController, AuditLogsController>();
+*/
 
 // 🚨 NEW: Authentication/Authorization
 // TODO: Configure JWT Bearer authentication for Entra ID

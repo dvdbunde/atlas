@@ -2,14 +2,15 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http;
 using Xunit;
+using ATLAS.IntegrationTests;
 
 namespace ATLAS.IntegrationTests.API
 {
-    public class PermitTypesControllerTests : IClassFixture<WebApplicationFactory<Program>>
+    public class PermitTypesControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public PermitTypesControllerTests(WebApplicationFactory<Program> factory)
+        public PermitTypesControllerTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }
@@ -59,8 +60,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task GetPermitTypeById_WithValidId_Should_Return200OK()
         {
-            // Arrange
-            var permitTypeId = Guid.NewGuid();
+            // Arrange - Use seeded permit type ID
+            var permitTypeId = TestData.BuildingPermitTypeId;
 
             // Act
             var response = await _client.GetAsync($"/api/permittypes/{permitTypeId}");
@@ -85,8 +86,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task UpdatePermitType_Should_Return200OK()
         {
-            // Arrange
-            var permitTypeId = Guid.NewGuid();
+            // Arrange - Use seeded permit type ID
+            var permitTypeId = TestData.BuildingPermitTypeId;
             var request = new
             {
                 permitTypeId = permitTypeId.ToString(),
@@ -110,8 +111,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task DeactivatePermitType_Should_Return200OK()
         {
-            // Arrange
-            var permitTypeId = Guid.NewGuid();
+            // Arrange - Use seeded permit type ID
+            var permitTypeId = TestData.BuildingPermitTypeId;
 
             // Act
             var response = await _client.DeleteAsync($"/api/permittypes/{permitTypeId}");
