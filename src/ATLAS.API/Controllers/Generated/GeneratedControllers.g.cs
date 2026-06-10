@@ -259,13 +259,13 @@ namespace ATLAS.API.Controllers.Generated
         /// Retrieve audit logs with optional filtering
         /// </remarks>
         /// <param name="userId">Filter by user ID</param>
-        /// <param name="actionType">Filter by action type</param>
+        /// <param name="action">Filter by action type</param>
         /// <param name="dateFrom">Filter by date (from)</param>
         /// <param name="dateTo">Filter by date (to)</param>
-        /// <param name="recordId">Filter by record ID</param>
+        /// <param name="entityId">Filter by entity ID</param>
         /// <returns>List of audit logs</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs", Name = "getAuditLogs")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> Auditlogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? actionType = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? recordId = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> Auditlogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? entityId = null);
 
         /// <summary>
         /// Export audit logs to CSV
@@ -274,12 +274,12 @@ namespace ATLAS.API.Controllers.Generated
         /// Export filtered audit logs to CSV format
         /// </remarks>
         /// <param name="userId">Filter by user ID</param>
-        /// <param name="actionType">Filter by action type</param>
+        /// <param name="action">Filter by action type</param>
         /// <param name="dateFrom">Filter by date (from)</param>
         /// <param name="dateTo">Filter by date (to)</param>
         /// <returns>CSV file</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs/export", Name = "exportAuditLogs")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> Export([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? actionType = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> Export([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null);
 
     }
 

@@ -116,6 +116,9 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("uploadedDate")]
         public DateTimeOffset UploadedDate { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("uploadedById")]
+        public System.Guid UploadedById { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -138,7 +141,7 @@ namespace ATLAS.API.Contracts.Generated
         public System.Guid OfficerId { get; set; } = default!;
 
         /// <summary>
-        /// 1=Approved, 2=Rejected
+        /// 1=Approved, 2=Rejected, 3=RequestInfo
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("decision")]
         public ReviewResponseDecision Decision { get; set; } = default!;
@@ -215,9 +218,6 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("role")]
         public string Role { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("department")]
-        public string? Department { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
 
@@ -242,17 +242,23 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
         public System.Guid? UserId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("actionType")]
-        public string ActionType { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("action")]
+        public string Action { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("entityType")]
+        public string EntityType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("entityId")]
+        public System.Guid EntityId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("details")]
+        public string? Details { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("timestamp")]
         public DateTimeOffset Timestamp { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("recordId")]
-        public System.Guid RecordId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("details")]
-        public string? Details { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("ipAddress")]
+        public string IpAddress { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -491,14 +497,11 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("description")]
         public string Description { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("fee")]
+        public decimal Fee { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("estimatedProcessingDays")]
-        public int EstimatedProcessingDays { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("deactivatedByAdminId")]
-        public System.Guid? DeactivatedByAdminId { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -526,9 +529,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("role")]
         public string Role { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("department")]
-        public string? Department { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -569,6 +569,8 @@ namespace ATLAS.API.Contracts.Generated
         _1 = 1,
 
         _2 = 2,
+
+        _3 = 3,
 
     }
 

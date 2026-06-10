@@ -13,9 +13,8 @@ namespace ATLAS.Application.Commands
         public Guid PermitTypeId { get; set; }
         public string? Name { get; set; }
         public string? Description { get; set; }
-        public int? EstimatedProcessingDays { get; set; }
+        public decimal? Fee { get; set; }
         public bool? IsActive { get; set; }
-        public Guid DeactivatedByAdminId { get; set; }
     }
 
     public class UpdatePermitTypeCommandHandler : IRequestHandler<UpdatePermitTypeCommand, bool>
@@ -38,13 +37,10 @@ namespace ATLAS.Application.Commands
             // For MVP, we skip updating these fields
             // TODO: Add UpdateDetails method to PermitType entity if needed
             
-            if (request.IsActive.HasValue)
-            {
-                if (request.IsActive.Value)
-                    permitType.Activate();
-                else
-                    permitType.Deactivate(request.DeactivatedByAdminId);
-            }
+            if (request.IsActive.HasValue && request.IsActive.Value)
+                permitType.Activate();
+            
+            // Deactivation is handled by the dedicated DeactivatePermitTypeCommand
             
             await _repository.UpdateAsync(permitType, cancellationToken);
             return true;

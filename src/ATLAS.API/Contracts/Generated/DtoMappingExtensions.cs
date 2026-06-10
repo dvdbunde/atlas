@@ -141,7 +141,8 @@ namespace ATLAS.API.Contracts.Generated
                 ContentType = response.ContentType,
                 FileSize = response.FileSize,
                 BlobUrl = response.BlobUrl?.ToString() ?? string.Empty, // Uri → string
-                UploadedDate = response.UploadedDate.DateTime // DateTimeOffset → DateTime
+                UploadedDate = response.UploadedDate.DateTime, // DateTimeOffset → DateTime
+                UploadedById = response.UploadedById
             };
         }
 
@@ -154,7 +155,8 @@ namespace ATLAS.API.Contracts.Generated
                 ContentType = dto.ContentType,
                 FileSize = dto.FileSize,
                 BlobUrl = new Uri(dto.BlobUrl), // string → Uri
-                UploadedDate = new DateTimeOffset(dto.UploadedDate)
+                UploadedDate = new DateTimeOffset(dto.UploadedDate),
+                UploadedById = dto.UploadedById
             };
         }
         #endregion
@@ -180,7 +182,7 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = dto.Id,
                 OfficerId = dto.OfficerId,
-                Decision = dto.Decision == 1 ? ReviewResponseDecision._1 : ReviewResponseDecision._2, // int → enum
+                Decision = (ReviewResponseDecision)dto.Decision, // int → num (handles 1=Approve, 2=Reject, 3=RequestInfo)
                 ReasonCode = dto.ReasonCode,
                 Comments = dto.Comments,
                 ReviewedDate = new DateTimeOffset(dto.ReviewedDate),
@@ -225,7 +227,6 @@ namespace ATLAS.API.Contracts.Generated
                 FirstName = response.FirstName,
                 LastName = response.LastName,
                 Role = response.Role,
-                Department = response.Department,
                 IsActive = response.IsActive
             };
         }
@@ -239,7 +240,6 @@ namespace ATLAS.API.Contracts.Generated
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 Role = dto.Role,
-                Department = dto.Department,
                 IsActive = dto.IsActive
             };
         }
@@ -252,10 +252,12 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = response.Id,
                 UserId = response.UserId,
-                ActionType = response.ActionType,
+                Action = response.Action,
+                EntityType = response.EntityType,
+                EntityId = response.EntityId,
+                Details = response.Details,
                 Timestamp = response.Timestamp.DateTime, // DateTimeOffset → DateTime
-                RecordId = response.RecordId,
-                Details = response.Details
+                IpAddress = response.IpAddress
             };
         }
 
@@ -265,10 +267,12 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = dto.Id,
                 UserId = dto.UserId,
-                ActionType = dto.ActionType,
+                Action = dto.Action,
+                EntityType = dto.EntityType,
+                EntityId = dto.EntityId,
+                Details = dto.Details,
                 Timestamp = new DateTimeOffset(dto.Timestamp),
-                RecordId = dto.RecordId,
-                Details = dto.Details
+                IpAddress = dto.IpAddress
             };
         }
         #endregion

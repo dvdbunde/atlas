@@ -67,10 +67,9 @@ namespace ATLAS.API.Controllers
             {
                 PermitTypeId = id,
                 Name = body.Name,
-                Description = body.Description,                
-                IsActive = body.IsActive,
-                DeactivatedByAdminId = body.DeactivatedByAdminId ?? Guid.Empty,
-                EstimatedProcessingDays = body.EstimatedProcessingDays
+                Description = body.Description,
+                Fee = body.Fee,
+                IsActive = body.IsActive
             };
 
             var result = await _mediator.Send(command, default);

@@ -47,8 +47,7 @@ namespace ATLAS.API.Controllers
                 Email = body.Email,
                 FirstName = body.FirstName,
                 LastName = body.LastName,
-                Role = body.Role,
-                Department = body.Department
+                Role = body.Role
             };
             var userId = await _mediator.Send(command, default);
             return CreatedAtAction(nameof(UsersGet), new { id = userId }, userId);

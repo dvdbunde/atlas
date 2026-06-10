@@ -16,7 +16,6 @@ namespace ATLAS.API.Tests.Contracts.Generated
                 FirstName = "John",
                 LastName = "Doe",
                 Role = "Citizen",
-                Department = "IT",
                 IsActive = true
             };
 
@@ -26,7 +25,6 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.Equal("John", response.FirstName);
             Assert.Equal("Doe", response.LastName);
             Assert.Equal("Citizen", response.Role);
-            Assert.Equal("IT", response.Department);
             Assert.True(response.IsActive);
         }
 
@@ -42,7 +40,6 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.Null(response.FirstName);
             Assert.Null(response.LastName);
             Assert.Null(response.Role);
-            Assert.Null(response.Department);
             Assert.True(response.IsActive); // Default is true
         }
     }

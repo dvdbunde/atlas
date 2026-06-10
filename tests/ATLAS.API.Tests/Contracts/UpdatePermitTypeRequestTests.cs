@@ -13,26 +13,24 @@ namespace ATLAS.API.Tests.Contracts
             var name = "Updated Permit";
             var description = "Updated description";            
             var isActive = false;
-            var deactivatedByAdminId = Guid.NewGuid();
+            var fee = 150.00m;
 
             // Act
             var request = new UpdatePermitTypeRequest
             {
                 PermitTypeId = permitTypeId,
                 Name = name,
-                Description = description,                
-                IsActive = isActive,
-                DeactivatedByAdminId = deactivatedByAdminId,
-                EstimatedProcessingDays = 10
+                Description = description,
+                Fee = fee,
+                IsActive = isActive
             };
 
             // Assert
             Assert.Equal(permitTypeId, request.PermitTypeId);
             Assert.Equal(name, request.Name);
-            Assert.Equal(description, request.Description);            
+            Assert.Equal(description, request.Description);
+            Assert.Equal(fee, request.Fee);
             Assert.Equal(isActive, request.IsActive);
-            Assert.Equal(deactivatedByAdminId, request.DeactivatedByAdminId);
-            Assert.Equal(10, request.EstimatedProcessingDays);
         }
 
         [Fact]

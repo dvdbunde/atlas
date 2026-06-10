@@ -84,14 +84,14 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(auditLogs);
 
-            var query = new GetAuditLogsQuery { ActionType = actionType };
+            var query = new GetAuditLogsQuery { Action = actionType };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
             Assert.Single(result);
-            Assert.All(result, log => Assert.Equal(actionType, log.ActionType));
+            Assert.All(result, log => Assert.Equal(actionType, log.Action));
         }
 
         [Fact]
@@ -134,14 +134,14 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(auditLogs);
 
-            var query = new GetAuditLogsQuery { RecordId = recordId };
+            var query = new GetAuditLogsQuery { EntityId = recordId };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
             Assert.Single(result);
-            Assert.All(result, log => Assert.Equal(recordId, log.RecordId));
+            Assert.All(result, log => Assert.Equal(recordId, log.EntityId));
         }
 
         [Fact]

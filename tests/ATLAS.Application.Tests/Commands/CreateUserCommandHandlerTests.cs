@@ -30,8 +30,7 @@ namespace ATLAS.Application.Tests.Commands
                 Email = "test@example.com",
                 FirstName = "John",
                 LastName = "Doe",
-                Role = "Citizen",
-                Department = "IT"
+                Role = "Citizen"
             };
 
             // Act

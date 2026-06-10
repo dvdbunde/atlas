@@ -35,6 +35,7 @@ namespace ATLAS.Application.DTOs
         public long FileSize { get; set; }
         public string BlobUrl { get; set; } = string.Empty;
         public DateTime UploadedDate { get; set; }
+        public Guid UploadedById { get; set; }
     }
 
     public class ReviewDto
@@ -64,7 +65,6 @@ namespace ATLAS.Application.DTOs
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public string? Department { get; set; }
         public bool IsActive { get; set; }
     }
 
@@ -72,9 +72,11 @@ namespace ATLAS.Application.DTOs
     {
         public Guid Id { get; set; }
         public Guid? UserId { get; set; }
-        public string ActionType { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+        public string EntityType { get; set; } = string.Empty;
+        public Guid EntityId { get; set; }
+        public string Details { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
-        public Guid RecordId { get; set; }
-        public string? Details { get; set; }
+        public string IpAddress { get; set; } = string.Empty;
     }
 }

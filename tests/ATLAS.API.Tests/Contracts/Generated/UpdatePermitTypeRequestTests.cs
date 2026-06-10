@@ -14,18 +14,16 @@ namespace ATLAS.API.Tests.Contracts.Generated
                 PermitTypeId = Guid.NewGuid(),
                 Name = "Updated Permit",
                 Description = "Updated description",
-                IsActive = false,
-                EstimatedProcessingDays = 5,
-                DeactivatedByAdminId = Guid.NewGuid()
+                Fee = 150.00m,
+                IsActive = false
             };
 
             // Assert
             Assert.NotEqual(Guid.Empty, request.PermitTypeId);
             Assert.Equal("Updated Permit", request.Name);
             Assert.Equal("Updated description", request.Description);
+            Assert.Equal(150.00m, request.Fee);
             Assert.False(request.IsActive);
-            Assert.Equal(5, request.EstimatedProcessingDays);
-            Assert.NotEqual(Guid.Empty, request.DeactivatedByAdminId);
         }
 
         [Fact]
@@ -38,9 +36,8 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.Equal(default(Guid), request.PermitTypeId);
             Assert.Null(request.Name);
             Assert.Null(request.Description);
+            Assert.Equal(0m, request.Fee);
             Assert.Equal(default(bool), request.IsActive);
-            Assert.Equal(default(int), request.EstimatedProcessingDays);
-            Assert.Null(request.DeactivatedByAdminId);
         }
     }
 }

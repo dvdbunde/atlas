@@ -73,7 +73,8 @@ namespace ATLAS.Application.Queries
                     ContentType = d.ContentType,
                     FileSize = d.FileSize,
                     BlobUrl = d.BlobUrl,
-                    UploadedDate = d.UploadedDate
+                    UploadedDate = d.UploadedDate,
+                    UploadedById = d.UploadedById
                 }).ToList(),
                 Reviews = application.Reviews.Select(r => new ReviewDto
                 {

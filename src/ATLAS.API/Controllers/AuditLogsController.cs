@@ -29,18 +29,18 @@ namespace ATLAS.API.Controllers
 
         public override async Task<ActionResult<ICollection<AuditLogResponse>>> Auditlogs(
             Guid? userId = null,
-            string? actionType = null,
+            string? action = null,
             DateTimeOffset? dateFrom = null,
             DateTimeOffset? dateTo = null,
-            Guid? recordId = null)
+            Guid? entityId = null)
         {
             var query = new GetAuditLogsQuery
             {
                 UserId = userId,
-                ActionType = actionType,
+                Action = action,
                 DateFrom = dateFrom?.DateTime,
                 DateTo = dateTo?.DateTime,
-                RecordId = recordId
+                EntityId = entityId
             };
             var results = await _mediator.Send(query, default);
             var response = new List<AuditLogResponse>();
@@ -53,7 +53,7 @@ namespace ATLAS.API.Controllers
 
         public override async Task<ActionResult<string>> Export(
             Guid? userId = null,
-            string? actionType = null,
+            string? action = null,
             DateTimeOffset? dateFrom = null,
             DateTimeOffset? dateTo = null)
         {

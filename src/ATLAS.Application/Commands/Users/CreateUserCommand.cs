@@ -13,7 +13,6 @@ namespace ATLAS.Application.Commands
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = "Citizen";
-        public string? Department { get; set; }
     }
 
     public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, Guid>

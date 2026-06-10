@@ -667,7 +667,7 @@ paths:
             type: string
             format: uuid
           description: Filter by user ID
-        - name: actionType
+        - name: action
           in: query
           schema:
             type: string
@@ -684,12 +684,12 @@ paths:
             type: string
             format: date-time
           description: Filter by date (to)
-        - name: recordId
+        - name: entityId
           in: query
           schema:
             type: string
             format: uuid
-          description: Filter by record ID
+          description: Filter by entity ID
       responses:
         '200':
           description: List of audit logs
@@ -719,7 +719,7 @@ paths:
             type: string
             format: uuid
           description: Filter by user ID
-        - name: actionType
+        - name: action
           in: query
           schema:
             type: string
@@ -839,6 +839,9 @@ components:
         uploadedDate:
           type: string
           format: date-time
+        uploadedById:
+          type: string
+          format: uuid
       required: [id, fileName, contentType, fileSize, blobUrl, uploadedDate]
     
     ReviewResponse:
@@ -853,8 +856,8 @@ components:
         decision:
           type: integer
           format: int32
-          description: 1=Approved, 2=Rejected
-          enum: [1, 2]
+          description: 1=Approved, 2=Rejected, 3=RequestInfo
+          enum: [1, 2, 3]
         reasonCode:
           type: string
           nullable: true
@@ -910,10 +913,6 @@ components:
         role:
           type: string
           example: 'Citizen'
-        department:
-          type: string
-          nullable: true
-          example: 'Permits Office'
         isActive:
           type: boolean
           default: true
@@ -929,19 +928,25 @@ components:
           type: string
           format: uuid
           nullable: true
-        actionType:
+        action:
           type: string
           example: 'APPLICATION_SUBMITTED'
-        timestamp:
+        entityType:
           type: string
-          format: date-time
-        recordId:
+          example: 'Application'
+        entityId:
           type: string
           format: uuid
         details:
           type: string
           nullable: true
-      required: [id, actionType, timestamp, recordId]
+        timestamp:
+          type: string
+          format: date-time
+        ipAddress:
+          type: string
+          example: '192.168.1.1'
+      required: [id, action, entityType, entityId, timestamp]
     
     ProblemDetails:
       type: object
@@ -1080,16 +1085,12 @@ components:
         name:
           type: string
         description:
-          type: string        
+          type: string
+        fee:
+          type: number
+          format: decimal
         isActive:
           type: boolean
-        estimatedProcessingDays:
-          type: integer
-          format: int32
-        deactivatedByAdminId:
-          type: string
-          format: uuid
-          nullable: true
       required: [permitTypeId]
     
     CreateUserRequest:
@@ -1104,9 +1105,6 @@ components:
           type: string
         role:
           type: string
-        department:
-          type: string
-          nullable: true        
       required: [email, firstName, lastName, role]
     
     UpdateUserRoleRequest:

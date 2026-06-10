@@ -11,10 +11,10 @@ namespace ATLAS.Application.Queries
     public class GetAuditLogsQuery : IRequest<IEnumerable<AuditLogDto>>
     {
         public Guid? UserId { get; set; }
-        public string? ActionType { get; set; }
+        public string? Action { get; set; }
         public DateTime? DateFrom { get; set; }
         public DateTime? DateTo { get; set; }
-        public Guid? RecordId { get; set; }
+        public Guid? EntityId { get; set; }
     }
 
     public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, IEnumerable<AuditLogDto>>
@@ -35,8 +35,8 @@ namespace ATLAS.Application.Queries
             if (request.UserId.HasValue)
                 auditLogs = auditLogs.Where(a => a.UserId == request.UserId).ToList();
             
-            if (!string.IsNullOrEmpty(request.ActionType))
-                auditLogs = auditLogs.Where(a => a.Action == request.ActionType).ToList();
+            if (!string.IsNullOrEmpty(request.Action))
+                auditLogs = auditLogs.Where(a => a.Action == request.Action).ToList();
             
             if (request.DateFrom.HasValue)
                 auditLogs = auditLogs.Where(a => a.Timestamp >= request.DateFrom).ToList();
@@ -44,18 +44,20 @@ namespace ATLAS.Application.Queries
             if (request.DateTo.HasValue)
                 auditLogs = auditLogs.Where(a => a.Timestamp <= request.DateTo).ToList();
             
-            if (request.RecordId.HasValue)
-                auditLogs = auditLogs.Where(a => a.EntityId == request.RecordId).ToList();
+            if (request.EntityId.HasValue)
+                auditLogs = auditLogs.Where(a => a.EntityId == request.EntityId).ToList();
             
             // Map to AuditLogDto
             return auditLogs.Select(a => new AuditLogDto
             {
                 Id = a.Id,
                 UserId = a.UserId,
-                ActionType = a.Action,
+                Action = a.Action,
+                EntityType = a.EntityType,
+                EntityId = a.EntityId,
+                Details = a.Details,
                 Timestamp = a.Timestamp,
-                RecordId = a.EntityId,
-                Details = a.Details
+                IpAddress = a.IpAddress
             }).ToList();
         }
     }

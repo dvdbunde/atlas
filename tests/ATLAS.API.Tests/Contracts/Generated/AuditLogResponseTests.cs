@@ -14,19 +14,23 @@ namespace ATLAS.API.Tests.Contracts.Generated
             {
                 Id = Guid.NewGuid(),
                 UserId = Guid.NewGuid(),
-                ActionType = "Create",
+                Action = "Create",
+                EntityType = "Application",
+                EntityId = Guid.NewGuid(),
+                Details = "Application created",
                 Timestamp = DateTimeOffset.UtcNow,
-                RecordId = Guid.NewGuid(),
-                Details = "Application created"
+                IpAddress = "192.168.1.1"
             };
 
             // Assert
             Assert.NotEqual(Guid.Empty, response.Id);
             Assert.NotEqual(Guid.Empty, response.UserId);
-            Assert.Equal("Create", response.ActionType);
-            Assert.NotNull(response.Timestamp);
-            Assert.NotEqual(Guid.Empty, response.RecordId);
+            Assert.Equal("Create", response.Action);
+            Assert.Equal("Application", response.EntityType);
+            Assert.NotEqual(Guid.Empty, response.EntityId);
             Assert.Equal("Application created", response.Details);
+            Assert.NotNull(response.Timestamp);
+            Assert.Equal("192.168.1.1", response.IpAddress);
         }
 
         [Fact]
@@ -38,10 +42,12 @@ namespace ATLAS.API.Tests.Contracts.Generated
             // Assert
             Assert.Equal(default(Guid), response.Id);
             Assert.Null(response.UserId);
-            Assert.Null(response.ActionType);
-            Assert.Equal(default(DateTimeOffset), response.Timestamp);
-            Assert.Equal(default(Guid), response.RecordId);
+            Assert.Null(response.Action);
+            Assert.Null(response.EntityType);
+            Assert.Equal(default(Guid), response.EntityId);
             Assert.Null(response.Details);
+            Assert.Equal(default(DateTimeOffset), response.Timestamp);
+            Assert.Null(response.IpAddress);
         }
     }
 }
