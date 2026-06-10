@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using ATLAS.API.Controllers;
-using ATLAS.API.Infrastructure;
 using ATLAS.Infrastructure;
 using FluentValidation;
 using Microsoft.OpenApi;

@@ -20,7 +20,7 @@ namespace ATLAS.API.Middleware
         
         public GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
         {
-            _next = next;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
             _logger = logger;
         }
         
