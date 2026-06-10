@@ -1,8 +1,11 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using ATLAS.API.Controllers;
 using ATLAS.Infrastructure;
 using FluentValidation;
-using Microsoft.OpenApi;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,32 +24,104 @@ builder.Services.AddMediatR(cfg =>
 // Register FluentValidation validators from Application layer
 builder.Services.AddValidatorsFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
 
-// 🚨 NEW: Authorization conventions for generated controllers
-/*
-builder.Services.AddControllers(options =>
-{
-    options.Conventions.Add(new GeneratedControllerAuthorizationConvention());
-});*/
-
-
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+    c.SwaggerDoc("v1", new OpenApiInfo 
     { 
         Title = "ATLAS API", 
         Version = "v1" 
+    });
+
+    // JWT Bearer security definition for Swagger UI "Authorize" button
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT Bearer token."
+    });
+
+    // Apply globally so all endpoints show the padlock
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
 builder.Services.AddControllers();
 
-// 🚨 NEW: Authentication/Authorization
-// TODO: Configure JWT Bearer authentication for Entra ID
-// builder.Services.AddAuthentication().AddJwtBearer(); // Requires Microsoft.AspNetCore.Authentication.JwtBearer package
-//builder.Services.AddAuthentication(); // Placeholder - configure when Entra ID is set up
-//builder.Services.AddAuthorization();
+// Configure JWT Bearer authentication for Microsoft Entra ID
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var azureAd = builder.Configuration.GetSection("AzureAd");
+        var instance = azureAd["Instance"] ?? "https://login.microsoftonline.com";
+        var tenantId = azureAd["TenantId"];
+        var audience = azureAd["Audience"];
 
-// 🚨 NEW: CORS for Blazor frontend
+        if (string.IsNullOrWhiteSpace(tenantId))
+            throw new InvalidOperationException("AzureAd:TenantId is required. Verify appsettings.json / Azure Key Vault.");
+        if (string.IsNullOrWhiteSpace(audience))
+            throw new InvalidOperationException("AzureAd:Audience is required. Verify appsettings.json / Azure Key Vault.");
+
+        var issuer = $"{instance}/{tenantId}/v2.0";
+        options.Authority = issuer;
+        options.Audience = audience;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromMinutes(2),
+            NameClaimType = ClaimTypes.NameIdentifier,
+            RoleClaimType = ClaimTypes.Role
+        };
+
+        // Map inbound claims to standard claim types (sub -> ClaimTypes.NameIdentifier)
+        options.MapInboundClaims = true;
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = async context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(
+                    "JWT authentication failed: {ErrorMsg} | Path: {Path} | Headers: {Headers}",
+                    context.Exception?.Message,
+                    context.HttpContext.Request.Path,
+                    context.HttpContext.Request.Headers.ContainsKey("Authorization") ? "Present" : "Missing");
+                await Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<Program>>();
+                logger.LogInformation(
+                    "JWT token validated | Sub: {Sub} | Iss: {Iss}",
+                    context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value,
+                    context.Principal?.FindFirst("iss")?.Value);
+                await Task.CompletedTask;
+            }
+        };    });
+
+builder.Services.AddAuthorization();
+
+// CORS for Blazor frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor",
@@ -70,13 +145,13 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "ATLAS API v1");
     });
-    app.MapOpenApi(); // Or UseSwagger/UseSwaggerUI
+    app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
-app.UseCors("AllowBlazor"); // 🚨 NEW
-//app.UseAuthentication(); // 🚨 NEW
-//app.UseAuthorization(); // 🚨 NEW
+app.UseCors("AllowBlazor");
+app.UseAuthentication();  // Authenticate JWT Bearer tokens
+app.UseAuthorization();   // Enforce authorization policies
 app.UseMiddleware<ATLAS.API.Middleware.GlobalExceptionMiddleware>();
 
 app.MapControllers();
