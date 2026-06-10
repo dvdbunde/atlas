@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Security.Claims;
+using ATLAS.API.Auth;
 using ATLAS.API.Controllers;
 using ATLAS.Infrastructure;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -60,7 +62,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Apply authorization policies to NSwag-generated controllers based on OpenAPI spec
+    options.Conventions.Add(new GeneratedControllerAuthorizationConvention());
+});
 
 // Configure JWT Bearer authentication for Microsoft Entra ID
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -119,7 +125,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             }
         };    });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Policy: any authenticated user (Citizen, Officer, or Admin)
+    options.AddPolicy("Authenticated", policy =>
+        policy.RequireAuthenticatedUser());
+
+    // Policy: Citizen role only
+    options.AddPolicy("Citizen", policy =>
+        policy.RequireRole("Citizen"));
+
+    // Policy: Officer role only
+    options.AddPolicy("Officer", policy =>
+        policy.RequireRole("Officer"));
+
+    // Policy: Admin role only
+    options.AddPolicy("Admin", policy =>
+        policy.RequireRole("Admin"));
+
+    // Policy: Officer or Admin (e.g., read-only admin views)
+    options.AddPolicy("OfficerOrAdmin", policy =>
+        policy.RequireRole("Officer", "Admin"));
+});
+
+// Claims transformation: map Entra ID roles/groups → application role claims
+builder.Services.AddScoped<IClaimsTransformation, AtlasClaimsTransformation>();
 
 // CORS for Blazor frontend
 builder.Services.AddCors(options =>
