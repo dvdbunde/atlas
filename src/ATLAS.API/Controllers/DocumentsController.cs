@@ -1,69 +1,59 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.Authorization;
+//----------------------
+// Documents Controller Adapter
+// Implements IDocumentsController using MediatR
+//----------------------
+
+#nullable enable
+
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using ATLAS.API.Controllers.Generated;
+using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
-using ATLAS.Application.Queries;
-using Microsoft.AspNetCore.Http;
-using ATLAS.Domain;
+using System.Threading.Tasks;
 
 namespace ATLAS.API.Controllers
 {
-    [ApiController]
-    [Route("api/applications/{applicationId}/documents")]
+    [ApiController]    
     [Produces("application/json")]
-    public class DocumentsController : ControllerBase
+    public sealed class DocumentsController : DocumentsControllerBase
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public DocumentsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
-        #region POST /api/applications/{applicationId}/documents (F-03)
-        [HttpPost]
-        [Authorize(Roles = "Citizen,Officer,Admin")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<bool>> UploadDocument(
-            [FromRoute] Guid applicationId,
-            [FromBody] UploadDocumentCommand command,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<bool>> Documents(
+            Guid applicationId,
+            UploadDocumentRequest body)
         {
-            command.ApplicationId = applicationId;
-
-            try
+            var command = new UploadDocumentCommand
             {
-                var result = await _mediator.Send(command, cancellationToken);
-                return Ok(result);
-            }
-            catch (DomainException ex)
-            {
-                return BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid File",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = ex.Message
-                });
-            }
-        }
-        #endregion
+                ApplicationId = applicationId,
+                FileName = body.FileName,
+                ContentType = body.ContentType,
+                FileSize = body.FileSize,
+                BlobUrl = body.BlobUrl?.ToString() ?? string.Empty,
+                UploadedById = body.UploadedById
+            };
 
-        #region GET /api/documents/{documentId}/download (F-08)
-        [HttpGet("../../documents/{documentId}/download")]
-        [Authorize(Roles = "Citizen,Officer,Admin")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DownloadDocument(
-            [FromRoute] Guid documentId,
-            CancellationToken cancellationToken)
+            var result = await _mediator.Send(command, default);                        
+            if (!result)
+            {
+                return NotFound(); // ← Application not found
+            }
+    
+            return NoContent(); // ← 204 for successful upload
+        }     
+
+        public override async Task<IActionResult> Download(Guid documentId)
         {
-            // TODO: Create GetDocumentByIdQuery and handler
-            // TODO: Generate SAS token for Azure Blob Storage
-            // TODO: Return FileResult with Blob stream
-
-            throw new NotImplementedException("Document download not yet implemented");
+            // TODO: Implement document download
+            // Return 501 Not Implemented
+            return StatusCode(501);
         }
-        #endregion
     }
 }

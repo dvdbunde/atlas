@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json.schemastore.org/nswag",
+  "runtime": "Net90",
+
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../../openapi/atlas-api.yaml"
+    }
+  },
+
+  "codeGenerators": {
+
+    "openApiToCSharpController": {
+    "controllerStyle": "Abstract",    
+    "className": "{controller}",
+    "namespace": "ATLAS.API.Controllers.Generated",
+    "output": "Controllers/Generated/GeneratedControllers.g.cs",
+    "controllerTarget": "AspNetCore",
+    "generateModelValidationAttributes": false,
+    "generateOptionalParameters": true,
+    "generateNullableReferenceTypes": true,
+    "useCancellationToken": false,
+    "generateDtoTypes": false,
+    "additionalNamespaceUsages": [
+      "ATLAS.API.Contracts.Generated"
+    ],
+    "operationGenerationMode": "MultipleClientsFromFirstTagAndPathSegments",
+    "routeNamingStrategy": "OperationId",
+    "useActionResultType": true 
+  },
+
+    "openApiToCSharpClient": {
+      "className": "AtlasContracts",
+      "namespace": "ATLAS.API.Contracts.Generated",
+      "output": "Contracts/Generated/AtlasContracts.g.cs",
+      "generateClientClasses": false,
+      "generateClientInterfaces": false,
+      "generateDtoTypes": true,
+      "generateJsonMethods": false,
+      "generateDataAnnotations": false,
+      "generateNullableReferenceTypes": true,
+      "generateOptionalParameters": true,
+      "dateType": "DateOnly",
+      "dateTimeType": "DateTimeOffset",
+      "timeType": "TimeOnly",
+      "classStyle": "Poco",
+      "jsonLibrary": "SystemTextJson"
+    }
+  }
+}

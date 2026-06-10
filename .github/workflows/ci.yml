@@ -18,6 +18,12 @@ jobs:
         with:
           dotnet-version: '9.0.314'
 
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Install NSwag CLI
+        run: dotnet tool install --global NSwag.ConsoleCore
+
       - name: Restore dependencies
         run: dotnet restore ATLAS.slnx
 

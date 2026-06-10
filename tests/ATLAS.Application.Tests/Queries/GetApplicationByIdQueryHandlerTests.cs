@@ -61,5 +61,16 @@ namespace ATLAS.Application.Tests.Queries
             // Assert
             Assert.Null(result);
         }
+
+        [Fact]
+        public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
+        {
+            // Arrange & Act & Assert
+            Assert.Throws<ArgumentNullException>(() => 
+                new GetApplicationByIdQueryHandler(
+                    null, 
+                    new Mock<IUserRepository>().Object, 
+                    new Mock<IPermitTypeRepository>().Object));
+        }
     }
 }

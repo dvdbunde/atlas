@@ -7,6 +7,7 @@
     <Project Path="src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/ATLAS.API.Tests/ATLAS.API.Tests.csproj" />
     <Project Path="tests/ATLAS.Application.Tests/ATLAS.Application.Tests.csproj" />
     <Project Path="tests/ATLAS.Domain.Tests/ATLAS.Domain.Tests.csproj" />
     <Project Path="tests/ATLAS.Infrastructure.Tests/ATLAS.Infrastructure.Tests.csproj" />

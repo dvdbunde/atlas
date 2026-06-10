@@ -1,88 +1,97 @@
+//----------------------
+// PermitTypes Controller Adapter
+// Implements IPermitTypesController using MediatR
+//----------------------
+
+#nullable enable
+
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ATLAS.Application.DTOs;
-using ATLAS.Application.Queries;
+using ATLAS.API.Controllers.Generated;
+using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
+using ATLAS.Application.Queries;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ATLAS.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
-    public class PermitTypesController : ControllerBase
+    [Produces("application/json")]    
+    public sealed class PermitTypesController : PermitTypesControllerBase
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public PermitTypesController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        /// <summary>
-        /// Get all permit types (F-17, F-18)
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<PermitTypeDto>>> GetPermitTypes(
-            CancellationToken cancellationToken,
-            [FromQuery] bool includeInactive = false)
+        public override async Task<ActionResult<ICollection<PermitTypeResponse>>> PermittypesGet(bool? includeInactive = false)
         {
-            var query = new GetPermitTypesQuery { IncludeInactive = includeInactive };
-            var results = await _mediator.Send(query, cancellationToken);
-            return Ok(results);
+            var query = new GetPermitTypesQuery { IncludeInactive = includeInactive ?? false };
+            var results = await _mediator.Send(query, default);
+            var response = new List<PermitTypeResponse>();
+            foreach (var dto in results)
+            {
+                response.Add(dto.ToResponse());
+            }
+            return Ok(response);
         }
 
-        /// <summary>
-        /// Get permit type by ID
-        /// </summary>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<PermitTypeDto?>> GetPermitTypeById(
-            [FromRoute] Guid id,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<Guid>> PermittypesPost(CreatePermitTypeRequest body)
+        {
+            var command = new CreatePermitTypeCommand
+            {
+                Name = body.Name,
+                Description = body.Description,
+                Fee = body.Fee
+            };
+            var permitTypeId = await _mediator.Send(command, default);
+            return CreatedAtAction(nameof(PermittypesGet), new { id = permitTypeId }, permitTypeId);
+        }
+
+        public override async Task<ActionResult<PermitTypeResponse>> PermittypesGet(Guid id)
         {
             var query = new GetPermitTypeByIdQuery { PermitTypeId = id };
-            var result = await _mediator.Send(query, cancellationToken);
-            return result == null ? NotFound() : Ok(result);
+            var result = await _mediator.Send(query, default);
+            if (result == null)
+                return NotFound();
+            return Ok(result.ToResponse());
         }
 
-        /// <summary>
-        /// Create permit type (F-17)
-        /// </summary>
-        [HttpPost]
-        [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-        public async Task<ActionResult<Guid>> CreatePermitType(
-            [FromBody] CreatePermitTypeCommand command,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<bool>> PermittypesPut(Guid id, UpdatePermitTypeRequest body)
         {
-            var permitTypeId = await _mediator.Send(command, cancellationToken);
-            return CreatedAtAction(nameof(GetPermitTypeById), new { id = permitTypeId }, permitTypeId);
+            var command = new UpdatePermitTypeCommand
+            {
+                PermitTypeId = id,
+                Name = body.Name,
+                Description = body.Description,
+                Fee = body.Fee,
+                IsActive = body.IsActive
+            };
+
+            var result = await _mediator.Send(command, default);
+
+            if (!result)
+            {
+                return NotFound(); // ← Permit type not found
+            }
+            
+            return Ok(true);
         }
 
-        /// <summary>
-        /// Update permit type (F-18)
-        /// </summary>
-        [HttpPut("{id}")]
-        public async Task<ActionResult<bool>> UpdatePermitType(
-            [FromRoute] Guid id,
-            [FromBody] UpdatePermitTypeCommand command,
-            CancellationToken cancellationToken)
-        {
-            command.PermitTypeId = id;
-            var result = await _mediator.Send(command, cancellationToken);
-            return result ? Ok(result) : NotFound();
-        }
-
-        /// <summary>
-        /// Deactivate permit type (F-19)
-        /// </summary>
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<bool>> DeactivatePermitType(
-            [FromRoute] Guid id,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<bool>> PermittypesDelete(Guid id)
         {
             var command = new DeactivatePermitTypeCommand { PermitTypeId = id };
-            var result = await _mediator.Send(command, cancellationToken);
-            return result ? Ok(result) : NotFound();
-        }
+            var result = await _mediator.Send(command, default);
+            if (!result)
+            {
+                return NotFound(); // ← Permit type not found
+            }
+            
+            return NoContent(); // ← 204 for successful DELETE
+        }       
     }
 }

@@ -18,7 +18,7 @@ namespace ATLAS.IntegrationTests.Migrations
             
             // Look for migration classes by checking for migration attributes or naming conventions
             var migrationTypes = migrationsAssembly.GetTypes()
-                .Where(t => t.Name.Contains("20260604170209") || t.Name.Contains("InitialCreate"))
+                .Where(t => t.Name.Contains("20260608132223") || t.Name.Contains("Initial_Create"))
                 .ToList();
 
             // Assert
@@ -33,12 +33,12 @@ namespace ATLAS.IntegrationTests.Migrations
             
             // Act - Get all migration classes by checking for migration naming pattern
             var migrationTypes = migrationsAssembly.GetTypes()
-                .Where(t => t.Name.Contains("Migration") || t.Name.Contains("InitialCreate"))
+                .Where(t => t.Name.Contains("Migration") || t.Name.Contains("Initial_Create"))
                 .ToList();
 
             // Assert
             Assert.NotEmpty(migrationTypes);
-            Assert.Contains(migrationTypes, t => t.Name.Contains("InitialCreate"));
+            Assert.Contains(migrationTypes, t => t.Name.Contains("Initial_Create"));
         }
 
         [Fact]

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ATLAS.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial_Create : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,10 +53,12 @@ namespace ATLAS.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Role = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    LastLoginDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -69,18 +71,17 @@ namespace ATLAS.Infrastructure.Migrations
                 name: "DocumentRequirement",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     PermitTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    DocumentType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    MaxFileSizeBytes = table.Column<long>(type: "bigint", nullable: false),
-                    AllowedExtensions = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DocumentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    AllowedExtensions = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaxFileSizeBytes = table.Column<long>(type: "bigint", nullable: false, defaultValue: 26214400L)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DocumentRequirement", x => x.Id);
+                    table.PrimaryKey("PK_DocumentRequirement", x => new { x.PermitTypeId, x.Id });
                     table.ForeignKey(
                         name: "FK_DocumentRequirement_PermitTypes_PermitTypeId",
                         column: x => x.PermitTypeId,
@@ -93,18 +94,17 @@ namespace ATLAS.Infrastructure.Migrations
                 name: "PermitField",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     PermitTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FieldName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    FieldType = table.Column<int>(type: "int", nullable: false),
-                    IsRequired = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    IsRequired = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    DefaultValue = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PermitField", x => x.Id);
+                    table.PrimaryKey("PK_PermitField", x => new { x.PermitTypeId, x.Id });
                     table.ForeignKey(
                         name: "FK_PermitField_PermitTypes_PermitTypeId",
                         column: x => x.PermitTypeId,
@@ -119,11 +119,13 @@ namespace ATLAS.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
                     ApplicationNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    SubmittedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReviewedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CitizenNotes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    OfficerNotes = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     CitizenId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PermitTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    SubmissionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AssignedOfficerId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -135,33 +137,27 @@ namespace ATLAS.Infrastructure.Migrations
                         column: x => x.PermitTypeId,
                         principalTable: "PermitTypes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Applications_Users_CitizenId",
                         column: x => x.CitizenId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Applications_Users_AssignedOfficerId",
-                        column: x => x.AssignedOfficerId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Document",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ApplicationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     ContentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     FileSize = table.Column<long>(type: "bigint", nullable: false),
-                    UploadedById = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BlobUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     UploadedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsVisibleToCitizen = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    UploadedById = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -174,26 +170,20 @@ namespace ATLAS.Infrastructure.Migrations
                         principalTable: "Applications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Document_Users_UploadedById",
-                        column: x => x.UploadedById,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Review",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ApplicationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OfficerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Decision = table.Column<int>(type: "int", nullable: false),
-                    ReasonCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ReasonCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Comments = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     ReviewedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsVisibleToCitizen = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    IsVisibleToCitizen = table.Column<bool>(type: "bit", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -211,13 +201,8 @@ namespace ATLAS.Infrastructure.Migrations
                         column: x => x.OfficerId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.NoAction);
+                        onDelete: ReferentialAction.Restrict);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Applications_AssignedOfficerId",
-                table: "Applications",
-                column: "AssignedOfficerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Applications_CitizenId",
@@ -233,21 +218,6 @@ namespace ATLAS.Infrastructure.Migrations
                 name: "IX_Document_ApplicationId",
                 table: "Document",
                 column: "ApplicationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Document_UploadedById",
-                table: "Document",
-                column: "UploadedById");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DocumentRequirement_PermitTypeId",
-                table: "DocumentRequirement",
-                column: "PermitTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PermitField_PermitTypeId",
-                table: "PermitField",
-                column: "PermitTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Review_ApplicationId",

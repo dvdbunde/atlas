@@ -118,8 +118,66 @@ C4Container
 | Azure SQL Database | Azure SQL Serverless | Auto-scaling based on workload |
 | Azure Blob Storage | Azure Blob Storage (Hot tier) | Unlimited scale, geo-redundant |
 
-## References
+---
+
+## Phase 4 Updates: Generated API Layer (NSwag)
+
+**Status**: ✅ Implemented (2026-06-08)
+
+### Changes to ASP.NET Core API Container
+
+The API layer now uses **NSwag-generated controllers** from the OpenAPI contract (openapi/atlas-api.yaml). This ensures the API surface always matches the contract.
+
+#### Before Phase 4 (Manual Controllers)
+
+- Controllers manually maintained in Controllers/*.cs
+- Required manual synchronization between contract and code
+- Mixed concerns: routing, MediatR dispatch, mapping in single files
+
+#### After Phase 4 (Generated Controllers)
+
+- **Generated controllers**: Controllers/Generated/GeneratedControllers.g.cs (from NSwag)
+- **Partial class adapters**: Controllers/Partial/*.partial.cs (custom MediatR integration)
+- **DTO mapping layer**: Contracts/Generated/DtoMappingExtensions.cs (explicit *Response ↔*Dto mapping)
+
+#### File Structure
+
+`
+Controllers/
+├── Generated/                    ← NSwag-generated (regeneration-safe, don't edit)
+│   └── GeneratedControllers.g.cs
+└── Partial/                       ← Custom adapters (edit these)
+    ├── ApplicationsController.partial.cs
+    ├── PermitTypesController.partial.cs
+    ├── UsersController.partial.cs
+    ├── AuditLogsController.partial.cs
+    └── DocumentsController.partial.cs
+
+Contracts/
+└── Generated/                    ← NSwag-generated DTOs
+    ├── AtlasContracts.g.cs      ← *Request and*Response types
+    └── DtoMappingExtensions.cs  ← Mapping to Application *Dto types
+`
+
+#### Benefits
+
+1. **Single source of truth**: OpenAPI contract drives the API surface
+2. **Regeneration-safe**: Custom code survives NSwag re-runs
+3. **Clear separation**: Generated code (routing) vs custom code (MediatR, mapping)
+4. **Explicit boundaries**: *Response (contract) vs*Dto (business) types
+
+#### Preserved Architecture
+
+- ✅ MediatR integration via partial class adapters
+- ✅ CQRS pattern unchanged (Commands/Queries in Application layer)
+- ✅ Validation pipeline (ValidationBehavior<TRequest, TResponse>)
+- ✅ Authorization via ASP.NET Core conventions (not attributes on generated code)
+
+### References
 
 - [ATLAS PRD - Technology Stack](../PRDs/atlas-mvp-prd.md#technology-stack)
 - [Clean Architecture - Container Boundaries](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 - [CQRS Pattern](https://martinfowler.com/bliki/CQRS.html)
+- [ADR-012: Generated API Layer with NSwag](../ADRs/adr-012-generated-api-layer.md)
+- [OpenAPI Specification](../../openapi/atlas-api.yaml)
+- [NSwag Documentation](https://github.com/RicoSuter/NSwag)

@@ -1,39 +1,41 @@
+//----------------------
+// Applications Controller Adapter
+// Implements IApplicationsController using MediatR
+//----------------------
+
+#nullable enable
+
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ATLAS.API.Controllers.Generated;
+using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
 using ATLAS.Application.Queries;
-using ATLAS.Application.DTOs;
-using ATLAS.Domain;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ATLAS.API.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
+    [ApiController]    
     [Produces("application/json")]
-    public class ApplicationsController : ControllerBase
+    public sealed class ApplicationsController : ApplicationsControllerBase
     {
         private readonly IMediator _mediator;
-        
+
+        [ActivatorUtilitiesConstructor]
         public ApplicationsController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));         
         }
-        
-        #region GET /api/applications
-        [HttpGet]
-        [Authorize(Roles = "Citizen,Officer,Admin")]
-        public async Task<ActionResult<IEnumerable<ApplicationSummaryDto>>> GetApplications(
-            [FromQuery] Guid? citizenId,
-            [FromQuery] Guid? officerId,
-            [FromQuery] string? status,
-            [FromQuery] Guid? permitTypeId,
-            [FromQuery] DateTime? dateFrom,
-            [FromQuery] DateTime? dateTo,
-            [FromQuery] string? search,
-            CancellationToken cancellationToken)
+
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> ApplicationsGet(
+            Guid? citizenId = null,
+            Guid? officerId = null,
+            string? status = null,
+            Guid? permitTypeId = null,
+            DateTimeOffset? dateFrom = null,
+            DateTimeOffset? dateTo = null,
+            string? search = null)            
         {
             var query = new GetApplicationsQuery
             {
@@ -41,201 +43,131 @@ namespace ATLAS.API.Controllers
                 OfficerId = officerId,
                 Status = status,
                 PermitTypeId = permitTypeId,
-                DateFrom = dateFrom,
-                DateTo = dateTo,
+                DateFrom = dateFrom?.DateTime,
+                DateTo = dateTo?.DateTime,
                 Search = search
             };
-            
-            var results = await _mediator.Send(query, cancellationToken);
-            return Ok(results);
-        }
-        #endregion
 
-        #region POST /api/applications
-        [HttpPost]
-        [Authorize(Roles = "Citizen,Officer,Admin")]
-        [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<Guid>> SubmitApplication(
-            [FromBody] SubmitApplicationCommand command,
-            CancellationToken cancellationToken)
+            var results = await _mediator.Send(query, default);
+            var response = new List<ApplicationSummaryResponse>();
+            foreach (var dto in results)
+            {
+                response.Add(dto.ToResponse());
+            }
+            return response;
+        }
+
+        public override async Task<ActionResult<Guid>> ApplicationsPost(
+            SubmitApplicationRequest body)
         {
-            try
+            var command = new SubmitApplicationCommand
             {
-                var applicationId = await _mediator.Send(command, cancellationToken);
-                
-                return CreatedAtAction(
-                    actionName: nameof(GetApplicationById),
-                    routeValues: new { id = applicationId },
-                    value: applicationId);
-            }
-            catch (FluentValidation.ValidationException ex)
-            {
-                return BadRequest(new ValidationProblemDetails
-                {
-                    Title = "Validation Failed",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = "One or more validation errors occurred",
-                    Errors = ex.Errors.GroupBy(e => e.PropertyName)
-                        .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
-                });
-            }
-        }
-        #endregion
+                CitizenId = body.CitizenId,
+                PermitTypeId = body.PermitTypeId,
+                CitizenNotes = body.CitizenNotes
+            };
 
-        #region GET /api/applications/{id}
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Citizen,Officer,Admin")]
-        [ProducesResponseType(typeof(ApplicationDetailDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApplicationDetailDto>> GetApplicationById(
-            [FromRoute] Guid id,
-            CancellationToken cancellationToken)
+             var applicationId = await _mediator.Send(command, default);
+    
+            // 🆕 Return 201 Created with location header
+            return CreatedAtAction(
+                nameof(ApplicationsGet), 
+                new { id = applicationId }, 
+                applicationId);    
+        }
+
+        public override async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGet(
+            Guid id)
         {
             var query = new GetApplicationByIdQuery { ApplicationId = id };
-            var result = await _mediator.Send(query, cancellationToken);
-            
+            var result = await _mediator.Send(query, default);
+
             if (result == null)
+            {
                 return NotFound();
-                
-            return Ok(result);
-        }
-        #endregion
+            }
 
-        #region POST /api/applications/{id}/approve
-        [HttpPost("{id}/approve")]
-        [Authorize(Roles = "Officer,Admin")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<bool>> ApproveApplication(
-            [FromRoute] Guid id,
-            [FromBody] ApproveApplicationCommand command,
-            CancellationToken cancellationToken)
-        {
-            command.ApplicationId = id;
-            
-            try
-            {
-                var result = await _mediator.Send(command, cancellationToken);
-                
-                if (!result)
-                    return NotFound();
-                    
-                return Ok(result);
-            }
-            catch (DomainException ex)
-            {
-                return BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid Status Transition",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = ex.Message
-                });
-            }
+            return result.ToResponse();
         }
-        #endregion
 
-        #region POST /api/applications/{id}/reject
-        [HttpPost("{id}/reject")]
-        [Authorize(Roles = "Officer,Admin")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<bool>> RejectApplication(
-            [FromRoute] Guid id,
-            [FromBody] RejectApplicationCommand command,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<bool>> Approve(
+            Guid id, ApproveApplicationRequest body)
         {
-            command.ApplicationId = id;
-            
-            try
+            var command = new ApproveApplicationCommand
             {
-                var result = await _mediator.Send(command, cancellationToken);
-                
-                if (!result)
-                    return NotFound();
-                    
-                return Ok(result);
-            }
-            catch (DomainException ex)
-            {
-                return BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid Status Transition",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = ex.Message
-                });
-            }
-        }
-        #endregion
+                ApplicationId = id,
+                OfficerId = body.OfficerId,
+                Comments = body.Comments
+            };
 
-        #region POST /api/applications/{id}/request-info
-        [HttpPost("{id}/request-info")]
-        [Authorize(Roles = "Officer,Admin")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<bool>> RequestInfo(
-            [FromRoute] Guid id,
-            [FromBody] RequestInfoCommand command,
-            CancellationToken cancellationToken)
-        {
-            command.ApplicationId = id;
+            var result = await _mediator.Send(command, default);    
+    
+            if (!result)
+            {
+                return NotFound(); // ← 404 if application not found
+            }
             
-            try
-            {
-                var result = await _mediator.Send(command, cancellationToken);
-                
-                if (!result)
-                    return NotFound();
-                    
-                return Ok(result);
-            }
-            catch (DomainException ex)
-            {
-                return BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid Status Transition",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = ex.Message
-                });
-            }
+            return Ok(true); // ← 200 OK with true            
         }
-        #endregion
 
-        #region POST /api/applications/{id}/assign
-        [HttpPost("{id}/assign")]
-        [Authorize(Roles = "Officer,Admin")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<bool>> AssignToOfficer(
-            [FromRoute] Guid id,
-            [FromBody] AssignToOfficerCommand command,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<bool>> Reject(
+            Guid id, RejectApplicationRequest body)
         {
-            command.ApplicationId = id;
-            
-            try
+            var command = new RejectApplicationCommand
+            {                
+                ApplicationId = id,
+                OfficerId = body.OfficerId,
+                ReasonCode = body.ReasonCode,
+                Comments = body.Comments
+            };
+
+            var result = await _mediator.Send(command, default);
+
+            if (!result)
             {
-                var result = await _mediator.Send(command, cancellationToken);
-                
-                if (!result)
-                    return NotFound();
-                    
-                return Ok(result);
+                return NotFound();
             }
-            catch (DomainException ex)
-            {
-                return BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid Status Transition",
-                    Status = StatusCodes.Status400BadRequest,
-                    Detail = ex.Message
-                });
-            }
+    
+            return Ok(true);            
         }
-        #endregion
+
+        public override async Task<ActionResult<bool>> RequestInfo(
+            Guid id, RequestInfoRequest body)
+        {
+            var command = new RequestInfoCommand
+            {
+                ApplicationId = id,
+                OfficerId = body.OfficerId,
+                Message = body.Message
+            };
+
+            var result = await _mediator.Send(command, default);
+    
+            if (!result)
+            {
+                return NotFound();
+            }
+            
+            return Ok(true);
+        }
+
+        public override async Task<ActionResult<bool>> Assign(
+            Guid id, AssignToOfficerRequest body)
+        {
+            var command = new AssignToOfficerCommand
+            {
+                ApplicationId = id,
+                OfficerId = body.OfficerId
+            };
+
+            var result = await _mediator.Send(command, default);
+    
+            if (!result)
+            {
+                return NotFound();
+            }
+            
+            return Ok(true);
+        }
     }
 }

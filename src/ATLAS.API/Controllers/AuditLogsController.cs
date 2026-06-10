@@ -1,63 +1,65 @@
+//----------------------
+// AuditLogs Controller Adapter
+// Implements IAuditLogsController using MediatR
+//----------------------
+
+#nullable enable
+
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ATLAS.Application.DTOs;
+using ATLAS.API.Controllers.Generated;
+using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Queries;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ATLAS.API.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
-    public class AuditLogsController : ControllerBase
+    [ApiController]    
+    [Produces("application/json")]
+    public sealed class AuditLogsController : AuditLogsControllerBase
     {
         private readonly IMediator _mediator;
 
+        [ActivatorUtilitiesConstructor]
         public AuditLogsController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        /// <summary>
-        /// Get audit logs (F-20)
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuditLogDto>>> GetAuditLogs(
-            [FromQuery] Guid? userId,
-            [FromQuery] string? actionType,
-            [FromQuery] DateTime? dateFrom,
-            [FromQuery] DateTime? dateTo,
-            [FromQuery] Guid? recordId,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<ICollection<AuditLogResponse>>> Auditlogs(
+            Guid? userId = null,
+            string? action = null,
+            DateTimeOffset? dateFrom = null,
+            DateTimeOffset? dateTo = null,
+            Guid? entityId = null)
         {
             var query = new GetAuditLogsQuery
             {
                 UserId = userId,
-                ActionType = actionType,
-                DateFrom = dateFrom,
-                DateTo = dateTo,
-                RecordId = recordId
+                Action = action,
+                DateFrom = dateFrom?.DateTime,
+                DateTo = dateTo?.DateTime,
+                EntityId = entityId
             };
-            var results = await _mediator.Send(query, cancellationToken);
-            return Ok(results);
+            var results = await _mediator.Send(query, default);
+            var response = new List<AuditLogResponse>();
+            foreach (var dto in results)
+            {
+                response.Add(dto.ToResponse());
+            }
+            return Ok(response);
         }
 
-        /// <summary>
-        /// Export audit logs to CSV (F-23)
-        /// </summary>
-        [HttpGet("export")]
-        public async Task<IActionResult> ExportAuditLogs(
-            [FromQuery] Guid? userId,
-            [FromQuery] string? actionType,
-            [FromQuery] DateTime? dateFrom,
-            [FromQuery] DateTime? dateTo,
-            CancellationToken cancellationToken)
+        public override async Task<ActionResult<string>> Export(
+            Guid? userId = null,
+            string? action = null,
+            DateTimeOffset? dateFrom = null,
+            DateTimeOffset? dateTo = null)
         {
             // TODO: Implement CSV export
-            // 1. Get audit logs using GetAuditLogsQuery
-            // 2. Convert to CSV format
-            // 3. Return as FileResult
-            throw new NotImplementedException("CSV export not yet implemented");
+            // Return 501 Not Implemented
+            return StatusCode(501);
         }
     }
 }
