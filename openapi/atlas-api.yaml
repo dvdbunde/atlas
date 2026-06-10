@@ -19,7 +19,7 @@ servers:
     description: Production server
 
 security:
-  - EntraID: ['User.Read']
+  - EntraID: []
 
 tags:
   - name: Applications
@@ -1145,14 +1145,10 @@ components:
   
   securitySchemes:
     EntraID:
-      type: oauth2
-      description: Microsoft Entra ID (Azure AD) authentication
-      flows:
-        authorizationCode:
-          authorizationUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize
-          tokenUrl: https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token
-          scopes:
-            User.Read: Read user profile
-            Citizen: Citizen role access
-            Officer: Officer role access
-            Admin: Admin role access
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Microsoft Entra ID JWT Bearer authentication.
+        Obtain a token from Entra ID (officers/admins) or the local Identity login endpoint (citizens),
+        then include it in the Authorization header: "Bearer {token}"
