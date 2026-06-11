@@ -53,7 +53,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             services.AddInfrastructureForTesting();
         
             // Register test authentication scheme — no Entra ID, no JWT, no external deps
-            // TestAuthHandler reads identity from HttpContext.Items set by TestAuthMiddleware
+            // TestAuthHandler reads identity from the X-Test-Identity header sent by TestHttpContextExtensions
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = TestAuthDefaults.AuthenticationScheme;
@@ -81,9 +81,6 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 
             // Register test claims transformation
             services.AddScoped<IClaimsTransformation, TestClaimsTransformation>();
-
-            // Add middleware to pipeline via startup filter
-            services.AddSingleton<IStartupFilter>(new TestAuthStartupFilter());
 
             // Add logging
             services.AddLogging(builder =>

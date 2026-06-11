@@ -59,6 +59,12 @@ public static class TestHttpContextExtensions
         return await client.SendAsync(CreateRequest(HttpMethod.Put, requestUri, body, identity));
     }
 
+    public static async Task<HttpResponseMessage> DeleteAsAsync(this HttpClient client, string requestUri, TestUserBuilder userBuilder)
+    {
+        var identity = userBuilder.Build();
+        return await client.SendAsync(CreateRequest(HttpMethod.Delete, requestUri, null, identity));
+    }
+
     public static async Task<HttpResponseMessage> GetAnonymousAsync(this HttpClient client, string requestUri)
     {
         var message = new HttpRequestMessage(HttpMethod.Get, requestUri);
@@ -68,6 +74,15 @@ public static class TestHttpContextExtensions
 
     public static async Task<HttpResponseMessage> PostAnonymousAsync(this HttpClient client, string requestUri, object body)
     {
-        return await client.SendAsync(CreateRequest(HttpMethod.Post, requestUri, body, null));        
+        var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+        var message = new HttpRequestMessage(HttpMethod.Post, requestUri)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+        message.Headers.Add("X-Test-Identity", "ANONYMOUS");
+        return await client.SendAsync(message);
     }
 }
