@@ -47,6 +47,19 @@ namespace ATLAS.Application.Behaviors
                 await _identityResolver.SynchronizeUserAsync(cancellationToken);
             }
 
+            // NOTE: SynchronizeUserAsync commits its changes in a separate
+            // transaction from the handler's IUnitOfWork.SaveChangesAsync().
+            // This means the sync save and the handler save are two separate
+            // transaction boundaries. If the handler fails after sync succeeds,
+            // the user sync changes remain committed.
+            //
+            // This is an accepted design trade-off for Option A: keeping the
+            // retry-on-conflict logic self-contained inside IdentityResolver.
+            // A future improvement could wrap both sync + handler in an
+            // IDbContextTransaction, but that would require either:
+            //   (a) moving the transaction orchestration to Infrastructure, or
+            //   (b) accepting the Application layer dependency on EF Core.
+
             // Proceed to the next behavior or the handler
             return await next();
         }

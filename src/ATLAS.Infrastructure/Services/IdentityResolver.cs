@@ -23,8 +23,14 @@ namespace ATLAS.Infrastructure.Services
     /// - LastName from ClaimTypes.Surname (or parsed from ClaimTypes.Name)
     /// - LastLoginDate via user.RecordLogin()
     ///
-    /// Design decision: does NOT call SaveChangesAsync — the caller (e.g., pipeline
-    /// behavior) owns the persist operation, keeping this composable with IUnitOfWork.
+    /// Design decisions:
+    /// - SynchronizeUserAsync internally persists changes and retries on
+    ///   concurrent registration races (DbUpdateException). Callers MUST NOT
+    ///   call SaveChangesAsync after invoking SynchronizeUserAsync.
+    /// - ResolveCurrentUserAsync does NOT persist — it is a pure find-or-create
+    ///   operation in memory.
+    /// - Uses IUnitOfWork internally for persistence, keeping the retry logic
+    ///   self-contained.
     /// </summary>
     public class IdentityResolver : IIdentityResolver
     {
