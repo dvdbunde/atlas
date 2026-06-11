@@ -185,6 +185,11 @@ public static class TestData
     public static Guid Document1Id { get; set; }
     public static Guid Document2Id { get; set; }
     public static Guid Document3Id { get; set; }
+
+    // Test authentication role selector
+    // Use this to switch the test user role (Citizen, Officer, Admin)
+    // Default is Admin to ensure all seeded data is accessible
+    public static string CurrentTestRole { get; set; } = "Admin";
 }
 
 
@@ -199,16 +204,24 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        // Provide complete claims for testing authorization and ICurrentUserService
-        // Using fixed test GUIDs that match seeded test data
-        var testUserId = TestData.AdminUserId != Guid.Empty ? TestData.AdminUserId.ToString() : "11111111-1111-1111-1111-111111111111";
+        // Determine test user identity based on TestData.CurrentTestRole
+        var (userId, name, email, role) = TestData.CurrentTestRole switch
+        {
+            "Citizen" when TestData.CitizenUserId != Guid.Empty => 
+                (TestData.CitizenUserId.ToString(), "Test Citizen", "citizen@atlas.test", "Citizen"),
+            "Officer" when TestData.OfficerUserId != Guid.Empty => 
+                (TestData.OfficerUserId.ToString(), "Test Officer", "officer@atlas.test", "Officer"),
+            "Admin" when TestData.AdminUserId != Guid.Empty => 
+                (TestData.AdminUserId.ToString(), "Test Admin", "admin@atlas.test", "Admin"),
+            _ => ("11111111-1111-1111-1111-111111111111", "Test User", "test@atlas.test", "Citizen")
+        };
         
         var claims = new[] 
         {
-            new Claim(ClaimTypes.NameIdentifier, testUserId),
-            new Claim(ClaimTypes.Name, "Test Admin"),
-            new Claim(ClaimTypes.Email, "admin@atlas.test"),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Name, name),
+            new Claim(ClaimTypes.Email, email),
+            new Claim(ClaimTypes.Role, role)
         };
         
         var identity = new ClaimsIdentity(claims, "Test");
