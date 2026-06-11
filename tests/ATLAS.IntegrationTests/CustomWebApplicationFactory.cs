@@ -1,25 +1,22 @@
+using ATLAS.Application.Behaviors;
+using ATLAS.Application.Interfaces;
+using ATLAS.Domain.Entities;
+using ATLAS.Domain.Enums;
+using ATLAS.Domain.Interfaces;
+using ATLAS.Infrastructure.Data;
+using ATLAS.Infrastructure.Repositories;
+using ATLAS.Infrastructure.Services;
+using ATLAS.IntegrationTests.Auth;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using ATLAS.Infrastructure.Data;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
-using ATLAS.Domain.Entities;
-using ATLAS.Domain.Enums;
-using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using ATLAS.Application.Behaviors;
-using ATLAS.Application.Interfaces;
-using ATLAS.Domain.Interfaces;
-using ATLAS.Infrastructure.Repositories;
-using ATLAS.Infrastructure.Services;
-using Microsoft.AspNetCore.Http;
 
 namespace ATLAS.IntegrationTests;
 
@@ -55,23 +52,38 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             // Call a test-specific infrastructure registration
             services.AddInfrastructureForTesting();
         
-            // Bypass authentication for integration tests
+            // Register test authentication scheme — no Entra ID, no JWT, no external deps
+            // TestAuthHandler reads identity from HttpContext.Items set by TestAuthMiddleware
             services.AddAuthentication(options =>
             {
-                options.DefaultAuthenticateScheme = "Test";
-                options.DefaultChallengeScheme = "Test";
+                options.DefaultAuthenticateScheme = TestAuthDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = TestAuthDefaults.AuthenticationScheme;
+                options.DefaultScheme = TestAuthDefaults.AuthenticationScheme;
             })
-            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
-                "Test", options => { });
+            .AddScheme<TestAuthenticationOptions, TestAuthHandler>(
+                TestAuthDefaults.AuthenticationScheme, options => { });
 
-            // Bypass authorization for integration tests
+            // Keep REAL authorization — test authentication provides role claims
+            // that policies evaluate against. No bypass.
             services.AddAuthorization(options =>
             {
-                options.DefaultPolicy = new AuthorizationPolicyBuilder()
-                    .AddAuthenticationSchemes("Test")
-                    .RequireAssertion(_ => true) // Always succeed
-                    .Build();
+                options.AddPolicy("Authenticated", policy =>
+                    policy.RequireAuthenticatedUser());
+                options.AddPolicy("Citizen", policy =>
+                    policy.RequireRole("Citizen"));
+                options.AddPolicy("Officer", policy =>
+                    policy.RequireRole("Officer"));
+                options.AddPolicy("Admin", policy =>
+                    policy.RequireRole("Admin"));
+                options.AddPolicy("OfficerOrAdmin", policy =>
+                    policy.RequireRole("Officer", "Admin"));
             });
+
+            // Register test claims transformation
+            services.AddScoped<IClaimsTransformation, TestClaimsTransformation>();
+
+            // Add middleware to pipeline via startup filter
+            services.AddSingleton<IStartupFilter>(new TestAuthStartupFilter());
 
             // Add logging
             services.AddLogging(builder =>
@@ -81,7 +93,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             });
         });
 
-        // 🆕 ENABLE DETAILED LOGGING
+        // Enable detailed logging
         builder.UseSetting("Logging:LogLevel:Microsoft.AspNetCore", "Debug");
         builder.UseSetting("Logging:LogLevel:Microsoft.AspNetCore.Routing", "Trace");
         builder.UseSetting("Logging:Console:IncludeScopes", "true");
@@ -188,88 +200,27 @@ public static class TestData
     public static Guid Document1Id { get; set; }
     public static Guid Document2Id { get; set; }
     public static Guid Document3Id { get; set; }
-
-    // Test authentication role selector
-    // Use this to switch the test user role (Citizen, Officer, Admin)
-    // Default is Admin to ensure all seeded data is accessible
-    public static string CurrentTestRole { get; set; } = "Admin";
 }
 
-
-// Test authentication handler that always succeeds
-public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger, UrlEncoder encoder)
-        : base(options, logger, encoder)
-    {
-    }
-
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        // Determine test user identity based on TestData.CurrentTestRole
-        var (userId, name, email, role) = TestData.CurrentTestRole switch
-        {
-            "Citizen" when TestData.CitizenUserId != Guid.Empty => 
-                (TestData.CitizenUserId.ToString(), "Test Citizen", "citizen@atlas.test", "Citizen"),
-            "Officer" when TestData.OfficerUserId != Guid.Empty => 
-                (TestData.OfficerUserId.ToString(), "Test Officer", "officer@atlas.test", "Officer"),
-            "Admin" when TestData.AdminUserId != Guid.Empty => 
-                (TestData.AdminUserId.ToString(), "Test Admin", "admin@atlas.test", "Admin"),
-            _ => ("11111111-1111-1111-1111-111111111111", "Test User", "test@atlas.test", "Admin") // Fallback to a default test user if role or IDs are not set
-        };
-        
-        var claims = new[] 
-        {
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Name, name),
-            new Claim(ClaimTypes.Email, email),
-            new Claim(ClaimTypes.Role, role)
-        };
-        
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, "Test");
-
-        var result = AuthenticateResult.Success(ticket);
-        return Task.FromResult(result);
-    }
-}
-
-
-// Extension method for test infrastructure
 public static class TestServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureForTesting(this IServiceCollection services)
-    {       
-        // Register repositories
+    {
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-        
-        // Register Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-        // Register HTTP context accessor and current user service
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-        // Register identity resolver
         services.AddScoped<IIdentityResolver, IdentityResolver>();
-
-        // Register MediatR from ALL layers
-        services.AddMediatR(cfg => 
+        services.AddMediatR(cfg =>
         {
-            cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); // API layer (contains Controllers)
-            cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly); // Application layer (contains handlers)
-            cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly); // Infrastructure layer (contains event handlers)
-
-            // User synchronization pipeline behavior — runs before every request handler
+            cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly);
             cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
         });
-
-        
         return services;
     }
 }
