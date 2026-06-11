@@ -14,8 +14,11 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using ATLAS.Application.Behaviors;
+using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Infrastructure.Repositories;
+using ATLAS.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace ATLAS.IntegrationTests;
@@ -248,12 +251,22 @@ public static class TestServiceCollectionExtensions
         // Register Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // Register HTTP context accessor and current user service
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        // Register identity resolver
+        services.AddScoped<IIdentityResolver, IdentityResolver>();
+
         // Register MediatR from ALL layers
         services.AddMediatR(cfg => 
         {
             cfg.RegisterServicesFromAssembly(typeof(Program).Assembly); // API layer (contains Controllers)
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly); // Application layer (contains handlers)
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly); // Infrastructure layer (contains event handlers)
+
+            // User synchronization pipeline behavior — runs before every request handler
+            cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
         });
 
         

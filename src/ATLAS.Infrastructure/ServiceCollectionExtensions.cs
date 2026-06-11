@@ -55,6 +55,9 @@ namespace ATLAS.Infrastructure
             // Register current user service — resolves authenticated user identity from HTTP context
             services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+            // Register identity resolver — synchronizes claims with Domain User aggregate
+            services.AddScoped<IIdentityResolver, IdentityResolver>();
+
             // Register repositories
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();

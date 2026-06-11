@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.Security.Claims;
 using ATLAS.API.Auth;
 using ATLAS.API.Controllers;
+using ATLAS.Application.Behaviors;
 using ATLAS.Infrastructure;
 using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -21,6 +23,9 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);    
     cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
+    
+    // User synchronization pipeline behavior — runs before every request handler
+    cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
 });
 
 // Register FluentValidation validators from Application layer

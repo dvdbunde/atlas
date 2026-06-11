@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 using ATLAS.IntegrationTests;
 
@@ -100,6 +101,55 @@ namespace ATLAS.IntegrationTests.API
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AuthenticatedRequest_ShouldSyncExistingUser()
+        {
+            // Arrange - Use seeded Admin identity which has known UserId
+            var previousRole = TestData.CurrentTestRole;
+            TestData.CurrentTestRole = "Admin";
+
+            try
+            {
+                // Act - Make an authenticated request that triggers UserSynchronizationBehavior
+                var response = await _client.GetAsync("/api/users");
+
+                // Assert - Request succeeded; sync ran without error
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            }
+            finally
+            {
+                TestData.CurrentTestRole = previousRole;
+            }
+        }
+
+        [Fact]
+        public async Task AuthenticatedRequest_WithNewIdentity_ShouldCreateUser()
+        {
+            // Arrange - Use a role that triggers the TestAuthHandler's default fallback identity
+            // The fallback identity has a hardcoded GUID and email "test@atlas.test" that
+            // won't match any seeded user, so IdentityResolver will create a new Domain User.
+            var previousRole = TestData.CurrentTestRole;
+            TestData.CurrentTestRole = "NewSyncTestUser";
+
+            try
+            {
+                // Act - First request triggers UserSynchronizationBehavior
+                var firstResponse = await _client.GetAsync("/api/users");
+                Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+                // Verify the synced user appears in the user list
+                var listResponse = await _client.GetAsync("/api/users");
+                var content = await listResponse.Content.ReadAsStringAsync();
+
+                // Assert - The new user with email "test@atlas.test" should have been created
+                Assert.Contains("test@atlas.test", content);
+            }
+            finally
+            {
+                TestData.CurrentTestRole = previousRole;
+            }
         }
     }
 }
