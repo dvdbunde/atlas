@@ -199,7 +199,18 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var claims = new[] { new Claim(ClaimTypes.Name, "Test User") };
+        // Provide complete claims for testing authorization and ICurrentUserService
+        // Using fixed test GUIDs that match seeded test data
+        var testUserId = TestData.AdminUserId != Guid.Empty ? TestData.AdminUserId.ToString() : "11111111-1111-1111-1111-111111111111";
+        
+        var claims = new[] 
+        {
+            new Claim(ClaimTypes.NameIdentifier, testUserId),
+            new Claim(ClaimTypes.Name, "Test Admin"),
+            new Claim(ClaimTypes.Email, "admin@atlas.test"),
+            new Claim(ClaimTypes.Role, "Admin")
+        };
+        
         var identity = new ClaimsIdentity(claims, "Test");
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, "Test");
