@@ -72,7 +72,7 @@ User (Aggregate Root)
 - User registration and profile management
 - Role assignment and permission enforcement
 - Account activation/deactivation
-- Integration with Microsoft Entra ID (Officers/Admins) and local accounts (Citizens)
+- Integration with Microsoft Entra ID (all user types)
 
 **Key Use Cases:**
 

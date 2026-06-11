@@ -6,7 +6,7 @@ This document illustrates the key data flows and process interactions in ATLAS u
 
 ## Prerequisites
 
-- **User is authenticated** via Microsoft Entra ID (Officers/Admins) or local account (Citizens)
+- **User is authenticated** via Microsoft Entra ID (all user types — Citizen, Officer, Admin)
 - **User has appropriate role** (Citizen, Officer, Admin) for the operation
 
 ---

@@ -564,7 +564,7 @@ paths:
     post:
       tags: [Users]
       summary: Create user account
-      description: Register a new user account
+      description: Create a new user profile in the system. Authentication is managed by Microsoft Entra ID — this endpoint creates the Domain User record for business operations.
       operationId: createUser
       requestBody:
         required: true
@@ -1148,7 +1148,6 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: |
+      description: >
         Microsoft Entra ID JWT Bearer authentication.
-        Obtain a token from Entra ID (officers/admins) or the local Identity login endpoint (citizens),
-        then include it in the Authorization header: "Bearer {token}"
+        Obtain a token from Microsoft Entra ID, then include it in the Authorization header: "Bearer {token}"

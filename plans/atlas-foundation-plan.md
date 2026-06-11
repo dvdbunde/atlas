@@ -241,25 +241,27 @@ flowchart TD
 
 ## Milestone 4: Authentication 🔄 IN PROGRESS**
 
-**Objective**: Integrate Microsoft Entra ID (ADR-008) for government employees and ASP.NET Core Identity for citizens.
+**Objective**: Implement Microsoft Entra ID authentication for all user roles (Citizen, Officer, Admin).
 
 **Deliverables**:
 
-- Microsoft Entra ID app registration configuration (for Officers/Admins per ADR-008)
-- ASP.NET Core Identity setup (for Citizens per ADR-008)
-- Blazor authentication with OpenID Connect (Officers/Admins) + Identity (Citizens)
-- Role definitions: `Citizen`, `Officer`, `Admin` (per ADR-008)
+- Microsoft Entra ID app registration configuration
+- JWT Bearer authentication pipeline (token validation, claims transformation)
+- ICurrentUserService + IIdentityResolver for user context resolution
+- UserSynchronizationBehavior (MediatR pipeline — auto-provisions Domain Users from JWT claims)
+- Role definitions: `Citizen`, `Officer`, `Admin` (assigned via Entra ID app roles)
 - Authorization policies for role-based access
+- GeneratedControllerAuthorizationConvention (convention-based auth on NSwag-generated controllers)
 - Login/logout UI components
 
 **Acceptance Criteria**:
 
-- ✅ Officers/Admins can log in with Microsoft Entra ID accounts (ADR-008)
-- ✅ Citizens can create local accounts (ASP.NET Core Identity per ADR-008)
+- ✅ All users can authenticate with Microsoft Entra ID accounts
+- ✅ Domain Users auto-provisioned from JWT claims on first login
 - ✅ Role-based authorization enforced (Citizens cannot access officer dashboard)
 - ✅ Authentication state persists across browser sessions
-- ✅ Unauthorized access returns 403 Forbidden
-- ✅ User roles properly assigned based on ADR-008 role definitions
+- ✅ Unauthorized access returns 401; forbidden returns 403
+- ✅ User roles properly assigned based on Entra ID app role definitions
 
 **Dependencies**: Milestone 1 (Solution Foundation), Milestone 3 (Database Persistence for user profiles)
 

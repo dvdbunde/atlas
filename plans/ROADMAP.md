@@ -22,7 +22,7 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 - M1: Solution Foundation (Clean Architecture, CI/CD, Bicep templates) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M2: Domain Model (Entities, Aggregates, Value Objects, Domain Events) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M3: Database Persistence (EF Core, Azure SQL, Repositories) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
-- M4: Authentication (Entra ID + ASP.NET Core Identity) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M4: Authentication (Microsoft Entra ID) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
 - M5: Permit Submission (Citizen UI, Form Validation) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M6: Document Upload (Azure Blob Storage, Drag-and-Drop) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M7: Application Review (Officer Dashboard, Review Workflow) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
