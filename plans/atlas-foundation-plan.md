@@ -252,6 +252,8 @@ flowchart TD
 - Role definitions: `Citizen`, `Officer`, `Admin` (assigned via Entra ID app roles)
 - Authorization policies for role-based access
 - GeneratedControllerAuthorizationConvention (convention-based auth on NSwag-generated controllers)
+- Swagger OAuth2 Authorization Code flow integration with Entra ID (replaced generic JWT Bearer dialog)
+- OpenAPI `EntraID` security scheme aligned to `openIdConnect` type
 - Login/logout UI components
 
 **Acceptance Criteria**:
@@ -262,6 +264,8 @@ flowchart TD
 - ✅ Authentication state persists across browser sessions
 - ✅ Unauthorized access returns 401; forbidden returns 403
 - ✅ User roles properly assigned based on Entra ID app role definitions
+- ✅ Swagger UI authenticates directly with Entra ID via OAuth2 Authorization Code flow
+- ✅ Security scheme naming consistent across OpenAPI ("EntraID"), Swagger UI ("EntraID"), and ASP.NET auth pipeline
 
 **Dependencies**: Milestone 1 (Solution Foundation), Milestone 3 (Database Persistence for user profiles)
 

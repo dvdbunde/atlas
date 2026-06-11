@@ -1130,9 +1130,9 @@ components:
   
   securitySchemes:
     EntraID:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: openIdConnect
+      openIdConnectUrl: https://login.microsoftonline.com/{tenantId}/v2.0/.well-known/openid-configuration
       description: >
-        Microsoft Entra ID JWT Bearer authentication.
-        Obtain a token from Microsoft Entra ID, then include it in the Authorization header: "Bearer {token}"
+        Microsoft Entra ID OAuth 2.0 authentication with OpenID Connect.
+        Obtain a token from Microsoft Entra ID (https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize)
+        using the Authorization Code flow, then include it in the Authorization header: "Bearer {token}"

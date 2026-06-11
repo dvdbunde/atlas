@@ -31,6 +31,12 @@ builder.Services.AddMediatR(cfg =>
 // Register FluentValidation validators from Application layer
 builder.Services.AddValidatorsFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
 
+// Read Azure AD config for Swagger OAuth2 and JWT validation
+var azureAdConfig = builder.Configuration.GetSection("AzureAd");
+var swaggerTenantId = azureAdConfig["TenantId"] ?? "common";
+var swaggerClientId = azureAdConfig["ClientId"] ?? "";
+var swaggerScope = $"api://{swaggerClientId}/access_as_user";
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo 
@@ -39,15 +45,26 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1" 
     });
 
-    // JWT Bearer security definition for Swagger UI "Authorize" button
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // Entra ID OAuth2 Authorization Code security definition for Swagger UI "Authorize" button
+    var authorizationUrl = $"https://login.microsoftonline.com/{swaggerTenantId}/oauth2/v2.0/authorize";
+    var tokenUrl = $"https://login.microsoftonline.com/{swaggerTenantId}/oauth2/v2.0/token";
+
+    c.AddSecurityDefinition("EntraID", new OpenApiSecurityScheme
     {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter your JWT Bearer token."
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            AuthorizationCode = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri(authorizationUrl),
+                TokenUrl = new Uri(tokenUrl),
+                Scopes = new Dictionary<string, string>
+                {
+                    { swaggerScope, "Access ATLAS API" }
+                }
+            }
+        },
+        Description = "Microsoft Entra ID OAuth2 Authorization Code flow. Obtain a token from Entra ID and use it as a Bearer token in API requests."
     });
 
     // Apply globally so all endpoints show the padlock
@@ -59,10 +76,10 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Id = "EntraID"
                 }
             },
-            Array.Empty<string>()
+            new[] { swaggerScope }
         }
     });
 });
@@ -179,6 +196,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "ATLAS API v1");
+        options.OAuthClientId(swaggerClientId);
+        options.OAuthScopes(swaggerScope);
+        options.OAuthUsePkce();
     });
     app.MapOpenApi();
 }
