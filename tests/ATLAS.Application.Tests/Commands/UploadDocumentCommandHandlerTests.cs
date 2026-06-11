@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.Interfaces;
 using ATLAS.Application.Commands;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Events;
@@ -15,13 +16,21 @@ namespace ATLAS.Application.Tests.Commands
     {
         private readonly Mock<IApplicationRepository> _mockRepository;
         private readonly Mock<IMediator> _mockMediator;
+        private readonly Mock<ICurrentUserService> _mockCurrentUserService;
         private readonly UploadDocumentCommandHandler _handler;
+        private readonly Guid _testUserId;
 
         public UploadDocumentCommandHandlerTests()
         {
             _mockRepository = new Mock<IApplicationRepository>();
             _mockMediator = new Mock<IMediator>();
-            _handler = new UploadDocumentCommandHandler(_mockRepository.Object, _mockMediator.Object);
+            _mockCurrentUserService = new Mock<ICurrentUserService>();
+            _testUserId = Guid.NewGuid();
+            _mockCurrentUserService.Setup(s => s.UserId).Returns(_testUserId);
+            _handler = new UploadDocumentCommandHandler(
+                _mockRepository.Object,
+                _mockMediator.Object,
+                _mockCurrentUserService.Object);
         }
 
         [Fact]
@@ -39,13 +48,11 @@ namespace ATLAS.Application.Tests.Commands
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.pdf",
-                UploadedById = Guid.NewGuid()
+                BlobUrl = "https://blob.com/test.pdf"
             };
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
-
             // Assert
             Assert.True(result);
             _mockRepository.Verify(r => r.UpdateAsync(application, It.IsAny<CancellationToken>()), Times.Once);
@@ -66,13 +73,11 @@ namespace ATLAS.Application.Tests.Commands
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.pdf",
-                UploadedById = Guid.NewGuid()
+                BlobUrl = "https://blob.com/test.pdf"
             };
 
             // Act
             var result = await _handler.Handle(command, CancellationToken.None);
-
             // Assert
             Assert.False(result);
         }
@@ -81,7 +86,7 @@ namespace ATLAS.Application.Tests.Commands
         public async Task Handle_ShouldThrowArgumentNullException_WhenRequestIsNull()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
                 _handler.Handle(null, CancellationToken.None));
         }
     }

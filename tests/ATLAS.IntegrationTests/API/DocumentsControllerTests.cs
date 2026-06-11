@@ -29,8 +29,7 @@ namespace ATLAS.IntegrationTests.API
                 fileName = "test.pdf",
                 contentType = "application/pdf",
                 fileSize = 1024,
-                blobUrl = "https://example.com/test.pdf",
-                uploadedById = TestData.CitizenUserId
+                blobUrl = "https://example.com/test.pdf"
             };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),

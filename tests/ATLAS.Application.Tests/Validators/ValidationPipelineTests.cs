@@ -18,7 +18,6 @@ namespace ATLAS.Application.Tests.Validators
             var validator = new SubmitApplicationCommandValidator();
             var command = new SubmitApplicationCommand
             {
-                CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.NewGuid(),
                 CitizenNotes = "Test notes"
             };
@@ -31,13 +30,12 @@ namespace ATLAS.Application.Tests.Validators
         }
 
         [Fact]
-        public void SubmitApplicationCommand_ShouldFail_WhenCitizenIdEmpty()
+        public void SubmitApplicationCommand_ShouldPass_WhenPermitTypeIdProvided()
         {
             // Arrange
             var validator = new SubmitApplicationCommandValidator();
             var command = new SubmitApplicationCommand
             {
-                CitizenId = Guid.Empty,
                 PermitTypeId = Guid.NewGuid()
             };
 
@@ -45,8 +43,7 @@ namespace ATLAS.Application.Tests.Validators
             var result = validator.Validate(command);
 
             // Assert
-            Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "CitizenId" && e.ErrorMessage == "CitizenId is required");
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -56,7 +53,6 @@ namespace ATLAS.Application.Tests.Validators
             var validator = new SubmitApplicationCommandValidator();
             var command = new SubmitApplicationCommand
             {
-                CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.Empty
             };
 
@@ -75,7 +71,6 @@ namespace ATLAS.Application.Tests.Validators
             var validator = new SubmitApplicationCommandValidator();
             var command = new SubmitApplicationCommand
             {
-                CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.NewGuid(),
                 CitizenNotes = new string('A', 2001) // Exceeds 2000 chars
             };
@@ -100,7 +95,6 @@ namespace ATLAS.Application.Tests.Validators
             var command = new ApproveApplicationCommand
             {
                 ApplicationId = Guid.NewGuid(),
-                OfficerId = Guid.NewGuid(),
                 Comments = "Approved"
             };
 
@@ -118,8 +112,7 @@ namespace ATLAS.Application.Tests.Validators
             var validator = new ApproveApplicationCommandValidator();
             var command = new ApproveApplicationCommand
             {
-                ApplicationId = Guid.Empty,
-                OfficerId = Guid.NewGuid()
+                ApplicationId = Guid.Empty
             };
 
             // Act
@@ -142,7 +135,6 @@ namespace ATLAS.Application.Tests.Validators
             var command = new RejectApplicationCommand
             {
                 ApplicationId = Guid.NewGuid(),
-                OfficerId = Guid.NewGuid(),
                 ReasonCode = ""
             };
 
@@ -162,7 +154,6 @@ namespace ATLAS.Application.Tests.Validators
             var command = new RejectApplicationCommand
             {
                 ApplicationId = Guid.NewGuid(),
-                OfficerId = Guid.NewGuid(),
                 ReasonCode = new string('R', 1001) // Exceeds 1000 chars
             };
 
@@ -189,8 +180,7 @@ namespace ATLAS.Application.Tests.Validators
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 11 * 1024 * 1024, // 11MB
-                BlobUrl = "https://blob.com/test.pdf",
-                UploadedById = Guid.NewGuid()
+                BlobUrl = "https://blob.com/test.pdf"
             };
 
             // Act
@@ -212,8 +202,7 @@ namespace ATLAS.Application.Tests.Validators
                 FileName = "test.exe",
                 ContentType = "application/exe", // Invalid type
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.exe",
-                UploadedById = Guid.NewGuid()
+                BlobUrl = "https://blob.com/test.exe"
             };
 
             // Act
@@ -235,8 +224,7 @@ namespace ATLAS.Application.Tests.Validators
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.pdf",
-                UploadedById = Guid.NewGuid()
+                BlobUrl = "https://blob.com/test.pdf"
             };
 
             // Act

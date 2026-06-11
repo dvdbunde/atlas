@@ -58,6 +58,9 @@ namespace ATLAS.Infrastructure
             // Register identity resolver — synchronizes claims with Domain User aggregate
             services.AddScoped<IIdentityResolver, IdentityResolver>();
 
+            // Register execution context — request-scoped identity + correlation tracing
+            services.AddScoped<IExecutionContext, ExecutionContext>();
+
             // Register repositories
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
@@ -93,6 +96,7 @@ namespace ATLAS.Infrastructure
 
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IExecutionContext, ExecutionContext>();
             return services;
         }
     }

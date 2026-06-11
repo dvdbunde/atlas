@@ -311,9 +311,6 @@ namespace ATLAS.API.Contracts.Generated
     public partial class SubmitApplicationRequest
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("citizenId")]
-        public System.Guid CitizenId { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("permitTypeId")]
         public System.Guid PermitTypeId { get; set; } = default!;
 
@@ -338,9 +335,6 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("officerId")]
-        public System.Guid OfficerId { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("comments")]
         public string Comments { get; set; } = "";
 
@@ -361,9 +355,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("officerId")]
-        public System.Guid OfficerId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("reasonCode")]
         public string ReasonCode { get; set; } = default!;
@@ -388,9 +379,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("officerId")]
-        public System.Guid OfficerId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("message")]
         public string Message { get; set; } = default!;
@@ -445,9 +433,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("blobUrl")]
         public System.Uri BlobUrl { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("uploadedById")]
-        public System.Guid UploadedById { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

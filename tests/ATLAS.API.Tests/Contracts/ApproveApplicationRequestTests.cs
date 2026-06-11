@@ -10,20 +10,17 @@ namespace ATLAS.API.Tests.Contracts
         {
             // Arrange
             var applicationId = Guid.NewGuid();
-            var officerId = Guid.NewGuid();
             var comments = "Approved";
 
             // Act
             var request = new ApproveApplicationRequest
             {
                 ApplicationId = applicationId,
-                OfficerId = officerId,
                 Comments = comments
             };
 
             // Assert
             Assert.Equal(applicationId, request.ApplicationId);
-            Assert.Equal(officerId, request.OfficerId);
             Assert.Equal(comments, request.Comments);
         }    
     }

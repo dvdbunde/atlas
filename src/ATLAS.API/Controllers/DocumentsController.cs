@@ -36,8 +36,7 @@ namespace ATLAS.API.Controllers
                 FileName = body.FileName,
                 ContentType = body.ContentType,
                 FileSize = body.FileSize,
-                BlobUrl = body.BlobUrl?.ToString() ?? string.Empty,
-                UploadedById = body.UploadedById
+                BlobUrl = body.BlobUrl?.ToString() ?? string.Empty
             };
 
             var result = await _mediator.Send(command, default);                        

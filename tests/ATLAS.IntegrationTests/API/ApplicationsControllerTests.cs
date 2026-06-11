@@ -51,7 +51,6 @@ namespace ATLAS.IntegrationTests.API
             // Arrange - Use seeded data
             var request = new
             {
-                citizenId = TestData.CitizenUserId,
                 permitTypeId = TestData.BuildingPermitTypeId,
                 citizenNotes = "Test application"
             };
@@ -96,9 +95,9 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task ApproveApplication_Should_Return200OK()
         {
-            // Arrange - Use seeded application and officer IDs
+            // Arrange - Use seeded application
             var applicationId = TestData.Application1Id;
-            var request = new ApproveApplicationRequest { ApplicationId = applicationId, OfficerId = TestData.OfficerUserId, Comments = "Approved" };
+            var request = new ApproveApplicationRequest { ApplicationId = applicationId, Comments = "Approved" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,
@@ -119,7 +118,6 @@ namespace ATLAS.IntegrationTests.API
             var request = new RejectApplicationRequest 
             { 
                 ApplicationId = applicationId,
-                OfficerId = TestData.OfficerUserId,  // ← Add this
                 ReasonCode = "INCOMPLETE_DOCUMENTATION", 
                 Comments = "Rejected" 
             };
@@ -145,7 +143,7 @@ namespace ATLAS.IntegrationTests.API
         {
             // Arrange - Use seeded application (submitted, can request info)
             var applicationId = TestData.Application1Id;
-            var request = new RequestInfoRequest {ApplicationId = applicationId, OfficerId = TestData.OfficerUserId, Message  = "Please provide additional information" };
+            var request = new RequestInfoRequest {ApplicationId = applicationId, Message = "Please provide additional information" };
             var content = new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(request),
                 System.Text.Encoding.UTF8,

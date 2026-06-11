@@ -977,27 +977,21 @@ components:
     
     SubmitApplicationRequest:
       type: object
-      properties:
-        citizenId:
-          type: string
-          format: uuid
+      properties:        
         permitTypeId:
           type: string
           format: uuid
         citizenNotes:
           type: string
           default: ''
-      required: [citizenId, permitTypeId]
+      required: [permitTypeId]
     
     ApproveApplicationRequest:
       type: object
       properties:
         applicationId:
           type: string
-          format: uuid
-        officerId:
-          type: string        
-          format: uuid
+          format: uuid        
         comments:
           type: string
           default: ''
@@ -1008,10 +1002,7 @@ components:
       properties:
         applicationId:
           type: string
-          format: uuid
-        officerId:
-          type: string        
-          format: uuid
+          format: uuid        
         reasonCode:
           type: string
         comments:
@@ -1024,10 +1015,7 @@ components:
       properties:
         applicationId:
           type: string
-          format: uuid
-        officerId:
-          type: string
-          format: uuid
+          format: uuid        
         message:
           type: string        
       required: [applicationId, message]
@@ -1058,10 +1046,7 @@ components:
           format: int64
         blobUrl:
           type: string
-          format: uri
-        uploadedById:
-          type: string        
-          format: uuid
+          format: uri        
       required: [applicationId, fileName, contentType, fileSize]
     
     CreatePermitTypeRequest:

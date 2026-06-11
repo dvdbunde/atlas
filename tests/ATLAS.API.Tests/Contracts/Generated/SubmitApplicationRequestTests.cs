@@ -11,13 +11,11 @@ namespace ATLAS.API.Tests.Contracts.Generated
             // Arrange & Act
             var request = new SubmitApplicationRequest
             {
-                CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.NewGuid(),
                 CitizenNotes = "Need permit for renovation"
             };
 
             // Assert
-            Assert.NotEqual(Guid.Empty, request.CitizenId);
             Assert.NotEqual(Guid.Empty, request.PermitTypeId);
             Assert.Equal("Need permit for renovation", request.CitizenNotes);
         }
@@ -29,7 +27,6 @@ namespace ATLAS.API.Tests.Contracts.Generated
             var request = new SubmitApplicationRequest();
 
             // Assert
-            Assert.Equal(default(Guid), request.CitizenId);
             Assert.Equal(default(Guid), request.PermitTypeId);
             Assert.Equal("", request.CitizenNotes); // Default is ""
         }
