@@ -20,6 +20,13 @@ public class TestAuthHandler : AuthenticationHandler<TestAuthenticationOptions>
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {      
+          // Explicit anonymous signal — return NoResult (no authenticated identity)
+        if (Context.Request.Headers.TryGetValue("X-Test-Identity", out var anonHeader) &&
+            anonHeader.FirstOrDefault() == "ANONYMOUS")
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+        
         if (Context.Items.TryGetValue(UserIdentityKey, out var identityObj) &&
             identityObj is ClaimsPrincipal principal)
         {

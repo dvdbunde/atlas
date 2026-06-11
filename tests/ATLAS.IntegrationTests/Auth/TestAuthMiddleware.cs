@@ -18,37 +18,47 @@ public class TestAuthMiddleware
     {
         if (context.Request.Headers.TryGetValue("X-Test-Identity", out var headerValue))
         {          
-            try
+            var value = headerValue.FirstOrDefault();
+            if (value == "ANONYMOUS")
             {
-                var base64 = headerValue.ToString();
-                var json = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
-                var dto = JsonSerializer.Deserialize<TestIdentityDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                if (dto != null)
-                {
-                    var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, dto.UserId ?? Guid.NewGuid().ToString()),
-                        new Claim(ClaimTypes.Name, dto.Name ?? "Test User"),
-                        new Claim(ClaimTypes.Email, dto.Email ?? "test@atlas.test"),
-                    };
-
-                    if (dto.Roles != null)
-                    {
-                        foreach (var role in dto.Roles)
-                        {
-                            claims.Add(new Claim(ClaimTypes.Role, role));
-                        }
-                    }
-
-                    var identity = new ClaimsIdentity(claims, TestAuthDefaults.AuthenticationScheme);
-                    var principal = new ClaimsPrincipal(identity);
-                    context.Items[TestAuthHandler.UserIdentityKey] = principal;
-                }
+                // Do nothing — let handler return NoResult
+                // No identity set in context items
             }
-            catch
+            else if (!string.IsNullOrEmpty(value))
             {
-            }            
+                try
+                {
+                    var base64 = headerValue.ToString();
+                    var json = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                    var dto = JsonSerializer.Deserialize<TestIdentityDto>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (dto != null)
+                    {
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, dto.UserId ?? Guid.NewGuid().ToString()),
+                            new Claim(ClaimTypes.Name, dto.Name ?? "Test User"),
+                            new Claim(ClaimTypes.Email, dto.Email ?? "test@atlas.test"),
+                        };
+
+                        if (dto.Roles != null)
+                        {
+                            foreach (var role in dto.Roles)
+                            {
+                                claims.Add(new Claim(ClaimTypes.Role, role));
+                            }
+                        }
+
+                        var identity = new ClaimsIdentity(claims, TestAuthDefaults.AuthenticationScheme);
+                        var principal = new ClaimsPrincipal(identity);
+                        context.Items[TestAuthHandler.UserIdentityKey] = principal;
+                    }
+                }
+                catch
+                {
+                }       
+            }
+                 
         }
 
         await _next(context);

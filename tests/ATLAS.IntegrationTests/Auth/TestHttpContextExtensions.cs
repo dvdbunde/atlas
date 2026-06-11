@@ -61,11 +61,13 @@ public static class TestHttpContextExtensions
 
     public static async Task<HttpResponseMessage> GetAnonymousAsync(this HttpClient client, string requestUri)
     {
-        return await client.SendAsync(CreateRequest(HttpMethod.Get, requestUri, null, null));
+        var message = new HttpRequestMessage(HttpMethod.Get, requestUri);
+        message.Headers.Add("X-Test-Identity", "ANONYMOUS");
+        return await client.SendAsync(message);
     }
 
     public static async Task<HttpResponseMessage> PostAnonymousAsync(this HttpClient client, string requestUri, object body)
     {
-        return await client.SendAsync(CreateRequest(HttpMethod.Post, requestUri, body, null));
+        return await client.SendAsync(CreateRequest(HttpMethod.Post, requestUri, body, null));        
     }
 }
