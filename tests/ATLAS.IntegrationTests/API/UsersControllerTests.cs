@@ -1,6 +1,8 @@
+using ATLAS.IntegrationTests.Auth;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 using ATLAS.IntegrationTests;
 
@@ -19,7 +21,7 @@ namespace ATLAS.IntegrationTests.API
         public async Task GetUsers_Should_Return200OK()
         {
             // Act
-            var response = await _client.GetAsync("/api/users");
+            var response = await _client.GetAsAsync("/api/users", TestUserBuilder.AsAdmin());
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -29,7 +31,7 @@ namespace ATLAS.IntegrationTests.API
         public async Task GetUsers_WithRole_Should_Return200OK()
         {
             // Act
-            var response = await _client.GetAsync("/api/users?role=Admin");
+            var response = await _client.GetAsAsync("/api/users?role=Admin", TestUserBuilder.AsAdmin());
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -46,13 +48,9 @@ namespace ATLAS.IntegrationTests.API
                 lastName = "User",
                 role = "Citizen"
             };
-            var content = new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(request),
-                System.Text.Encoding.UTF8,
-                "application/json");
 
             // Act
-            var response = await _client.PostAsync("/api/users", content);
+            var response = await _client.PostAnonymousAsync("/api/users", request);
 
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
@@ -65,7 +63,7 @@ namespace ATLAS.IntegrationTests.API
             var userId = TestData.CitizenUserId;
 
             // Act
-            var response = await _client.GetAsync($"/api/users/{userId}");
+            var response = await _client.GetAsAsync($"/api/users/{userId}", TestUserBuilder.AsAdmin());
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -78,7 +76,7 @@ namespace ATLAS.IntegrationTests.API
             var userId = Guid.NewGuid();
 
             // Act
-            var response = await _client.GetAsync($"/api/users/{userId}");
+            var response = await _client.GetAsAsync($"/api/users/{userId}", TestUserBuilder.AsAdmin());
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -90,16 +88,42 @@ namespace ATLAS.IntegrationTests.API
             // Arrange - Use seeded officer ID
             var userId = TestData.OfficerUserId;
             var request = new { role = "Officer" };
-            var content = new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(request),
-                System.Text.Encoding.UTF8,
-                "application/json");
 
             // Act
-            var response = await _client.PutAsync($"/api/users/{userId}/role", content);
+            var response = await _client.PutAsAsync($"/api/users/{userId}/role", request, TestUserBuilder.AsAdmin());
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AuthenticatedRequest_ShouldSyncExistingUser()
+        {
+            // Arrange & Act - Use seeded Admin identity; sync happens via pipeline
+            var response = await _client.GetAsAsync("/api/users", TestUserBuilder.AsAdmin());
+
+            // Assert - Request succeeded; sync ran without error
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AuthenticatedRequest_WithNewIdentity_ShouldCreateUser()
+        {
+            // Arrange - Use a new user identity that won't match any seeded Domain User
+            // The fallback identity will create a new Domain User via IdentityResolver
+            var newUserId = Guid.NewGuid();
+            var newUserBuilder = TestUserBuilder.AsUser(newUserId, "New Sync User", "test@atlas.test", "Admin");
+
+            // Act - First request triggers UserSynchronizationBehavior
+            var firstResponse = await _client.GetAsAsync("/api/users", newUserBuilder);
+            Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+            // Verify the synced user appears in the user list
+            var listResponse = await _client.GetAsAsync("/api/users", newUserBuilder);
+            var content = await listResponse.Content.ReadAsStringAsync();
+
+            // Assert - The new user with email "test@atlas.test" should have been created
+            Assert.Contains("test@atlas.test", content);
         }
     }
 }

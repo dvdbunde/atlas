@@ -2,14 +2,15 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.Interfaces;
 using Entities = ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
+using ATLAS.Domain.Events;
 
 namespace ATLAS.Application.Commands
 {
     public class SubmitApplicationCommand : IRequest<Guid>
     {
-        public Guid CitizenId { get; set; }
         public Guid PermitTypeId { get; set; }
         public string CitizenNotes { get; set; } = string.Empty;
     }
@@ -18,11 +19,16 @@ namespace ATLAS.Application.Commands
     {
         private readonly IApplicationRepository _repository;
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SubmitApplicationCommandHandler(IApplicationRepository repository, IMediator mediator)
+        public SubmitApplicationCommandHandler(
+            IApplicationRepository repository,
+            IMediator mediator,
+            ICurrentUserService currentUserService)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<Guid> Handle(SubmitApplicationCommand request, CancellationToken cancellationToken)
@@ -30,23 +36,17 @@ namespace ATLAS.Application.Commands
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var application = new Entities.Application(request.CitizenId, request.PermitTypeId, request.CitizenNotes);
+            if (!_currentUserService.UserId.HasValue)
+                throw new UnauthorizedAccessException("Authenticated user must have a valid UserId to submit an application.");
+
+            var citizenId = _currentUserService.UserId.Value;
+            var application = new Entities.Application(citizenId, request.PermitTypeId, request.CitizenNotes);
             application.Submit();
             
             await _repository.AddAsync(application, cancellationToken);
-            await _mediator.Publish(new ApplicationSubmittedEvent(application.Id), cancellationToken);
+            await _mediator.Publish(new ApplicationSubmittedEvent(application.Id, citizenId, request.PermitTypeId), cancellationToken);
             
             return application.Id;
-        }
-    }
-
-    public class ApplicationSubmittedEvent : INotification
-    {
-        public Guid ApplicationId { get; }
-        
-        public ApplicationSubmittedEvent(Guid applicationId)
-        {
-            ApplicationId = applicationId;
         }
     }
 }

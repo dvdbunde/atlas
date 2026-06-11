@@ -531,7 +531,7 @@ The following items are **explicitly out of scope** for the MVP release:
 - **C-02**: Frontend must use **Blazor** (Server or WebAssembly TBD based on performance testing)
 - **C-03**: Database must use **Azure SQL Database** (Serverless tier for cost optimization)
 - **C-04**: Document storage must use **Azure Blob Storage** (with CDN for performance if needed)
-- **C-05**: Authentication must integrate with **Microsoft Entra ID** (Azure AD) for government employees; citizens may use local accounts (MVP) or Entra External ID (future)
+- **C-05**: Authentication must integrate with **Microsoft Entra ID** (Azure AD) for all users — Citizens, Permit Officers, and Administrators. No local accounts or separate authentication stores.
 - **C-06**: Application must be hosted on **Azure App Service** (Windows or Linux plan TBD)
 
 #### Business Constraints
@@ -596,6 +596,7 @@ The following items are **explicitly out of scope** for the MVP release:
 1. **Q1**: Should citizens use local accounts (username/password) or Entra External ID for authentication?
    - *Impact*: Affects development effort and security compliance
    - *Decision needed by*: June 15, 2026
+   - *Decision*: **Resolved — All users authenticate via Microsoft Entra ID.** No local accounts. Citizens authenticate through Entra ID (External ID if needed).
 
 2. **Q2**: What is the approval workflow for permits that require multiple officer reviews (e.g., Building + Zoning)?
    - *Impact*: May require workflow engine vs. simple linear approval

@@ -219,7 +219,7 @@ namespace ATLAS.API.Controllers.Generated
         /// Create user account
         /// </summary>
         /// <remarks>
-        /// Register a new user account
+        /// Create a new user profile in the system. Authentication is managed by Microsoft Entra ID — this endpoint creates the Domain User record for business operations.
         /// </remarks>
         /// <returns>User created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/users", Name = "createUser")]

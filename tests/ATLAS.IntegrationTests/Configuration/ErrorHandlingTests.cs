@@ -46,8 +46,7 @@ namespace ATLAS.IntegrationTests.Configuration
             // Arrange
             var validator = new ATLAS.Application.Commands.SubmitApplicationCommandValidator();
             var command = new ATLAS.Application.Commands.SubmitApplicationCommand
-            {
-                CitizenId = Guid.Empty, // Invalid
+            {                
                 PermitTypeId = Guid.Empty // Invalid
             };
 

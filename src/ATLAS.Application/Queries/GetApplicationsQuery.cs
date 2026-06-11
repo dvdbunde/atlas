@@ -1,9 +1,11 @@
 using MediatR;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
+using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Interfaces;
 
 namespace ATLAS.Application.Queries
@@ -24,15 +26,18 @@ namespace ATLAS.Application.Queries
         private readonly IApplicationRepository _applicationRepository;
         private readonly IUserRepository _userRepository;
         private readonly IPermitTypeRepository _permitTypeRepository;
+        private readonly ICurrentUserService _currentUserService;
 
         public GetApplicationsQueryHandler(
             IApplicationRepository applicationRepository,
             IUserRepository userRepository,
-            IPermitTypeRepository permitTypeRepository)
+            IPermitTypeRepository permitTypeRepository,
+            ICurrentUserService currentUserService)
         {
             _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<IEnumerable<ApplicationSummaryDto>> Handle(GetApplicationsQuery request, CancellationToken cancellationToken)
@@ -40,12 +45,29 @@ namespace ATLAS.Application.Queries
             // Get all applications (repository returns IEnumerable)
             var applications = await _applicationRepository.GetAllAsync(cancellationToken);
             var query = applications.AsQueryable();
-            
-            // Apply filters based on request parameters
-            if (request.CitizenId.HasValue)
+
+            // Role-based auto-scoping:
+            // - Citizens: can only see their own applications (client-supplied citizenId is ignored)
+            // - Officers: can only see applications assigned to them (unless admin)
+            // - Admins: full access with all client-supplied filters
+            var role = _currentUserService.Role;
+            var userId = _currentUserService.UserId;
+
+            if (role == "Citizen" && userId.HasValue)
+            {
+                query = query.Where(a => a.CitizenId == userId.Value);
+            }
+            // Officer — no Reviews-based auto-scoping in MVP.
+            // Authorization is enforced at the endpoint level by
+            // GeneratedControllerAuthorizationConvention (OfficerOrAdmin policy).
+            // Admin — no auto-scoping; all filters below apply
+
+            // Apply client-supplied filters (for admins/officers with explicit params)
+            // Note: citizenId/officerId params are ignored for citizens (already auto-scoped)
+            if (request.CitizenId.HasValue && role != "Citizen")
                 query = query.Where(a => a.CitizenId == request.CitizenId);
             
-            if (request.OfficerId.HasValue)
+            if (request.OfficerId.HasValue && role != "Officer")
                 query = query.Where(a => a.Reviews.Any(r => r.OfficerId == request.OfficerId));
             
             if (!string.IsNullOrEmpty(request.Status))

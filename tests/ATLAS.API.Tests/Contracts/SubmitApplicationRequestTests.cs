@@ -9,20 +9,17 @@ namespace ATLAS.API.Tests.Contracts
         public void Properties_ShouldBeSetCorrectly_WhenUsingObjectInitializer()
         {
             // Arrange
-            var citizenId = Guid.NewGuid();
             var permitTypeId = Guid.NewGuid();
             var notes = "Test application";
 
             // Act
             var request = new SubmitApplicationRequest
             {
-                CitizenId = citizenId,
                 PermitTypeId = permitTypeId,
                 CitizenNotes = notes
             };
 
             // Assert
-            Assert.Equal(citizenId, request.CitizenId);
             Assert.Equal(permitTypeId, request.PermitTypeId);
             Assert.Equal(notes, request.CitizenNotes);
         }      

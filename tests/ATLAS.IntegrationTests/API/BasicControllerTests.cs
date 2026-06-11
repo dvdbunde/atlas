@@ -1,4 +1,5 @@
 using ATLAS.Domain.Interfaces;
+using ATLAS.IntegrationTests.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,7 +71,7 @@ namespace ATLAS.IntegrationTests.API
             
             // Check 3: Try a simple GET
             _output.WriteLine("📡 Making request to /api/applications...");
-            var response = await _client.GetAsync("/api/applications");
+            var response = await _client.GetAsAsync("/api/applications", TestUserBuilder.AsAdmin());
             _output.WriteLine($"📡 Response status: {response.StatusCode}");
             
             var content = await response.Content.ReadAsStringAsync();

@@ -1,3 +1,4 @@
+using ATLAS.Application.Interfaces;
 using MediatR;
 using System;
 using System.Threading;
@@ -14,13 +15,21 @@ namespace ATLAS.Application.Tests.Commands
     {
         private readonly Mock<IApplicationRepository> _mockRepository;
         private readonly Mock<IMediator> _mockMediator;
+        private readonly Mock<ICurrentUserService> _mockCurrentUserService;
         private readonly SubmitApplicationCommandHandler _handler;
+        private readonly Guid _testUserId;
 
         public SubmitApplicationCommandHandlerTests()
         {
             _mockRepository = new Mock<IApplicationRepository>();
             _mockMediator = new Mock<IMediator>();
-            _handler = new SubmitApplicationCommandHandler(_mockRepository.Object, _mockMediator.Object);
+            _mockCurrentUserService = new Mock<ICurrentUserService>();
+            _testUserId = Guid.NewGuid();
+            _mockCurrentUserService.Setup(s => s.UserId).Returns(_testUserId);
+            _handler = new SubmitApplicationCommandHandler(
+                _mockRepository.Object,
+                _mockMediator.Object,
+                _mockCurrentUserService.Object);
         }
 
         [Fact]
@@ -29,7 +38,6 @@ namespace ATLAS.Application.Tests.Commands
             // Arrange
             var command = new SubmitApplicationCommand
             {
-                CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.NewGuid(),
                 CitizenNotes = "Test notes"
             };

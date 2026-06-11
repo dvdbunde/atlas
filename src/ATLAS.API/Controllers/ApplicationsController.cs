@@ -62,7 +62,6 @@ namespace ATLAS.API.Controllers
         {
             var command = new SubmitApplicationCommand
             {
-                CitizenId = body.CitizenId,
                 PermitTypeId = body.PermitTypeId,
                 CitizenNotes = body.CitizenNotes
             };
@@ -96,7 +95,6 @@ namespace ATLAS.API.Controllers
             var command = new ApproveApplicationCommand
             {
                 ApplicationId = id,
-                OfficerId = body.OfficerId,
                 Comments = body.Comments
             };
 
@@ -116,7 +114,6 @@ namespace ATLAS.API.Controllers
             var command = new RejectApplicationCommand
             {                
                 ApplicationId = id,
-                OfficerId = body.OfficerId,
                 ReasonCode = body.ReasonCode,
                 Comments = body.Comments
             };
@@ -137,7 +134,6 @@ namespace ATLAS.API.Controllers
             var command = new RequestInfoCommand
             {
                 ApplicationId = id,
-                OfficerId = body.OfficerId,
                 Message = body.Message
             };
 

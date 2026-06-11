@@ -1,6 +1,6 @@
+using ATLAS.IntegrationTests.Auth;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
-using System.Net.Http;
 using Xunit;
 
 namespace ATLAS.IntegrationTests.API
@@ -17,56 +17,37 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task GetAuditLogs_Should_Return200OK()
         {
-            // Act
-            var response = await _client.GetAsync("/api/auditlogs");
-
-            // Assert
+            var response = await _client.GetAsAsync("/api/auditlogs", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
         public async Task GetAuditLogs_WithUserId_Should_Return200OK()
         {
-            // Arrange
             var userId = Guid.NewGuid();
-
-            // Act
-            var response = await _client.GetAsync($"/api/auditlogs?userId={userId}");
-
-            // Assert
+            var response = await _client.GetAsAsync($"/api/auditlogs?userId={userId}", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
         public async Task GetAuditLogs_WithActionType_Should_Return200OK()
         {
-            // Act
-            var response = await _client.GetAsync("/api/auditlogs?actionType=APPLICATION_SUBMITTED");
-
-            // Assert
+            var response = await _client.GetAsAsync("/api/auditlogs?actionType=APPLICATION_SUBMITTED", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]
         public async Task ExportAuditLogs_Should_Return501NotImplemented()
         {
-            // Act
-            var response = await _client.GetAsync("/api/auditlogs/export");
-
-            // Assert
+            var response = await _client.GetAsAsync("/api/auditlogs/export", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
         }
 
         [Fact]
         public async Task ExportAuditLogs_WithFilters_Should_Return501NotImplemented()
         {
-            // Arrange
             var userId = Guid.NewGuid();
-
-            // Act
-            var response = await _client.GetAsync($"/api/auditlogs/export?userId={userId}");
-
-            // Assert
+            var response = await _client.GetAsAsync($"/api/auditlogs/export?userId={userId}", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
         }
     }

@@ -1,13 +1,16 @@
 namespace ATLAS.Infrastructure
 {
     using ATLAS.Application;
+    using ATLAS.Application.Interfaces;
     using ATLAS.Domain.Entities;
     using ATLAS.Domain.Interfaces;
     using ATLAS.Infrastructure.Data;
     using ATLAS.Infrastructure.EventHandlers;
     using ATLAS.Infrastructure.Repositories;
+    using ATLAS.Infrastructure.Services;
     using FluentValidation;
     using MediatR;
+    using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +48,19 @@ namespace ATLAS.Infrastructure
                     configuration.GetConnectionString("DefaultConnection"),
                     sqlOptions => sqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName));
             });
-            
+
+            // Register HTTP context accessor for identity resolution
+            services.AddHttpContextAccessor();
+
+            // Register current user service — resolves authenticated user identity from HTTP context
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+            // Register identity resolver — synchronizes claims with Domain User aggregate
+            services.AddScoped<IIdentityResolver, IdentityResolver>();
+
+            // Register execution context — request-scoped identity + correlation tracing
+            services.AddScoped<IExecutionContext, ExecutionContext>();
+
             // Register repositories
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
@@ -66,15 +81,22 @@ namespace ATLAS.Infrastructure
         }
         
         /// <summary>
-        /// Registers Infrastructure layer services with default configuration
-        /// Convenience method that uses the built-in configuration
+        /// Registers Infrastructure layer services with default configuration.
+        /// Convenience overload for environments where full configuration isn't available
+        /// (e.g., tests). Still registers HTTP context accessor and current user service.
         /// </summary>
         /// <param name="services">The service collection</param>
         /// <returns>The service collection for fluent chaining</returns>
         public static IServiceCollection AddInfrastructure(this IServiceCollection services)
         {
-            // This overload assumes configuration will be provided elsewhere
-            // or uses default configuration
+            if (services == null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IExecutionContext, ExecutionContext>();
             return services;
         }
     }

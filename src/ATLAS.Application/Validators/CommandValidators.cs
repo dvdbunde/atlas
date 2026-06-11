@@ -6,10 +6,7 @@ namespace ATLAS.Application.Commands
     public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplicationCommand>
     {
         public SubmitApplicationCommandValidator()
-        {
-            RuleFor(x => x.CitizenId)
-                .NotEmpty().WithMessage("CitizenId is required");
-
+        {          
             RuleFor(x => x.PermitTypeId)
                 .NotEmpty().WithMessage("PermitTypeId is required");
 
@@ -25,9 +22,6 @@ namespace ATLAS.Application.Commands
             RuleFor(x => x.ApplicationId)
                 .NotEmpty().WithMessage("ApplicationId is required");
 
-            RuleFor(x => x.OfficerId)
-                .NotEmpty().WithMessage("OfficerId is required");
-
             RuleFor(x => x.Comments)
                 .MaximumLength(2000).WithMessage("Comments cannot exceed 2000 characters");
         }
@@ -39,9 +33,6 @@ namespace ATLAS.Application.Commands
         {
             RuleFor(x => x.ApplicationId)
                 .NotEmpty().WithMessage("ApplicationId is required");
-
-            RuleFor(x => x.OfficerId)
-                .NotEmpty().WithMessage("OfficerId is required");
 
             RuleFor(x => x.ReasonCode)
                 .NotEmpty().WithMessage("Rejection reason code is required")
@@ -55,9 +46,6 @@ namespace ATLAS.Application.Commands
         {
             RuleFor(x => x.ApplicationId)
                 .NotEmpty().WithMessage("ApplicationId is required");
-
-            RuleFor(x => x.OfficerId)
-                .NotEmpty().WithMessage("OfficerId is required");
 
             RuleFor(x => x.Message)
                 .NotEmpty().WithMessage("Message is required")
@@ -100,10 +88,7 @@ namespace ATLAS.Application.Commands
             RuleFor(x => x.BlobUrl)
                 .NotEmpty().WithMessage("BlobUrl is required")
                 .Must(x => Uri.TryCreate(x, UriKind.Absolute, out _))
-                .WithMessage("BlobUrl must be a valid URL");
-
-            RuleFor(x => x.UploadedById)
-                .NotEmpty().WithMessage("UploadedById is required");
+                .WithMessage("BlobUrl must be a valid URL");        
         }
     }
 }

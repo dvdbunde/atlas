@@ -2,7 +2,7 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ATLAS.Domain.Entities;
+using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 
@@ -15,18 +15,22 @@ namespace ATLAS.Application.Commands
         public string ContentType { get; set; } = string.Empty;
         public long FileSize { get; set; }
         public string BlobUrl { get; set; } = string.Empty;
-        public Guid UploadedById { get; set; }
     }
 
     public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentCommand, bool>
     {
         private readonly IApplicationRepository _repository;
         private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UploadDocumentCommandHandler(IApplicationRepository repository, IMediator mediator)
+        public UploadDocumentCommandHandler(
+            IApplicationRepository repository,
+            IMediator mediator,
+            ICurrentUserService currentUserService)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
@@ -34,14 +38,18 @@ namespace ATLAS.Application.Commands
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
+            if (!_currentUserService.UserId.HasValue)
+                throw new UnauthorizedAccessException("Authenticated user must have a valid UserId to upload a document.");
+
+            var uploadedById = _currentUserService.UserId.Value;
             var application = await _repository.GetByIdAsync(request.ApplicationId, cancellationToken);
             
             if (application == null)
                 return false;
 
-            var document = application.AddDocument(Guid.NewGuid(), request.FileName, request.ContentType, request.FileSize, request.BlobUrl, request.UploadedById);
+            var document = application.AddDocument(Guid.NewGuid(), request.FileName, request.ContentType, request.FileSize, request.BlobUrl, uploadedById);
             await _repository.UpdateAsync(application, cancellationToken);
-            await _mediator.Publish(new DocumentUploadedEvent(document.Id, request.ApplicationId, request.UploadedById, request.FileName), cancellationToken);
+            await _mediator.Publish(new DocumentUploadedEvent(document.Id, request.ApplicationId, uploadedById, request.FileName), cancellationToken);
             
             return true;
         }

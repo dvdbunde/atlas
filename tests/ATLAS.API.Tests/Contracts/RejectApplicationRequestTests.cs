@@ -10,7 +10,6 @@ namespace ATLAS.API.Tests.Contracts
         {
             // Arrange
             var applicationId = Guid.NewGuid();
-            var officerId = Guid.NewGuid();
             var reasonCode = "INCOMPLETE";
             var comments = "Missing documents";
 
@@ -18,14 +17,12 @@ namespace ATLAS.API.Tests.Contracts
             var request = new RejectApplicationRequest
             {
                 ApplicationId = applicationId,
-                OfficerId = officerId,
                 ReasonCode = reasonCode,
                 Comments = comments
             };
 
             // Assert
             Assert.Equal(applicationId, request.ApplicationId);
-            Assert.Equal(officerId, request.OfficerId);
             Assert.Equal(reasonCode, request.ReasonCode);
             Assert.Equal(comments, request.Comments);
         }      
