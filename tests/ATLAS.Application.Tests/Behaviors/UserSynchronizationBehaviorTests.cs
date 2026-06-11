@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using ATLAS.Application.Behaviors;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Entities;
-using ATLAS.Domain.Interfaces;
 using MediatR;
 using Moq;
 using Xunit;
@@ -15,18 +14,15 @@ namespace ATLAS.Application.Tests.Behaviors
     {
         private readonly Mock<ICurrentUserService> _mockCurrentUserService;
         private readonly Mock<IIdentityResolver> _mockIdentityResolver;
-        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly UserSynchronizationBehavior<DummyRequest, DummyResponse> _behavior;
 
         public UserSynchronizationBehaviorTests()
         {
             _mockCurrentUserService = new Mock<ICurrentUserService>();
             _mockIdentityResolver = new Mock<IIdentityResolver>();
-            _mockUnitOfWork = new Mock<IUnitOfWork>();
             _behavior = new UserSynchronizationBehavior<DummyRequest, DummyResponse>(
                 _mockCurrentUserService.Object,
-                _mockIdentityResolver.Object,
-                _mockUnitOfWork.Object);
+                _mockIdentityResolver.Object);
         }
 
         [Fact]
@@ -48,7 +44,6 @@ namespace ATLAS.Application.Tests.Behaviors
 
             // Assert
             _mockIdentityResolver.Verify(r => r.SynchronizeUserAsync(It.IsAny<CancellationToken>()), Times.Never);
-            _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
             Assert.True(nextCalled);
         }
 
@@ -71,7 +66,6 @@ namespace ATLAS.Application.Tests.Behaviors
 
             // Assert
             _mockIdentityResolver.Verify(r => r.SynchronizeUserAsync(It.IsAny<CancellationToken>()), Times.Once);
-            _mockUnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
             Assert.True(nextCalled);
         }
 
@@ -83,9 +77,6 @@ namespace ATLAS.Application.Tests.Behaviors
             _mockIdentityResolver
                 .Setup(r => r.SynchronizeUserAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new User("test@example.com", "Test", "User", UserRole.Citizen));
-            _mockUnitOfWork
-                .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
 
             // Act
             var result = await _behavior.Handle(
@@ -103,8 +94,7 @@ namespace ATLAS.Application.Tests.Behaviors
             Assert.Throws<ArgumentNullException>(() =>
                 new UserSynchronizationBehavior<DummyRequest, DummyResponse>(
                     null!,
-                    _mockIdentityResolver.Object,
-                    _mockUnitOfWork.Object));
+                    _mockIdentityResolver.Object));
         }
 
         [Fact]
@@ -113,17 +103,6 @@ namespace ATLAS.Application.Tests.Behaviors
             Assert.Throws<ArgumentNullException>(() =>
                 new UserSynchronizationBehavior<DummyRequest, DummyResponse>(
                     _mockCurrentUserService.Object,
-                    null!,
-                    _mockUnitOfWork.Object));
-        }
-
-        [Fact]
-        public void Constructor_ShouldThrowArgumentNullException_WhenUnitOfWorkIsNull()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-                new UserSynchronizationBehavior<DummyRequest, DummyResponse>(
-                    _mockCurrentUserService.Object,
-                    _mockIdentityResolver.Object,
                     null!));
         }
 

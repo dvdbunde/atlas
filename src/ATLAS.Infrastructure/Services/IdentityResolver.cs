@@ -2,6 +2,7 @@ using System.Security.Claims;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ATLAS.Infrastructure.Services
 {
@@ -29,13 +30,21 @@ namespace ATLAS.Infrastructure.Services
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IUserRepository _userRepository;
+        private readonly IUnitOfWork _unitOfWork;
+
+        // Tracks whether the most recent ResolveCurrentUserAsync call created a new user.
+        // Used by SynchronizeUserAsync to decide AddAsync vs UpdateAsync.
+        // Reset to false at the start of every ResolveCurrentUserAsync call.
+        private bool _isNewlyCreated;
 
         public IdentityResolver(
             ICurrentUserService currentUserService,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IUnitOfWork unitOfWork)
         {
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         /// <inheritdoc />
@@ -43,6 +52,9 @@ namespace ATLAS.Infrastructure.Services
         {
             if (!_currentUserService.IsAuthenticated)
                 throw new InvalidOperationException("Cannot resolve identity for unauthenticated request.");
+
+            // Reset flag — this call will determine if a new user is needed
+            _isNewlyCreated = false;
 
             var userId = _currentUserService.UserId;
             var email = _currentUserService.Email;
@@ -55,15 +67,17 @@ namespace ATLAS.Infrastructure.Services
                     return user;
             }
 
-            // Strategy 2: Look up by Email (fallback for identities without a matching sub claim)
+            // Strategy 2: Look up by Email (fallback for identities without a matching sub claim).
+            // Normalize to lower-invariant to match Domain User storage (see User constructor).
             if (!string.IsNullOrWhiteSpace(email))
             {
-                var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
+                var user = await _userRepository.GetByEmailAsync(email.ToLowerInvariant(), cancellationToken);
                 if (user != null)
                     return user;
             }
 
             // Strategy 3: Create new Domain User from identity claims
+            _isNewlyCreated = true;
             return CreateUserFromClaims();
         }
 
@@ -103,8 +117,36 @@ namespace ATLAS.Infrastructure.Services
             // Record login timestamp
             user.RecordLogin();
 
-            // Persist changes via repository (caller owns SaveChangesAsync)
-            await _userRepository.UpdateAsync(user, cancellationToken);
+            // Persist and retry on concurrent registration race (unique constraint violation).
+            // The first attempt may collide with another request creating the same user.
+            // On retry, ResolveCurrentUserAsync will find the user created by the first request.
+            const int maxAttempts = 2;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    if (_isNewlyCreated)
+                    {
+                        await _userRepository.AddAsync(user, cancellationToken);
+                    }
+                    else
+                    {
+                        await _userRepository.UpdateAsync(user, cancellationToken);
+                    }
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    break;
+                }
+                catch (DbUpdateException) when (attempt < maxAttempts)
+                {
+                    // The concurrent request committed first. Re-resolve to find
+                    // the existing user; _isNewlyCreated becomes false so the
+                    // retry will call UpdateAsync instead of AddAsync.
+                    _isNewlyCreated = false;
+                    user = await ResolveCurrentUserAsync(cancellationToken);
+                }
+            }
 
             return user;
         }

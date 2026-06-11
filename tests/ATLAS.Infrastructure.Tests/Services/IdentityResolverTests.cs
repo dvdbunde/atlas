@@ -16,15 +16,18 @@ namespace ATLAS.Infrastructure.Tests.Services
     {
         private readonly Mock<ICurrentUserService> _mockCurrentUserService;
         private readonly Mock<IUserRepository> _mockUserRepository;
+        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
         private readonly IdentityResolver _resolver;
 
         public IdentityResolverTests()
         {
             _mockCurrentUserService = new Mock<ICurrentUserService>();
             _mockUserRepository = new Mock<IUserRepository>();
+            _mockUnitOfWork = new Mock<IUnitOfWork>();
             _resolver = new IdentityResolver(
                 _mockCurrentUserService.Object,
-                _mockUserRepository.Object);
+                _mockUserRepository.Object,
+                _mockUnitOfWork.Object);
         }
 
         #region SynchronizeUserAsync
@@ -78,7 +81,8 @@ namespace ATLAS.Infrastructure.Tests.Services
             Assert.Equal("Unknown", result.FirstName);
             Assert.Equal("User", result.LastName);
             Assert.Equal(UserRole.Citizen, result.Role);
-            _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockUserRepository.Verify(r => r.AddAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockUserRepository.Verify(r => r.UpdateAsync(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -240,14 +244,21 @@ namespace ATLAS.Infrastructure.Tests.Services
         public void Constructor_ShouldThrowArgumentNullException_WhenCurrentUserServiceIsNull()
         {
             Assert.Throws<ArgumentNullException>(() =>
-                new IdentityResolver(null!, _mockUserRepository.Object));
+                new IdentityResolver(null!, _mockUserRepository.Object, _mockUnitOfWork.Object));
         }
 
         [Fact]
         public void Constructor_ShouldThrowArgumentNullException_WhenUserRepositoryIsNull()
         {
             Assert.Throws<ArgumentNullException>(() =>
-                new IdentityResolver(_mockCurrentUserService.Object, null!));
+                new IdentityResolver(_mockCurrentUserService.Object, null!, _mockUnitOfWork.Object));
+        }
+
+        [Fact]
+        public void Constructor_ShouldThrowArgumentNullException_WhenUnitOfWorkIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                new IdentityResolver(_mockCurrentUserService.Object, _mockUserRepository.Object, null!));
         }
     }
 }

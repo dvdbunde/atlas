@@ -1,5 +1,4 @@
 using ATLAS.Application.Interfaces;
-using ATLAS.Domain.Interfaces;
 using MediatR;
 
 namespace ATLAS.Application.Behaviors
@@ -18,8 +17,8 @@ namespace ATLAS.Application.Behaviors
     ///   like user registration).
     /// - Delegates resolution and synchronization to <see cref="IIdentityResolver"/>,
     ///   keeping this behavior thin and testable.
-    /// - Calls SaveChangesAsync to persist synchronization changes before the
-    ///   handler executes, so the Domain User is always current within the request.
+    /// - SynchronizeUserAsync internally persists and retries on concurrent
+    ///   registration races (see IdentityResolver for retry logic).
     /// - If synchronization fails, the exception propagates and the handler
     ///   is NOT executed — failing early prevents inconsistent state.
     /// </summary>
@@ -28,16 +27,13 @@ namespace ATLAS.Application.Behaviors
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IIdentityResolver _identityResolver;
-        private readonly IUnitOfWork _unitOfWork;
 
         public UserSynchronizationBehavior(
             ICurrentUserService currentUserService,
-            IIdentityResolver identityResolver,
-            IUnitOfWork unitOfWork)
+            IIdentityResolver identityResolver)
         {
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _identityResolver = identityResolver ?? throw new ArgumentNullException(nameof(identityResolver));
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         public async Task<TResponse> Handle(
@@ -49,7 +45,6 @@ namespace ATLAS.Application.Behaviors
             if (_currentUserService.IsAuthenticated)
             {
                 await _identityResolver.SynchronizeUserAsync(cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
             // Proceed to the next behavior or the handler

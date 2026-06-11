@@ -216,7 +216,7 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
                 (TestData.OfficerUserId.ToString(), "Test Officer", "officer@atlas.test", "Officer"),
             "Admin" when TestData.AdminUserId != Guid.Empty => 
                 (TestData.AdminUserId.ToString(), "Test Admin", "admin@atlas.test", "Admin"),
-            _ => ("11111111-1111-1111-1111-111111111111", "Test User", "test@atlas.test", "Citizen")
+            _ => ("11111111-1111-1111-1111-111111111111", "Test User", "test@atlas.test", "Admin") // Fallback to a default test user if role or IDs are not set
         };
         
         var claims = new[] 
