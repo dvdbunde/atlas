@@ -115,14 +115,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         if (string.IsNullOrWhiteSpace(audience))
             throw new InvalidOperationException("AzureAd:Audience is required. Verify appsettings.json / Azure Key Vault.");
 
-        var issuer = $"{instance}/{tenantId}/v2.0";
-        options.Authority = issuer;
-        options.Audience = audience;
+        
+        options.Authority = $"{instance}/{tenantId}/v2.0";
+        //options.Audience = audience;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,            
+            ValidIssuers =
+            [
+                $"https://sts.windows.net/{tenantId}/",                    // v1.0
+                $"https://login.microsoftonline.com/{tenantId}/v2.0"       // v2.0
+            ],
             ValidateAudience = true,
-            ValidAudience = audience,
+            ValidAudiences =
+            [
+                clientId,                                                  // v2.0 format
+                $"api://{clientId}",                                       // v1.0 format
+                audience                                                   // from config (backward compat)
+            ],
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(2),
