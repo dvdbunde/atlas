@@ -48,10 +48,31 @@ namespace ATLAS.Infrastructure.Services
         /// The authenticated user's email address, derived from the email claim.
         /// Returns null for anonymous requests or if the claim is not present.
         /// </summary>
-        public string? Email =>
-            FindClaim(ClaimTypes.Email)?.Value ?? 
-            FindClaim("email")?.Value ?? 
-            FindClaim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+        public string? Email
+        {
+            get
+            {
+                // Try standard email claims first
+                var email = FindClaim(ClaimTypes.Email)?.Value ?? 
+                        FindClaim("email")?.Value ?? 
+                        FindClaim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
+                
+                if (!string.IsNullOrWhiteSpace(email))
+                    return email;
+                
+                // Fallback: try preferred_username (often contains email for Entra ID)
+                var preferredUsername = FindClaim("preferred_username")?.Value;
+                if (!string.IsNullOrWhiteSpace(preferredUsername) && preferredUsername.Contains("@"))
+                    return preferredUsername;
+                
+                // Fallback: try UPN
+                var upn = FindClaim("upn")?.Value;
+                if (!string.IsNullOrWhiteSpace(upn) && upn.Contains("@"))
+                    return upn;
+                
+                return null;
+            }
+        }
 
         /// <summary>
         /// The authenticated user's application role (Citizen, Officer, Admin).
