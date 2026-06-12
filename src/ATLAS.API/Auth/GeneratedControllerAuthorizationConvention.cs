@@ -62,10 +62,10 @@ namespace ATLAS.API.Auth
                 // AuditLogs — all operations require Admin
                 ("auditlogs", _) => "Admin",
 
-                // Users: GET + Role = Admin; POST = anonymous (registration)
+                // Users: GET + Role = Admin; POST = Authenticated (registration)
                 ("users", "usersget")  => "Admin",
                 ("users", "role")      => "Admin",
-                ("users", "userspost") => null, // AllowAnonymous
+                ("users", "userspost") => "Authenticated", // AllowAuthenticated to enable registration; controller-level [AllowAnonymous] will override for this action
 
                 // Documents — authenticated users
                 ("documents", _) => "Authenticated",

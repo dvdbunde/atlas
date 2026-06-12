@@ -33,9 +33,20 @@ builder.Services.AddValidatorsFromAssembly(typeof(ATLAS.Application.AssemblyMark
 
 // Read Azure AD config for Swagger OAuth2 and JWT validation
 var azureAdConfig = builder.Configuration.GetSection("AzureAd");
-var swaggerTenantId = azureAdConfig["TenantId"] ?? "common";
-var swaggerClientId = azureAdConfig["ClientId"] ?? "";
-var swaggerScope = $"api://{swaggerClientId}/access_as_user";
+var tenantId = azureAdConfig["TenantId"] ?? "common";
+var clientId = azureAdConfig["ClientId"] ?? "";
+var swaggerClientId = azureAdConfig["SwaggerClientId"] ?? "";
+
+if (builder.Environment.IsDevelopment())
+{
+    if (string.IsNullOrWhiteSpace(swaggerClientId))
+    {
+        throw new InvalidOperationException(
+            "AzureAd:SwaggerClientId is required");
+    }
+}
+
+var swaggerScope = $"api://{clientId}/atlas.access";
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -46,8 +57,8 @@ builder.Services.AddSwaggerGen(c =>
     });
 
     // Entra ID OAuth2 Authorization Code security definition for Swagger UI "Authorize" button
-    var authorizationUrl = $"https://login.microsoftonline.com/{swaggerTenantId}/oauth2/v2.0/authorize";
-    var tokenUrl = $"https://login.microsoftonline.com/{swaggerTenantId}/oauth2/v2.0/token";
+    var authorizationUrl = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize";
+    var tokenUrl = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
 
     c.AddSecurityDefinition("EntraID", new OpenApiSecurityScheme
     {
@@ -109,8 +120,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Audience = audience;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidIssuer = issuer,
+            ValidateIssuer = true,            
             ValidateAudience = true,
             ValidAudience = audience,
             ValidateLifetime = true,
@@ -177,7 +187,7 @@ builder.Services.AddScoped<IClaimsTransformation, AtlasClaimsTransformation>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor",
-        policy => policy.WithOrigins("https://localhost:5001")
+        policy => policy.WithOrigins("https://localhost:7295")
                       .AllowAnyMethod()
                       .AllowAnyHeader());
 });
