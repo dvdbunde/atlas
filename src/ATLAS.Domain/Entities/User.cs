@@ -35,6 +35,35 @@ namespace ATLAS.Domain.Entities
             LastLoginDate = null;
         }
 
+        /// <summary>
+        /// Creates a User with a specific ID (used for Entra ID integration where the oid claim is the user's GUID).
+        /// </summary>
+        public User(Guid id, string email, string firstName, string lastName, UserRole role)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email cannot be empty", nameof(email));
+            
+            if (!email.Contains("@") || !email.Contains("."))
+                throw new ArgumentException("Invalid email format", nameof(email));
+            
+            if (string.IsNullOrWhiteSpace(firstName))
+                throw new ArgumentException("First name cannot be empty", nameof(firstName));
+            
+            if (string.IsNullOrWhiteSpace(lastName))
+                throw new ArgumentException("Last name cannot be empty", nameof(lastName));
+
+            Id = id;
+            Email = email.ToLowerInvariant();
+            FirstName = firstName;
+            LastName = lastName;
+            Role = role;
+            IsActive = true;
+            LastLoginDate = null;
+        }
+
         protected User()
         {
         }
