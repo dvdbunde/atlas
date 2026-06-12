@@ -9,7 +9,7 @@ namespace ATLAS.Domain.Entities
         public string FirstName { get; private set; }
         public string LastName { get; private set; }
         public UserRole Role { get; private set; }
-        public bool IsActive { get; private set; }
+        public bool IsActive { get; private set; } = true;  
         public DateTime? LastLoginDate { get; private set; }
 
         public User(string email, string firstName, string lastName, UserRole role)
