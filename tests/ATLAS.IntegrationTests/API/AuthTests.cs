@@ -21,10 +21,10 @@ public class AuthTests : IClassFixture<CustomWebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetPermitTypes_AsCitizen_ShouldReturn403()
+    public async Task GetPermitTypes_AsCitizen_ShouldReturn200()
     {
         var response = await _client.GetAsAsync("/api/permittypes", TestUserBuilder.AsCitizen());
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

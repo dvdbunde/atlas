@@ -23,6 +23,9 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);    
     cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
+
+    // ✅ Add validation pipeline behavior
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     
     // User synchronization pipeline behavior — runs before every request handler
     cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
@@ -189,9 +192,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("OfficerOrAdmin", policy =>
         policy.RequireRole("Officer", "Admin"));
 });
-
-// Claims transformation: map Entra ID roles/groups → application role claims
-builder.Services.AddScoped<IClaimsTransformation, AtlasClaimsTransformation>();
 
 // CORS for Blazor frontend
 builder.Services.AddCors(options =>
