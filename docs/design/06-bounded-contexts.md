@@ -54,17 +54,17 @@ PermitType (Aggregate Root)
 
 **Ubiquitous Language:**
 
-- User, Role (Citizen/Officer/Admin), Account
-- Activate, Deactivate, ChangeRole
-- Authentication, Authorization
+- User (synchronized projection), Role (Citizen/Officer/Admin), Account
+- Synchronize from Entra ID claims (read-only projection)
+- Authentication (Entra ID), Authorization (Entra roles)**
 
-**Domain Model:**
+Domain Model:**
 
 ```text
-User (Aggregate Root)
-├── Id, Email, FirstName, LastName
-├── Role (UserRole)
-└── IsActive
+User (Synchronized Projection)
+├── Id (Entra Object ID), Email, FirstName, LastName
+├── Role (UserRole, synchronized from Entra)
+└── LastLoginDate (audit trail)
 ```
 
 **Responsibilities:**

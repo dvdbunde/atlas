@@ -55,10 +55,10 @@ classDiagram
         +string FirstName
         +string LastName
         +UserRole Role
-        +bool IsActive
-        +DateTime CreatedDate
-        +ChangeRole(newRole)
-        +Deactivate()
+        +DateTime? LastLoginDate
+        +RecordLogin()
+        +GetFullName()
+        +SynchronizeFromClaims()
     }
 
     class Document {

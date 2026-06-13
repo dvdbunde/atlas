@@ -1,32 +1,40 @@
 using System;
 using Xunit;
 using ATLAS.Domain.Entities;
-using ATLAS.Domain.Enums;
-using ATLAS.Domain.Events;
 
 namespace ATLAS.Domain.Tests.Entities
 {
     public class UserTests
     {
+        private readonly Guid _userId = Guid.NewGuid();
         private readonly string _email = "test@example.com";
         private readonly string _firstName = "John";
         private readonly string _lastName = "Doe";
 
-        #region Constructor Tests
+        #region Constructor Tests (Entra Sync Context)
 
         [Fact]
         public void Create_ShouldInitializeWithCorrectValues()
         {
-            // Arrange & Act
-            var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
+            // Arrange & Act - User is created during Entra ID sync
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
 
             // Assert
+            Assert.Equal(_userId, user.Id);
             Assert.Equal(_email, user.Email);
             Assert.Equal(_firstName, user.FirstName);
             Assert.Equal(_lastName, user.LastName);
             Assert.Equal(UserRole.Citizen, user.Role);
-            Assert.True(user.IsActive);
-            Assert.True(user.CreatedDate <= DateTime.UtcNow);
+            Assert.Null(user.LastLoginDate);
+        }
+
+        [Fact]
+        public void Create_ShouldThrowException_WhenIdIsEmpty()
+        {
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => 
+                new User(Guid.Empty, _email, _firstName, _lastName, UserRole.Citizen));
+            Assert.Contains("cannot be empty", exception.Message);
         }
 
         [Fact]
@@ -34,7 +42,7 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                new User("", _firstName, _lastName, UserRole.Citizen));
+                new User(_userId, "", _firstName, _lastName, UserRole.Citizen));
             Assert.Contains("cannot be empty", exception.Message);
         }
 
@@ -43,7 +51,7 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                new User("invalid-email", _firstName, _lastName, UserRole.Citizen));
+                new User(_userId, "invalid-email", _firstName, _lastName, UserRole.Citizen));
             Assert.Contains("valid email", exception.Message.ToLower());
         }
 
@@ -52,7 +60,7 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                new User(_email, "", _lastName, UserRole.Citizen));
+                new User(_userId, _email, "", _lastName, UserRole.Citizen));
             Assert.Contains("cannot be empty", exception.Message);
         }
 
@@ -61,96 +69,135 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                new User(_email, _firstName, "", UserRole.Citizen));
+                new User(_userId, _email, _firstName, "", UserRole.Citizen));
             Assert.Contains("cannot be empty", exception.Message);
         }
 
         #endregion
 
-        #region Role Management Tests (Public Sector)
+        #region Synchronization Tests (Entra-First)
 
         [Fact]
-        public void ChangeRole_ShouldUpdateRole_WhenValidTransition()
+        public void SynchronizeFromClaims_WithMatchingValues_ShouldNotModifyProperties()
+        {
+            // Arrange - User already synchronized with Entra claims
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
+
+            // Act - Sync with same values (idempotent)
+            user.SynchronizeFromClaims(_email, _firstName, _lastName, UserRole.Citizen);
+
+            // Assert - No changes
+            Assert.Equal(_email, user.Email);
+            Assert.Equal(_firstName, user.FirstName);
+            Assert.Equal(_lastName, user.LastName);
+            Assert.Equal(UserRole.Citizen, user.Role);
+        }
+
+        [Fact]
+        public void SynchronizeFromClaims_WithChangedEmail_ShouldUpdateEmail()
         {
             // Arrange
-            var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            var originalRole = user.Role;
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
+            var newEmail = "updated@example.com";
 
-            // Act
-            user.ChangeRole(UserRole.Officer);
+            // Act - Sync from Entra claims with new email
+            user.SynchronizeFromClaims(newEmail, _firstName, _lastName, UserRole.Citizen);
+
+            // Assert
+            Assert.Equal(newEmail, user.Email);
+        }
+
+        [Fact]
+        public void SynchronizeFromClaims_WithChangedRole_ShouldUpdateRole()
+        {
+            // Arrange
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
+
+            // Act - Sync from Entra claims with updated role
+            user.SynchronizeFromClaims(_email, _firstName, _lastName, UserRole.Officer);
 
             // Assert
             Assert.Equal(UserRole.Officer, user.Role);
-            Assert.NotEqual(originalRole, user.Role);
         }
 
         [Fact]
-        public void ChangeRole_ShouldRaiseEvent_WhenRoleChanged()
+        public void SynchronizeFromClaims_WithChangedName_ShouldUpdateName()
         {
             // Arrange
-            var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            user.ClearDomainEvents();
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
 
             // Act
-            user.ChangeRole(UserRole.Officer);
+            user.SynchronizeFromClaims(_email, "Jane", "Smith", UserRole.Citizen);
 
             // Assert
-            var domainEvent = Assert.Single(user.DomainEvents);
-            var roleChangedEvent = Assert.IsType<UserRoleChangedEvent>(domainEvent);
-            Assert.Equal(user.Id, roleChangedEvent.UserId);
-            Assert.Equal(UserRole.Citizen, roleChangedEvent.OldRole);
-            Assert.Equal(UserRole.Officer, roleChangedEvent.NewRole);
+            Assert.Equal("Jane", user.FirstName);
+            Assert.Equal("Smith", user.LastName);
         }
 
         [Fact]
-        public void ChangeRole_ShouldNotThrowException_WhenSameRole()
+        public void SynchronizeFromClaims_WithEmptyValues_ShouldNotOverwrite()
         {
             // Arrange
-            var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            var originalRole = user.Role;
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
 
-            // Act - ChangeRole with same role should return silently
-            user.ChangeRole(UserRole.Citizen);
+            // Act - Sync with empty values (should be ignored)
+            user.SynchronizeFromClaims("", "", "", UserRole.Citizen);
 
-            // Assert - Role should remain unchanged
-            Assert.Equal(originalRole, user.Role);
+            // Assert - Original values preserved
+            Assert.Equal(_email, user.Email);
+            Assert.Equal(_firstName, user.FirstName);
+            Assert.Equal(_lastName, user.LastName);
+        }
+
+        [Fact]
+        public void SynchronizeFromClaims_ShouldNotRaiseDomainEvent()
+        {
+            // Arrange
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
+            user.ClearDomainEvents();
+
+            // Act - Sync is a passive operation, not identity management
+            user.SynchronizeFromClaims(_email, _firstName, _lastName, UserRole.Officer);
+
+            // Assert - No domain events are raised for sync operations
+            Assert.Empty(user.DomainEvents);
         }
 
         #endregion
 
-        #region Activation/Deactivation Tests
+        #region RecordLogin Tests
 
         [Fact]
-        public void Deactivate_ShouldSetIsActiveToFalse()
+        public void RecordLogin_ShouldUpdateLastLoginDate()
         {
             // Arrange
-            var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
+            Assert.Null(user.LastLoginDate);
 
             // Act
-            user.Deactivate();
+            user.RecordLogin();
 
             // Assert
-            Assert.False(user.IsActive);
+            Assert.NotNull(user.LastLoginDate);
+            Assert.True(user.LastLoginDate <= DateTime.UtcNow);
         }
+
+        #endregion
+
+        #region Display Tests
 
         [Fact]
-        public void Deactivate_ShouldNotRaiseEvent()
+        public void GetFullName_ShouldReturnFormattedName()
         {
             // Arrange
-            var user = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            user.ClearDomainEvents();
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
 
             // Act
-            user.Deactivate();
+            var fullName = user.GetFullName();
 
-            // Assert - Deactivate doesn't raise a domain event in current implementation
-            Assert.Empty(user.DomainEvents);
+            // Assert
+            Assert.Equal("John Doe", fullName);
         }
-
-        // Note: User entity doesn't have Activate() method
-        // IsActive is set via Deactivate() which sets it to false
-        // To reactivate, we would need to check the actual domain model
-        // For now, we test that IsActive property can be observed
 
         #endregion
 
@@ -159,25 +206,38 @@ namespace ATLAS.Domain.Tests.Entities
         [Fact]
         public void User_ShouldHaveValidEmail_ForOfficialCommunication()
         {
-            // Arrange & Act
-            var user = new User("official@government.gov", _firstName, _lastName, UserRole.Officer);
+            // Arrange & Act - User created during Entra sync
+            var user = new User(_userId, "official@government.gov", _firstName, _lastName, UserRole.Officer);
 
             // Assert
             Assert.Contains("@government.gov", user.Email);
         }
 
         [Fact]
-        public void User_ShouldEnforceRoleBasedAccess_ForPublicSector()
+        public void User_ShouldStoreRole_FromEntraClaims()
         {
-            // Arrange
-            var citizen = new User(_email, _firstName, _lastName, UserRole.Citizen);
-            var officer = new User(_email, _firstName, _lastName, UserRole.Officer);
-            var admin = new User(_email, _firstName, _lastName, UserRole.Admin);
+            // Arrange - Roles originate from Entra ID app roles
+            var citizen = new User(Guid.NewGuid(), _email, _firstName, _lastName, UserRole.Citizen);
+            var officer = new User(Guid.NewGuid(), _email, _firstName, _lastName, UserRole.Officer);
+            var admin = new User(Guid.NewGuid(), _email, _firstName, _lastName, UserRole.Admin);
 
-            // Assert
+            // Assert - Roles are stored as synchronized from Entra
             Assert.Equal(UserRole.Citizen, citizen.Role);
             Assert.Equal(UserRole.Officer, officer.Role);
             Assert.Equal(UserRole.Admin, admin.Role);
+        }
+
+        [Fact]
+        public void Role_ShouldOnlyBeUpdated_FromEntraClaims()
+        {
+            // Arrange - Role set during Entra sync
+            var user = new User(_userId, _email, _firstName, _lastName, UserRole.Citizen);
+
+            // Act - Role can only change via SynchronizeFromClaims (Entra-driven)
+            user.SynchronizeFromClaims(_email, _firstName, _lastName, UserRole.Admin);
+
+            // Assert
+            Assert.Equal(UserRole.Admin, user.Role);
         }
 
         #endregion

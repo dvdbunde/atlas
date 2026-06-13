@@ -76,20 +76,53 @@ public class Application : Entity<Guid>
 
 ---
 
-### 2. User Entity
+### 2. User Entity (Entra Synchronized Projection)
 
-Represents all system users (Citizens, Officers, Administrators).
+Represents a synchronized local projection of an Entra ID principal (Citizen, Officer, Administrator).
+The User entity is NOT an independently-managed identity account — it is a business entity
+used for ownership, assignments, auditing, and reporting. All identity data is sourced from
+Entra ID claims via the synchronization pipeline.
 
-| Property | Type | Description | Business Rules |
-| ---------- | ------ | ------------- | ---------------- |
-| `Id` | Guid | Unique identifier | Generated on creation |
-| `Email` | string | User's email address | Must be valid email, unique in system |
-| `FirstName` | string | User's first name | Required, 1-50 characters |
-| `LastName` | string | User's last name | Required, 1-50 characters |
-| `Role` | UserRole | System role (Citizen/Officer/Admin) | Determines permissions |
-| `IsActive` | bool | Whether user can access system | Inactive users cannot login |
-| `CreatedDate` | DateTime | Account creation date | Set on creation |
-| `LastLoginDate` | DateTime? | Last successful login | Updated on each login |
+| Property | Type | Description | Source |
+| -------- | ---- | ----------- | ------ |
+| `Id` | Guid | Entra ID object ID (oid claim) | Entra ID |
+| `Email` | string | User's email address | Entra ID `email` claim |
+| `FirstName` | string | User's first name | Entra ID `given_name` claim |
+| `LastName` | string | User's last name | Entra ID `family_name` claim |
+| `Role` | UserRole | System role (Citizen/Officer/Admin) | Entra ID `roles` claim |
+| `LastLoginDate` | DateTime? | Last successful authentication | Updated on each sync |
+
+**Synchronization Method:**
+
+```csharp
+public void SynchronizeFromClaims(string email, string firstName, string lastName, UserRole role)
+{
+    // Only updates values that have actually changed (idempotent)
+    // Does NOT raise domain events — this is a passive sync operation
+}
+```
+
+**Business Methods:**
+
+```csharp
+public void RecordLogin()
+{
+    LastLoginDate = DateTime.UtcNow;
+}
+
+public string GetFullName()
+{
+    return $"{FirstName} {LastName}";
+}
+```
+
+**Removed Methods (Entra-first architecture, see ADR-013):**
+
+- `ChangeRole()` — role mutation removed; roles come from Entra
+- `Deactivate()` — lifecycle removed; activation managed in Entra
+- `UpdateEmail()` — profile mutation removed; email comes from Entra
+- `UpdateProfile()` — profile mutation removed; name comes from Entra
+- `IsActive` property — lifecycle removed; activation managed in Entra
 
 **Methods:**
 
@@ -113,6 +146,8 @@ public void Deactivate(Guid deactivatedByAdminId)
     AddDomainEvent(new UserDeactivatedEvent(Id, deactivatedByAdminId));
 }
 ```
+
+> **Note**: The methods above are historical documentation only. In the current Entra-first architecture (see ADR-013), role mutations and deactivation are managed through Entra ID. The `User` entity no longer has `ChangeRole()`, `Deactivate()`, `UpdateEmail()`, or `UpdateProfile()` methods. See the [User Entity (Entra Synchronized Projection)](#2-user-entity-entra-synchronized-projection) section above for the current model.
 
 ---
 

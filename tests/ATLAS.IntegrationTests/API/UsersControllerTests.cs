@@ -36,26 +36,7 @@ namespace ATLAS.IntegrationTests.API
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
-
-        [Fact]
-        public async Task CreateUser_Should_Return201Created()
-        {
-            // Arrange
-            var request = new
-            {
-                email = "test@example.com",
-                firstName = "Test",
-                lastName = "User",
-                role = "Citizen"
-            };
-
-            // Act
-            var response = await _client.PostAsAsync("/api/users?role=Admin", request, TestUserBuilder.AsAdmin());
-
-            // Assert
-            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        }
-
+      
         [Fact]
         public async Task GetUserById_WithValidId_Should_Return200OK()
         {
@@ -80,20 +61,6 @@ namespace ATLAS.IntegrationTests.API
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task UpdateUserRole_Should_Return200OK()
-        {
-            // Arrange - Use seeded officer ID
-            var userId = TestData.OfficerUserId;
-            var request = new { role = "Officer" };
-
-            // Act
-            var response = await _client.PutAsAsync($"/api/users/{userId}/role", request, TestUserBuilder.AsAdmin());
-
-            // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         [Fact]

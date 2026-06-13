@@ -3,14 +3,27 @@ using ATLAS.Domain.Entities;
 namespace ATLAS.Application.Interfaces
 {
     /// <summary>
-    /// Resolves the authenticated user's identity and synchronizes claims with
+    /// Resolves the authenticated user's identity and synchronizes Entra ID claims with
     /// the Domain User aggregate. This is the Application-layer abstraction for
-    /// identity resolution, following the Clean Architecture pattern alongside
-    /// <see cref="ICurrentUserService"/>.
+    /// identity resolution in an Entra-first architecture, following Clean Architecture
+    /// alongside <see cref="ICurrentUserService"/>.
     ///
     /// Responsibilities:
     /// - Resolve the Domain User for the current authenticated identity (find-or-create).
-    /// - Synchronize the Domain User's profile properties from identity claims.
+    /// - Synchronize the Domain User's profile properties (email, name, role) from
+    ///   Entra ID claims via <see cref="User.SynchronizeFromClaims"/>.
+    ///
+    /// Key behaviors (Entra-first):
+    /// - User creation is automatic and idempotent (first request creates, subsequent finds).
+    /// - User updates are automatic and idempotent (claims diff'd against stored values).
+    /// - Role updates are derived from Entra only — ATLAS never writes roles.
+    /// - Profile updates are derived from Entra only — ATLAS never writes profiles.
+    ///
+    /// Stored identity information:
+    /// - External identity identifier (Entra ID oid → User.Id)
+    /// - Display information (email, first name, last name)
+    /// - Role information (Citizen/Officer/Admin)
+    /// - Last seen/information (LastLoginDate)
     ///
     /// Design decisions:
     /// - <see cref="SynchronizeUserAsync"/> internally persists changes and handles

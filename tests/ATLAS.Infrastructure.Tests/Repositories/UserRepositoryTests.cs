@@ -23,7 +23,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User("test@example.com", "John", "Doe", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "test@example.com", "John", "Doe", UserRole.Citizen);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
@@ -56,7 +56,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User("unique@email.com", "Jane", "Doe", UserRole.Officer);
+            var user = new User(Guid.NewGuid(), "unique@email.com", "Jane", "Doe", UserRole.Officer);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
@@ -75,8 +75,8 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var citizen = new User("citizen@test.com", "Citizen", "One", UserRole.Citizen);
-            var officer = new User("officer@test.com", "Officer", "One", UserRole.Officer);
+            var citizen = new User(Guid.NewGuid(), "citizen@test.com", "Citizen", "One", UserRole.Citizen);
+            var officer = new User(Guid.NewGuid(), "officer@test.com", "Officer", "One", UserRole.Officer);
             context.Users.AddRange(citizen, officer);
             await context.SaveChangesAsync();
 
@@ -95,7 +95,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User("new@user.com", "New", "User", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "new@user.com", "New", "User", UserRole.Citizen);
             var repository = new UserRepository(context);
 
             // Act
@@ -113,12 +113,12 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User("update@test.com", "Update", "Me", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "update@test.com", "Update", "Me", UserRole.Citizen);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
             var repository = new UserRepository(context);
-            user.Deactivate(); // Changes IsActive to false
+            user.RecordLogin(); // Verify update persists state changes
 
             // Act
             await repository.UpdateAsync(user);
@@ -127,7 +127,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Assert
             var updated = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
             Assert.NotNull(updated);
-            Assert.False(updated.IsActive);
+            Assert.NotNull(updated.LastLoginDate);
         }
 
         [Fact]
@@ -135,7 +135,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User("delete@test.com", "Delete", "Me", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "delete@test.com", "Delete", "Me", UserRole.Citizen);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
@@ -155,7 +155,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User("exists@test.com", "Exists", "User", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "exists@test.com", "Exists", "User", UserRole.Citizen);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 

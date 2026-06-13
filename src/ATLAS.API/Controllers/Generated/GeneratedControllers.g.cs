@@ -216,16 +216,6 @@ namespace ATLAS.API.Controllers.Generated
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<UserResponse>>> UsersGet([Microsoft.AspNetCore.Mvc.FromQuery] string? role = null);
 
         /// <summary>
-        /// Create user account
-        /// </summary>
-        /// <remarks>
-        /// Create a new user profile in the system. Authentication is managed by Microsoft Entra ID — this endpoint creates the Domain User record for business operations.
-        /// </remarks>
-        /// <returns>User created successfully</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/users", Name = "createUser")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> UsersPost([Microsoft.AspNetCore.Mvc.FromBody] CreateUserRequest body);
-
-        /// <summary>
         /// Get user by ID
         /// </summary>
         /// <remarks>
@@ -235,17 +225,6 @@ namespace ATLAS.API.Controllers.Generated
         /// <returns>User details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/users/{id}", Name = "getUserById")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserResponse>> UsersGet(System.Guid id);
-
-        /// <summary>
-        /// Update user role
-        /// </summary>
-        /// <remarks>
-        /// Update the role of an existing user
-        /// </remarks>
-        /// <param name="id">User ID</param>
-        /// <returns>User role updated successfully</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/users/{id}/role", Name = "updateUserRole")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Role(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdateUserRoleRequest body);
 
     }
 

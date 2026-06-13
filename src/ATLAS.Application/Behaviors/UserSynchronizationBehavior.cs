@@ -5,16 +5,22 @@ namespace ATLAS.Application.Behaviors
 {
     /// <summary>
     /// MediatR pipeline behavior that synchronizes the authenticated user's
-    /// identity with the Domain User aggregate before every request handler.
+    /// Entra ID identity with the Domain User aggregate before every request handler.
     ///
     /// This ensures that every authenticated request has a corresponding Domain
-    /// User record, with up-to-date profile properties and login timestamps.
+    /// User record, with up-to-date profile properties and login timestamps
+    /// synchronized from Entra ID claims (Entra-first model).
     ///
     /// Pipeline position: runs BEFORE the request handler, after ValidationBehavior.
     ///
+    /// Entra-first synchronization:
+    /// - User creation: automatic on first authenticated request (idempotent)
+    /// - User updates: automatic on every authenticated request (idempotent)
+    /// - Role updates: derived from Entra ID claims only
+    /// - Profile updates: derived from Entra ID claims only
+    ///
     /// Design decisions:
-    /// - Skips synchronization for unauthenticated requests (anonymous endpoints
-    ///   like user registration).
+    /// - Skips synchronization for unauthenticated requests (anonymous endpoints).
     /// - Delegates resolution and synchronization to <see cref="IIdentityResolver"/>,
     ///   keeping this behavior thin and testable.
     /// - SynchronizeUserAsync internally persists and retries on concurrent

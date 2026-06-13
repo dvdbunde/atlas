@@ -80,8 +80,8 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Note: InMemory database doesn't enforce unique constraints
             // This test verifies the domain allows duplicate emails (constraint is in EF Core config)
             // In production with SQL Server, the unique index would prevent this
-            var user1 = new User("duplicate@email.com", "User", "One", UserRole.Citizen);
-            var user2 = new User("duplicate@email.com", "User", "Two", UserRole.Officer);
+            var user1 = new User(Guid.NewGuid(), "duplicate@email.com", "User", "One", UserRole.Citizen);
+            var user2 = new User(Guid.NewGuid(), "duplicate@email.com", "User", "Two", UserRole.Officer);
             
             _context.Users.AddRange(user1, user2);
             

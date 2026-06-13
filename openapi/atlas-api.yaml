@@ -560,34 +560,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
       security:
         - EntraID: ['Admin']
-    
-    post:
-      tags: [Users]
-      summary: Create user account
-      description: Create a new user profile in the system. Authentication is managed by Microsoft Entra ID — this endpoint creates the Domain User record for business operations.
-      operationId: createUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateUserRequest'
-      responses:
-        '201':
-          description: User created successfully
-          content:
-            application/json:
-              schema:
-                type: string
-                format: uuid
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-      security:
-        - EntraID: ['Admin']
 
   /api/users/{id}:
     get:
@@ -610,42 +582,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-      security:
-        - EntraID: ['Admin']
-
-  /api/users/{id}/role:
-    put:
-      tags: [Users]
-      summary: Update user role
-      description: Update the role of an existing user
-      operationId: updateUserRole
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: User ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserRoleRequest'
-      responses:
-        '200':
-          description: User role updated successfully
-          content:
-            application/json:
-              schema:
-                type: boolean
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -1077,31 +1013,7 @@ components:
           format: decimal
         isActive:
           type: boolean
-      required: [permitTypeId]
-    
-    CreateUserRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        firstName:
-          type: string
-        lastName:
-          type: string
-        role:
-          type: string
-      required: [email, firstName, lastName, role]
-    
-    UpdateUserRoleRequest:
-      type: object
-      properties:
-        userId:
-          type: string
-          format: uuid
-        role:
-          type: string        
-      required: [userId, role]
+      required: [permitTypeId]  
   
   responses:
     Unauthorized:

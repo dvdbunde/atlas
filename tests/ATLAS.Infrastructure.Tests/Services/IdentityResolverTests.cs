@@ -37,7 +37,7 @@ namespace ATLAS.Infrastructure.Tests.Services
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var existingUser = new User("existing@test.com", "Existing", "User", UserRole.Citizen);
+            var existingUser = new User(userId, "existing@test.com", "Existing", "User", UserRole.Citizen);
 
             _mockCurrentUserService.Setup(s => s.IsAuthenticated).Returns(true);
             _mockCurrentUserService.Setup(s => s.UserId).Returns(userId);
@@ -90,7 +90,7 @@ namespace ATLAS.Infrastructure.Tests.Services
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var existingUser = new User("old@test.com", "Existing", "User", UserRole.Officer);
+            var existingUser = new User(userId, "old@test.com", "Existing", "User", UserRole.Officer);
 
             _mockCurrentUserService.Setup(s => s.IsAuthenticated).Returns(true);
             _mockCurrentUserService.Setup(s => s.UserId).Returns(userId);
@@ -114,7 +114,7 @@ namespace ATLAS.Infrastructure.Tests.Services
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var existingUser = new User("test@test.com", "OldFirst", "OldLast", UserRole.Citizen);
+            var existingUser = new User(userId, "test@test.com", "OldFirst", "OldLast", UserRole.Citizen);
 
             var claims = new List<Claim>
             {
@@ -159,7 +159,7 @@ namespace ATLAS.Infrastructure.Tests.Services
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var existingUser = new User("test@test.com", "Test", "User", UserRole.Citizen);
+            var existingUser = new User(userId, "test@test.com", "Test", "User", UserRole.Citizen);
 
             _mockCurrentUserService.Setup(s => s.IsAuthenticated).Returns(true);
             _mockCurrentUserService.Setup(s => s.UserId).Returns(userId);
@@ -218,7 +218,7 @@ namespace ATLAS.Infrastructure.Tests.Services
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var existingUser = new User("email@test.com", "Email", "User", UserRole.Officer);
+            var existingUser = new User(userId, "email@test.com", "Email", "User", UserRole.Officer);
 
             _mockCurrentUserService.Setup(s => s.IsAuthenticated).Returns(true);
             _mockCurrentUserService.Setup(s => s.UserId).Returns(userId);

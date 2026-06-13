@@ -181,7 +181,7 @@ User (Root)
 - `User` IS the aggregate root - no separate aggregate class needed
 - `User` is a simple aggregate with no child entities
 - Direct property access is acceptable (no internal entities to protect)
-- Role changes go through `user.ChangeRole(newRole)` to enforce invariants
+- Role changes are managed in Entra ID and synchronized via `user.SynchronizeFromClaims()` (read-only projection)
 
 ---
 

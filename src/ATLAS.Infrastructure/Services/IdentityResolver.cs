@@ -17,10 +17,9 @@ namespace ATLAS.Infrastructure.Services
     /// 2. Fallback: look up by Email (ClaimTypes.Email).
     /// 3. If neither found, create a new Domain User from claim values.
     ///
-    /// Synchronization updates:
-    /// - Email if changed
-    /// - FirstName from ClaimTypes.GivenName (or parsed from ClaimTypes.Name)
-    /// - LastName from ClaimTypes.Surname (or parsed from ClaimTypes.Name)
+    /// Synchronization (Entra-first model):
+    /// - Email, FirstName, LastName, Role ALL derived from Entra ID claims
+    /// - Uses <see cref="User.SynchronizeFromClaims"/> (idempotent, no domain events)
     /// - LastLoginDate via user.RecordLogin()
     ///
     /// Design decisions:
@@ -31,6 +30,8 @@ namespace ATLAS.Infrastructure.Services
     ///   operation in memory.
     /// - Uses IUnitOfWork internally for persistence, keeping the retry logic
     ///   self-contained.
+    /// - Role synchronization is passive: ATLAS reads the role from Entra claims,
+    ///   never writes roles to Entra. Roles are reflected locally for authorization.
     /// </summary>
     public class IdentityResolver : IIdentityResolver
     {
@@ -95,30 +96,21 @@ namespace ATLAS.Infrastructure.Services
 
             var user = await ResolveCurrentUserAsync(cancellationToken);
 
-            // Synchronize profile properties from claims
-            var email = _currentUserService.Email;
-            if (!string.IsNullOrWhiteSpace(email) &&
-                !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
-            {
-                user.UpdateEmail(email);
-            }
-
-            // Extract name parts from claims
+            // Synchronize profile properties from claims (idempotent - only updates changed values)
+            // This is the Entra-first sync: claims are the single source of truth
+            var email = _currentUserService.Email ?? string.Empty;
             var claims = _currentUserService.Claims;
-            var firstName = ExtractFirstName(claims);
-            var lastName = ExtractLastName(claims);
-
-            if (firstName != null || lastName != null)
+            var firstName = ExtractFirstName(claims) ?? string.Empty;
+            var lastName = ExtractLastName(claims) ?? string.Empty;
+            var roleClaim = _currentUserService.Role;
+            var role = UserRole.Citizen;
+            if (!string.IsNullOrWhiteSpace(roleClaim) &&
+                Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var parsedRole))
             {
-                var currentFirstName = firstName ?? user.FirstName;
-                var currentLastName = lastName ?? user.LastName;
-
-                if (!string.Equals(user.FirstName, currentFirstName, StringComparison.Ordinal) ||
-                    !string.Equals(user.LastName, currentLastName, StringComparison.Ordinal))
-                {
-                    user.UpdateProfile(currentFirstName, currentLastName);
-                }
+                role = parsedRole;
             }
+
+            user.SynchronizeFromClaims(email, firstName, lastName, role);
 
             // Record login timestamp
             user.RecordLogin();

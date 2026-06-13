@@ -33,7 +33,7 @@ namespace ATLAS.Application.Queries
                     users = users.Where(u => u.Role == role).ToList();
             }
             
-            // Map to UserDto
+            // Map to UserDto (read-only, synchronized from Entra)
             return users.Select(u => new UserDto
             {
                 Id = u.Id,
@@ -41,7 +41,7 @@ namespace ATLAS.Application.Queries
                 FirstName = u.FirstName,
                 LastName = u.LastName,
                 Role = u.Role.ToString(),
-                IsActive = u.IsActive
+                LastLoginDate = u.LastLoginDate
             }).ToList();
         }
     }
@@ -67,6 +67,7 @@ namespace ATLAS.Application.Queries
             if (user == null)
                 return null;
 
+            // Map to UserDto (read-only, synchronized from Entra)
             return new UserDto
             {
                 Id = user.Id,
@@ -74,7 +75,7 @@ namespace ATLAS.Application.Queries
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Role = user.Role.ToString(),
-                IsActive = user.IsActive
+                LastLoginDate = user.LastLoginDate
             };
         }
     }

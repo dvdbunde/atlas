@@ -55,7 +55,7 @@ C4Container
 
 - **Citizens**: Application form, document upload, status dashboard
 - **Officers**: Review dashboard, application details, approval/rejection workflow
-- **Administrators**: Permit type management, audit log viewer, user management
+- **Administrators**: Permit type management, audit log viewer (user management delegated to Entra ID)
 
 ### 2. ASP.NET Core API (Application Layer)
 

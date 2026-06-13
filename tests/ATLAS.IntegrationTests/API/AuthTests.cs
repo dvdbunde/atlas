@@ -65,19 +65,5 @@ public class AuthTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         var response = await _client.GetAsAsync("/api/users", TestUserBuilder.AsAdmin());
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task CreateUser_AsAdmin_ShouldReturn201()
-    {
-        var request = new
-        {
-            email = "newuser@test.com",
-            firstName = "New",
-            lastName = "User",
-            role = "Citizen"
-        };
-        var response = await _client.PostAsAsync("/api/users?role=Admin", request, TestUserBuilder.AsAdmin());
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-    }
+    }  
 }

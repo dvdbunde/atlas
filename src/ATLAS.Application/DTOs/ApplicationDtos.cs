@@ -58,6 +58,10 @@ namespace ATLAS.Application.DTOs
         public bool IsActive { get; set; }
     }
 
+    /// <summary>
+    /// User DTO - represents a synchronized Entra ID principal
+    /// Read-only representation for queries (no identity management)
+    /// </summary>
     public class UserDto
     {
         public Guid Id { get; set; }
@@ -65,7 +69,7 @@ namespace ATLAS.Application.DTOs
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public bool IsActive { get; set; }
+        public DateTime? LastLoginDate { get; set; }
     }
 
     public class AuditLogDto

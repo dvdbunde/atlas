@@ -30,8 +30,8 @@ namespace ATLAS.Application.Tests.Queries
             // Arrange
             var users = new List<User>
             {
-                new User("user1@test.com", "John", "Doe", UserRole.Citizen),
-                new User("user2@test.com", "Jane", "Smith", UserRole.Officer)
+                new User(Guid.NewGuid(), "user1@test.com", "John", "Doe", UserRole.Citizen),
+                new User(Guid.NewGuid(), "user2@test.com", "Jane", "Smith", UserRole.Officer)
             };
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -52,9 +52,9 @@ namespace ATLAS.Application.Tests.Queries
             // Arrange
             var users = new List<User>
             {
-                new User("user1@test.com", "John", "Doe", UserRole.Citizen),
-                new User("user2@test.com", "Jane", "Smith", UserRole.Officer),
-                new User("user3@test.com", "Bob", "Johnson", UserRole.Citizen)
+                new User(Guid.NewGuid(), "user1@test.com", "John", "Doe", UserRole.Citizen),
+                new User(Guid.NewGuid(), "user2@test.com", "Jane", "Smith", UserRole.Officer),
+                new User(Guid.NewGuid(), "user3@test.com", "Bob", "Johnson", UserRole.Citizen)
             };
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -76,8 +76,8 @@ namespace ATLAS.Application.Tests.Queries
             // Arrange
             var users = new List<User>
             {
-                new User("user1@test.com", "John", "Doe", UserRole.Citizen),
-                new User("user2@test.com", "Jane", "Smith", UserRole.Officer)
+                new User(Guid.NewGuid(), "user1@test.com", "John", "Doe", UserRole.Citizen),
+                new User(Guid.NewGuid(), "user2@test.com", "Jane", "Smith", UserRole.Officer)
             };
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -115,8 +115,8 @@ namespace ATLAS.Application.Tests.Queries
         public async Task Handle_ValidUserId_ShouldReturnUserDto()
         {
             // Arrange
-            var user = new User("test@test.com", "John", "Doe", UserRole.Citizen);
-            var userId = user.Id; // Get the auto-generated Id
+            var userId = Guid.NewGuid();
+            var user = new User(userId, "test@test.com", "John", "Doe", UserRole.Citizen);
             
             _mockRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(user);
@@ -133,7 +133,7 @@ namespace ATLAS.Application.Tests.Queries
             Assert.Equal("John", result.FirstName);
             Assert.Equal("Doe", result.LastName);
             Assert.Equal("Citizen", result.Role);
-            Assert.True(result.IsActive);
+            Assert.Null(result.LastLoginDate); // Newly created, never logged in
         }
 
         [Fact]
