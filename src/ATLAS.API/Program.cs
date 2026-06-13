@@ -23,6 +23,9 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);    
     cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
+
+    // ✅ Add validation pipeline behavior
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     
     // User synchronization pipeline behavior — runs before every request handler
     cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
@@ -30,6 +33,23 @@ builder.Services.AddMediatR(cfg =>
 
 // Register FluentValidation validators from Application layer
 builder.Services.AddValidatorsFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
+
+// Read Azure AD config for Swagger OAuth2 and JWT validation
+var azureAdConfig = builder.Configuration.GetSection("AzureAd");
+var tenantId = azureAdConfig["TenantId"] ?? "common";
+var clientId = azureAdConfig["ClientId"] ?? "";
+var swaggerClientId = azureAdConfig["SwaggerClientId"] ?? "";
+
+if (builder.Environment.IsDevelopment())
+{
+    if (string.IsNullOrWhiteSpace(swaggerClientId))
+    {
+        throw new InvalidOperationException(
+            "AzureAd:SwaggerClientId is required");
+    }
+}
+
+var swaggerScope = $"api://{clientId}/atlas.access";
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -39,15 +59,26 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1" 
     });
 
-    // JWT Bearer security definition for Swagger UI "Authorize" button
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // Entra ID OAuth2 Authorization Code security definition for Swagger UI "Authorize" button
+    var authorizationUrl = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize";
+    var tokenUrl = $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/token";
+
+    c.AddSecurityDefinition("EntraID", new OpenApiSecurityScheme
     {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter your JWT Bearer token."
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            AuthorizationCode = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri(authorizationUrl),
+                TokenUrl = new Uri(tokenUrl),
+                Scopes = new Dictionary<string, string>
+                {
+                    { swaggerScope, "Access ATLAS API" }
+                }
+            }
+        },
+        Description = "Microsoft Entra ID OAuth2 Authorization Code flow. Obtain a token from Entra ID and use it as a Bearer token in API requests."
     });
 
     // Apply globally so all endpoints show the padlock
@@ -59,10 +90,10 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Id = "EntraID"
                 }
             },
-            Array.Empty<string>()
+            new[] { swaggerScope }
         }
     });
 });
@@ -87,15 +118,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         if (string.IsNullOrWhiteSpace(audience))
             throw new InvalidOperationException("AzureAd:Audience is required. Verify appsettings.json / Azure Key Vault.");
 
-        var issuer = $"{instance}/{tenantId}/v2.0";
-        options.Authority = issuer;
-        options.Audience = audience;
+        
+        options.Authority = $"{instance}/{tenantId}/v2.0";
+        //options.Audience = audience;
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidIssuer = issuer,
+            ValidateIssuer = true,            
+            ValidIssuers =
+            [
+                $"https://sts.windows.net/{tenantId}/",                    // v1.0
+                $"https://login.microsoftonline.com/{tenantId}/v2.0"       // v2.0
+            ],
             ValidateAudience = true,
-            ValidAudience = audience,
+            ValidAudiences =
+            [
+                clientId,                                                  // v2.0 format
+                $"api://{clientId}",                                       // v1.0 format
+                audience                                                   // from config (backward compat)
+            ],
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(2),
@@ -153,14 +193,11 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Officer", "Admin"));
 });
 
-// Claims transformation: map Entra ID roles/groups → application role claims
-builder.Services.AddScoped<IClaimsTransformation, AtlasClaimsTransformation>();
-
 // CORS for Blazor frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor",
-        policy => policy.WithOrigins("https://localhost:5001")
+        policy => policy.WithOrigins("https://localhost:7295")
                       .AllowAnyMethod()
                       .AllowAnyHeader());
 });
@@ -179,6 +216,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "ATLAS API v1");
+        options.OAuthClientId(swaggerClientId);
+        options.OAuthScopes(swaggerScope);
+        options.OAuthUsePkce();
     });
     app.MapOpenApi();
 }

@@ -50,7 +50,7 @@ namespace ATLAS.IntegrationTests.API
             };
 
             // Act
-            var response = await _client.PostAnonymousAsync("/api/users", request);
+            var response = await _client.PostAsAsync("/api/users?role=Admin", request, TestUserBuilder.AsAdmin());
 
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);

@@ -183,6 +183,7 @@ public static class Roles
 - **IMP-009**: Domain User auto-provisioning via `IIdentityResolver.SynchronizeUserAsync()` runs in the MediatR pipeline on every authenticated request
 - **IMP-010**: No ASP.NET Core Identity, no local usernames/passwords, no email verification, no password reset, no account lockout — all delegated to Entra ID
 - **IMP-011**: The `POST /api/users` endpoint creates a Domain `User` record (business profile) only; authentication derives from the Entra ID JWT token, not local credentials
+- **IMP-012**: Swagger UI uses OAuth2 Authorization Code flow against Entra ID. The OpenAPI `EntraID` security scheme uses `type: openIdConnect` with the Entra ID OIDC metadata URL. The Swagger security definition is configured as `SecuritySchemeType.OAuth2` with Authorization Code flow, reading `AzureAd:TenantId` and `AzureAd:ClientId` from configuration at startup. The OAuth scope is `api://{ClientId}/access_as_user`. `OAuthUsePkce()` is enabled for production-grade token acquisition.
 
 ## Compliance with Requirements
 

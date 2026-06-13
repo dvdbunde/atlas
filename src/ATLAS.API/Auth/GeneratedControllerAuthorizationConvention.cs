@@ -9,8 +9,8 @@ namespace ATLAS.API.Auth
     /// 
     /// Mapping rules (mirrors openapi/atlas-api.yaml security blocks):
     /// - Applications: GET, POST -> Authenticated; Approve, Reject, RequestInfo, Assign -> OfficerOrAdmin
-    /// - PermitTypes: ALL -> Admin
-    /// - Users: GET, Role -> Admin; POST (create) -> AllowAnonymous
+    /// - PermitTypes: GET (list + single) -> Authenticated; POST, PUT, DELETE -> Admin
+    /// - Users: ALL -> Admin
     /// - AuditLogs: ALL -> Admin
     /// - Documents: ALL -> Authenticated
     /// </summary>
@@ -56,16 +56,19 @@ namespace ATLAS.API.Auth
                 ("applications", "requestinfo")      => "OfficerOrAdmin",
                 ("applications", "assign")           => "OfficerOrAdmin",
 
-                // PermitTypes — all operations require Admin
-                ("permittypes", _) => "Admin",
+                // PermitTypes — GET (list + single) = Authenticated; POST/PUT/DELETE = Admin
+                ("permittypes", "permittypesget")  => "Authenticated",
+                ("permittypes", "permittypespost") => "Admin",
+                ("permittypes", "permittypesput")  => "Admin",
+                ("permittypes", "permittypesdelete") => "Admin",
 
                 // AuditLogs — all operations require Admin
                 ("auditlogs", _) => "Admin",
 
-                // Users: GET + Role = Admin; POST = anonymous (registration)
+                // Users: GET + Role = Admin; POST = Admin (updated spec)
                 ("users", "usersget")  => "Admin",
                 ("users", "role")      => "Admin",
-                ("users", "userspost") => null, // AllowAnonymous
+                ("users", "userspost") => "Admin", 
 
                 // Documents — authenticated users
                 ("documents", _) => "Authenticated",

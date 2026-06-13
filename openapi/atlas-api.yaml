@@ -409,7 +409,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
       security:
-        - EntraID: ['Admin']
+        - EntraID: ['Citizen', 'Officer', 'Admin']
     
     post:
       tags: [PermitTypes]
@@ -467,7 +467,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
       security:
-        - EntraID: ['Admin']
+        - EntraID: ['Citizen', 'Officer', 'Admin']
     
     put:
       tags: [PermitTypes]
@@ -586,7 +586,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-      security: []
+      security:
+        - EntraID: ['Admin']
 
   /api/users/{id}:
     get:
@@ -1130,9 +1131,9 @@ components:
   
   securitySchemes:
     EntraID:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: openIdConnect
+      openIdConnectUrl: https://login.microsoftonline.com/{tenantId}/v2.0/.well-known/openid-configuration
       description: >
-        Microsoft Entra ID JWT Bearer authentication.
-        Obtain a token from Microsoft Entra ID, then include it in the Authorization header: "Bearer {token}"
+        Microsoft Entra ID OAuth 2.0 authentication with OpenID Connect.
+        Obtain a token from Microsoft Entra ID (https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize)
+        using the Authorization Code flow, then include it in the Authorization header: "Bearer {token}"

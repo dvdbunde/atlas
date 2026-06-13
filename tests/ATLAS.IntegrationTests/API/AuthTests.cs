@@ -21,10 +21,10 @@ public class AuthTests : IClassFixture<CustomWebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task GetPermitTypes_AsCitizen_ShouldReturn403()
+    public async Task GetPermitTypes_AsCitizen_ShouldReturn200()
     {
         var response = await _client.GetAsAsync("/api/permittypes", TestUserBuilder.AsCitizen());
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class AuthTests : IClassFixture<CustomWebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task CreateUser_Anonymous_ShouldReturn201()
+    public async Task CreateUser_AsAdmin_ShouldReturn201()
     {
         var request = new
         {
@@ -77,7 +77,7 @@ public class AuthTests : IClassFixture<CustomWebApplicationFactory<Program>>
             lastName = "User",
             role = "Citizen"
         };
-        var response = await _client.PostAnonymousAsync("/api/users", request);
+        var response = await _client.PostAsAsync("/api/users?role=Admin", request, TestUserBuilder.AsAdmin());
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 }

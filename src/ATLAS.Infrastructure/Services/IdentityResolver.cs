@@ -173,7 +173,10 @@ namespace ATLAS.Infrastructure.Services
                 role = parsedRole;
             }
 
-            var user = new User(email, firstName, lastName, role);
+            // Use oid claim as User ID (matches Entra ID user GUID)
+            // Fallback to new GUID if oid is not available
+            var userId = _currentUserService.UserId ?? Guid.NewGuid();
+            var user = new User(userId, email, firstName, lastName, role);
             user.RecordLogin();
             return user;
         }
