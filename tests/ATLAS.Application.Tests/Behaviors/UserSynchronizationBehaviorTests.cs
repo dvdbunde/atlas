@@ -76,7 +76,7 @@ namespace ATLAS.Application.Tests.Behaviors
             _mockCurrentUserService.Setup(s => s.IsAuthenticated).Returns(true);
             _mockIdentityResolver
                 .Setup(r => r.SynchronizeUserAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new User("test@example.com", "Test", "User", UserRole.Citizen));
+                .ReturnsAsync(new User(Guid.NewGuid(), "test@example.com", "Test", "User", UserRole.Citizen));
 
             // Act
             var result = await _behavior.Handle(

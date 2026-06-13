@@ -125,9 +125,9 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         context.PermitTypes.AddRange(new[] { buildingPermit, eventPermit, signagePermit });
 
         // Seed Users
-        var citizen = new User("citizen@test.com", "John", "Doe", UserRole.Citizen);
-        var officer = new User("officer@test.com", "Jane", "Smith", UserRole.Officer);
-        var admin = new User("admin@test.com", "Admin", "User", UserRole.Admin);
+        var citizen = new User(Guid.NewGuid(), "citizen@test.com", "John", "Doe", UserRole.Citizen);
+        var officer = new User(Guid.NewGuid(), "officer@test.com", "Jane", "Smith", UserRole.Officer);
+        var admin = new User(Guid.NewGuid(), "admin@test.com", "Admin", "User", UserRole.Admin);
         
         context.Users.AddRange(new[] { citizen, officer, admin });
         

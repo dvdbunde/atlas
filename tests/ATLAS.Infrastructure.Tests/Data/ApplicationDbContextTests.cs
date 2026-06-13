@@ -31,7 +31,7 @@ namespace ATLAS.Infrastructure.Tests.Data
         public async Task SaveChangesAsync_ShouldDispatchDomainEvents()
         {
             // Arrange
-            var user = new ATLAS.Domain.Entities.User("test@test.com", "John", "Doe", ATLAS.Domain.Entities.UserRole.Citizen);
+            var user = new ATLAS.Domain.Entities.User(Guid.NewGuid(), "test@test.com", "John", "Doe", ATLAS.Domain.Entities.UserRole.Citizen);
             _context.Users.Add(user);
             
             // Act

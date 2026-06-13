@@ -24,8 +24,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         private readonly DocumentUploadedEventHandler _documentUploadedHandler;
         private readonly PermitTypeActivatedEventHandler _activatedHandler;
         private readonly PermitTypeDeactivatedEventHandler _deactivatedHandler;
-        private readonly PermitTypeFieldAddedEventHandler _fieldAddedHandler;
-        private readonly UserRoleChangedEventHandler _roleChangedHandler;
+        private readonly PermitTypeFieldAddedEventHandler _fieldAddedHandler;        
         private readonly ApplicationAssignedToOfficerEventHandler _assignedHandler;
 
         public DomainEventToAuditLogPersistenceTests()
@@ -46,7 +45,6 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
             _activatedHandler = new PermitTypeActivatedEventHandler(_auditLogRepository);
             _deactivatedHandler = new PermitTypeDeactivatedEventHandler(_auditLogRepository);
             _fieldAddedHandler = new PermitTypeFieldAddedEventHandler(_auditLogRepository);
-            _roleChangedHandler = new UserRoleChangedEventHandler(_auditLogRepository);
             _assignedHandler = new ApplicationAssignedToOfficerEventHandler(_auditLogRepository);
         }
 
@@ -120,23 +118,8 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
             Assert.Contains("test.pdf", log.Details);
         }
 
-        [Fact]
-        public async Task UserRoleChangedEvent_ShouldPersistToAuditLog()
-        {
-            // Arrange
-            var evt = new UserRoleChangedEvent(Guid.NewGuid(), UserRole.Citizen, UserRole.Officer);
-
-            // Act
-            await _roleChangedHandler.Handle(evt, CancellationToken.None);
-            await _context.SaveChangesAsync();
-
-            // Assert
-            var auditLogs = await _auditLogRepository.GetByEntityAsync("User", evt.UserId);
-            var log = Assert.Single(auditLogs);
-            Assert.Equal("UserRoleChanged", log.Action);
-            Assert.Contains("Citizen", log.Details);
-            Assert.Contains("Officer", log.Details);
-        }
+        // UserRoleChanged test removed in Phase A - role changes are Entra-driven
+        // Local role mutation is impossible; role sync does not raise domain events
 
         [Fact]
         public async Task MultipleEvents_ShouldCreateMultipleAuditLogs()

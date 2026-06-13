@@ -40,7 +40,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var permitType = new PermitType("Test Permit", "Description", 100m);
-            var user = new User("test@email.com", "Test", "User", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "test@email.com", "Test", "User", UserRole.Citizen);
 
             // Act - Add multiple entities through UnitOfWork
             await _unitOfWork.Applications.AddAsync(application);
