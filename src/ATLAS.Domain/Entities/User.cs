@@ -94,7 +94,45 @@ namespace ATLAS.Domain.Entities
             LastLoginDate = DateTime.UtcNow;
         }
 
-        /// <summary>
+        /// <summary>        
+        /// Synchronizes profile properties from Entra ID claims.
+        /// This is NOT identity management - it is the Entra-first synchronization
+        /// mechanism that updates the local representation from the single source of truth.
+        /// Only updates values that have actually changed (idempotent).
+        /// Does NOT raise domain events.
+        /// </summary>
+        /// <param name="email">Email address from Entra claims</param>
+        /// <param name="firstName">First name from Entra claims</param>
+        /// <param name="lastName">Last name from Entra claims</param>
+        /// <param name="role">Role from Entra app roles</param>
+        public void SynchronizeFromClaims(string email, string firstName, string lastName, UserRole role)
+        {
+            // Only update if values have actually changed (idempotent)
+            if (!string.IsNullOrWhiteSpace(email) &&
+                !string.Equals(Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                Email = email.ToLowerInvariant();
+            }
+
+            if (!string.IsNullOrWhiteSpace(firstName) &&
+                !string.Equals(FirstName, firstName, StringComparison.Ordinal))
+            {
+                FirstName = firstName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(lastName) &&
+                !string.Equals(LastName, lastName, StringComparison.Ordinal))
+            {
+                LastName = lastName;
+            }
+
+            if (Role != role)
+            {
+                Role = role;
+            }
+        }
+
+        /// <summary>        
         /// Gets the user'\''s full name for display purposes
         /// </summary>
         public string GetFullName()

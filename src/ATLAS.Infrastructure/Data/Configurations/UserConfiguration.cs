@@ -13,8 +13,7 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.Property(u => u.Email).IsRequired().HasMaxLength(255);
             builder.Property(u => u.FirstName).IsRequired().HasMaxLength(100);
             builder.Property(u => u.LastName).IsRequired().HasMaxLength(100);
-            builder.Property(u => u.Role).IsRequired();
-            builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
+            builder.Property(u => u.Role).IsRequired();            
             builder.Property(u => u.LastLoginDate).IsRequired(false);
             builder.HasIndex(u => u.Email).IsUnique();
         }

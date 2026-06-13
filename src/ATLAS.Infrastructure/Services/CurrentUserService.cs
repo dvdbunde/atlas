@@ -7,6 +7,12 @@ namespace ATLAS.Infrastructure.Services
     /// <summary>
     /// Infrastructure implementation of ICurrentUserService that reads the current user's
     /// identity from the ASP.NET Core HTTP context via IHttpContextAccessor.
+    ///
+    /// In the Entra-first architecture, this service extracts identity claims that are
+    /// synchronized to the Domain User aggregate via IIdentityResolver:
+    /// - UserId from the Entra oid claim (external identity identifier)
+    /// - Display information from given_name, family_name, email claims
+    /// - Role information from roles/role claims
     /// </summary>
     public class CurrentUserService : ICurrentUserService
     {

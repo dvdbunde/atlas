@@ -226,8 +226,7 @@ namespace ATLAS.API.Contracts.Generated
                 Email = response.Email,
                 FirstName = response.FirstName,
                 LastName = response.LastName,
-                Role = response.Role,
-                IsActive = response.IsActive
+                Role = response.Role                
             };
         }
 
@@ -239,8 +238,7 @@ namespace ATLAS.API.Contracts.Generated
                 Email = dto.Email,
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
-                Role = dto.Role,
-                IsActive = dto.IsActive
+                Role = dto.Role                
             };
         }
         #endregion
