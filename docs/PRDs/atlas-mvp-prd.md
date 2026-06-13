@@ -139,14 +139,14 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Citizen receives email notification with officer's message
 - Citizen can view requested info and update application (status → "Resubmitted")
 
-### UC8: Administrator Manages User Accounts (F-21)
+### UC8: Administrator Manages User Roles (F-21)
 
-- Admin accesses "User Management" panel
-- Views list of all users (Citizens, Officers, Admins)
-- Can create new user account with role assignment
-- Can change user role (with audit trail)
-- Can activate/deactivate user accounts
-- Cannot modify their own role (prevents lockout)
+- Admin accesses "User Management" panel (data from Entra ID synchronization)
+- Views list of all synchronized users (Citizens, Officers, Admins)
+- Cannot create user accounts through ATLAS (managed in Entra ID)
+- Cannot change user roles through ATLAS (managed in Entra ID via app roles)
+- Cannot activate/deactivate user accounts through ATLAS (managed in Entra ID)
+- All user lifecycle operations are performed in the Entra ID admin portal and automatically synchronized to ATLAS
 
 ### UC9: Administrator Exports Audit Data (F-23)
 
@@ -204,7 +204,9 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 | F-18 | Administrators can edit existing permit type configurations (fields, requirements, fees) | Must |
 | F-19 | Administrators can activate/deactivate permit types (soft delete) | Must |
 | F-20 | Administrators can view a complete audit history of all system actions (user actions, configuration changes) | Must |
-| F-21 | Administrators can manage user accounts and assign roles (Citizen, Officer, Admin) | Should |
+| F-21 | Administrators manage user roles through Entra ID; roles are automatically synchronized to ATLAS | Should |
+
+> **Note**: F-21 was originally specified as "Administrators can manage user accounts and assign roles." In the Entra-first architecture (see ADR-013), user account management is delegated to Microsoft Entra ID. ATLAS reads role assignments from Entra ID tokens and synchronizes them locally. The requirement is satisfied through Entra ID integration — administrators manage roles in the Entra ID admin portal, and changes propagate to ATLAS on the user's next authenticated request.
 | F-22 | Administrators can configure system-wide settings (notification templates, document size limits) | Should |
 | F-23 | Administrators can export audit data to CSV/Excel | Could |
 
@@ -353,9 +355,11 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 
 **F-21 Acceptance Criteria:**
 
-- Admin can create new user accounts with role assignment (Citizen/Officer/Admin)
-- Admin can change user roles (with audit trail of role changes)
-- Admin can deactivate/activate user accounts
+- Admin can view all synchronized users (Citizen/Officer/Admin)
+- User accounts are managed in Entra ID — ATLAS receives identity and role assignments via JWT claims
+- Admin cannot create user accounts through ATLAS (handled in Entra ID)
+- Admin cannot change user roles through ATLAS (handled in Entra ID app roles)
+- Admin cannot deactivate/activate user accounts through ATLAS (handled in Entra ID)
 - Admin cannot modify their own role (prevents lockout)
 
 **F-22 Acceptance Criteria:**

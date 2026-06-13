@@ -23,7 +23,7 @@ ATLAS is a public-sector application handling sensitive permit data and PII. The
 1. **Audit Logs** — PRD F-20: 7 years (compliance requirement)
 2. **Permit Applications** — Approved/Rejected applications (how long to retain?)
 3. **Documents (Blob Storage)** — Uploaded files linked to applications
-4. **User Accounts** — Citizen/Officer/Admin accounts (GDPR "right to be forgotten"?)
+4. **User Records** — Synchronized Entra ID principal representations (GDPR "right to be forgotten"?)
 5. **Draft Applications** — Incomplete applications (auto-purge after inactivity?)
 
 **Current State (MVP Planning):**
@@ -65,7 +65,7 @@ We will implement **tiered data retention policies** using a combination of:
 | **Draft Applications** | 30 days of inactivity | Azure SQL + Blob Storage | Auto-purge after 30 days | Prevents DB bloat |
 | **Documents (Approved/Rejected)** | 7 years (matches application) | Azure Blob Storage | Lifecycle policy move to Archive → Delete | Use Blob lifecycle management |
 | **Documents (Draft)** | 30 days (matches draft) | Azure Blob Storage | Lifecycle policy delete | Auto-purge with draft |
-| **User Accounts (Inactive)** | 3 years of inactivity | Azure SQL (`User` table) | Soft delete, PII anonymization | GDPR compliance (if applicable) |
+| **User Records (Inactive)** | 3 years of inactivity | Azure SQL (`User` table) | Soft delete, PII anonymization | GDPR compliance (if applicable). Note: User deactivation is managed in Entra ID; this policy applies to the synchronized local record. |
 | **System Configuration** | Indefinite | Azure SQL | No purge | Required for historical reporting |
 
 ### Implementation: Azure Blob Storage Lifecycle Management
@@ -158,7 +158,7 @@ public class DataPurgeFunction
 }
 ```
 
-### Implementation: User Account Anonymization
+### Implementation: User Record Anonymization
 
 ```csharp
 // When purging inactive user accounts (3 years)
@@ -250,7 +250,7 @@ public class UserPurgeService
 ### Phase 2 (Post-MVP)
 
 1. Implement 7-year purge for approved/rejected applications
-2. Add user account anonymization (3 years inactivity)
+2. Implement user record anonymization for inactive users (3 years of inactivity)
 3. Create monitoring dashboard for purge job status
 4. Add "export before purge" feature for compliance reporting
 5. Document GDPR compliance approach for citizen data

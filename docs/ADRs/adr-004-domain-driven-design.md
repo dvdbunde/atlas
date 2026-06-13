@@ -75,7 +75,7 @@ Events that capture state changes for audit and extensibility:
 - `ApplicationResubmittedEvent`
 - `DocumentUploadedEvent`
 - `PermitTypeDeactivatedEvent`
-- `UserRoleChangedEvent`
+<!-- UserRoleChangedEvent removed in ADR-013: roles are Entra-driven -->
 
 #### 5. **Repositories** (Application Layer Interfaces)
 
