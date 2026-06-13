@@ -162,12 +162,15 @@ public class DataPurgeFunction
 
 ```csharp
 // When purging inactive user accounts (3 years)
+// Note: User lifecycle (activation/deactivation) is managed in Entra ID.
+// ATLAS only maintains a synchronized projection. This anonymization
+// is for local audit trail preservation when Entra ID accounts are removed.
 public class UserPurgeService
 {
     public async Task AnonymizeInactiveUsers(DateTime cutoffDate)
     {
         var inactiveUsers = await _context.Users
-            .Where(u => u.LastLoginDate < cutoffDate && u.IsActive)
+            .Where(u => u.LastLoginDate < cutoffDate)
             .ToListAsync();
         
         foreach (var user in inactiveUsers)
@@ -176,7 +179,7 @@ public class UserPurgeService
             user.Email = $"anonymized-{user.Id}@deleted.local";
             user.FirstName = "Anonymized";
             user.LastName = "User";
-            user.IsActive = false;
+            // Note: No IsActive property - user lifecycle managed in Entra ID
             // Keep UserId for audit log references
         }
         
