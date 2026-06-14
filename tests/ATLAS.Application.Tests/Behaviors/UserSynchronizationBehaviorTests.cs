@@ -35,7 +35,7 @@ namespace ATLAS.Application.Tests.Behaviors
             // Act
             await _behavior.Handle(
                 new DummyRequest(),
-                () =>
+                (ct) =>
                 {
                     nextCalled = true;
                     return Task.FromResult(new DummyResponse());
@@ -57,7 +57,7 @@ namespace ATLAS.Application.Tests.Behaviors
             // Act
             await _behavior.Handle(
                 new DummyRequest(),
-                () =>
+                (ct) =>
                 {
                     nextCalled = true;
                     return Task.FromResult(new DummyResponse());
@@ -81,7 +81,7 @@ namespace ATLAS.Application.Tests.Behaviors
             // Act
             var result = await _behavior.Handle(
                 new DummyRequest(),
-                () => Task.FromResult(new DummyResponse()),
+                (ct) => Task.FromResult(new DummyResponse()),
                 CancellationToken.None);
 
             // Assert

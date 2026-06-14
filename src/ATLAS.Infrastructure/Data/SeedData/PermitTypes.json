@@ -1,0 +1,128 @@
+[
+  {
+    "Name": "Building Permit",
+    "Description": "Permit for construction, renovation, and demolition of buildings",
+    "Fee": 250.00,
+    "IsActive": true,
+    "Fields": [
+      {
+        "Name": "ProjectTitle",
+        "Type": "Text",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "ProjectDescription",
+        "Type": "MultilineText",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "EstimatedCost",
+        "Type": "Number",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "StartDate",
+        "Type": "Date",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "IsResidential",
+        "Type": "Boolean",
+        "IsRequired": true,
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "BuildingType",
+        "Type": "Dropdown",
+        "IsRequired": true,
+        "DefaultValue": "Residential"
+      }
+    ]
+  },
+  {
+    "Name": "Business Permit",
+    "Description": "Permit for operating a business within city limits",
+    "Fee": 150.00,
+    "IsActive": true,
+    "Fields": [
+      {
+        "Name": "BusinessName",
+        "Type": "Text",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "BusinessDescription",
+        "Type": "MultilineText",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "EstimatedRevenue",
+        "Type": "Number",
+        "IsRequired": false,
+        "DefaultValue": null
+      },
+      {
+        "Name": "OpeningDate",
+        "Type": "Date",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "IsHomeBased",
+        "Type": "Boolean",
+        "IsRequired": true,
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "BusinessType",
+        "Type": "Dropdown",
+        "IsRequired": true,
+        "DefaultValue": "Retail"
+      }
+    ]
+  },
+  {
+    "Name": "Parking Permit",
+    "Description": "Permit for reserved parking spaces",
+    "Fee": 50.00,
+    "IsActive": true,
+    "Fields": [
+      {
+        "Name": "VehicleMake",
+        "Type": "Text",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "VehicleModel",
+        "Type": "Text",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "LicensePlate",
+        "Type": "Text",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "ParkingDuration",
+        "Type": "Dropdown",
+        "IsRequired": true,
+        "DefaultValue": "Monthly"
+      },
+      {
+        "Name": "AccessibleParkingNeeded",
+        "Type": "Boolean",
+        "IsRequired": true,
+        "DefaultValue": "false"
+      }
+    ]
+  }
+]

@@ -28,5 +28,9 @@ namespace ATLAS.Domain.Interfaces
         // Review access methods (Reviews are owned by Application aggregate)
         Task<Entities.Review?> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default);
         Task<IEnumerable<Entities.Review>> GetReviewsByApplicationIdAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
+        // Phase H+B - Milestone 5: Additional methods for draft workflow
+        Task<Entities.PermitType?> GetPermitTypeByIdAsync(Guid permitTypeId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Entities.PermitType>> GetActivePermitTypesAsync(CancellationToken cancellationToken = default);
     }
 }

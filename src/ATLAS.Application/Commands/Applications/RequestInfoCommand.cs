@@ -2,9 +2,9 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
+using ATLAS.Application.Interfaces;
 
 namespace ATLAS.Application.Commands
 {
