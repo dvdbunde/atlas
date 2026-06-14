@@ -33,7 +33,7 @@ namespace ATLAS.Infrastructure.Data.SeedData
                 return;
             }
 
-            var jsonPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "ATLAS.Infrastructure", "Data", "SeedData", "PermitTypes.json");
+            var jsonPath = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "PermitTypes.json");
             
             if (!File.Exists(jsonPath))
             {
@@ -51,7 +51,8 @@ namespace ATLAS.Infrastructure.Data.SeedData
                 foreach (var field in pt.Fields)
                 {
                     var fieldType = Enum.Parse<FieldType>(field.Type);
-                    permitType.AddField(field.Name, fieldType, field.IsRequired, field.DefaultValue);
+                    var defaultValue = field.DefaultValue ?? string.Empty;                    
+                    permitType.AddField(field.Name, fieldType, field.IsRequired, defaultValue);
                 }
 
                 await _context.PermitTypes.AddAsync(permitType);
