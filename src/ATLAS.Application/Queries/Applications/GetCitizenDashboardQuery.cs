@@ -42,18 +42,10 @@ namespace ATLAS.Application.Queries.Applications
             var citizenId = _currentUserService.UserId.Value;
             var applications = await _repository.GetByCitizenIdAsync(citizenId, cancellationToken);
 
-            // Load all active permit types to map PermitTypeId -> Name
-            var permitTypes = await _permitTypeRepository.GetAllActiveAsync(cancellationToken);
-            var permitTypeDict = new Dictionary<Guid, string>();
-            foreach (var pt in permitTypes)
-            {
-                permitTypeDict[pt.Id] = pt.Name;
-            }
-
             var dtos = new List<CitizenDashboardDto>();
             foreach (var app in applications)
             {
-                permitTypeDict.TryGetValue(app.PermitTypeId, out var permitTypeName);
+                var permitTypeName = await _permitTypeRepository.GetNameByIdAsync(app.PermitTypeId, cancellationToken);
                 dtos.Add(new CitizenDashboardDto
                 {
                     ApplicationId = app.Id,

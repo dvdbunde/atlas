@@ -4,6 +4,7 @@ using ATLAS.API.Auth;
 using ATLAS.API.Controllers;
 using ATLAS.Application.Behaviors;
 using ATLAS.Infrastructure;
+using ATLAS.Infrastructure.Data.SeedData;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
@@ -203,6 +204,16 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Seed permit type data on startup (skip in Testing environment - test factory seeds its own data)
+if (!app.Environment.EnvironmentName.Equals("Testing", StringComparison.OrdinalIgnoreCase))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var seedDataLoader = scope.ServiceProvider.GetRequiredService<SeedDataLoader>();
+        await seedDataLoader.LoadSeedDataAsync();
+    }
+}
 
 if (app.Environment.EnvironmentName == "Testing" || app.Environment.IsDevelopment())
 {

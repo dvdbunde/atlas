@@ -17,77 +17,64 @@ namespace ATLAS.Infrastructure.Data.SeedData
         private readonly IConfiguration _configuration;
         private readonly ILogger<SeedDataLoader> _logger;
 
-        public SeedDataLoader(
-            ApplicationDbContext context,
-            IConfiguration configuration,
-            ILogger<SeedDataLoader> logger)
+        public SeedDataLoader(ApplicationDbContext context, IConfiguration configuration, ILogger<SeedDataLoader> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task SeedPermitTypesAsync(CancellationToken cancellationToken = default)
+        public async Task LoadSeedDataAsync()
         {
             // Check if permit types already exist
-            if (await _context.PermitTypes.AnyAsync(cancellationToken))
+            if (await _context.PermitTypes.AnyAsync())
             {
                 _logger.LogInformation("Permit types already seeded. Skipping.");
                 return;
             }
 
-            var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, 
-                "Data", "SeedData", "PermitTypes.json");
-
-            if (!File.Exists(filePath))
+            var jsonPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "ATLAS.Infrastructure", "Data", "SeedData", "PermitTypes.json");
+            
+            if (!File.Exists(jsonPath))
             {
-                _logger.LogWarning("Seed file not found at {FilePath}. Skipping.", filePath);
+                _logger.LogWarning("PermitTypes.json not found at {Path}. Skipping seed.", jsonPath);
                 return;
             }
 
-            var json = await File.ReadAllTextAsync(filePath, cancellationToken);
-            var seedData = JsonSerializer.Deserialize<PermitTypeSeedDto[]>(json);
+            var json = await File.ReadAllTextAsync(jsonPath);
+            var permitTypes = JsonSerializer.Deserialize<List<PermitTypeSeedModel>>(json);
 
-            if (seedData == null || seedData.Length == 0)
+            foreach (var pt in permitTypes)
             {
-                _logger.LogWarning("No permit types found in seed file. Skipping.");
-                return;
-            }
-
-            foreach (var dto in seedData)
-            {
-                var permitType = new PermitType(dto.Name, dto.Description, dto.Fee);
-
-                foreach (var fieldDto in dto.Fields)
+                var permitType = new PermitType(pt.Name, pt.Description, pt.Fee);
+                
+                foreach (var field in pt.Fields)
                 {
-                    if (Enum.TryParse<FieldType>(fieldDto.Type, out var fieldType))
-                    {
-                        permitType.AddField(fieldDto.Name, fieldType, fieldDto.IsRequired, fieldDto.DefaultValue);
-                    }
+                    var fieldType = Enum.Parse<FieldType>(field.Type);
+                    permitType.AddField(field.Name, fieldType, field.IsRequired, field.DefaultValue);
                 }
 
-                _context.PermitTypes.Add(permitType);
+                await _context.PermitTypes.AddAsync(permitType);
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
-            _logger.LogInformation("Successfully seeded {Count} permit types.", seedData.Length);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} permit types.", permitTypes.Count);
         }
-    }
 
-    public class PermitTypeSeedDto
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public decimal Fee { get; set; }
-        public bool IsActive { get; set; }
-        public PermitFieldSeedDto[] Fields { get; set; } = Array.Empty<PermitFieldSeedDto>();
-    }
+        private class PermitTypeSeedModel
+        {
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public decimal Fee { get; set; }
+            public List<FieldSeedModel> Fields { get; set; }
+        }
 
-    public class PermitFieldSeedDto
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-        public bool IsRequired { get; set; }
-        public string? DefaultValue { get; set; }
+        private class FieldSeedModel
+        {
+            public string Name { get; set; }
+            public string Type { get; set; }
+            public bool IsRequired { get; set; }
+            public string DefaultValue { get; set; }
+        }
     }
 }

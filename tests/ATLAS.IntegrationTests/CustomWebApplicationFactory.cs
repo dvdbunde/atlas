@@ -4,6 +4,7 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Infrastructure.Data;
+using ATLAS.Infrastructure.Data.SeedData;
 using ATLAS.Infrastructure.Repositories;
 using ATLAS.Infrastructure.Services;
 using ATLAS.IntegrationTests.Auth;
@@ -208,6 +209,7 @@ public static class TestServiceCollectionExtensions
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<SeedDataLoader>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityResolver, IdentityResolver>();

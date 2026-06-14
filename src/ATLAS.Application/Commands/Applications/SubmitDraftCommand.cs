@@ -51,11 +51,7 @@ namespace ATLAS.Application.Commands.Applications
             // Verify status
             if (application.Status != ApplicationStatus.Draft)
                 throw new InvalidOperationException("Only draft applications can be submitted");
-
-            // Rule 3: Application must contain at least one FieldValue
-            if (!application.FieldValues.Any())
-                throw new InvalidOperationException("Application must have at least one field value before submission");
-
+                
             // Load PermitType to validate fields
             var permitType = await _permitTypeRepository.GetByIdAsync(application.PermitTypeId, cancellationToken);
             if (permitType == null)
@@ -72,6 +68,10 @@ namespace ATLAS.Application.Commands.Applications
             // Rule 2: All required PermitFields must have values
             var requiredFields = permitType.Fields.Where(f => f.IsRequired).Select(f => f.Name).ToList();
             var providedFields = application.FieldValues.Select(f => f.FieldName).ToList();
+
+            // Rule 3: Application must contain at least one FieldValue (fail fast)
+            if (!application.FieldValues.Any())
+                throw new InvalidOperationException("Application must have at least one field value before submission");
 
             foreach (var requiredField in requiredFields)
             {
