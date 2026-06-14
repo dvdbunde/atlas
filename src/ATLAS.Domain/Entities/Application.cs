@@ -5,6 +5,21 @@ using ATLAS.Domain.Events;
 
 namespace ATLAS.Domain.Entities
 {
+    /// <summary>
+    /// Application aggregate root - enforces invariants for Application and its child entities.
+    /// 
+    /// AGGREGATE BOUNDARIES (Phase A - Milestone 5):
+    /// - Application is the aggregate root
+    /// - Documents are owned by Application (OwnsMany)
+    /// - Reviews are owned by Application (OwnsMany)
+    /// - FieldValues are owned by Application (OwnsMany)
+    /// 
+    /// DOMAIN INVARIANTS:
+    /// 1. FieldValues collection follows same ownership model as Documents and Reviews
+    /// 2. No separate repository for FieldValues - persisted through Application
+    /// 3. FieldName references PermitField.Name (immutable reference)
+    /// 4. Required fields must be populated before submission (validated in Application layer)
+    /// </summary>
     public class Application : Entity<Guid>
     {
         public string ApplicationNumber { get; private set; }
@@ -21,6 +36,9 @@ namespace ATLAS.Domain.Entities
         
         private readonly List<Review> _reviews = new();
         public IReadOnlyList<Review> Reviews => _reviews.AsReadOnly();
+
+        private readonly List<ApplicationFieldValue> _fieldValues = new();
+        public IReadOnlyList<ApplicationFieldValue> FieldValues => _fieldValues.AsReadOnly();
 
         public Application(Guid citizenId, Guid permitTypeId, string citizenNotes)
         {
@@ -136,6 +154,46 @@ namespace ATLAS.Domain.Entities
             AddDomainEvent(new DocumentUploadedEvent(documentId, Id, uploadedById, fileName));
 
             return document;
+        }
+
+        public ApplicationFieldValue AddFieldValue(string fieldName, string value, int sortOrder)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentException("Field name cannot be null, empty, or whitespace", nameof(fieldName));
+
+            if (_fieldValues.Any(fv => fv.FieldName.Equals(fieldName, StringComparison.OrdinalIgnoreCase)))
+                throw new DomainException($"Field '{fieldName}' already exists in this application");
+
+            var fieldValue = new ApplicationFieldValue(Id, fieldName, value, sortOrder);
+            _fieldValues.Add(fieldValue);
+
+            return fieldValue;
+        }
+
+        public void UpdateFieldValue(string fieldName, string newValue)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentException("Field name cannot be null, empty, or whitespace", nameof(fieldName));
+
+            var fieldValue = _fieldValues.FirstOrDefault(fv => fv.FieldName.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
+            
+            if (fieldValue == null)
+                throw new DomainException($"Field '{fieldName}' not found in this application");
+
+            fieldValue.UpdateValue(newValue);
+        }
+
+        public void RemoveFieldValue(string fieldName)
+        {
+            if (string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentException("Field name cannot be null, empty, or whitespace", nameof(fieldName));
+
+            var fieldValue = _fieldValues.FirstOrDefault(fv => fv.FieldName.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
+            
+            if (fieldValue == null)
+                throw new DomainException($"Field '{fieldName}' not found in this application");
+
+            _fieldValues.Remove(fieldValue);
         }
 
         public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)

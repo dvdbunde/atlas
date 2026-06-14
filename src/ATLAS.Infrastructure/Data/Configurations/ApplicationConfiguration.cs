@@ -39,6 +39,16 @@ namespace ATLAS.Infrastructure.Data.Configurations
                 review.HasOne<Entities.User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
             });
+
+            // Configure ApplicationFieldValue as owned entity (Phase A - Milestone 5)
+            builder.OwnsMany(a => a.FieldValues, field =>
+            {
+                field.HasKey(f => f.Id);
+                field.Property(f => f.ApplicationId).IsRequired();
+                field.Property(f => f.FieldName).IsRequired().HasMaxLength(100);
+                field.Property(f => f.Value).IsRequired();
+                field.Property(f => f.SortOrder).IsRequired();
+            });
         }
     }
 }
