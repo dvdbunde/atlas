@@ -5,6 +5,7 @@ namespace ATLAS.Infrastructure
     using ATLAS.Domain.Entities;
     using ATLAS.Domain.Interfaces;
     using ATLAS.Infrastructure.Data;
+    using ATLAS.Infrastructure.Data.SeedData;
     using ATLAS.Infrastructure.EventHandlers;
     using ATLAS.Infrastructure.Repositories;
     using ATLAS.Infrastructure.Services;
@@ -67,6 +68,9 @@ namespace ATLAS.Infrastructure
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             
+            // Register seed data loader
+            services.AddScoped<SeedDataLoader>();
+
             // Register Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             

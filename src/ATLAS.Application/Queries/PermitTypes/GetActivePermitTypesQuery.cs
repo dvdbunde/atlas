@@ -16,11 +16,11 @@ namespace ATLAS.Application.Queries.PermitTypes
 
     public class GetActivePermitTypesQueryHandler : IRequestHandler<GetActivePermitTypesQuery, IEnumerable<PermitTypeSummaryDto>>
     {
-        private readonly IApplicationRepository _repository;
+        private readonly IPermitTypeRepository _repository;
         private readonly ILogger<GetActivePermitTypesQueryHandler> _logger;
 
         public GetActivePermitTypesQueryHandler(
-            IApplicationRepository repository,
+            IPermitTypeRepository repository,
             ILogger<GetActivePermitTypesQueryHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -29,7 +29,7 @@ namespace ATLAS.Application.Queries.PermitTypes
 
         public async Task<IEnumerable<PermitTypeSummaryDto>> Handle(GetActivePermitTypesQuery request, CancellationToken cancellationToken)
         {
-            var permitTypes = await _repository.GetActivePermitTypesAsync(cancellationToken);
+            var permitTypes = await _repository.GetAllActiveAsync(cancellationToken);
 
             var dtos = new List<PermitTypeSummaryDto>();
             foreach (var pt in permitTypes)

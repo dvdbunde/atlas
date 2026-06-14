@@ -117,22 +117,6 @@ namespace ATLAS.Infrastructure.Repositories
             return application?.Reviews ?? Enumerable.Empty<Entities.Review>();
         }
 
-        // Phase H+B - PermitType access methods
-        public async Task<Entities.PermitType?> GetPermitTypeByIdAsync(Guid permitTypeId, CancellationToken cancellationToken = default)
-        {
-            return await _context.PermitTypes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == permitTypeId, cancellationToken);
-        }
-
-        public async Task<IEnumerable<Entities.PermitType>> GetActivePermitTypesAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.PermitTypes
-                .AsNoTracking()
-                .Where(p => p.IsActive)
-                .ToListAsync(cancellationToken);
-        }
-
         // Phase H+B - FieldValues access (FieldValues are owned by Application aggregate)
         public async Task<IEnumerable<Entities.ApplicationFieldValue>> GetFieldValuesByApplicationIdAsync(Guid applicationId, CancellationToken cancellationToken = default)
         {

@@ -18,15 +18,18 @@ namespace ATLAS.Application.Queries.Applications
     public class GetCitizenDashboardQueryHandler : IRequestHandler<GetCitizenDashboardQuery, IEnumerable<CitizenDashboardDto>>
     {
         private readonly IApplicationRepository _repository;
+        private readonly IPermitTypeRepository _permitTypeRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<GetCitizenDashboardQueryHandler> _logger;
 
         public GetCitizenDashboardQueryHandler(
             IApplicationRepository repository,
+            IPermitTypeRepository permitTypeRepository,
             ICurrentUserService currentUserService,
             ILogger<GetCitizenDashboardQueryHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -40,8 +43,12 @@ namespace ATLAS.Application.Queries.Applications
             var applications = await _repository.GetByCitizenIdAsync(citizenId, cancellationToken);
 
             // Load all active permit types to map PermitTypeId -> Name
-            var permitTypes = await _repository.GetActivePermitTypesAsync(cancellationToken);
-            var permitTypeDict = permitTypes.ToDictionary(p => p.Id, p => p.Name);
+            var permitTypes = await _permitTypeRepository.GetAllActiveAsync(cancellationToken);
+            var permitTypeDict = new Dictionary<Guid, string>();
+            foreach (var pt in permitTypes)
+            {
+                permitTypeDict[pt.Id] = pt.Name;
+            }
 
             var dtos = new List<CitizenDashboardDto>();
             foreach (var app in applications)
@@ -58,8 +65,7 @@ namespace ATLAS.Application.Queries.Applications
                 });
             }
 
-            _logger.LogInformation("Retrieved {Count} applications for citizen {CitizenId}", 
-                dtos.Count, citizenId);
+            _logger.LogInformation("Retrieved {Count} applications for citizen {CitizenId}", dtos.Count, citizenId);
 
             return dtos;
         }

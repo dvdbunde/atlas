@@ -18,16 +18,19 @@ namespace ATLAS.Application.Commands.Applications
 
     public class SubmitDraftCommandHandler : IRequestHandler<SubmitDraftCommand, Unit>
     {
-        private readonly IApplicationRepository _repository;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IPermitTypeRepository _permitTypeRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger<SubmitDraftCommandHandler> _logger;
 
         public SubmitDraftCommandHandler(
-            IApplicationRepository repository,
+            IApplicationRepository applicationRepository,
+            IPermitTypeRepository permitTypeRepository,
             ICurrentUserService currentUserService,
             ILogger<SubmitDraftCommandHandler> logger)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
+            _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -37,7 +40,7 @@ namespace ATLAS.Application.Commands.Applications
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var application = await _repository.GetByIdAsync(request.ApplicationId, cancellationToken);
+            var application = await _applicationRepository.GetByIdAsync(request.ApplicationId, cancellationToken);
             if (application == null)
                 throw new ArgumentException($"Application {request.ApplicationId} not found");
 
@@ -54,7 +57,7 @@ namespace ATLAS.Application.Commands.Applications
                 throw new InvalidOperationException("Application must have at least one field value before submission");
 
             // Load PermitType to validate fields
-            var permitType = await _repository.GetPermitTypeByIdAsync(application.PermitTypeId, cancellationToken);
+            var permitType = await _permitTypeRepository.GetByIdAsync(application.PermitTypeId, cancellationToken);
             if (permitType == null)
                 throw new ArgumentException($"Permit type {application.PermitTypeId} not found");
 
@@ -69,12 +72,12 @@ namespace ATLAS.Application.Commands.Applications
             // Rule 2: All required PermitFields must have values
             var requiredFields = permitType.Fields.Where(f => f.IsRequired).Select(f => f.Name).ToList();
             var providedFields = application.FieldValues.Select(f => f.FieldName).ToList();
-            
+
             foreach (var requiredField in requiredFields)
             {
                 if (!providedFields.Contains(requiredField, StringComparer.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Required field '{requiredField}' is missing");
-                
+
                 var fieldValue = application.FieldValues.First(f => f.FieldName.Equals(requiredField, StringComparison.OrdinalIgnoreCase));
                 if (string.IsNullOrWhiteSpace(fieldValue.Value))
                     throw new InvalidOperationException($"Required field '{requiredField}' must have a value");
@@ -82,8 +85,8 @@ namespace ATLAS.Application.Commands.Applications
 
             // All validation passed, submit
             application.Submit();
-            await _repository.UpdateAsync(application, cancellationToken);
-            
+            await _applicationRepository.UpdateAsync(application, cancellationToken);
+
             _logger.LogInformation("Draft application {ApplicationId} submitted", request.ApplicationId);
 
             return Unit.Value;
