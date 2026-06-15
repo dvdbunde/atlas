@@ -4,11 +4,11 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration;
 
-public class DependencyInjectionTests : IClassFixture<WebApplicationFactory<Program>>
+public class DependencyInjectionTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly CustomWebApplicationFactory<Program> _factory;
     
-    public DependencyInjectionTests(WebApplicationFactory<Program> factory)
+    public DependencyInjectionTests(CustomWebApplicationFactory<Program> factory)
     {
         _factory = factory;
     }

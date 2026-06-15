@@ -3,6 +3,7 @@ namespace ATLAS.Infrastructure
     using ATLAS.Application;
     using ATLAS.Application.Interfaces;
     using ATLAS.Domain.Entities;
+    using ATLAS.Domain.Events;
     using ATLAS.Domain.Interfaces;
     using ATLAS.Infrastructure.Data;
     using ATLAS.Infrastructure.Data.SeedData;
@@ -101,6 +102,23 @@ namespace ATLAS.Infrastructure
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IExecutionContext, ExecutionContext>();
+
+            //----------------------
+            // Email Services (Phase E1)
+            //----------------------
+
+            // Email service (SMTP for development)
+            services.AddTransient<IEmailService, SmtpEmailService>();
+
+            // Email template renderer
+            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+            // Email event handlers (MediatR auto-discovers, but explicit for clarity)
+            services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+
             return services;
         }
     }

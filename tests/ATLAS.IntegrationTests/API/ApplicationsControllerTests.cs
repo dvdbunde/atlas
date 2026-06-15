@@ -43,6 +43,8 @@ namespace ATLAS.IntegrationTests.API
                 citizenNotes = "Test application"
             };
             var response = await _client.PostAsAsync("/api/applications", request, TestUserBuilder.AsAdmin());
+            _output.WriteLine($"Response: {response.StatusCode}");
+            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 

@@ -47,8 +47,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseInMemoryDatabase("ATLAS_Test_DB");
-            });
-
+            });         
 
             // Call a test-specific infrastructure registration
             services.AddInfrastructureForTesting();
@@ -204,10 +203,21 @@ public static class TestServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructureForTesting(this IServiceCollection services)
     {
+        //----------------------
+        // Email Services (Phase E1) - REQUIRED FOR TESTS
+        //----------------------
+        services.AddTransient<IEmailService, SmtpEmailService>();
+        services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+        //----------------------
+        // Repositories and MediatR (same as real infrastructure, but without external deps)
+        //----------------------
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+        
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<SeedDataLoader>();
         services.AddHttpContextAccessor();
@@ -219,7 +229,8 @@ public static class TestServiceCollectionExtensions
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly);
             cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
-        });
+        });            
+        
         return services;
     }
 }

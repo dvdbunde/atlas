@@ -1,0 +1,12 @@
+Dear Citizen,
+
+Additional information has been requested for your permit application.
+
+Application Number: {{ApplicationNumber}}
+Permit Type: {{PermitTypeName}}
+Message: {{Message}}
+
+Please log in to your dashboard to provide the requested information.
+
+Thank you,
+ATLAS Team

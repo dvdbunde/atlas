@@ -1,0 +1,11 @@
+Dear Citizen,
+
+Your permit application has been approved!
+
+Application Number: {{ApplicationNumber}}
+Permit Type: {{PermitTypeName}}
+
+You can now proceed with the next steps as outlined in the permit requirements.
+
+Thank you,
+ATLAS Team
