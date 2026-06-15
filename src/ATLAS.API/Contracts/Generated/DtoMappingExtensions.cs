@@ -274,5 +274,75 @@ namespace ATLAS.API.Contracts.Generated
             };
         }
         #endregion
+
+        #region PermitTypeSummary: Dto → Response
+        public static PermitTypeSummaryResponse ToResponse(this PermitTypeSummaryDto dto)
+        {
+            var response = new PermitTypeSummaryResponse
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                Description = dto.Description,
+                Fee = dto.Fee
+            };
+
+            if (dto.Fields != null)
+            {
+                response.Fields = new List<FieldDefinitionResponse>();
+                foreach (var field in dto.Fields)
+                {
+                    response.Fields.Add(field.ToResponse());
+                }
+            }
+
+            return response;
+        }
+        #endregion
+
+        #region FieldDefinition: Dto → Response
+        public static FieldDefinitionResponse ToResponse(this FieldDefinitionDto dto)
+        {            
+            return new FieldDefinitionResponse
+            {
+                Name = dto.Name,
+                Type = dto.Type,
+                IsRequired = dto.IsRequired,
+                DefaultValue = dto.DefaultValue
+            };
+        }
+        #endregion
+
+        #region CitizenDashboard: Dto → Response
+        // CitizenDashboardDto maps to ApplicationSummaryResponse
+        // Properties: ApplicationId, ApplicationNumber, PermitTypeName, Status, SubmittedDate, LastUpdated
+        public static ApplicationSummaryResponse ToResponse(this CitizenDashboardDto dto)
+        {
+            return new ApplicationSummaryResponse
+            {
+                Id = dto.ApplicationId, // Note: DTO uses ApplicationId, Response uses Id
+                ApplicationNumber = dto.ApplicationNumber,
+                Status = ParseStatus(dto.Status), // Convert string to int
+                SubmittedDate = dto.SubmittedDate.HasValue ? new DateTimeOffset(dto.SubmittedDate.Value) : null,
+                // CitizenId, PermitTypeId, CitizenName not in DTO - leave as defaults
+                PermitTypeName = dto.PermitTypeName
+            };
+        }
+
+        private static int ParseStatus(string status)
+        {
+            // Map status string to integer (adjust based on actual status codes)
+            return status?.ToLowerInvariant() switch
+            {
+                "draft" => 0,
+                "submitted" => 1,
+                "under review" => 2,
+                "approved" => 3,
+                "rejected" => 4,
+                "info requested" => 5,
+                "resubmitted" => 6,
+                _ => 0
+            };
+        }
+        #endregion
     }
 }

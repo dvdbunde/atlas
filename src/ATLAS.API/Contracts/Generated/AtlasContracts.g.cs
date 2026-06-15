@@ -576,8 +576,7 @@ namespace ATLAS.API.Contracts.Generated
         public string Name { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<FieldDefinitionResponseType>))]
-        public FieldDefinitionResponseType Type { get; set; } = default!;
+        public string Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isRequired")]
         public bool IsRequired { get; set; } = default!;
@@ -635,30 +634,6 @@ namespace ATLAS.API.Contracts.Generated
         _2 = 2,
 
         _3 = 3,
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum FieldDefinitionResponseType
-    {
-
-        [System.Runtime.Serialization.EnumMember(Value = @"Text")]
-        Text = 0,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"MultilineText")]
-        MultilineText = 1,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"Number")]
-        Number = 2,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"Date")]
-        Date = 3,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"Boolean")]
-        Boolean = 4,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"Dropdown")]
-        Dropdown = 5,
 
     }
 
