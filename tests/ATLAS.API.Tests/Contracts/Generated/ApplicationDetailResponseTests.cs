@@ -14,7 +14,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             {
                 Id = Guid.NewGuid(),
                 ApplicationNumber = "APP-2024-001",
-                Status = 2,
+                Status = ApplicationSummaryResponseStatus.Approved,
                 SubmittedDate = DateTimeOffset.UtcNow,
                 CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.NewGuid(),
@@ -29,7 +29,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             // Assert
             Assert.NotEqual(Guid.Empty, response.Id);
             Assert.Equal("APP-2024-001", response.ApplicationNumber);
-            Assert.Equal(2, response.Status);
+            Assert.Equal(ApplicationSummaryResponseStatus.Approved, response.Status);
             Assert.NotNull(response.ReviewedDate);
             Assert.Equal("Need permit urgently", response.CitizenNotes);
             Assert.Equal("Approved after review", response.OfficerNotes);

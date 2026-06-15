@@ -874,10 +874,10 @@ components:
           type: string
           example: 'APP-2026-0001'
         status:
-          type: integer
-          format: int32
-          description: Application status code
-          example: 1
+          type: string
+          description: Application status
+          enum: [Draft, Submitted, UnderReview, Approved, Rejected, InfoRequested, Resubmitted]
+          example: Submitted
         submittedDate:
           type: string
           format: date-time

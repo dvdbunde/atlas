@@ -39,10 +39,11 @@ namespace ATLAS.API.Contracts.Generated
         public string ApplicationNumber { get; set; } = default!;
 
         /// <summary>
-        /// Application status code
+        /// Application status
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ApplicationSummaryResponseStatus>))]
+        public ApplicationSummaryResponseStatus Status { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("submittedDate")]
         public DateTimeOffset? SubmittedDate { get; set; } = default!;
@@ -622,6 +623,33 @@ namespace ATLAS.API.Contracts.Generated
             get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
             set { _additionalProperties = value; }
         }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum ApplicationSummaryResponseStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Draft")]
+        Draft = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Submitted")]
+        Submitted = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UnderReview")]
+        UnderReview = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Approved")]
+        Approved = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Rejected")]
+        Rejected = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"InfoRequested")]
+        InfoRequested = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Resubmitted")]
+        Resubmitted = 6,
 
     }
 

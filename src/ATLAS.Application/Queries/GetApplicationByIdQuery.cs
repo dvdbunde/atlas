@@ -77,7 +77,7 @@ namespace ATLAS.Application.Queries
             {
                 Id = application.Id,
                 ApplicationNumber = application.ApplicationNumber,
-                Status = (int)application.Status,
+                Status = application.Status,
                 SubmittedDate = application.SubmittedDate,
                 CitizenId = application.CitizenId,
                 PermitTypeId = application.PermitTypeId,

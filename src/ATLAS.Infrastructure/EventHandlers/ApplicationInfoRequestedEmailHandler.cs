@@ -12,6 +12,7 @@ using ATLAS.Application.DTOs;
 using ATLAS.Application.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Infrastructure.EventHandlers
 {
@@ -42,7 +43,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 {
                     ApplicationNumber = notification.ApplicationId.ToString(),
                     PermitTypeName = "Permit Type",
-                    Status = 5 // Info Requested
+                    Status = ApplicationStatus.InfoRequested // Info Requested
                 };
 
                 var body = await _templateRenderer.RenderAsync("InfoRequestNotification", model, cancellationToken);

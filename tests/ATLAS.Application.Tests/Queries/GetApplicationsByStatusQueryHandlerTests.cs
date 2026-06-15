@@ -51,7 +51,7 @@ namespace ATLAS.Application.Tests.Queries
 
             // Assert
             Assert.Equal(2, result.Count);
-            Assert.All(result, dto => Assert.Equal((int)ApplicationStatus.Submitted, dto.Status));
+            Assert.All(result, dto => Assert.Equal(ApplicationStatus.Submitted, dto.Status));
         }
 
         [Fact]

@@ -9,6 +9,7 @@
 #nullable enable
 
 using ATLAS.Application.DTOs;
+using ATLAS.Domain.Enums;
 using System;
 
 namespace ATLAS.API.Contracts.Generated
@@ -26,7 +27,7 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = response.Id,
                 ApplicationNumber = response.ApplicationNumber,
-                Status = response.Status,
+                Status =  ToDomainStatus(response.Status),
                 SubmittedDate = response.SubmittedDate?.DateTime, // DateTimeOffset? → DateTime?
                 CitizenId = response.CitizenId,
                 PermitTypeId = response.PermitTypeId,
@@ -41,7 +42,7 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = dto.Id,
                 ApplicationNumber = dto.ApplicationNumber,
-                Status = dto.Status,
+                Status = ToApiStatus( dto.Status),
                 SubmittedDate = dto.SubmittedDate.HasValue ? new DateTimeOffset(dto.SubmittedDate.Value) : null,
                 CitizenId = dto.CitizenId,
                 PermitTypeId = dto.PermitTypeId,
@@ -67,7 +68,7 @@ namespace ATLAS.API.Contracts.Generated
             // Map base properties
             detailDto.Id = response.Id;
             detailDto.ApplicationNumber = response.ApplicationNumber;
-            detailDto.Status = response.Status;
+            detailDto.Status = ToDomainStatus(response.Status);
             detailDto.SubmittedDate = response.SubmittedDate?.DateTime;
             detailDto.CitizenId = response.CitizenId;
             detailDto.PermitTypeId = response.PermitTypeId;
@@ -109,7 +110,7 @@ namespace ATLAS.API.Contracts.Generated
             // Map base properties
             response.Id = dto.Id;
             response.ApplicationNumber = dto.ApplicationNumber;
-            response.Status = dto.Status;
+            response.Status = ToApiStatus(dto.Status);
             response.SubmittedDate = dto.SubmittedDate.HasValue ? new DateTimeOffset(dto.SubmittedDate.Value) : null;
             response.CitizenId = dto.CitizenId;
             response.PermitTypeId = dto.PermitTypeId;
@@ -321,28 +322,36 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = dto.ApplicationId, // Note: DTO uses ApplicationId, Response uses Id
                 ApplicationNumber = dto.ApplicationNumber,
-                Status = ParseStatus(dto.Status), // Convert string to int
+                Status = ToApiStatus(dto.Status), 
                 SubmittedDate = dto.SubmittedDate.HasValue ? new DateTimeOffset(dto.SubmittedDate.Value) : null,
                 // CitizenId, PermitTypeId, CitizenName not in DTO - leave as defaults
                 PermitTypeName = dto.PermitTypeName
             };
         }
-
-        private static int ParseStatus(string status)
-        {
-            // Map status string to integer (adjust based on actual status codes)
-            return status?.ToLowerInvariant() switch
-            {
-                "draft" => 0,
-                "submitted" => 1,
-                "under review" => 2,
-                "approved" => 3,
-                "rejected" => 4,
-                "info requested" => 5,
-                "resubmitted" => 6,
-                _ => 0
-            };
-        }
         #endregion
-    }
+
+        private static ApplicationSummaryResponseStatus ToApiStatus(ApplicationStatus status) => status switch
+        {
+            ApplicationStatus.Draft => ApplicationSummaryResponseStatus.Draft,
+            ApplicationStatus.Submitted => ApplicationSummaryResponseStatus.Submitted,
+            ApplicationStatus.UnderReview => ApplicationSummaryResponseStatus.UnderReview,
+            ApplicationStatus.Approved => ApplicationSummaryResponseStatus.Approved,
+            ApplicationStatus.Rejected => ApplicationSummaryResponseStatus.Rejected,
+            ApplicationStatus.InfoRequested => ApplicationSummaryResponseStatus.InfoRequested,
+            ApplicationStatus.Resubmitted => ApplicationSummaryResponseStatus.Resubmitted,
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
+
+        private static ApplicationStatus ToDomainStatus(ApplicationSummaryResponseStatus status) => status switch
+        {
+            ApplicationSummaryResponseStatus.Draft => ApplicationStatus.Draft,
+            ApplicationSummaryResponseStatus.Submitted => ApplicationStatus.Submitted,
+            ApplicationSummaryResponseStatus.UnderReview => ApplicationStatus.UnderReview,
+            ApplicationSummaryResponseStatus.Approved => ApplicationStatus.Approved,
+            ApplicationSummaryResponseStatus.Rejected => ApplicationStatus.Rejected,
+            ApplicationSummaryResponseStatus.InfoRequested => ApplicationStatus.InfoRequested,
+            ApplicationSummaryResponseStatus.Resubmitted => ApplicationStatus.Resubmitted,
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
+    }    
 }

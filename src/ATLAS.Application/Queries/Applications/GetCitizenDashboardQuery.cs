@@ -51,7 +51,7 @@ namespace ATLAS.Application.Queries.Applications
                     ApplicationId = app.Id,
                     ApplicationNumber = app.ApplicationNumber,
                     PermitTypeName = permitTypeName ?? "Unknown",
-                    Status = app.Status.ToString(),
+                    Status = app.Status,
                     SubmittedDate = app.SubmittedDate,
                     LastUpdated = app.ReviewedDate ?? app.SubmittedDate
                 });

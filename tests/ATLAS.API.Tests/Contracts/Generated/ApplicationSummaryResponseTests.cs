@@ -1,4 +1,5 @@
 using ATLAS.API.Contracts.Generated;
+
 using Xunit;
 
 namespace ATLAS.API.Tests.Contracts.Generated
@@ -13,7 +14,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             {
                 Id = Guid.NewGuid(),
                 ApplicationNumber = "APP-2024-001",
-                Status = 1,
+                Status = ApplicationSummaryResponseStatus.Submitted,
                 SubmittedDate = DateTimeOffset.UtcNow,
                 CitizenId = Guid.NewGuid(),
                 PermitTypeId = Guid.NewGuid(),
@@ -24,7 +25,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             // Assert
             Assert.NotEqual(Guid.Empty, response.Id);
             Assert.Equal("APP-2024-001", response.ApplicationNumber);
-            Assert.Equal(1, response.Status);
+            Assert.Equal(ApplicationSummaryResponseStatus.Submitted, response.Status);
             Assert.NotNull(response.SubmittedDate);
             Assert.NotEqual(Guid.Empty, response.CitizenId);
             Assert.NotEqual(Guid.Empty, response.PermitTypeId);
@@ -41,7 +42,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             // Assert
             Assert.Equal(default(Guid), response.Id);
             Assert.Null(response.ApplicationNumber);
-            Assert.Equal(0, response.Status);
+            Assert.Equal(ApplicationSummaryResponseStatus.Draft, response.Status);
             Assert.Null(response.SubmittedDate);
             Assert.Equal(default(Guid), response.CitizenId);
             Assert.Equal(default(Guid), response.PermitTypeId);

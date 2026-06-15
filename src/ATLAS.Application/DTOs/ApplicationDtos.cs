@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.DTOs
 {
@@ -7,7 +8,7 @@ namespace ATLAS.Application.DTOs
     {
         public Guid Id { get; set; }
         public string ApplicationNumber { get; set; }
-        public int Status { get; set; }
+        public ApplicationStatus Status { get; set; } 
         public DateTime? SubmittedDate { get; set; }
         public Guid CitizenId { get; set; }
         public Guid PermitTypeId { get; set; }

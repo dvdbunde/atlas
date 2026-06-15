@@ -53,7 +53,7 @@ namespace ATLAS.Application.Tests.Queries
             Assert.NotNull(result);
             Assert.Equal(application.Id, result.Id);
             Assert.False(string.IsNullOrEmpty(result.ApplicationNumber));
-            Assert.Equal((int)ApplicationStatus.Submitted, result.Status);
+            Assert.Equal(ApplicationStatus.Submitted, result.Status);
         }
 
         [Fact]
