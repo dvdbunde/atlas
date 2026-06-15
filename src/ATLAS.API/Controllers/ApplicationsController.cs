@@ -165,5 +165,30 @@ namespace ATLAS.API.Controllers
             
             return Ok(true);
         }
+
+        public override Task<ActionResult<ApplicationSummaryResponse>> ApplicationsPut(Guid id, [FromBody] UpdateDraftRequest body)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<ActionResult<ApplicationSummaryResponse>> Draft([FromBody] CreateDraftRequest body)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<ActionResult<ApplicationSummaryResponse>> Submit(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<ActionResult<ApplicationSummaryResponse>> Resubmit(Guid id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override Task<ActionResult<ICollection<ApplicationSummaryResponse>>> Dashboard()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

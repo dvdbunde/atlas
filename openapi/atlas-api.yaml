@@ -102,6 +102,7 @@ paths:
       summary: Submit new application
       description: Submit a new permit application
       operationId: submitApplication
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -162,6 +163,43 @@ paths:
           $ref: '#/components/responses/Forbidden'
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
+
+    put:
+      tags: [Applications]
+      summary: Update draft application
+      description: Update a draft application's field values and notes
+      operationId: updateDraft
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDraftRequest'
+      responses:
+        '200':
+          description: Draft updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']        
 
   /api/applications/{id}/approve:
     post:
@@ -351,6 +389,120 @@ paths:
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
 
+  /api/applications/draft:
+    post:
+      tags: [Applications]
+      summary: Create draft application
+      description: Create a new draft permit application with field values
+      operationId: createDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDraftRequest'
+      responses:
+        '201':
+          description: Draft created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']
+
+  /api/applications/{id}/submit:
+    post:
+      tags: [Applications]
+      summary: Submit draft application
+      description: Submit a draft application for review
+      operationId: submitDraft
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Draft submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']
+
+  /api/applications/{id}/resubmit:
+    post:
+      tags: [Applications]
+      summary: Resubmit application
+      description: Resubmit an application after information request
+      operationId: resubmitDraft
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Application resubmitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']
+
+  /api/applications/citizen/dashboard:
+    get:
+      tags: [Applications]
+      summary: Get citizen dashboard
+      description: Retrieve the current user's applications with status
+      operationId: getCitizenDashboard
+      responses:
+        '200':
+          description: Dashboard retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']        
+
   /api/documents/{documentId}/download:
     get:
       tags: [Documents]
@@ -532,6 +684,28 @@ paths:
           $ref: '#/components/responses/Forbidden'
       security:
         - EntraID: ['Admin']
+
+  /api/permit-types/active:
+    get:
+      tags: [PermitTypes]
+      summary: Get active permit types
+      description: Retrieve all active permit types with field definitions
+      operationId: getActivePermitTypes
+      responses:
+        '200':
+          description: Active permit types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermitTypeSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']        
 
   /api/users:
     get:
@@ -1014,6 +1188,81 @@ components:
         isActive:
           type: boolean
       required: [permitTypeId]  
+
+    FieldValueRequest:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          example: ProjectTitle
+        value:
+          type: string
+        sortOrder:
+          type: integer
+          format: int32
+      required: [fieldName, value, sortOrder]
+
+    CreateDraftRequest:
+      type: object
+      properties:
+        permitTypeId:
+          type: string
+          format: uuid
+        citizenNotes:
+          type: string
+          default: ''
+        fieldValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldValueRequest'
+      required: [permitTypeId, fieldValues]
+
+    UpdateDraftRequest:
+      type: object
+      properties:
+        citizenNotes:
+          type: string
+          default: ''
+        fieldValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldValueRequest'
+      required: [fieldValues]
+
+    FieldDefinitionResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [Text, MultilineText, Number, Date, Boolean, Dropdown]
+          example: Text
+        isRequired:
+          type: boolean
+        defaultValue:
+          type: string
+          nullable: true
+      required: [name, type, isRequired]
+
+    PermitTypeSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        fee:
+          type: number
+          format: decimal
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldDefinitionResponse'
+      required: [id, name, description, fee]      
   
   responses:
     Unauthorized:

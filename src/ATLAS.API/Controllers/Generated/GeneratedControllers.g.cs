@@ -55,6 +55,7 @@ namespace ATLAS.API.Controllers.Generated
         /// Submit a new permit application
         /// </remarks>
         /// <returns>Application created successfully</returns>
+        [System.Obsolete]
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications", Name = "submitApplication")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> ApplicationsPost([Microsoft.AspNetCore.Mvc.FromBody] SubmitApplicationRequest body);
 
@@ -68,6 +69,17 @@ namespace ATLAS.API.Controllers.Generated
         /// <returns>Application details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}", Name = "getApplicationById")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationDetailResponse>> ApplicationsGet(System.Guid id);
+
+        /// <summary>
+        /// Update draft application
+        /// </summary>
+        /// <remarks>
+        /// Update a draft application's field values and notes
+        /// </remarks>
+        /// <param name="id">Application ID</param>
+        /// <returns>Draft updated</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}", Name = "updateDraft")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> ApplicationsPut(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdateDraftRequest body);
 
         /// <summary>
         /// Approve application
@@ -112,6 +124,48 @@ namespace ATLAS.API.Controllers.Generated
         /// <returns>Application assigned successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/assign", Name = "assignToOfficer")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Assign(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignToOfficerRequest body);
+
+        /// <summary>
+        /// Create draft application
+        /// </summary>
+        /// <remarks>
+        /// Create a new draft permit application with field values
+        /// </remarks>
+        /// <returns>Draft created</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/draft", Name = "createDraft")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Draft([Microsoft.AspNetCore.Mvc.FromBody] CreateDraftRequest body);
+
+        /// <summary>
+        /// Submit draft application
+        /// </summary>
+        /// <remarks>
+        /// Submit a draft application for review
+        /// </remarks>
+        /// <param name="id">Application ID</param>
+        /// <returns>Draft submitted</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/submit", Name = "submitDraft")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Submit(System.Guid id);
+
+        /// <summary>
+        /// Resubmit application
+        /// </summary>
+        /// <remarks>
+        /// Resubmit an application after information request
+        /// </remarks>
+        /// <param name="id">Application ID</param>
+        /// <returns>Application resubmitted</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/resubmit", Name = "resubmitDraft")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Resubmit(System.Guid id);
+
+        /// <summary>
+        /// Get citizen dashboard
+        /// </summary>
+        /// <remarks>
+        /// Retrieve the current user's applications with status
+        /// </remarks>
+        /// <returns>Dashboard retrieved</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/citizen/dashboard", Name = "getCitizenDashboard")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> Dashboard();
 
     }
 
@@ -198,6 +252,16 @@ namespace ATLAS.API.Controllers.Generated
         /// <returns>Permit type deactivated successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "deactivatePermitType")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesDelete(System.Guid id);
+
+        /// <summary>
+        /// Get active permit types
+        /// </summary>
+        /// <remarks>
+        /// Retrieve all active permit types with field definitions
+        /// </remarks>
+        /// <returns>Active permit types</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permit-types/active", Name = "getActivePermitTypes")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeSummaryResponse>>> Active();
 
     }
 

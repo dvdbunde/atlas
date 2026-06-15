@@ -92,6 +92,11 @@ namespace ATLAS.API.Controllers
             }
             
             return NoContent(); // ← 204 for successful DELETE
-        }       
+        }
+
+        public override Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> Active()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
