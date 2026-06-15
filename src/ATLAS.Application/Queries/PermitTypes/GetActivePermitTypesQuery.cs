@@ -43,7 +43,7 @@ namespace ATLAS.Application.Queries.PermitTypes
                     Fields = pt.Fields.Select(f => new FieldDefinitionDto
                     {
                         Name = f.Name,
-                        Type = f.Type.ToString(),
+                        Type = f.Type,
                         IsRequired = f.IsRequired,
                         DefaultValue = f.DefaultValue
                     }).ToList()

@@ -1235,7 +1235,8 @@ components:
         name:
           type: string
         type:
-          type: string          
+          type: string
+          enum: [Text, MultilineText, Number, Date, Boolean, Dropdown]
           example: Text
         isRequired:
           type: boolean

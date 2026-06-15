@@ -1,4 +1,5 @@
 using System;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Domain.ValueObjects
 {
@@ -48,15 +49,5 @@ namespace ATLAS.Domain.ValueObjects
         {
             return HashCode.Combine(Name, Type, IsRequired, DefaultValue);
         }
-    }
-
-    public enum FieldType
-    {
-        Text = 1,
-        MultilineText = 2,
-        Number = 3,
-        Date = 4,
-        Boolean = 5,
-        Dropdown = 6
-    }
+    }   
 }

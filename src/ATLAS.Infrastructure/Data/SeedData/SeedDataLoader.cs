@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.ValueObjects;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Infrastructure.Data.SeedData
 {

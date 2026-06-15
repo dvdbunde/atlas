@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ATLAS.Domain.ValueObjects;
 using ATLAS.Domain.Events;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Domain.Entities
 {

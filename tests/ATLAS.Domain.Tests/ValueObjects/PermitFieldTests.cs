@@ -1,4 +1,5 @@
 using System;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.ValueObjects;
 using Xunit;
 

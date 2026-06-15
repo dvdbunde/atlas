@@ -5,6 +5,7 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.ValueObjects;
 using ATLAS.Domain.Events;
 using Xunit;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Domain.Tests.Entities
 {

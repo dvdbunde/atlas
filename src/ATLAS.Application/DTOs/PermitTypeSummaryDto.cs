@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.DTOs
 {
@@ -15,7 +16,7 @@ namespace ATLAS.Application.DTOs
     public class FieldDefinitionDto
     {
         public string Name { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
+        public FieldType Type { get; set; } 
         public bool IsRequired { get; set; }
         public string? DefaultValue { get; set; }
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.ValueObjects;
 using ATLAS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
