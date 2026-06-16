@@ -3,6 +3,11 @@
   <ItemGroup>
     <ProjectReference Include="..\ATLAS.Domain\ATLAS.Domain.csproj" />
     <ProjectReference Include="..\ATLAS.Application\ATLAS.Application.csproj" />
+    <ProjectReference Include="..\ATLAS.Infrastructure\ATLAS.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.1.0" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -13,4 +18,3 @@
   </PropertyGroup>
 
 </Project>
-

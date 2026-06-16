@@ -1,6 +1,7 @@
 namespace ATLAS.Infrastructure
 {
     using ATLAS.Application;
+    using ATLAS.Application.Behaviors;
     using ATLAS.Application.Interfaces;
     using ATLAS.Domain.Entities;
     using ATLAS.Domain.Events;
@@ -80,6 +81,13 @@ namespace ATLAS.Infrastructure
             {
                 cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly); // Application layer
                 cfg.RegisterServicesFromAssembly(typeof(AuditLogRepository).Assembly); // Infrastructure layer (for event handlers)
+
+                // ✅ Add validation pipeline behavior
+                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+                
+                // User synchronization pipeline behavior — runs before every request handler
+                cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
+
             });
             
             return services;

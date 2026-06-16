@@ -1,0 +1,66 @@
+@page "/permits"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Select Permit Type</PageTitle>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Apply for a Permit</h1>
+    <p class="text-muted mb-4">Select the type of permit you would like to apply for.</p>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading permit types...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr>
+            <button class="btn btn-outline-danger" @onclick="LoadPermitTypes">
+                Try Again
+            </button>
+        </div>
+    }
+    else if (_viewModel.IsEmpty)
+    {
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No permit types available</h4>
+            <p>There are currently no permit types available for application. Please check back later.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var permit in _viewModel.PermitTypes)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">@permit.Name</h5>
+                            <p class="card-text text-muted">@permit.Description</p>
+                            @if (permit.HasCost)
+                            {
+                                <p class="card-text">
+                                    <strong>Fee:</strong> @permit.Fee.ToString("C")
+                                </p>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="@permit.NavigationUrl"
+                               class="btn btn-primary w-100"
+                               aria-label="Apply for @permit.Name">
+                                Apply
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

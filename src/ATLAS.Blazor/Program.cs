@@ -1,34 +1,39 @@
 using ATLAS.Blazor.Components;
+using ATLAS.Infrastructure;
 using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Add Blazor authentication and authorization for AuthorizeView support
 builder.Services.AddAuthenticationCore();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 
+// Register Infrastructure layer (DbContext, repositories, MediatR)
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddInfrastructure(builder.Configuration);
+}
+else
+{
+    // Test environment uses the no-config overload
+    builder.Services.AddInfrastructure();
+}
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseAntiforgery();
-
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
-
