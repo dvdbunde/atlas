@@ -71,7 +71,14 @@ namespace ATLAS.Application.Queries
                 Name = permitType.Name,
                 Description = permitType.Description,
                 Fee = permitType.Fee,
-                IsActive = permitType.IsActive
+                IsActive = permitType.IsActive,
+                Fields = permitType.Fields.Select(f => new FieldDefinitionDto
+                    {
+                        Name = f.Name,
+                        Type = f.Type,
+                        IsRequired = f.IsRequired,
+                        DefaultValue = f.DefaultValue
+                    }).ToList()
             };
         }
     }

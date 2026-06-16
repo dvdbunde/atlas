@@ -197,9 +197,9 @@ namespace ATLAS.API.Contracts.Generated
             };
         }
 
-        public static PermitTypeResponse ToResponse(this PermitTypeDto dto)
+        public static PermitTypeSummaryResponse ToResponse(this PermitTypeSummaryDto dto)
         {
-            return new PermitTypeResponse
+            return new PermitTypeSummaryResponse
             {
                 Id = dto.Id,
                 Name = dto.Name,
@@ -207,6 +207,8 @@ namespace ATLAS.API.Contracts.Generated
                 Fee = dto.Fee,
                 IsActive = dto.IsActive
             };
+
+            
         }
         #endregion
 
@@ -269,14 +271,15 @@ namespace ATLAS.API.Contracts.Generated
         #endregion
 
         #region PermitTypeSummary: Dto → Response
-        public static PermitTypeSummaryResponse ToResponse(this PermitTypeSummaryDto dto)
+        public static PermitTypeResponse ToResponse(this PermitTypeDto dto)
         {
-            var response = new PermitTypeSummaryResponse
+            var response = new PermitTypeResponse
             {
                 Id = dto.Id,
                 Name = dto.Name,
                 Description = dto.Description,
-                Fee = dto.Fee
+                Fee = dto.Fee,
+                IsActive = dto.IsActive
             };
 
             if (dto.Fields != null)

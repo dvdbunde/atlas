@@ -50,6 +50,15 @@ namespace ATLAS.Application.DTOs
         public bool IsVisibleToCitizen { get; set; }
     }
 
+    public class PermitTypeSummaryDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal Fee { get; set; }
+        public bool IsActive { get; set; }
+    }
+
     public class PermitTypeDto
     {
         public Guid Id { get; set; }
@@ -57,6 +66,15 @@ namespace ATLAS.Application.DTOs
         public string Description { get; set; } = string.Empty;
         public decimal Fee { get; set; }
         public bool IsActive { get; set; }
+        public List<FieldDefinitionDto> Fields { get; set; } = new();
+    }
+
+    public class FieldDefinitionDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public FieldType Type { get; set; } 
+        public bool IsRequired { get; set; }
+        public string? DefaultValue { get; set; }
     }
 
     /// <summary>
@@ -83,5 +101,15 @@ namespace ATLAS.Application.DTOs
         public string Details { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
         public string IpAddress { get; set; } = string.Empty;
+    }
+
+    public class CitizenDashboardDto
+    {
+        public Guid ApplicationId { get; set; }
+        public string ApplicationNumber { get; set; } = string.Empty;
+        public string PermitTypeName { get; set; } = string.Empty;
+        public ApplicationStatus Status { get; set; }
+        public DateTime? SubmittedDate { get; set; }
+        public DateTime? LastUpdated { get; set; }
     }
 }

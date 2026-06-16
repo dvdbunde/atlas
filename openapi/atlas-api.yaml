@@ -983,28 +983,7 @@ components:
           type: boolean
           default: false
       required: [id, officerId, decision, reviewedDate, isVisibleToCitizen]
-    
-    PermitTypeResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: 'Business Permit'
-        description:
-          type: string
-          example: 'Permit for business operations'
-        fee:
-          type: number
-          format: decimal
-          example: 150.00
-        isActive:
-          type: boolean
-          default: true
-      required: [id, name, description, fee, isActive]
-    
+         
     UserResponse:
       type: object
       properties:
@@ -1253,16 +1232,43 @@ components:
           format: uuid
         name:
           type: string
+          example: 'Business Permit'
         description:
           type: string
+          example: 'Permit for business operations'
         fee:
           type: number
           format: decimal
+          example: 150.00
+        isActive:
+          type: boolean
+          default: true
+      required: [id, name, description, fee, isActive]      
+
+    PermitTypeResponse:    
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: 'Business Permit'
+        description:
+          type: string
+          example: 'Permit for business operations'
+        fee:
+          type: number
+          format: decimal
+          example: 150.00
+        isActive:
+          type: boolean
+          default: true
         fields:
           type: array
           items:
             $ref: '#/components/schemas/FieldDefinitionResponse'
-      required: [id, name, description, fee]      
+      required: [id, name, description, fee, isActive, fields]      
   
   responses:
     Unauthorized:

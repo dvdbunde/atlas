@@ -40,13 +40,7 @@ namespace ATLAS.Application.Queries.PermitTypes
                     Name = pt.Name,
                     Description = pt.Description,
                     Fee = pt.Fee,
-                    Fields = pt.Fields.Select(f => new FieldDefinitionDto
-                    {
-                        Name = f.Name,
-                        Type = f.Type,
-                        IsRequired = f.IsRequired,
-                        DefaultValue = f.DefaultValue
-                    }).ToList()
+                    IsActive = pt.IsActive                    
                 });
             }
 

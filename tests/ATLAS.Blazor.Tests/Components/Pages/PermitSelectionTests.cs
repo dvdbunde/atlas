@@ -7,7 +7,7 @@ using Moq;
 
 namespace ATLAS.Blazor.Tests.Components.Pages;
 
-public class PermitSelectionTests : TestContext
+public class PermitSelectionTests : BunitContext
 {
     private readonly Mock<IMediator> _mediatorMock;
 
@@ -17,7 +17,7 @@ public class PermitSelectionTests : TestContext
         Services.AddSingleton(_mediatorMock.Object);
     }
 
-    private static List<PermitTypeSummaryDto> CreateSamplePermitTypes()
+    private static List<PermitTypeSummaryDto> CreateSamplePermitSummaryTypes()
     {
         return new List<PermitTypeSummaryDto>
         {
@@ -27,7 +27,7 @@ public class PermitSelectionTests : TestContext
                 Name = "Building Permit",
                 Description = "For construction and renovation projects",
                 Fee = 150.00m,
-                Fields = new List<FieldDefinitionDto>()
+                IsActive = true                
             },
             new()
             {
@@ -35,7 +35,7 @@ public class PermitSelectionTests : TestContext
                 Name = "Event Permit",
                 Description = "For public events and gatherings",
                 Fee = 0m,
-                Fields = new List<FieldDefinitionDto>()
+                IsActive = true             
             }
         };
     }
@@ -61,7 +61,7 @@ public class PermitSelectionTests : TestContext
     public void Should_RenderPermitCards_WhenPermitTypesLoaded()
     {
         // Arrange
-        var permitTypes = CreateSamplePermitTypes();
+        var permitTypes = CreateSamplePermitSummaryTypes();
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
             .ReturnsAsync(permitTypes);
@@ -114,7 +114,7 @@ public class PermitSelectionTests : TestContext
     public void Should_RenderApplyButton_OnEachCard()
     {
         // Arrange
-        var permitTypes = CreateSamplePermitTypes();
+        var permitTypes = CreateSamplePermitSummaryTypes();
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
             .ReturnsAsync(permitTypes);
@@ -132,7 +132,7 @@ public class PermitSelectionTests : TestContext
     public void Should_GenerateCorrectNavigationUrl()
     {
         // Arrange
-        var permitTypes = CreateSamplePermitTypes();
+        var permitTypes = CreateSamplePermitSummaryTypes();
         var firstId = permitTypes[0].Id;
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
@@ -152,7 +152,7 @@ public class PermitSelectionTests : TestContext
         // Arrange
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
-            .ReturnsAsync(CreateSamplePermitTypes());
+            .ReturnsAsync(CreateSamplePermitSummaryTypes());
 
         // Act
         var cut = Render<PermitSelection>();
@@ -168,7 +168,7 @@ public class PermitSelectionTests : TestContext
         // Arrange
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
-            .ReturnsAsync(CreateSamplePermitTypes());
+            .ReturnsAsync(CreateSamplePermitSummaryTypes());
 
         // Act
         var cut = Render<PermitSelection>();
@@ -185,7 +185,7 @@ public class PermitSelectionTests : TestContext
         _mediatorMock
             .SetupSequence(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
             .ThrowsAsync(new InvalidOperationException("Fail"))
-            .ReturnsAsync(CreateSamplePermitTypes());
+            .ReturnsAsync(CreateSamplePermitSummaryTypes());
 
         var cut = Render<PermitSelection>();
 
@@ -205,7 +205,7 @@ public class PermitSelectionTests : TestContext
         // Arrange
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetActivePermitTypesQuery>(), default))
-            .ReturnsAsync(CreateSamplePermitTypes());
+            .ReturnsAsync(CreateSamplePermitSummaryTypes());
 
         // Act
         var cut = Render<PermitSelection>();
