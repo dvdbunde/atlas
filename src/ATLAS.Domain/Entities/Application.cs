@@ -220,11 +220,4 @@ namespace ATLAS.Domain.Entities
             return $"PERMIT-{now:yyyy}{now:MM}{now:dd}-{randomDigits}";
         }
     }
-
-    public enum ReviewDecision
-    {
-        Approve = 1,
-        Reject = 2,
-        RequestInfo = 3
-    }
 }

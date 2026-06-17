@@ -142,9 +142,10 @@ namespace ATLAS.API.Contracts.Generated
         public System.Guid OfficerId { get; set; } = default!;
 
         /// <summary>
-        /// 1=Approved, 2=Rejected, 3=RequestInfo
+        /// Review decision
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("decision")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReviewResponseDecision>))]
         public ReviewResponseDecision Decision { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("reasonCode")]
@@ -637,11 +638,14 @@ namespace ATLAS.API.Contracts.Generated
     public enum ReviewResponseDecision
     {
 
-        _1 = 1,
+        [System.Runtime.Serialization.EnumMember(Value = @"Approve")]
+        Approve = 0,
 
-        _2 = 2,
+        [System.Runtime.Serialization.EnumMember(Value = @"Reject")]
+        Reject = 1,
 
-        _3 = 3,
+        [System.Runtime.Serialization.EnumMember(Value = @"RequestInfo")]
+        RequestInfo = 2,
 
     }
 

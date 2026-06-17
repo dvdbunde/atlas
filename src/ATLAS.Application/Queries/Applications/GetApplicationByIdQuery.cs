@@ -101,7 +101,7 @@ namespace ATLAS.Application.Queries.Applications
                 {
                     Id = r.Id,
                     OfficerId = r.OfficerId,
-                    Decision = (int)r.Decision,
+                    Decision = r.Decision,
                     ReasonCode = r.ReasonCode,
                     Comments = r.Comments,
                     ReviewedDate = r.ReviewedDate,

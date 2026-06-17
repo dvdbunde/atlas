@@ -1,5 +1,6 @@
 using System;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Enums;
 using Xunit;
 
 namespace ATLAS.Domain.Tests.Entities

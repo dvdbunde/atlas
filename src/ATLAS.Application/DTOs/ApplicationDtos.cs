@@ -49,7 +49,7 @@ namespace ATLAS.Application.DTOs
     {
         public Guid Id { get; set; }
         public Guid OfficerId { get; set; }
-        public int Decision { get; set; }
+        public ReviewDecision Decision { get; set; }
         public string? ReasonCode { get; set; }
         public string? Comments { get; set; }
         public DateTime ReviewedDate { get; set; }

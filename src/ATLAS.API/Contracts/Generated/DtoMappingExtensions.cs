@@ -161,7 +161,7 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = response.Id,
                 OfficerId = response.OfficerId,
-                Decision = (int)response.Decision, // ReviewResponseDecision enum → int
+                Decision = ToDomainReviewDecision( response.Decision), 
                 ReasonCode = response.ReasonCode,
                 Comments = response.Comments,
                 ReviewedDate = response.ReviewedDate.DateTime, // DateTimeOffset → DateTime
@@ -175,7 +175,7 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = dto.Id,
                 OfficerId = dto.OfficerId,
-                Decision = (ReviewResponseDecision)dto.Decision, // int → num (handles 1=Approve, 2=Reject, 3=RequestInfo)
+                Decision = ToApiReviewDecision(dto.Decision),
                 ReasonCode = dto.ReasonCode,
                 Comments = dto.Comments,
                 ReviewedDate = new DateTimeOffset(dto.ReviewedDate),
@@ -368,6 +368,22 @@ namespace ATLAS.API.Contracts.Generated
             FieldDefinitionResponseType.Date => FieldType.Date,
             FieldDefinitionResponseType.Boolean => FieldType.Boolean,
             FieldDefinitionResponseType.Dropdown => FieldType.Dropdown,
+            _ => throw new ArgumentOutOfRangeException(nameof(apiType))
+        };
+
+        private static ReviewResponseDecision ToApiReviewDecision(ReviewDecision domainType) => domainType switch
+        {
+            ReviewDecision.Approve => ReviewResponseDecision.Approve,
+            ReviewDecision.Reject => ReviewResponseDecision.Reject,
+            ReviewDecision.RequestInfo => ReviewResponseDecision.RequestInfo,            
+            _ => throw new ArgumentOutOfRangeException(nameof(domainType))
+        };
+
+        private static ReviewDecision ToDomainReviewDecision(ReviewResponseDecision apiType) => apiType switch
+        {
+            ReviewResponseDecision.Approve => ReviewDecision.Approve,
+            ReviewResponseDecision.Reject => ReviewDecision.Reject,
+            ReviewResponseDecision.RequestInfo => ReviewDecision.RequestInfo,            
             _ => throw new ArgumentOutOfRangeException(nameof(apiType))
         };
     }    

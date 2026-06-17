@@ -965,10 +965,9 @@ components:
           type: string
           format: uuid
         decision:
-          type: integer
-          format: int32
-          description: 1=Approved, 2=Rejected, 3=RequestInfo
-          enum: [1, 2, 3]
+          type: string
+          description: Review decision
+          enum: [Approve, Reject, RequestInfo]
         reasonCode:
           type: string
           nullable: true

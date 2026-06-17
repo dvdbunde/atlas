@@ -13,7 +13,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             {
                 Id = Guid.NewGuid(),
                 OfficerId = Guid.NewGuid(),
-                Decision = ReviewResponseDecision._1,
+                Decision = ReviewResponseDecision.Approve,
                 ReasonCode = "CODE-001",
                 Comments = "Approved",
                 ReviewedDate = DateTimeOffset.UtcNow,
@@ -23,7 +23,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             // Assert
             Assert.NotEqual(Guid.Empty, response.Id);
             Assert.NotEqual(Guid.Empty, response.OfficerId);
-            Assert.Equal(ReviewResponseDecision._1, response.Decision);
+            Assert.Equal(ReviewResponseDecision.Approve, response.Decision);
             Assert.Equal("CODE-001", response.ReasonCode);
             Assert.Equal("Approved", response.Comments);
             Assert.NotNull(response.ReviewedDate);
@@ -50,12 +50,12 @@ namespace ATLAS.API.Tests.Contracts.Generated
         public void Decision_ShouldSupportBothValues()
         {
             // Arrange & Act
-            var response1 = new ReviewResponse { Decision = ReviewResponseDecision._1 };
-            var response2 = new ReviewResponse { Decision = ReviewResponseDecision._2 };
+            var response1 = new ReviewResponse { Decision = ReviewResponseDecision.Approve };
+            var response2 = new ReviewResponse { Decision = ReviewResponseDecision.Reject };
 
             // Assert
-            Assert.Equal(ReviewResponseDecision._1, response1.Decision);
-            Assert.Equal(ReviewResponseDecision._2, response2.Decision);
+            Assert.Equal(ReviewResponseDecision.Approve, response1.Decision);
+            Assert.Equal(ReviewResponseDecision.Reject, response2.Decision);
         }
     }
 }
