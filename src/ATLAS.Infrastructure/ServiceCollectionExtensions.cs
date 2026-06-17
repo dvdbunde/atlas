@@ -64,6 +64,23 @@ namespace ATLAS.Infrastructure
             // Register execution context — request-scoped identity + correlation tracing
             services.AddScoped<IExecutionContext, ExecutionContext>();
 
+            //----------------------
+            // Email Services (Phase E1)
+            //----------------------
+
+            // Email service (SMTP for development)
+            services.AddTransient<IEmailService, SmtpEmailService>();
+
+            // Email template renderer
+            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+            // Email event handlers (MediatR auto-discovers, but explicit for clarity)
+            services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+
+
             // Register repositories
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();

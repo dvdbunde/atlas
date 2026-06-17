@@ -925,7 +925,11 @@ components:
               type: string
               nullable: true
               example: 'Jane Smith'
-          required: [citizenNotes, officerNotes, documents, reviews]
+            fieldValues:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldValueResponse'              
+          required: [citizenNotes, officerNotes, documents, reviews, fieldValues]
     
     DocumentResponse:
       type: object
@@ -1179,6 +1183,17 @@ components:
           type: integer
           format: int32
       required: [fieldName, value, sortOrder]
+
+    FieldValueResponse:
+      type: object
+      properties:
+        fieldName:
+          type: string
+        value:
+          type: string
+        sortOrder:
+          type: integer
+      required: [fieldName, value, sortOrder]         
 
     CreateDraftRequest:
       type: object

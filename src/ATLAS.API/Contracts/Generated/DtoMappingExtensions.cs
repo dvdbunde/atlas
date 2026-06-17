@@ -84,6 +84,15 @@ namespace ATLAS.API.Contracts.Generated
                 }
             }
 
+            // Map field values
+            if (response.FieldValues != null)
+            {
+                foreach (var fv in response.FieldValues)
+                {
+                    detailDto.FieldValues[fv.FieldName] = fv.Value;
+                }
+            }
+
             return detailDto;
         }
 
@@ -118,6 +127,22 @@ namespace ATLAS.API.Contracts.Generated
             foreach (var review in dto.Reviews)
             {
                 response.Reviews.Add(review.ToResponse());
+            }
+
+            // Map field values
+            if (dto.FieldValues != null && dto.FieldValues.Count > 0)
+            {
+                response.FieldValues = new List<FieldValueResponse>();
+                var sortOrder = 0;
+                foreach (var kvp in dto.FieldValues)
+                {
+                    response.FieldValues.Add(new FieldValueResponse
+                    {
+                        FieldName = kvp.Key,
+                        Value = kvp.Value,
+                        SortOrder = sortOrder++
+                    });
+                }
             }
 
             return response;

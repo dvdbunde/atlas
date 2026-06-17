@@ -1,5 +1,5 @@
 @page "/applications/confirmation/{Id:guid}"
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Citizen")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 
