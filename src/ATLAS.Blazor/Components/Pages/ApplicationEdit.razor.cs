@@ -6,7 +6,7 @@ using ATLAS.Blazor.Components.Shared;
 using ATLAS.Blazor.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Components;
-
+ 
 namespace ATLAS.Blazor.Components.Pages;
 
 public partial class ApplicationEdit : ComponentBase
@@ -22,6 +22,10 @@ public partial class ApplicationEdit : ComponentBase
 
     private ApplicationEditViewModel _viewModel = new();
     private DynamicFormGenerator _dynamicForm = default!;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -123,5 +127,44 @@ public partial class ApplicationEdit : ComponentBase
     private void DismissSuccess()
     {
         _viewModel.SaveSuccess = false;
+    }
+
+    private async Task SubmitApplication()
+    {
+        // Validate before submit
+        _dynamicForm.Validate();
+
+        if (_viewModel.Fields.Any(f => f.HasErrors))
+            return;
+
+        _viewModel.IsSubmitting = true;
+        _viewModel.SubmitHasError = false;
+        _viewModel.SubmitErrorMessage = null;
+
+        try
+        {
+            var command = new SubmitDraftCommand
+            {
+                ApplicationId = _viewModel.ApplicationId
+            };
+
+            await Mediator.Send(command);
+
+            Logger.LogInformation(
+                "Application {ApplicationId} submitted successfully",
+                _viewModel.ApplicationId);
+
+            Navigation.NavigateTo($"/applications/confirmation/{_viewModel.ApplicationId}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to submit application {ApplicationId}", _viewModel.ApplicationId);
+            _viewModel.SubmitHasError = true;
+            _viewModel.SubmitErrorMessage = "We were unable to submit your application. Please fix any validation errors and try again.";
+        }
+        finally
+        {
+            _viewModel.IsSubmitting = false;
+        }
     }
 }

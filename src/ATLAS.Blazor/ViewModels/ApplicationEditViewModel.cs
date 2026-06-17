@@ -22,6 +22,9 @@ public class ApplicationEditViewModel
     public string? ErrorMessage { get; set; }
     public bool SaveSuccess { get; set; }
     public bool IsLoaded => !IsLoading && !HasError;
+    public bool IsSubmitting { get; set; }
+    public bool SubmitHasError { get; set; }
+    public string? SubmitErrorMessage { get; set; }
 
     /// <summary>
     /// Loads the page from application and permit type data.

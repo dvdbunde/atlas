@@ -65,9 +65,39 @@
             </div>
         </DynamicFormGenerator>
 
+        @* Submit button — only when form is valid *@
+        <div class="mt-3 d-flex gap-2">
+            <button type="button"
+                    class="btn btn-success btn-lg"
+                    disabled="@(_viewModel.IsSubmitting || _viewModel.Fields.Any(f => f.HasErrors))"
+                    @onclick="SubmitApplication">
+                @if (_viewModel.IsSubmitting)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    <span>Submitting...</span>
+                }
+                else
+                {
+                    <span>Submit Application</span>
+                }
+            </button>
+        </div>
+
         @if (_viewModel.IsSaving)
         {
             <div class="mt-3 text-muted" role="status">Saving your changes...</div>
+        }
+
+        @if (_viewModel.IsSubmitting)
+        {
+            <div class="mt-3 text-muted" role="status">Submitting your application...</div>
+        }
+
+        @if (_viewModel.SubmitHasError)
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                @_viewModel.SubmitErrorMessage
+            </div>
         }
     }
 </div>

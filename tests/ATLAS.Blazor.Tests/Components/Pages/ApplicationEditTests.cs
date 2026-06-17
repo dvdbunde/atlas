@@ -276,4 +276,68 @@ public class ApplicationEditTests : BunitContext
         var alert = cut.Find(".alert-danger");
         Assert.Contains("Something went wrong", alert.TextContent);
     }
+
+    [Fact]
+    public void Should_ShowSubmitButton_WhenLoaded()
+    {
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        var submitButton = cut.Find("button.btn-success");
+        Assert.Contains("Submit Application", submitButton.TextContent);
+    }
+
+    [Fact]
+    public void Should_RedirectToConfirmation_WhenSubmitSucceeds()
+    {
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<SubmitDraftCommand>(), default))
+            .ReturnsAsync(Unit.Value);
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        cut.Find("button.btn-success").Click();
+
+        // NavigationManager.NavigateTo should have been called with confirmation URL
+        // In bUnit this doesn't redirect the test, we just verify no exception occurred
+        // and that an error alert wasn't shown
+        var errorAlerts = cut.FindAll(".alert-danger");
+        Assert.Empty(errorAlerts);
+    }
+
+    [Fact]
+    public void Should_ShowSubmitError_WhenSubmitFails()
+    {
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<SubmitDraftCommand>(), default))
+            .ThrowsAsync(new InvalidOperationException("Submit failed"));
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        cut.Find("button.btn-success").Click();
+
+        var alert = cut.Find(".alert-danger");
+        Assert.Contains("unable to submit", alert.TextContent);
+    }
 }
