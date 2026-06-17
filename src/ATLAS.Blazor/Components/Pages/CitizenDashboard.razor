@@ -1,0 +1,79 @@
+@page "/dashboard"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>My Applications</PageTitle>
+
+<div class="container mt-4">
+    <h1 class="mb-4">My Applications</h1>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading your applications...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr>
+            <button class="btn btn-outline-danger" @onclick="LoadDashboard">
+                Try Again
+            </button>
+        </div>
+    }
+    else if (_viewModel.IsEmpty)
+    {
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No permit applications found</h4>
+            <p>You haven't submitted any permit applications yet.</p>
+            <a href="/permits" class="btn btn-primary">
+                Apply for a Permit
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Application #</th>
+                        <th scope="col">Permit Type</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Submitted</th>
+                        <th scope="col">Last Updated</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in _viewModel.Applications)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@app.ApplicationNumber</strong>
+                            </td>
+                            <td>@app.PermitTypeName</td>
+                            <td>
+                                <StatusBadge Status="@app.Status" />
+                            </td>
+                            <td>@app.SubmittedDateDisplay</td>
+                            <td>@app.LastUpdatedDisplay</td>
+                            <td>
+                                <a href="@app.NavigationUrl"
+                                   class="btn btn-sm btn-outline-primary"
+                                   aria-label="@app.ActionLabel for @app.ApplicationNumber">
+                                    @app.ActionLabel
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

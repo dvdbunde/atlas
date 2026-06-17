@@ -1,0 +1,25 @@
+@using ATLAS.Domain.Enums
+@namespace ATLAS.Blazor.Components.Shared
+
+@* 
+    StatusBadge - Lightweight reusable component for displaying ApplicationStatus.
+    Maps each status to a contextual Bootstrap badge color.
+*@
+
+@{
+    var (cssClass, label) = Status switch
+    {
+        ApplicationStatus.Draft => ("bg-secondary", "Draft"),
+        ApplicationStatus.Submitted => ("bg-primary", "Submitted"),
+        ApplicationStatus.UnderReview => ("bg-info text-dark", "Under Review"),
+        ApplicationStatus.Approved => ("bg-success", "Approved"),
+        ApplicationStatus.Rejected => ("bg-danger", "Rejected"),
+        ApplicationStatus.InfoRequested => ("bg-warning text-dark", "Info Requested"),
+        ApplicationStatus.Resubmitted => ("bg-primary", "Resubmitted"),
+        _ => ("bg-dark", Status.ToString())
+    };
+}
+
+<span class="badge @cssClass" @attributes="AdditionalAttributes">
+    @label
+</span>
