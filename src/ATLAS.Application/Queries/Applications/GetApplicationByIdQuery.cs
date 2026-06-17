@@ -7,7 +7,7 @@ using ATLAS.Application.DTOs;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Queries
+namespace ATLAS.Application.Queries.Applications
 {
     public class GetApplicationByIdQuery : IRequest<ApplicationDetailDto?>
     {

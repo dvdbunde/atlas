@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Interfaces;
-using ATLAS.Application.Queries;
+using ATLAS.Application.Queries.Applications;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;

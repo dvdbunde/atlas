@@ -30,11 +30,11 @@ namespace ATLAS.API.Controllers
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        public override async Task<ActionResult<ICollection<PermitTypeResponse>>> PermittypesGet(bool? includeInactive = false)
+        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> PermittypesGet(bool? includeInactive = false)
         {
             var query = new GetPermitTypesQuery { IncludeInactive = includeInactive ?? false };
             var results = await _mediator.Send(query, default);
-            var response = new List<PermitTypeResponse>();
+            var response = new List<PermitTypeSummaryResponse>();
             foreach (var dto in results)
             {
                 response.Add(dto.ToResponse());

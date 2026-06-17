@@ -7,7 +7,7 @@ using ATLAS.Application.DTOs;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Queries
+namespace ATLAS.Application.Queries.Applications
 {
     public class GetApplicationsByStatusQuery : IRequest<List<ApplicationSummaryDto>>
     {

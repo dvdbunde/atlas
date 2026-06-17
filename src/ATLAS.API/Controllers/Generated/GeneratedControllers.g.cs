@@ -208,7 +208,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="includeInactive">Include inactive permit types in results</param>
         /// <returns>List of permit types</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permittypes", Name = "getPermitTypes")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeResponse>>> PermittypesGet([Microsoft.AspNetCore.Mvc.FromQuery] bool? includeInactive = false);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeSummaryResponse>>> PermittypesGet([Microsoft.AspNetCore.Mvc.FromQuery] bool? includeInactive = false);
 
         /// <summary>
         /// Create permit type

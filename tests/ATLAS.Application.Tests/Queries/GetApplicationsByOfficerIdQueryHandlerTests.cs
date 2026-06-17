@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
-using ATLAS.Application.Queries;
+using ATLAS.Application.Queries.Applications;
 using Entities = ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
