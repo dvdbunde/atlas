@@ -25,6 +25,8 @@ public class PermitTypeCardViewModel
     public string Description { get; init; } = string.Empty;
     public decimal Fee { get; init; }
     public bool HasCost => Fee > 0;
+    public bool IsActive { get; init; }
+
     public string NavigationUrl => $"/applications/create/{Id}";
 
     public static PermitTypeCardViewModel FromDto(PermitTypeSummaryDto dto)
@@ -34,7 +36,8 @@ public class PermitTypeCardViewModel
             Id = dto.Id,
             Name = dto.Name,
             Description = dto.Description,
-            Fee = dto.Fee
+            Fee = dto.Fee,
+            IsActive = dto.IsActive
         };
     }
 }

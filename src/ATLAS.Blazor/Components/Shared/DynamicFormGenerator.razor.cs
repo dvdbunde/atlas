@@ -30,7 +30,7 @@ public partial class DynamicFormGenerator : ComponentBase
     private DynamicFormFieldViewModel[] _orderedFields = Array.Empty<DynamicFormFieldViewModel>();
     private readonly DynamicFormModel _formModel = new();
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
         _editContext = new EditContext(_formModel);
 
@@ -56,5 +56,24 @@ public partial class DynamicFormGenerator : ComponentBase
         _editContext?.NotifyFieldChanged(fi);
 
         OnFieldChanged.InvokeAsync(field);
+    }
+
+    /// <summary>
+    /// Triggers client-side validation for all fields.
+    /// Call this from a parent component before saving to ensure validation runs.
+    /// </summary>
+    public void Validate()
+    {
+        _editContext?.Validate();
+        StateHasChanged();
+    }
+    
+    private async Task HandleSubmit()
+    {
+        // Trigger validation pipeline so DynamicFieldValidator populates field.Errors
+        _editContext?.Validate();
+
+        // Always invoke the parent callback — parent decides whether to proceed
+        await OnSubmit.InvokeAsync();
     }
 }
