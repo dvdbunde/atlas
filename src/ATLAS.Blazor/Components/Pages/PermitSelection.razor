@@ -6,8 +6,20 @@
 <PageTitle>Select Permit Type</PageTitle>
 
 <div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Select Permit Type</li>
+        </ol>
+    </nav>
     <h1 class="mb-4">Apply for a Permit</h1>
     <p class="text-muted mb-4">Select the type of permit you would like to apply for.</p>
+
+    <div class="mb-3">
+        <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+            &larr; Back to Dashboard
+        </a>
+    </div>
 
     @if (_viewModel.IsLoading)
     {

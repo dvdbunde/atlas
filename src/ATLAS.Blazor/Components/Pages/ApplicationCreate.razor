@@ -6,6 +6,13 @@
 <PageTitle>@(_viewModel.PermitName ?? "New Application")</PageTitle>
 
 <div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/permits">Permits</a></li>
+            <li class="breadcrumb-item active" aria-current="page">New Application</li>
+        </ol>
+    </nav>
     @if (_viewModel.IsLoading)
     {
         <div class="d-flex justify-content-center align-items-center py-5" role="status">
@@ -22,6 +29,7 @@
             <button class="btn btn-outline-danger" @onclick="LoadPermitType">
                 Try Again
             </button>
+            <a href="/dashboard" class="btn btn-outline-primary ms-2">Go to Dashboard</a>
         </div>
     }
     else if (_viewModel.IsLoaded)

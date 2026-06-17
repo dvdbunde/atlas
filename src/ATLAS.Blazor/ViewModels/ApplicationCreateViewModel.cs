@@ -1,5 +1,4 @@
 using ATLAS.Application.DTOs;
-using ATLAS.Blazor.ViewModels;
 
 namespace ATLAS.Blazor.ViewModels;
 

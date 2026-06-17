@@ -106,7 +106,7 @@
 
                 @if (field.HasErrors)
                 {
-                    <div id="@(fieldId + "-validation")" class="invalid-feedback" role="alert">
+                    <div id="@(fieldId + "-validation")" class="invalid-feedback" role="alert" aria-live="polite">
                         @foreach (var error in field.Errors)
                         {
                             <span>@error</span>

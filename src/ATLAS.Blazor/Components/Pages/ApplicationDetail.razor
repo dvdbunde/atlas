@@ -6,6 +6,12 @@
 <PageTitle>@("Application " + (_viewModel.ApplicationNumber ?? "Detail"))</PageTitle>
 
 <div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@_viewModel.ApplicationNumber</li>
+        </ol>
+    </nav>
     @if (_viewModel.IsLoading)
     {
         <div class="d-flex justify-content-center align-items-center py-5" role="status">
@@ -34,6 +40,9 @@
                 <StatusBadge Status="@_viewModel.Status" />
                 <span class="text-muted small">Submitted: @_viewModel.SubmittedDateDisplay</span>
                 <span class="text-muted small">Last Updated: @_viewModel.ReviewedDateDisplay</span>
+                <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+                    &larr; Back to Dashboard
+                </a>
             </div>
         </div>
 

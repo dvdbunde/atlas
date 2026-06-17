@@ -6,6 +6,12 @@
 <PageTitle>@("Edit " + (_viewModel.ApplicationNumber ?? "Application"))</PageTitle>
 
 <div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit @_viewModel.ApplicationNumber</li>
+        </ol>
+    </nav>
     @if (_viewModel.IsLoading)
     {
         <div class="d-flex justify-content-center align-items-center py-5" role="status">
@@ -30,7 +36,7 @@
         <p class="text-muted mb-3">@_viewModel.PermitDescription</p>
         <p class="text-muted small mb-4">
             Application: <strong>@_viewModel.ApplicationNumber</strong>
-            &middot; Status: <strong>@_viewModel.Status</strong>
+            &middot; Status: <StatusBadge Status="@_viewModel.Status" />
         </p>
 
         @if (_viewModel.SaveSuccess)
@@ -97,6 +103,8 @@
         {
             <div class="alert alert-danger mt-3" role="alert">
                 @_viewModel.SubmitErrorMessage
+                <hr>
+                <a href="/dashboard" class="btn btn-outline-danger btn-sm">Go to Dashboard</a>
             </div>
         }
     }

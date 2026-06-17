@@ -128,7 +128,7 @@ public class ConfirmationPageTests : BunitContext
         var cut = Render<ConfirmationPage>(parameters =>
             parameters.Add(p => p.Id, _applicationId));
 
-        var dashboardLink = cut.Find("a[href='/dashboard']");
+        var dashboardLink = cut.FindAll("a[href='/dashboard']")[1];
         Assert.NotNull(dashboardLink);
         Assert.Contains("Go to Dashboard", dashboardLink.TextContent);
     }

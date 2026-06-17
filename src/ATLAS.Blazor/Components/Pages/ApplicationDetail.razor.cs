@@ -55,6 +55,11 @@ public partial class ApplicationDetail : ComponentBase
 
             _viewModel.Load(application, permitType);
         }
+        catch (UnauthorizedAccessException)
+        {
+            _viewModel.HasError = true;
+            _viewModel.ErrorMessage = "You do not have permission to view this application.";
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load application {ApplicationId}", Id);
