@@ -106,7 +106,10 @@ namespace ATLAS.Application.Queries.Applications
                     Comments = r.Comments,
                     ReviewedDate = r.ReviewedDate,
                     IsVisibleToCitizen = r.IsVisibleToCitizen
-                }).ToList()
+                }).ToList(),                
+                FieldValues = application.FieldValues.ToDictionary(
+                    fv => fv.FieldName,
+                    fv => fv.Value)
             };
         }
     }

@@ -26,6 +26,12 @@ namespace ATLAS.Application.DTOs
         public List<ReviewDto> Reviews { get; set; } = new();
         // NEW: Missing fields from PRD
         public string? OfficerName { get; set; }
+
+        /// <summary>
+        /// Current field values for this application.
+        /// Key = FieldName (matches PermitField.Name), Value = entered value.
+        /// </summary>
+        public Dictionary<string, string> FieldValues { get; set; } = new();
     }
 
     public class DocumentDto
