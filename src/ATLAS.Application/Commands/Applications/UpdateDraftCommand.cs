@@ -53,7 +53,7 @@ namespace ATLAS.Application.Commands.Applications
                 throw new InvalidOperationException("Only draft applications can be updated");
 
             // Update citizen notes
-            // Note: Application entity would need a method to update notes
+            application.UpdateNotes(request.CitizenNotes);
 
             // Update field values
             foreach (var field in request.FieldValues)

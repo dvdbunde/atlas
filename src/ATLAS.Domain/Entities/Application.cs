@@ -61,7 +61,21 @@ namespace ATLAS.Domain.Entities
         {
         }
 
-      public void Submit()
+        /// <summary>
+        /// Updates the citizen notes for this application.
+        /// Only allowed when the application is in Draft or InfoRequested status.
+        /// </summary>
+        /// <param name="notes">The new notes text (null becomes empty string).</param>
+        /// <exception cref="DomainException">Thrown when the application is not in an editable state.</exception>
+        public void UpdateNotes(string notes)
+        {
+            if (Status != ApplicationStatus.Draft && Status != ApplicationStatus.InfoRequested)
+                throw new DomainException("Can only update notes for draft or info-requested applications");
+
+            CitizenNotes = notes ?? string.Empty;
+        }
+
+        public void Submit()
         {
             if (Status != ApplicationStatus.Draft)
                 throw new DomainException("Only draft applications can be submitted");
