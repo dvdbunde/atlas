@@ -876,7 +876,7 @@ components:
         status:
           type: string
           description: Application status
-          enum: [Draft, Submitted, UnderReview, Approved, Rejected, InfoRequested, Resubmitted]
+          enum: [Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected]
           example: Submitted
         submittedDate:
           type: string

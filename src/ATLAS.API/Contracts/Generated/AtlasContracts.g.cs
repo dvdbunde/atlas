@@ -620,17 +620,17 @@ namespace ATLAS.API.Contracts.Generated
         [System.Runtime.Serialization.EnumMember(Value = @"UnderReview")]
         UnderReview = 2,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"Approved")]
-        Approved = 3,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"Rejected")]
-        Rejected = 4,
-
         [System.Runtime.Serialization.EnumMember(Value = @"InfoRequested")]
-        InfoRequested = 5,
+        InfoRequested = 3,
 
         [System.Runtime.Serialization.EnumMember(Value = @"Resubmitted")]
-        Resubmitted = 6,
+        Resubmitted = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Approved")]
+        Approved = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Rejected")]
+        Rejected = 6,
 
     }
 
