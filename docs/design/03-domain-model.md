@@ -158,12 +158,11 @@ Submitted → UnderReview → Approved
 ### FieldType (Enum)
 
 - `Text` - Free-text input
+- `MultilineText` - Multi-line text area
 - `Number` - Numeric input
 - `Date` - Date picker
+- `Boolean` - Boolean checkbox
 - `Dropdown` - Single select from options
-- `MultiSelect` - Multiple selection
-- `Checkbox` - Boolean checkbox
-- `TextArea` - Multi-line text
 
 ## Domain Invariants
 

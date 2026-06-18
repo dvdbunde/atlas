@@ -401,13 +401,38 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateDraftRequest'
+            examples:
+              standardDraft:
+                summary: Create a building permit draft
+                value:
+                  permitTypeId: '87654321-4321-4321-4321-210987654321'
+                  citizenNotes: 'Building a new deck'
+                  fieldValues:
+                    - fieldName: ProjectTitle
+                      value: 'Residential Deck Construction'
+                      sortOrder: 1
+                    - fieldName: PropertyAddress
+                      value: '123 Main St'
+                      sortOrder: 2
       responses:
         '201':
-          description: Draft created
+          description: Draft created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                draftCreated:
+                  summary: Draft application response
+                  value:
+                    id: '11111111-2222-3333-4444-555555555555'
+                    applicationNumber: 'APP-2026-0042'
+                    status: Draft
+                    submittedDate: null
+                    citizenId: '12345678-1234-1234-1234-123456789012'
+                    permitTypeId: '87654321-4321-4321-4321-210987654321'
+                    citizenName: 'John Doe'
+                    permitTypeName: 'Building Permit'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -433,11 +458,23 @@ paths:
           description: Application ID
       responses:
         '200':
-          description: Draft submitted
+          description: Draft submitted successfully; status transitions from Draft to Submitted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                draftSubmitted:
+                  summary: Submitted application response
+                  value:
+                    id: '11111111-2222-3333-4444-555555555555'
+                    applicationNumber: 'APP-2026-0042'
+                    status: Submitted
+                    submittedDate: '2026-06-18T14:30:00Z'
+                    citizenId: '12345678-1234-1234-1234-123456789012'
+                    permitTypeId: '87654321-4321-4321-4321-210987654321'
+                    citizenName: 'John Doe'
+                    permitTypeName: 'Building Permit'
         '400':
           $ref: '#/components/responses/ValidationError'
         '404':
@@ -465,11 +502,23 @@ paths:
           description: Application ID
       responses:
         '200':
-          description: Application resubmitted
+          description: Application resubmitted successfully; status transitions from InfoRequested to Resubmitted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                applicationResubmitted:
+                  summary: Resubmitted application response
+                  value:
+                    id: '11111111-2222-3333-4444-555555555555'
+                    applicationNumber: 'APP-2026-0042'
+                    status: Resubmitted
+                    submittedDate: '2026-06-18T14:30:00Z'
+                    citizenId: '12345678-1234-1234-1234-123456789012'
+                    permitTypeId: '87654321-4321-4321-4321-210987654321'
+                    citizenName: 'John Doe'
+                    permitTypeName: 'Building Permit'
         '400':
           $ref: '#/components/responses/ValidationError'
         '404':
@@ -489,13 +538,33 @@ paths:
       operationId: getCitizenDashboard
       responses:
         '200':
-          description: Dashboard retrieved
+          description: Dashboard retrieved with the current citizen's applications (drafts and submitted)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                citizenDashboard:
+                  summary: Citizen dashboard applications list
+                  value:
+                    - id: '11111111-2222-3333-4444-555555555555'
+                      applicationNumber: 'APP-2026-0042'
+                      status: Submitted
+                      submittedDate: '2026-06-18T14:30:00Z'
+                      citizenId: '12345678-1234-1234-1234-123456789012'
+                      permitTypeId: '87654321-4321-4321-4321-210987654321'
+                      citizenName: 'John Doe'
+                      permitTypeName: 'Building Permit'
+                    - id: '22222222-3333-4444-5555-666666666666'
+                      applicationNumber: 'APP-2026-0043'
+                      status: Draft
+                      submittedDate: null
+                      citizenId: '12345678-1234-1234-1234-123456789012'
+                      permitTypeId: '87654321-4321-4321-4321-210987654321'
+                      citizenName: 'John Doe'
+                      permitTypeName: 'Building Permit'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -907,12 +976,15 @@ components:
               type: string
               format: date-time
               nullable: true
+              example: '2026-06-19T10:00:00Z'
             citizenNotes:
               type: string
               default: ''
+              example: 'Building a new deck'
             officerNotes:
               type: string
               default: ''
+              example: 'Application complete, all documents verified'
             documents:
               type: array
               items:
@@ -1189,10 +1261,13 @@ components:
       properties:
         fieldName:
           type: string
+          example: 'ProjectTitle'
         value:
           type: string
+          example: 'Residential Deck Construction'
         sortOrder:
           type: integer
+          example: 1
       required: [fieldName, value, sortOrder]         
 
     CreateDraftRequest:
@@ -1201,13 +1276,22 @@ components:
         permitTypeId:
           type: string
           format: uuid
+          example: '87654321-4321-4321-4321-210987654321'
         citizenNotes:
           type: string
           default: ''
+          example: 'Building a new deck'
         fieldValues:
           type: array
           items:
             $ref: '#/components/schemas/FieldValueRequest'
+          example:
+            - fieldName: ProjectTitle
+              value: 'Residential Deck Construction'
+              sortOrder: 1
+            - fieldName: PropertyAddress
+              value: '123 Main St'
+              sortOrder: 2
       required: [permitTypeId, fieldValues]
 
     UpdateDraftRequest:
@@ -1216,10 +1300,18 @@ components:
         citizenNotes:
           type: string
           default: ''
+          example: 'Updated: Building a new deck with permit drawings'
         fieldValues:
           type: array
           items:
             $ref: '#/components/schemas/FieldValueRequest'
+          example:
+            - fieldName: ProjectTitle
+              value: 'Residential Deck Construction - Revised'
+              sortOrder: 1
+            - fieldName: PropertyAddress
+              value: '123 Main St'
+              sortOrder: 2
       required: [fieldValues]
 
     FieldDefinitionResponse:
@@ -1227,15 +1319,18 @@ components:
       properties:
         name:
           type: string
+          example: 'ProjectTitle'
         type:
           type: string
           enum: [Text, MultilineText, Number, Date, Boolean, Dropdown]
           example: Text
         isRequired:
           type: boolean
+          example: true
         defaultValue:
           type: string
           nullable: true
+          example: null        
       required: [name, type, isRequired]
 
     PermitTypeSummaryResponse:

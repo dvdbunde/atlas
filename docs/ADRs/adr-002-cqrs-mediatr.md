@@ -10,15 +10,21 @@ ATLAS has distinct read and write requirements:
 
 ### Write Operations (Commands)
 
-- Submit application (complex validation, domain logic)
+- Create draft application (saves partial application with field values)
+- Update draft application (modifies field values and notes)
+- Submit draft application (transitions Draft → Submitted)
 - Approve/reject application (state changes, business rules)
+- Request information (transitions to InfoRequested for citizen resubmission)
+- Resubmit application (transitions InfoRequested → Resubmitted)
 - Create/update permit types (admin operations)
 - Upload documents (file handling, blob storage)
 
 ### Read Operations (Queries)
 
 - List applications by status (dashboard views)
-- Get application details (with documents, reviews)
+- Get citizen dashboard (current user's applications with status)
+- Get application details (with documents, reviews, field values)
+- Get permit types with field definitions (for dynamic form rendering)
 - Search/filter applications (officer dashboard)
 - Generate reports (future: analytics, audit logs)
 

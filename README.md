@@ -23,7 +23,7 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
 
 ## Project Status
 
-**Current Milestone**: Milestone 3 - Database Persistence ✅ COMPLETE (92%)
+**Current Milestone**: Milestone 5 - Permit Submission ✅ IMPLEMENTED
 
 **Completed Features**:
 
@@ -33,14 +33,24 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
 - ✅ CQRS pattern with MediatR
 - ✅ Repository pattern implementation
 - ✅ FluentValidation for command validation
-- ✅ 97% test pass rate (38/39 Infrastructure, 11/11 Application, 2/2 Integration)
-
-**In Progress**:
+- ✅ Microsoft Entra ID authentication & authorization (Milestone 4)
+- ✅ Permit Submission workflow (Milestone 5):
+  - Browse permit types with dynamic form fields
+  - Create and save draft applications
+  - Edit draft applications with dynamic forms
+  - Submit applications for review
+  - Citizen dashboard with status overview
+  - Application detail view with status history
+  - Email notifications on status changes (SMTP)
+  - Confirmation workflow after submission
+- ✅ Document upload with Azure Blob Storage
+- ✅ Application review workflow (Officer dashboard with approve/reject/request-info)
+- ✅ Audit logging with 7-year retention policy
 
 - ⚠️ 1 test failing (concurrency test with InMemory provider)
 - ⚠️ Azure Key Vault integration simplified for development
 
-**Next Milestone**: Milestone 4 - Identity & Authentication (see [TODO.md](plans/TODO.md) for details)
+**Next Milestone**: Milestone 9 - Azure Deployment (see [ROADMAP.md](plans/ROADMAP.md) for details)
 
 ## Who this is for
 

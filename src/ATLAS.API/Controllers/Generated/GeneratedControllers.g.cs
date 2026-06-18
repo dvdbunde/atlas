@@ -131,7 +131,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <remarks>
         /// Create a new draft permit application with field values
         /// </remarks>
-        /// <returns>Draft created</returns>
+        /// <returns>Draft created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/draft", Name = "createDraft")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Draft([Microsoft.AspNetCore.Mvc.FromBody] CreateDraftRequest body);
 
@@ -142,7 +142,7 @@ namespace ATLAS.API.Controllers.Generated
         /// Submit a draft application for review
         /// </remarks>
         /// <param name="id">Application ID</param>
-        /// <returns>Draft submitted</returns>
+        /// <returns>Draft submitted successfully; status transitions from Draft to Submitted</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/submit", Name = "submitDraft")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Submit(System.Guid id);
 
@@ -153,7 +153,7 @@ namespace ATLAS.API.Controllers.Generated
         /// Resubmit an application after information request
         /// </remarks>
         /// <param name="id">Application ID</param>
-        /// <returns>Application resubmitted</returns>
+        /// <returns>Application resubmitted successfully; status transitions from InfoRequested to Resubmitted</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/resubmit", Name = "resubmitDraft")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Resubmit(System.Guid id);
 
@@ -163,7 +163,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <remarks>
         /// Retrieve the current user's applications with status
         /// </remarks>
-        /// <returns>Dashboard retrieved</returns>
+        /// <returns>Dashboard retrieved with the current citizen's applications (drafts and submitted)</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/citizen/dashboard", Name = "getCitizenDashboard")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> Dashboard();
 

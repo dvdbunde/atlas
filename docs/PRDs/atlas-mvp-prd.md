@@ -7,6 +7,7 @@
 | Date | Author | Change Description |
 | ---------- | ------ | ------------------ |
 | 2026-06-02 | David (Product Owner) | Initial MVP draft |
+| 2026-06-18 | Engineering Team | Milestone 5 completion: Permit Submission workflow (drafts, dynamic forms, dashboard, notifications, confirmation) |
 
 ---
 
@@ -79,11 +80,15 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 ### UC1: Citizen Submits Permit Application
 
 - Citizen logs into portal
-- Selects permit type from active list
-- Fills out application form
+- Browses active permit types
+- Selects permit type and creates a draft application
+- Fills out dynamic form fields specific to the permit type
 - Uploads required documents
-- Submits application
-- System generates confirmation number and sends email notification
+- Saves draft to resume later if needed
+- Submits completed application
+- System transitions status from Draft → Submitted
+- System generates application number and sends email notification
+- Citizen views application on dashboard and tracks status
 
 ### UC2: Permit Officer Reviews Application
 
@@ -102,13 +107,15 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Activates/deactivates permit types
 - Views audit log of all configuration changes
 
-### UC4: Citizen Views Application List (F-04)
+### UC4: Citizen Views Application Dashboard (F-04, F-07)
 
 - Citizen logs into portal
-- Views list of their submitted applications
+- Views dashboard with all their applications (drafts and submitted)
 - Sees application number, permit type, submission date, current status
-- Can click on any application to view details
-- List is sorted by submission date (newest first)
+- Draft applications show "Edit" and "Submit" actions
+- Submitted applications show current status badge
+- Can click on any application to view full details
+- List is sorted by created date (newest first)
 
 ### UC5: Citizen Downloads Documents (F-08)
 
@@ -163,26 +170,26 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 
 #### Citizens
 
-| ID | Requirement | Priority |
-| ---- | ------------- | ---------- |
-| F-01 | Citizens can create a new permit application by selecting from active permit types | Must |
-| F-02 | Citizens can fill out permit application forms with validation (required fields, data formats) | Must |
-| F-03 | Citizens can upload supporting documents (PDF, JPG, PNG) up to 25MB per file | Must |
-| F-04 | Citizens can view a list of their submitted applications with current status | Must |
-| F-05 | Citizens can view detailed status history for each application (Submitted, Under Review, Approved, Rejected) | Must |
-| F-06 | Citizens receive email notifications on status changes | Should |
-| F-07 | Citizens can save draft applications and resume later | Should |
-| F-08 | Citizens can download previously uploaded documents | Could |
+| ID | Requirement | Priority | Status |
+| ---- | ------------- | ---------- | ------ |
+| F-01 | Citizens can create a new permit application by selecting from active permit types | Must | ✅ Implemented |
+| F-02 | Citizens can fill out permit application forms with validation (required fields, data formats) | Must | ✅ Implemented |
+| F-03 | Citizens can upload supporting documents (PDF, JPG, PNG) up to 25MB per file | Must | ✅ Implemented |
+| F-04 | Citizens can view a list of their submitted applications with current status | Must | ✅ Implemented |
+| F-05 | Citizens can view detailed status history for each application (Submitted, Under Review, Approved, Rejected) | Must | ✅ Implemented |
+| F-06 | Citizens receive email notifications on status changes | Should | ✅ Implemented |
+| F-07 | Citizens can save draft applications and resume later | Should | ✅ Implemented |
+| F-08 | Citizens can download previously uploaded documents | Could | ✅ Implemented |
 
 #### Permit Officers
 
-| ID | Requirement | Priority |
-| ---- | ------------- | ---------- |
-| F-09 | Officers can view a dashboard of pending applications assigned to them or their department | Must |
-| F-10 | Officers can open application details including all form data and uploaded documents | Must |
-| F-11 | Officers can add internal review notes to applications (not visible to citizens) | Must |
-| F-12 | Officers can approve applications with digital signature/confirmation | Must |
-| F-13 | Officers can reject applications with mandatory reason code and comments | Must |
+| ID | Requirement | Priority | Status |
+| ---- | ------------- | ---------- | ------ |
+| F-09 | Officers can view a dashboard of pending applications assigned to them or their department | Must | ✅ Implemented |
+| F-10 | Officers can open application details including all form data and uploaded documents | Must | ✅ Implemented |
+| F-11 | Officers can add internal review notes to applications (not visible to citizens) | Must | ✅ Implemented |
+| F-12 | Officers can approve applications with digital signature/confirmation | Must | ✅ Implemented |
+| F-13 | Officers can reject applications with mandatory reason code and comments | Must | ✅ Implemented |
 
 **Rejection Reason Codes (F-13):**
 
@@ -192,19 +199,19 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - `InvalidProperty` — Property doesn't qualify for requested permit
 - `ZoningConflict` — Proposed use conflicts with zoning regulations
 - `Other` — Other reason (requires detailed comments)
-| F-14 | Officers can filter and search applications by status, date range, permit type | Should |
-| F-15 | Officers can request additional information from citizens (triggers status change) | Should |
-| F-16 | Officers can view application history and previous officer notes | Could |
+| F-14 | Officers can filter and search applications by status, date range, permit type | Should | ✅ Implemented |
+| F-15 | Officers can request additional information from citizens (triggers status change) | Should | ✅ Implemented |
+| F-16 | Officers can view application history and previous officer notes | Could | ✅ Implemented |
 
 #### Administrators
 
-| ID | Requirement | Priority |
-| ---- | ------------- | ---------- |
-| F-17 | Administrators can create new permit types with configurable fields and requirements | Must |
-| F-18 | Administrators can edit existing permit type configurations (fields, requirements, fees) | Must |
-| F-19 | Administrators can activate/deactivate permit types (soft delete) | Must |
-| F-20 | Administrators can view a complete audit history of all system actions (user actions, configuration changes) | Must |
-| F-21 | Administrators manage user roles through Entra ID; roles are automatically synchronized to ATLAS | Should |
+| ID | Requirement | Priority | Status |
+| ---- | ------------- | ---------- | ------ |
+| F-17 | Administrators can create new permit types with configurable fields and requirements | Must | ✅ Implemented |
+| F-18 | Administrators can edit existing permit type configurations (fields, requirements, fees) | Must | ✅ Implemented |
+| F-19 | Administrators can activate/deactivate permit types (soft delete) | Must | ✅ Implemented |
+| F-20 | Administrators can view a complete audit history of all system actions (user actions, configuration changes) | Must | ✅ Implemented |
+| F-21 | Administrators manage user roles through Entra ID; roles are automatically synchronized to ATLAS | Should | ✅ Implemented |
 
 > **Note**: F-21 was originally specified as "Administrators can manage user accounts and assign roles." In the Entra-first architecture (see ADR-013), user account management is delegated to Microsoft Entra ID. ATLAS reads role assignments from Entra ID tokens and synchronizes them locally. The requirement is satisfied through Entra ID integration — administrators manage roles in the Entra ID admin portal, and changes propagate to ATLAS on the user's next authenticated request.
 | F-22 | Administrators can configure system-wide settings (notification templates, document size limits) | Should |
@@ -571,6 +578,7 @@ The following items are **explicitly out of scope** for the MVP release:
 | **UAT with Stakeholders** | September 30, 2026 | Testing complete, training materials ready |
 | **Go-Live (MVP Launch)** | October 15, 2026 | UAT sign-off, production Azure resources deployed |
 | **Post-Launch Review** | November 15, 2026 | 30 days production metrics |
+| **M5: Permit Submission** | June 18, 2026 | ✅ Implementation complete — Draft applications, dynamic forms, citizen dashboard, confirmation workflow, email notifications |
 
 #### Critical Path
 
@@ -609,14 +617,17 @@ The following items are **explicitly out of scope** for the MVP release:
 3. **Q3**: Should rejected applications allow citizens to resubmit with corrections, or must they start a new application?
    - *Impact*: UX flow and database schema (versioning vs. new record)
    - *Decision needed by*: July 15, 2026 (before backend development)
+   - *Decision*: **Resolved — Rejected applications that are in "InfoRequested" status can be resubmitted.** Citizens update their application and use the resubmit workflow (new endpoint: `POST /api/applications/{id}/resubmit`). Rejected (non-InfoRequested) applications require a new application.
 
 4. **Q4**: What email service should be used for notifications (SendGrid, Azure Communication Services, SMTP relay)?
    - *Impact*: Cost, deliverability, configuration effort
    - *Decision needed by*: July 1, 2026 (before integration testing)
+   - *Decision*: **Resolved — SMTP email service implemented.** `SmtpEmailService` with `EmailTemplateRenderer` for configurable templates. Infrastructure supports swapping to Azure Communication Services in future.
 
 5. **Q5**: Should the MVP include a public-facing permit status lookup (no login required, just confirmation number)?
    - *Impact*: Security considerations, citizen convenience
    - *Decision needed by*: June 30, 2026
+   - *Decision*: **Resolved — Not included in MVP.** Status lookup requires authenticated access via the citizen dashboard. Deferred to post-MVP.
 
 ---
 

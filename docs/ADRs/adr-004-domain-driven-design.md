@@ -51,7 +51,7 @@ Objects with identity continuity (tracked by ID across time):
 
 Immutable objects defined by their attributes (no identity):
 
-- `ApplicationStatus` - Value object (Submitted, UnderReview, Approved, Rejected)
+- `ApplicationStatus` - Value object (Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected)
 - `DocumentType` - Enumeration of accepted file types
 - `AuditLog` - Immutable record of system actions
 
@@ -105,8 +105,11 @@ src/ATLAS.Domain/
 │   ├── Review.cs
 │   ├── User.cs
 │   └── AuditLog.cs
-├── ValueObjects/
+├── Enums/
 │   ├── ApplicationStatus.cs
+│   ├── FieldType.cs
+│   └── UserRole.cs
+├── ValueObjects/
 │   ├── DocumentType.cs
 │   ├── PermitField.cs
 │   └── DocumentRequirement.cs
