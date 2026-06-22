@@ -1,4 +1,4 @@
-using ATLAS.Blazor.Models;
+using ATLAS.Blazor.FormModel;
 using ATLAS.Blazor.ViewModels;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;

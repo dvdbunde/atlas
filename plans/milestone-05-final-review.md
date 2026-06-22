@@ -1,3 +1,5 @@
+# ATLAS Milestone 05 final review
+
 Documentation Review Findings
 ADRs reviewed: ADR-001, ADR-002, ADR-005, ADR-008, ADR-012, ADR-013
 PRD sections: F-01 through F-07 (citizen requirements)
@@ -64,7 +66,7 @@ CONCERN 3 — AuthService Necessity
 Evidence:
 
 Program.cs registers AddAuthenticationCore(), AddAuthorizationCore(), and AddCascadingAuthenticationState()
-_Imports.razor does NOT include Microsoft.AspNetCore.Components.Authorization — but AddCascadingAuthenticationState() makes CascadingParameter<AuthenticationState> available
+_Imports.razor does NOT include Microsoft.AspNetCore.Components.Authorization — but AddCascadingAuthenticationState() makes CascadingParameter(AuthenticationState) available
 No existing Blazor component uses AuthorizeView or [Authorize]
 AuthenticationStateProvider is registered automatically by AddAuthenticationCore()
 Finding: AuthenticationStateProvider + CascadingAuthenticationState is already sufficient. An AuthService wrapping AuthenticationStateProvider would be a thin (potentially unnecessary) wrapper. Blazor Server already has the auth infrastructure. Per ADR-005 and ADR-008, authentication flows via Entra ID with role claims — the standard Blazor pattern of AuthorizeView + [Authorize] already handles this.
@@ -73,7 +75,7 @@ Recommendation: REJECT AuthService.cs. Use Blazor's built-in:
 
 AuthorizeView with Roles="Citizen" for component-level conditional rendering
 [Authorize] attribute on pages for URL-level access control
-CascadingParameter<AuthenticationState> for programmatic access to claims
+CascadingParameter(AuthenticationState) for programmatic access to claims
 CONCERN 4 — Permit Type Detail Retrieval
 Evidence from OpenAPI:
 
@@ -92,11 +94,11 @@ Evidence from AtlasContracts.g.cs:
 
 ✅ ApplicationSummaryResponse — exists (Id, ApplicationNumber, Status as ApplicationSummaryResponseStatus, SubmittedDate, CitizenId, PermitTypeId, CitizenName, PermitTypeName)
 ✅ ApplicationDetailResponse — exists (inherits ApplicationSummaryResponse + reviewedDate, citizenNotes, officerNotes, documents, reviews, officerName)
-✅ PermitTypeSummaryResponse — exists (Id, Name, Description, Fee, Fields as ICollection<FieldDefinitionResponse>)
+✅ PermitTypeSummaryResponse — exists (Id, Name, Description, Fee, Fields as ICollection(FieldDefinitionResponse)
 ✅ FieldDefinitionResponse — exists (Name, Type as FieldDefinitionResponseType with JsonStringEnumConverter, IsRequired, DefaultValue)
 ✅ ApplicationSummaryResponseStatus — exists as enum (Draft, Submitted, UnderReview, Approved, Rejected, InfoRequested, Resubmitted)
 ✅ FieldDefinitionResponseType — exists as enum (Text, MultilineText, Number, Date, Boolean, Dropdown)
-✅ CreateDraftRequest — exists (PermitTypeId, CitizenNotes, FieldValues as ICollection<FieldValueRequest>)
+✅ CreateDraftRequest — exists (PermitTypeId, CitizenNotes, FieldValues as ICollection(FieldValueRequest))
 ✅ UpdateDraftRequest — exists (CitizenNotes, FieldValues)
 ✅ FieldValueRequest — exists (FieldName, Value, SortOrder)
 ❌ NO C# NSwag-generated client class exists (no partial class ApplicationsClient or similar)
@@ -129,13 +131,13 @@ Finding: DataAnnotationsValidator alone is NOT sufficient for dynamic field vali
 Recommendation: MODIFY — Implement custom validation:
 
 Blazor EditForm with OnValidSubmit and custom ValidationMessageStore
-Iterate List<FieldDefinitionResponse> and for each field where IsRequired == true, check if the corresponding value in Dictionary<string, string> is non-empty
+Iterate List(FieldDefinitionResponse) and for each field where IsRequired == true, check if the corresponding value in Dictionary<string, string> is non-empty
 Report validation errors via ValidationMessageStore
 This is a common pattern for dynamic forms in Blazor
 CONCERN 8 — ApplicationTimeline Feasibility
 Evidence:
 
-ApplicationDetailResponse has reviews array (type: List<ReviewResponse>)
+ApplicationDetailResponse has reviews array (type: List(ReviewResponse))
 ReviewResponse has: id, officerId, decision (enum: 1=Approved, 2=Rejected, 3=RequestInfo), reasonCode, comments, reviewedDate
 Domain model has Application.Status state machine with 7 states
 The domain tracks only CURRENT status (not historical transitions)
@@ -179,22 +181,24 @@ Full solution: dotnet build --property WarningLevel=0 (verify no regressions)
 Test: dotnet test tests/ATLAS.IntegrationTests/ATLAS.IntegrationTests.csproj (API integration tests)
 Verify specific branch: dotnet build (without WarningLevel=0 to catch warnings)
 Required Changes Before Phase D Starts
-#	Change	Source	Impact
-1	Add API project reference to Blazor (or extract shared contracts library)	Concern 1, 5	Required — Blazor needs access to AtlasContracts.g.cs types
-2	Fix route paths to match approved plan (/dashboard, /applications/...)	Concern 2, 6	Required — consistency with approved plan and API naming
-3	Remove AuthService.cs from plan	Concern 3	Recommended — use built-in Blazor auth framework
-4	Update ApplicationCreate to use GET /api/permit-types/active (not GET /api/permittypes/{id})	Concern 4	Required — PermitTypeResponse doesn't have fields
-5	Replace DataAnnotationsValidator with custom dynamic validation	Concern 7	Required — compile-time attributes can't validate runtime field definitions
-6	Replace ApplicationTimeline with simpler review activity display	Concern 8	Required — status history data doesn't exist yet
-7	Use [Authorize(Roles = "Citizen")] on all citizen pages	Concern 9	Required — authorization enforcement
+
+## Change Source Impact
+
+1 Add API project reference to Blazor (or extract shared contracts library) Concern 1, 5 Required — Blazor needs access to AtlasContracts.g.cs types
+2 Fix route paths to match approved plan (/dashboard, /applications/...) Concern 2, 6 Required — consistency with approved plan and API naming
+3 Remove AuthService.cs from plan Concern 3 Recommended — use built-in Blazor auth framework
+4 Update ApplicationCreate to use GET /api/permit-types/active (not GET /api/permittypes/{id}) Concern 4 Required — PermitTypeResponse doesn't have fields
+5 Replace DataAnnotationsValidator with custom dynamic validation Concern 7 Required — compile-time attributes can't validate runtime field definitions
+6 Replace ApplicationTimeline with simpler review activity display Concern 8 Required — status history data doesn't exist yet
+7 Use [Authorize(Roles = "Citizen")] on all citizen pages Concern 9 Required — authorization enforcement
 Updated Risk Assessment
-Risk	Likelihood	Impact	Status
-Blazor can't access NSwag contracts without project reference	Certain	High	🔴 Must fix — add API reference to Blazor .csproj
-ApplicationCreate tries to use endpoint without fields	Certain	Blocker	🔴 Must fix — use getActivePermitTypes instead
-DataAnnotationsValidator fails on dynamic fields	Certain	Medium	🔴 Must fix — implement custom ValidationMessageStore
-ApplicationTimeline has no data to render	Certain	Medium	🔴 Must fix — switch to review activity component
-Routes conflict between plan versions	Decided	Low	🟡 Must align — use approved plan routes
-AuthService duplicates framework	Probable	Low	🟢 Reject — use built-in Blazor auth
+Risk Likelihood Impact Status
+Blazor can't access NSwag contracts without project reference Certain High 🔴 Must fix — add API reference to Blazor .csproj
+ApplicationCreate tries to use endpoint without fields Certain Blocker 🔴 Must fix — use getActivePermitTypes instead
+DataAnnotationsValidator fails on dynamic fields Certain Medium 🔴 Must fix — implement custom ValidationMessageStore
+ApplicationTimeline has no data to render Certain Medium 🔴 Must fix — switch to review activity component
+Routes conflict between plan versions Decided Low 🟡 Must align — use approved plan routes
+AuthService duplicates framework Probable Low 🟢 Reject — use built-in Blazor auth
 Final GO / NO-GO Decision
 NO-GO — Requires Remediation Before Phase D Begins
 7 changes are required before implementation can start. The most critical are:
@@ -206,12 +210,12 @@ Timeline feasibility — Status transition history doesn't exist in the current 
 Route alignment — Phase D routes deviate from the approved Milestone 5 plan
 The answer to the 6 validation questions:
 
-Question	Answer
-Can Phase D begin immediately?	No
-Are any API changes required?	No — API surface is sufficient (with correct endpoint usage)
-Are any OpenAPI changes required?	No
-Are any DTO changes required?	No — all DTOs exist in NSwag contracts (access is the issue)
-Are any missing endpoints required?	No — GET /api/permit-types/active provides fields (just use it instead of GET /api/permittypes/{id})
+Question Answer
+Can Phase D begin immediately? No
+Are any API changes required? No — API surface is sufficient (with correct endpoint usage)
+Are any OpenAPI changes required? No
+Are any DTO changes required? No — all DTOs exist in NSwag contracts (access is the issue)
+Are any missing endpoints required? No — GET /api/permit-types/active provides fields (just use it instead of GET /api/permittypes/{id})
 Summary
 
 Concerns resolved: 3 (AuthService usage), 10 (build validation)

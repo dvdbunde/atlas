@@ -1,5 +1,5 @@
 using ATLAS.Blazor.Components.Shared;
-using ATLAS.Blazor.Models;
+using ATLAS.Blazor.FormModel;
 using ATLAS.Blazor.ViewModels;
 using ATLAS.Domain.Enums;
 using Bunit;
