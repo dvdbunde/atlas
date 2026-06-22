@@ -91,21 +91,7 @@ namespace ATLAS.Infrastructure
             services.AddScoped<SeedDataLoader>();
 
             // Register Unit of Work
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            
-            // Register MediatR - scan both Application and Infrastructure assemblies
-            services.AddMediatR(cfg => 
-            {
-                cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly); // Application layer
-                cfg.RegisterServicesFromAssembly(typeof(AuditLogRepository).Assembly); // Infrastructure layer (for event handlers)
-
-                // ✅ Add validation pipeline behavior
-                cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
-                
-                // User synchronization pipeline behavior — runs before every request handler
-                cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
-
-            });
+            services.AddScoped<IUnitOfWork, UnitOfWork>();                     
             
             return services;
         }
