@@ -33,7 +33,6 @@
 
 ## Links
 
-- Plan/TODO item: (e.g., plans/TODO.md row or issue link)
 - ADR/PRD/design doc: (link to docs/ADRs or docs/PRDs or docs/design)
 
 ## Quality & Policy Checks

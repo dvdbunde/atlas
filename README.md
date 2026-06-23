@@ -43,14 +43,11 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
   - Application detail view with status history
   - Email notifications on status changes (SMTP)
   - Confirmation workflow after submission
-- ✅ Document upload with Azure Blob Storage
-- ✅ Application review workflow (Officer dashboard with approve/reject/request-info)
-- ✅ Audit logging with 7-year retention policy
 
 - ⚠️ 1 test failing (concurrency test with InMemory provider)
 - ⚠️ Azure Key Vault integration simplified for development
 
-**Next Milestone**: Milestone 9 - Azure Deployment (see [ROADMAP.md](plans/ROADMAP.md) for details)
+**Next Milestone**: Milestone 6 - Document Management (see [ROADMAP.md](plans/ROADMAP.md) for details)
 
 ## Who this is for
 
@@ -66,7 +63,6 @@ This repository contains both the ATLAS application code and comprehensive docum
 ### Application Code
 
 - `src/` - Application source code (.NET 9, Blazor)
-- `infra/` - Azure infrastructure as code (Bicep/Terraform)
 
 ### Documentation & Planning
 
@@ -81,7 +77,6 @@ This repository contains both the ATLAS application code and comprehensive docum
 
 - `plans/` - Project plans, roadmap, and task tracking
   - [ROADMAP.md](plans/ROADMAP.md) - Strategic planning and milestones
-  - [TODO.md](plans/TODO.md) - Current task queue
 
 ### Development Configuration
 
@@ -96,7 +91,7 @@ This repository contains both the ATLAS application code and comprehensive docum
 2. **Set up development environment**: Ensure you have .NET 9 SDK installed (run `dotnet --list-sdks` to verify)
 3. **Review architecture**: Check [architecture documentation](docs/architecture/) when available
 4. **Review coding standards**: Read [backend instructions](.github/instructions/backend.instructions.md) and [frontend instructions](.github/instructions/frontend.instructions.md)
-5. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) and [TODO.md](plans/TODO.md) for current priorities
+5. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) for current priorities
 
 ## Development Workflow
 
@@ -226,7 +221,6 @@ Authoritative single sources of truth (SSOT) for key policies and templates. Pre
 - **Planning**
   - Plan template (SSOT): `plans/plan-template.md`
   - Small plan example: `plans/examples/plan-small.md`
-  - TODO (work queue): `plans/TODO.md`
 
 ### CI Coverage Enforcement
 

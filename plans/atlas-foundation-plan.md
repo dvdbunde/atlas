@@ -3,7 +3,9 @@
 **Project**: ATLAS (Automated Tracking & Licensing Application System)
 **Version**: 1.1 (Corrected)
 **Date**: June 3, 2026
-**Status**: ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+**Status**: ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+
+## Milestones M1–M5: Complete | M6–M10: Planned
 
 ---
 
@@ -14,7 +16,7 @@ This roadmap outlines the implementation plan for ATLAS MVP as defined in [atlas
 - **Clean Architecture** (ADR-001)
 - **CQRS with MediatR** (ADR-002)
 - **Azure SQL + Blob Storage** (ADR-003)
-- **Domain-Driven Design** (ADR-004) - *Contains actual domain model*
+- **Domain-Driven Design** (ADR-004) - _Contains actual domain model_
 - **Blazor Server** (ADR-005)
 - **GitHub Actions** (ADR-006)
 - **Bicep** (ADR-007)
@@ -177,7 +179,7 @@ flowchart TD
 
 **PRD Mapping**: F-01, F-02, F-09, F-10 (domain models for these features)
 
-**References**: ADR-004 (Domain-Driven Design) - *Primary reference for domain model*
+**References**: ADR-004 (Domain-Driven Design) - _Primary reference for domain model_
 
 ---
 
@@ -239,7 +241,7 @@ flowchart TD
 
 ---
 
-## Milestone 4: Authentication 🔄 IN PROGRESS**
+## Milestone 4: Authentication ✅ COMPLETE**
 
 **Objective**: Implement Microsoft Entra ID authentication for all user roles (Citizen, Officer, Admin).
 
@@ -277,20 +279,30 @@ flowchart TD
 
 ---
 
-## Milestone 5: Permit Submission
+## Milestone 5: Permit Submission ✅ COMPLETE**
 
 **Objective**: Implement citizen-facing permit application submission workflow (UC1 from PRD).
 
 **Deliverables**:
 
 - Permit type selection page (lists active permit types from F-17)
-- Permit application form with validation (F-01, F-02)
+- Dynamic form generation with 6 field types (Text, MultilineText, Number, Date, Boolean, Dropdown)
+- Draft application workflow (create, save, edit, submit)
 - Application status dashboard for citizens (F-04, F-05)
+- Application detail view with status history timeline
+- Confirmation workflow after successful submission
+- Email notifications (SMTP) on status changes (submission confirmation, approval, rejection, info request)
 - CQRS commands using MediatR (ADR-002):
   - `SubmitApplicationCommand` (invokes `Application.Submit()` from ADR-004)
-  - `SaveDraftApplicationCommand`
-- Email confirmation on submission (F-06)
-- Unit and integration tests
+  - `SaveDraftApplicationCommand`, `UpdateDraftCommand`
+  - `CreateDraftCommand`, `SubmitDraftCommand`
+- DynamicFieldValidator with custom ValidationMessageStore (no FluentValidation in UI)
+- Authentication hardening: `[Authorize(Roles = "Citizen")]` enforcement on all citizen pages
+- Blazor shared components: DynamicFormGenerator, DynamicFieldValidator, StatusBadge, ApplicationTimeline
+- ADR-014: Dynamic Permit Form Storage Strategy (ApplicationFieldValue as owned entity)
+- 80+ bUnit tests across 7 test suites, 26 application handler tests
+- Milestone 5 UI Readiness Report (Phase D8 sign-off)
+- Documentation: ADR-014, milestone-05-final-review
 
 **Acceptance Criteria**:
 
@@ -306,13 +318,17 @@ flowchart TD
 
 **Estimated Effort**: 13 SP (6.5 developer days)
 
+**Completion Date**: 2026-06-18
+
+**Next Milestone**: [Milestone 6: Document Management](#milestone-6-document-management) — Active
+
 **PRD Mapping**: F-01, F-02, F-04, F-05, F-06, F-07 (draft applications)
 
 **References**: ADR-002 (CQRS), ADR-004 (Domain Model - `Application`)
 
 ---
 
-## Milestone 6: Document Upload
+## Milestone 6: Document Management
 
 **Objective**: Implement document upload to Azure Blob Storage (ADR-003) with citizen-facing UI.
 
@@ -347,7 +363,7 @@ flowchart TD
 
 ---
 
-## Milestone 7: Application Review
+## Milestone 7: Officer Review Workflow
 
 **Objective**: Implement permit officer dashboard and review workflow (UC2 from PRD).
 
@@ -386,9 +402,9 @@ flowchart TD
 
 ---
 
-## Milestone 8: Audit Logging
+## Milestone 8: Administration
 
-**Objective**: Implement comprehensive audit trail for compliance (UC3 from PRD, F-20).
+**Objective**: Implement administrative features — permit type management, user administration, audit log viewer, and system configuration.
 
 **Deliverables**:
 
@@ -426,9 +442,9 @@ flowchart TD
 
 ---
 
-## Milestone 9: Azure Deployment
+## Milestone 9: Audit & Compliance
 
-**Objective**: Deploy ATLAS to Azure App Service with full infrastructure as code (ADR-007: Bicep).
+**Objective**: Implement comprehensive audit trail for compliance (UC3 from PRD, F-20), data retention policies, and deploy ATLAS to Azure App Service with full infrastructure as code (ADR-007: Bicep).
 
 **Deliverables**:
 

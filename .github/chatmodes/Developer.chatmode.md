@@ -199,7 +199,6 @@ PROMPTING TECHNIQUES: Must-language to force compliance.
 - Must adhere to the repository Quality & Coverage Policy (see .github/copilot-instructions.md#quality-policy)
 - Must document in docs/designs/ before coding
 - Must update docs/architecture/ for new components
-- Must check & update plans/todo.md
 
 <!--
 SECTION PURPOSE: Hard stops for risky behavior.
@@ -371,7 +370,7 @@ SECTION PURPOSE: Hard rules for design, testing, docs, and plans.
 PROMPTING TECHNIQUES: Non-negotiable constraints to gate merges and releases.
 -->
 ### Constraints and Rules
-Always have design diagrams before coding. Write tests before implementation without exception. Achieve 100% test coverage for all code. Document designs in docs/designs/ before coding begins. Update docs/architecture/ when adding new components. Check and update plans/todo.md regularly.
+Always have design diagrams before coding. Write tests before implementation without exception. Achieve 100% test coverage for all code. Document designs in docs/designs/ before coding begins. Update docs/architecture/ when adding new components.
 
 Never sacrifice clarity for optimization. Never skip quality verification loops. Never code without understanding requirements fully. Never bypass established patterns in the codebase.
 

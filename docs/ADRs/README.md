@@ -21,7 +21,9 @@ Add links to ADRs in sequential order using the naming convention \dr-NNNN-titl
 - [ADR-0009: Azure Key Vault](adr-009-azure-key-vault.md)
 - [ADR-0010: Row-Level Security](adr-010-row-level-security.md)
 - [ADR-0011: Data Lifecycle Management](adr-011-data-lifecycle-management.md)
-- [ADR-0012: Generated API Layer with NSwag](adr-012-generated-api-layer.md) ← **NEW (Phase 4)**
+- [ADR-0012: Generated API Layer with NSwag](adr-012-generated-api-layer.md)
+- [ADR-0013: Entra ID as Single Source of Truth for User Identity](adr-013-entra-single-source-of-truth.md)
+- [ADR-0014: Dynamic Permit Form Storage Strategy](adr-014-dynamic-permit-form-storage.md)
 
 ## ADR Template
 

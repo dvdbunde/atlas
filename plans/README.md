@@ -16,10 +16,6 @@ Plans are used to:
 
 - Small feature plan: `plans/examples/plan-small.md`
 
-## The Role of TODO items
-
-`plans/TODO.md` is the single source of truth for the agent's work queue. It is a markdown checklist of tasks that the agent needs to complete.
-
 ## Archive
 
 Completed plans are moved from this directory into the `plans/archive` directory.
