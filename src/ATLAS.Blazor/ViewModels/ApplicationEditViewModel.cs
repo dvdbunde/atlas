@@ -53,6 +53,7 @@ public class ApplicationEditViewModel
                 IsRequired = fd.IsRequired,
                 DefaultValue = fd.DefaultValue,
                 CurrentValue = hasExistingValue ? existingValue : (fd.DefaultValue ?? string.Empty),
+                Options = fd.Options ?? new(),
                 SortOrder = 0
             };
         }).ToList();

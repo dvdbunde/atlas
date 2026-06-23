@@ -65,15 +65,16 @@ public class DynamicFormGeneratorTests : BunitContext
                 DefaultValue = "false",
                 CurrentValue = "false",
                 SortOrder = 5
-            },
+            },           
             new DynamicFormFieldViewModel
             {
-                FieldName = "PermitType",
-                Label = "Permit Type",
+                FieldName = "BuildingType",
+                Label = "Building Type",
                 Type = FieldType.Dropdown,
                 IsRequired = true,
                 DefaultValue = string.Empty,
                 CurrentValue = string.Empty,
+                Options = new List<string> { "Residential", "Commercial", "Industrial" },
                 SortOrder = 6
             }
         };
@@ -167,7 +168,7 @@ public class DynamicFormGeneratorTests : BunitContext
 
         var select = cut.Find("select");
         Assert.NotNull(select);
-        Assert.Equal("field-PermitType", select.Id);
+        Assert.Equal("field-BuildingType", select.Id);
     }
 
     [Fact]
@@ -180,7 +181,7 @@ public class DynamicFormGeneratorTests : BunitContext
 
         var placeholder = cut.Find("select option[value='']");
         Assert.NotNull(placeholder);
-        Assert.Contains("Select permit type", placeholder.TextContent, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Select building type", placeholder.TextContent, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -441,5 +442,22 @@ public class DynamicFormGeneratorTests : BunitContext
         var describedBy = input.GetAttribute("aria-describedby");
         Assert.NotNull(describedBy);
         Assert.Equal("field-PropertyAddress-validation", describedBy);
+    }
+
+    [Fact]
+    public void Should_RenderDropdownOptions_FromFieldMetadata()
+    {
+        var fields = new[] { _allFieldTypes[5] };
+
+        var cut = Render<DynamicFormGenerator>(parameters =>
+            parameters.Add(p => p.Fields, fields));
+
+        var options = cut.FindAll("select option");
+        
+        // First option is the placeholder
+        Assert.Equal(4, options.Count);
+        Assert.Contains(options, o => o.TextContent == "Residential");
+        Assert.Contains(options, o => o.TextContent == "Commercial");
+        Assert.Contains(options, o => o.TextContent == "Industrial");
     }
 }

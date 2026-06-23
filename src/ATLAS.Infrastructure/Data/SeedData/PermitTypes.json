@@ -39,7 +39,8 @@
         "Name": "BuildingType",
         "Type": "Dropdown",
         "IsRequired": true,
-        "DefaultValue": "Residential"
+        "DefaultValue": "Residential",
+        "Options": ["Residential", "Commercial", "Industrial"]
       }
     ]
   },
@@ -83,7 +84,8 @@
         "Name": "BusinessType",
         "Type": "Dropdown",
         "IsRequired": true,
-        "DefaultValue": "Retail"
+        "DefaultValue": "Retail",
+        "Options": ["Retail", "Service", "Manufacturing"]
       }
     ]
   },
@@ -115,7 +117,8 @@
         "Name": "ParkingDuration",
         "Type": "Dropdown",
         "IsRequired": true,
-        "DefaultValue": "Monthly"
+        "DefaultValue": "1 Month",
+        "Options": ["1 Month", "6 Months", "12 Months"]
       },
       {
         "Name": "AccessibleParkingNeeded",
