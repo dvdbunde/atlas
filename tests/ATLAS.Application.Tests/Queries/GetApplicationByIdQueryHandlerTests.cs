@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Interfaces;
-using ATLAS.Application.Queries;
+using ATLAS.Application.Queries.Applications;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
@@ -53,7 +53,7 @@ namespace ATLAS.Application.Tests.Queries
             Assert.NotNull(result);
             Assert.Equal(application.Id, result.Id);
             Assert.False(string.IsNullOrEmpty(result.ApplicationNumber));
-            Assert.Equal((int)ApplicationStatus.Submitted, result.Status);
+            Assert.Equal(ApplicationStatus.Submitted, result.Status);
         }
 
         [Fact]

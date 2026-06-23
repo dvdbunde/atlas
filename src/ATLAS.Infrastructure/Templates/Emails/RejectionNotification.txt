@@ -1,0 +1,12 @@
+Dear Citizen,
+
+Your permit application has been rejected.
+
+Application Number: {{ApplicationNumber}}
+Permit Type: {{PermitTypeName}}
+Reason: {{ReasonCode}}
+
+Please contact us if you have any questions.
+
+Thank you,
+ATLAS Team

@@ -1,4 +1,5 @@
 using System;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Domain.Entities
 {

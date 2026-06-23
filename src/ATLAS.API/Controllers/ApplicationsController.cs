@@ -11,8 +11,11 @@ using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
 using ATLAS.Application.Queries;
+using ATLAS.Application.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Queries.Applications;
 
 namespace ATLAS.API.Controllers
 {
@@ -164,6 +167,115 @@ namespace ATLAS.API.Controllers
             }
             
             return Ok(true);
+        }
+
+        public override async Task<ActionResult<ApplicationSummaryResponse>> ApplicationsPut(Guid id, [FromBody] UpdateDraftRequest body)
+        {
+            var command = new UpdateDraftCommand
+            {
+                ApplicationId = id,
+                CitizenNotes = body.CitizenNotes,
+                FieldValues = body.FieldValues?.ToDictionary(
+                    fv => fv.FieldName,
+                    fv => fv.Value) ?? new Dictionary<string, string>()
+            };
+
+            var result = await _mediator.Send(command, default);
+            
+            // Fetch updated application
+            var query = new GetApplicationByIdQuery { ApplicationId = id };
+            var application = await _mediator.Send(query, default);
+            
+            if (application == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(application.ToResponse());
+        }
+
+        public override async Task<ActionResult<ApplicationSummaryResponse>> Draft([FromBody] CreateDraftRequest body)
+        {
+            var command = new Application.Commands.Applications.CreateDraftCommand
+            {
+                PermitTypeId = body.PermitTypeId,
+                CitizenNotes = body.CitizenNotes,
+                FieldValues = body.FieldValues?.ToDictionary(
+                    fv => fv.FieldName,
+                    fv => fv.Value) ?? new Dictionary<string, string>()
+            };
+
+            var applicationId = await _mediator.Send(command, default);
+            
+            // Get the created draft to return
+            var query = new GetApplicationByIdQuery { ApplicationId = applicationId };
+            var result = await _mediator.Send(query, default);
+            
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return CreatedAtAction(
+                nameof(ApplicationsGet),
+                new { id = applicationId },
+                result.ToResponse());
+        }
+
+        public override async Task<ActionResult<ApplicationSummaryResponse>> Submit(Guid id)
+        {
+            var command = new SubmitDraftCommand
+            {
+                ApplicationId = id
+            };
+
+            await _mediator.Send(command, default);
+            
+            // Fetch submitted application
+            var query = new GetApplicationByIdQuery { ApplicationId = id };
+            var result = await _mediator.Send(query, default);
+            
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result.ToResponse());
+        }
+
+        public override async Task<ActionResult<ApplicationSummaryResponse>> Resubmit(Guid id)
+        {
+            var command = new ResubmitApplicationCommand
+            {
+                ApplicationId = id
+            };
+
+            await _mediator.Send(command, default);
+            
+            // Fetch resubmitted application
+            var query = new GetApplicationByIdQuery { ApplicationId = id };
+            var result = await _mediator.Send(query, default);
+            
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result.ToResponse());
+        }
+
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> Dashboard()
+        {
+            var query = new GetCitizenDashboardQuery();
+            var results = await _mediator.Send(query, default);
+            
+            var response = new List<ApplicationSummaryResponse>();
+            foreach (var dto in results)
+            {
+                response.Add(dto.ToResponse());
+            }
+            
+            return Ok(response);
         }
     }
 }

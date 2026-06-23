@@ -102,6 +102,7 @@ paths:
       summary: Submit new application
       description: Submit a new permit application
       operationId: submitApplication
+      deprecated: true
       requestBody:
         required: true
         content:
@@ -162,6 +163,43 @@ paths:
           $ref: '#/components/responses/Forbidden'
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
+
+    put:
+      tags: [Applications]
+      summary: Update draft application
+      description: Update a draft application's field values and notes
+      operationId: updateDraft
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDraftRequest'
+      responses:
+        '200':
+          description: Draft updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']        
 
   /api/applications/{id}/approve:
     post:
@@ -351,6 +389,189 @@ paths:
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
 
+  /api/applications/draft:
+    post:
+      tags: [Applications]
+      summary: Create draft application
+      description: Create a new draft permit application with field values
+      operationId: createDraft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDraftRequest'
+            examples:
+              standardDraft:
+                summary: Create a building permit draft
+                value:
+                  permitTypeId: '87654321-4321-4321-4321-210987654321'
+                  citizenNotes: 'Building a new deck'
+                  fieldValues:
+                    - fieldName: ProjectTitle
+                      value: 'Residential Deck Construction'
+                      sortOrder: 1
+                    - fieldName: PropertyAddress
+                      value: '123 Main St'
+                      sortOrder: 2
+      responses:
+        '201':
+          description: Draft created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                draftCreated:
+                  summary: Draft application response
+                  value:
+                    id: '11111111-2222-3333-4444-555555555555'
+                    applicationNumber: 'APP-2026-0042'
+                    status: Draft
+                    submittedDate: null
+                    citizenId: '12345678-1234-1234-1234-123456789012'
+                    permitTypeId: '87654321-4321-4321-4321-210987654321'
+                    citizenName: 'John Doe'
+                    permitTypeName: 'Building Permit'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']
+
+  /api/applications/{id}/submit:
+    post:
+      tags: [Applications]
+      summary: Submit draft application
+      description: Submit a draft application for review
+      operationId: submitDraft
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Draft submitted successfully; status transitions from Draft to Submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                draftSubmitted:
+                  summary: Submitted application response
+                  value:
+                    id: '11111111-2222-3333-4444-555555555555'
+                    applicationNumber: 'APP-2026-0042'
+                    status: Submitted
+                    submittedDate: '2026-06-18T14:30:00Z'
+                    citizenId: '12345678-1234-1234-1234-123456789012'
+                    permitTypeId: '87654321-4321-4321-4321-210987654321'
+                    citizenName: 'John Doe'
+                    permitTypeName: 'Building Permit'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']
+
+  /api/applications/{id}/resubmit:
+    post:
+      tags: [Applications]
+      summary: Resubmit application
+      description: Resubmit an application after information request
+      operationId: resubmitDraft
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Application resubmitted successfully; status transitions from InfoRequested to Resubmitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                applicationResubmitted:
+                  summary: Resubmitted application response
+                  value:
+                    id: '11111111-2222-3333-4444-555555555555'
+                    applicationNumber: 'APP-2026-0042'
+                    status: Resubmitted
+                    submittedDate: '2026-06-18T14:30:00Z'
+                    citizenId: '12345678-1234-1234-1234-123456789012'
+                    permitTypeId: '87654321-4321-4321-4321-210987654321'
+                    citizenName: 'John Doe'
+                    permitTypeName: 'Building Permit'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']
+
+  /api/applications/citizen/dashboard:
+    get:
+      tags: [Applications]
+      summary: Get citizen dashboard
+      description: Retrieve the current user's applications with status
+      operationId: getCitizenDashboard
+      responses:
+        '200':
+          description: Dashboard retrieved with the current citizen's applications (drafts and submitted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationSummaryResponse'
+              examples:
+                citizenDashboard:
+                  summary: Citizen dashboard applications list
+                  value:
+                    - id: '11111111-2222-3333-4444-555555555555'
+                      applicationNumber: 'APP-2026-0042'
+                      status: Submitted
+                      submittedDate: '2026-06-18T14:30:00Z'
+                      citizenId: '12345678-1234-1234-1234-123456789012'
+                      permitTypeId: '87654321-4321-4321-4321-210987654321'
+                      citizenName: 'John Doe'
+                      permitTypeName: 'Building Permit'
+                    - id: '22222222-3333-4444-5555-666666666666'
+                      applicationNumber: 'APP-2026-0043'
+                      status: Draft
+                      submittedDate: null
+                      citizenId: '12345678-1234-1234-1234-123456789012'
+                      permitTypeId: '87654321-4321-4321-4321-210987654321'
+                      citizenName: 'John Doe'
+                      permitTypeName: 'Building Permit'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']        
+
   /api/documents/{documentId}/download:
     get:
       tags: [Documents]
@@ -403,7 +624,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/PermitTypeResponse'
+                  $ref: '#/components/schemas/PermitTypeSummaryResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -532,6 +753,28 @@ paths:
           $ref: '#/components/responses/Forbidden'
       security:
         - EntraID: ['Admin']
+
+  /api/permit-types/active:
+    get:
+      tags: [PermitTypes]
+      summary: Get active permit types
+      description: Retrieve all active permit types with field definitions
+      operationId: getActivePermitTypes
+      responses:
+        '200':
+          description: Active permit types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermitTypeSummaryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen']        
 
   /api/users:
     get:
@@ -700,10 +943,10 @@ components:
           type: string
           example: 'APP-2026-0001'
         status:
-          type: integer
-          format: int32
-          description: Application status code
-          example: 1
+          type: string
+          description: Application status
+          enum: [Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected]
+          example: Submitted
         submittedDate:
           type: string
           format: date-time
@@ -733,12 +976,15 @@ components:
               type: string
               format: date-time
               nullable: true
+              example: '2026-06-19T10:00:00Z'
             citizenNotes:
               type: string
               default: ''
+              example: 'Building a new deck'
             officerNotes:
               type: string
               default: ''
+              example: 'Application complete, all documents verified'
             documents:
               type: array
               items:
@@ -751,7 +997,11 @@ components:
               type: string
               nullable: true
               example: 'Jane Smith'
-          required: [citizenNotes, officerNotes, documents, reviews]
+            fieldValues:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldValueResponse'              
+          required: [citizenNotes, officerNotes, documents, reviews, fieldValues]
     
     DocumentResponse:
       type: object
@@ -791,10 +1041,9 @@ components:
           type: string
           format: uuid
         decision:
-          type: integer
-          format: int32
-          description: 1=Approved, 2=Rejected, 3=RequestInfo
-          enum: [1, 2, 3]
+          type: string
+          description: Review decision
+          enum: [Approve, Reject, RequestInfo]
         reasonCode:
           type: string
           nullable: true
@@ -809,28 +1058,7 @@ components:
           type: boolean
           default: false
       required: [id, officerId, decision, reviewedDate, isVisibleToCitizen]
-    
-    PermitTypeResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-          example: 'Business Permit'
-        description:
-          type: string
-          example: 'Permit for business operations'
-        fee:
-          type: number
-          format: decimal
-          example: 150.00
-        isActive:
-          type: boolean
-          default: true
-      required: [id, name, description, fee, isActive]
-    
+         
     UserResponse:
       type: object
       properties:
@@ -1014,6 +1242,128 @@ components:
         isActive:
           type: boolean
       required: [permitTypeId]  
+
+    FieldValueRequest:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          example: ProjectTitle
+        value:
+          type: string
+        sortOrder:
+          type: integer
+          format: int32
+      required: [fieldName, value, sortOrder]
+
+    FieldValueResponse:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          example: 'ProjectTitle'
+        value:
+          type: string
+          example: 'Residential Deck Construction'
+        sortOrder:
+          type: integer
+          example: 1
+      required: [fieldName, value, sortOrder]         
+
+    CreateDraftRequest:
+      type: object
+      properties:
+        permitTypeId:
+          type: string
+          format: uuid
+          example: '87654321-4321-4321-4321-210987654321'
+        citizenNotes:
+          type: string
+          default: ''
+          example: 'Building a new deck'
+        fieldValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldValueRequest'
+          example:
+            - fieldName: ProjectTitle
+              value: 'Residential Deck Construction'
+              sortOrder: 1
+            - fieldName: PropertyAddress
+              value: '123 Main St'
+              sortOrder: 2
+      required: [permitTypeId, fieldValues]
+
+    UpdateDraftRequest:
+      type: object
+      properties:
+        citizenNotes:
+          type: string
+          default: ''
+          example: 'Updated: Building a new deck with permit drawings'
+        fieldValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldValueRequest'
+          example:
+            - fieldName: ProjectTitle
+              value: 'Residential Deck Construction - Revised'
+              sortOrder: 1
+            - fieldName: PropertyAddress
+              value: '123 Main St'
+              sortOrder: 2
+      required: [fieldValues]
+
+    FieldDefinitionResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'ProjectTitle'
+        type:
+          type: string
+          enum: [Text, MultilineText, Number, Date, Boolean, Dropdown]
+          example: Text
+        isRequired:
+          type: boolean
+          example: true
+        defaultValue:
+          type: string
+          nullable: true
+          example: null        
+      required: [name, type, isRequired]
+
+    PermitTypeSummaryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: 'Business Permit'
+        description:
+          type: string
+          example: 'Permit for business operations'
+        fee:
+          type: number
+          format: decimal
+          example: 150.00
+        isActive:
+          type: boolean
+          default: true
+      required: [id, name, description, fee, isActive]      
+
+    PermitTypeResponse:  
+      allOf:
+        - $ref: '#/components/schemas/PermitTypeSummaryResponse'
+        - type: object
+          properties:          
+            fields:
+              type: array
+              items:
+                $ref: '#/components/schemas/FieldDefinitionResponse'
+          required: [id, name, description, fee, isActive, fields]      
   
   responses:
     Unauthorized:

@@ -11,8 +11,10 @@ using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
 using ATLAS.Application.Queries;
+using ATLAS.Application.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ATLAS.Application.Queries.PermitTypes;
 
 namespace ATLAS.API.Controllers
 {
@@ -28,11 +30,11 @@ namespace ATLAS.API.Controllers
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        public override async Task<ActionResult<ICollection<PermitTypeResponse>>> PermittypesGet(bool? includeInactive = false)
+        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> PermittypesGet(bool? includeInactive = false)
         {
             var query = new GetPermitTypesQuery { IncludeInactive = includeInactive ?? false };
             var results = await _mediator.Send(query, default);
-            var response = new List<PermitTypeResponse>();
+            var response = new List<PermitTypeSummaryResponse>();
             foreach (var dto in results)
             {
                 response.Add(dto.ToResponse());
@@ -92,6 +94,20 @@ namespace ATLAS.API.Controllers
             }
             
             return NoContent(); // ← 204 for successful DELETE
-        }       
+        }
+
+        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> Active()
+        {
+            var query = new GetActivePermitTypesQuery();
+            var results = await _mediator.Send(query, default);
+            
+            var response = new List<PermitTypeSummaryResponse>();
+            foreach (var dto in results)
+            {
+                response.Add(dto.ToResponse());
+            }
+            
+            return Ok(response);
+        }
     }
 }

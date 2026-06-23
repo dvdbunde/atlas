@@ -9,7 +9,7 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Queries
+namespace ATLAS.Application.Queries.Applications
 {
     public class GetApplicationsByOfficerIdQuery : IRequest<List<ApplicationSummaryDto>>
     {
@@ -50,7 +50,7 @@ namespace ATLAS.Application.Queries
                 {
                     Id = app.Id,
                     ApplicationNumber = app.ApplicationNumber,
-                    Status = (int)app.Status,
+                    Status = app.Status,
                     SubmittedDate = app.SubmittedDate,
                     CitizenId = app.CitizenId,
                     PermitTypeId = app.PermitTypeId,

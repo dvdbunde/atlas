@@ -1,7 +1,21 @@
 using System;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Domain.ValueObjects
 {
+    /// <summary>
+    /// PermitField is a Value Object (not an Entity).
+    /// 
+    /// VALUE OBJECT CHARACTERISTICS:
+    /// 1. No identity: PermitField has no Id field
+    /// 2. Immutable: Once created, field properties should not change
+    /// 3. Equality by value: Two PermitFields are equal if all properties match
+    /// 
+    /// REFERENCE STRATEGY (Phase A - Milestone 5):
+    /// - ApplicationFieldValue references PermitField using FieldName (not PermitFieldId)
+    /// - FieldName is treated as immutable
+    /// - This is documented in ADR-014 (to be created in Phase F+G)
+    /// </summary>
     public class PermitField
     {
         public string Name { get; private set; }
@@ -35,16 +49,5 @@ namespace ATLAS.Domain.ValueObjects
         {
             return HashCode.Combine(Name, Type, IsRequired, DefaultValue);
         }
-    }
-
-    public enum FieldType
-    {
-        Text = 1,
-        Number = 2,
-        Date = 3,
-        Dropdown = 4,
-        MultiSelect = 5,
-        Checkbox = 6,
-        TextArea = 7
-    }
+    }   
 }

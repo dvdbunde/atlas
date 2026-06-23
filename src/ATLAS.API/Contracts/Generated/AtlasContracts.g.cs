@@ -39,10 +39,11 @@ namespace ATLAS.API.Contracts.Generated
         public string ApplicationNumber { get; set; } = default!;
 
         /// <summary>
-        /// Application status code
+        /// Application status
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("status")]
-        public int Status { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ApplicationSummaryResponseStatus>))]
+        public ApplicationSummaryResponseStatus Status { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("submittedDate")]
         public DateTimeOffset? SubmittedDate { get; set; } = default!;
@@ -91,6 +92,9 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("officerName")]
         public string? OfficerName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("fieldValues")]
+        public System.Collections.Generic.ICollection<FieldValueResponse> FieldValues { get; set; } = new System.Collections.ObjectModel.Collection<FieldValueResponse>();
 
     }
 
@@ -141,9 +145,10 @@ namespace ATLAS.API.Contracts.Generated
         public System.Guid OfficerId { get; set; } = default!;
 
         /// <summary>
-        /// 1=Approved, 2=Rejected, 3=RequestInfo
+        /// Review decision
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("decision")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ReviewResponseDecision>))]
         public ReviewResponseDecision Decision { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("reasonCode")]
@@ -157,36 +162,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("isVisibleToCitizen")]
         public bool IsVisibleToCitizen { get; set; } = false;
-
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PermitTypeResponse
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public System.Guid Id { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("description")]
-        public string Description { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("fee")]
-        public decimal Fee { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("isActive")]
-        public bool IsActive { get; set; } = true;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -500,14 +475,228 @@ namespace ATLAS.API.Contracts.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class FieldValueRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("fieldName")]
+        public string FieldName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("value")]
+        public string Value { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sortOrder")]
+        public int SortOrder { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class FieldValueResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("fieldName")]
+        public string FieldName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("value")]
+        public string Value { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sortOrder")]
+        public int SortOrder { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateDraftRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("permitTypeId")]
+        public System.Guid PermitTypeId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("citizenNotes")]
+        public string CitizenNotes { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("fieldValues")]
+        public System.Collections.Generic.ICollection<FieldValueRequest> FieldValues { get; set; } = new System.Collections.ObjectModel.Collection<FieldValueRequest>();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UpdateDraftRequest
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("citizenNotes")]
+        public string CitizenNotes { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("fieldValues")]
+        public System.Collections.Generic.ICollection<FieldValueRequest> FieldValues { get; set; } = new System.Collections.ObjectModel.Collection<FieldValueRequest>();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class FieldDefinitionResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("type")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<FieldDefinitionResponseType>))]
+        public FieldDefinitionResponseType Type { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isRequired")]
+        public bool IsRequired { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("defaultValue")]
+        public string? DefaultValue { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PermitTypeSummaryResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public System.Guid Id { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("fee")]
+        public decimal Fee { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("isActive")]
+        public bool IsActive { get; set; } = true;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PermitTypeResponse : PermitTypeSummaryResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("fields")]
+        public System.Collections.Generic.ICollection<FieldDefinitionResponse> Fields { get; set; } = new System.Collections.ObjectModel.Collection<FieldDefinitionResponse>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum ApplicationSummaryResponseStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Draft")]
+        Draft = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Submitted")]
+        Submitted = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UnderReview")]
+        UnderReview = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"InfoRequested")]
+        InfoRequested = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Resubmitted")]
+        Resubmitted = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Approved")]
+        Approved = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Rejected")]
+        Rejected = 6,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ReviewResponseDecision
     {
 
-        _1 = 1,
+        [System.Runtime.Serialization.EnumMember(Value = @"Approve")]
+        Approve = 0,
 
-        _2 = 2,
+        [System.Runtime.Serialization.EnumMember(Value = @"Reject")]
+        Reject = 1,
 
-        _3 = 3,
+        [System.Runtime.Serialization.EnumMember(Value = @"RequestInfo")]
+        RequestInfo = 2,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum FieldDefinitionResponseType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Text")]
+        Text = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"MultilineText")]
+        MultilineText = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Number")]
+        Number = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Date")]
+        Date = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Boolean")]
+        Boolean = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Dropdown")]
+        Dropdown = 5,
 
     }
 

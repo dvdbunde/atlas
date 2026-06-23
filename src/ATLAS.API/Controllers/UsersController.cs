@@ -9,7 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Contracts.Generated;
-using ATLAS.Application.Queries;
+using ATLAS.Application.Queries.Users;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

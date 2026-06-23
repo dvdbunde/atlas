@@ -1,0 +1,124 @@
+@page "/applications/{Id:guid}"
+@attribute [Authorize(Roles = "Citizen")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>@("Application " + (_viewModel.ApplicationNumber ?? "Detail"))</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@_viewModel.ApplicationNumber</li>
+        </ol>
+    </nav>
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading application details...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr>
+            <button class="btn btn-outline-danger" @onclick="LoadApplication">
+                Try Again
+            </button>
+        </div>
+    }
+    else if (_viewModel.IsLoaded)
+    {
+        @* Header Section *@
+        <div class="mb-4">
+            <h1 class="mb-1">@_viewModel.ApplicationNumber</h1>
+            <p class="text-muted mb-2">@_viewModel.PermitTypeDescription</p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <StatusBadge Status="@_viewModel.Status" />
+                <span class="text-muted small">Submitted: @_viewModel.SubmittedDateDisplay</span>
+                <span class="text-muted small">Last Updated: @_viewModel.ReviewedDateDisplay</span>
+                <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            @* Timeline Section *@
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Application Timeline</h5>
+                        <ApplicationTimeline Entries="@_viewModel.TimelineEntries" />
+                    </div>
+                </div>
+            </div>
+
+            @* Details Section *@
+            <div class="col-md-8">
+                @* Application Data Section *@
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Application Data</h5>
+
+                        @if (!string.IsNullOrEmpty(_viewModel.CitizenNotes))
+                        {
+                            <div class="mb-3">
+                                <label class="fw-semibold">Citizen Notes</label>
+                                <p class="form-control-plaintext">@_viewModel.CitizenNotes</p>
+                            </div>
+                        }
+
+                        @foreach (var field in _viewModel.Fields)
+                        {
+                            <div class="mb-3">
+                                <label class="fw-semibold">@field.Label</label>
+                                <p class="form-control-plaintext">@field.Value</p>
+                            </div>
+                        }
+
+                        @if (_viewModel.Fields.Count == 0 && string.IsNullOrEmpty(_viewModel.CitizenNotes))
+                        {
+                            <p class="text-muted">No application data available.</p>
+                        }
+                    </div>
+                </div>
+
+                @* Review Section *@
+                @if (_viewModel.HasReviews)
+                {
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Reviews</h5>
+
+                            @foreach (var review in _viewModel.Reviews)
+                            {
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <StatusBadge Status="@ReviewDecisionToStatus(review.Decision)" />
+                                        <small class="text-muted">@review.ReviewedDateDisplay</small>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(review.ReasonCode))
+                                    {
+                                        <p class="mb-1">
+                                            <strong>Reason:</strong> @review.ReasonCode
+                                        </p>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(review.Comments))
+                                    {
+                                        <p class="mb-0">@review.Comments</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

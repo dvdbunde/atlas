@@ -213,6 +213,43 @@ namespace ATLAS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.OwnsMany("ATLAS.Domain.Entities.ApplicationFieldValue", "FieldValues", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("ApplicationId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<DateTime>("CreatedDate")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<string>("FieldName")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<DateTime?>("ModifiedDate")
+                                .HasColumnType("datetime2");
+
+                            b1.Property<int>("SortOrder")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("ApplicationId");
+
+                            b1.ToTable("ApplicationFieldValue");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ApplicationId");
+                        });
+
                     b.OwnsMany("ATLAS.Domain.Entities.Document", "Documents", b1 =>
                         {
                             b1.Property<Guid>("Id")
@@ -317,6 +354,8 @@ namespace ATLAS.Infrastructure.Migrations
                         });
 
                     b.Navigation("Documents");
+
+                    b.Navigation("FieldValues");
 
                     b.Navigation("Reviews");
                 });

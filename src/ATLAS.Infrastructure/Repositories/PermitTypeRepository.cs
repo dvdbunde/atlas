@@ -56,5 +56,15 @@ namespace ATLAS.Infrastructure.Repositories
         {
             return _context.PermitTypes.AnyAsync(p => p.Id == id, cancellationToken);
         }
+
+        public async Task<string?> GetNameByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var permitType = await _context.PermitTypes
+                .Where(p => p.Id == id && p.IsActive)
+                .Select(p => p.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+            
+            return permitType;
+        }
     }
 }

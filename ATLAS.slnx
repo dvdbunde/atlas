@@ -12,5 +12,6 @@
     <Project Path="tests/ATLAS.Domain.Tests/ATLAS.Domain.Tests.csproj" />
     <Project Path="tests/ATLAS.Infrastructure.Tests/ATLAS.Infrastructure.Tests.csproj" />
     <Project Path="tests/ATLAS.IntegrationTests/ATLAS.IntegrationTests.csproj" />
+    <Project Path="tests/ATLAS.Blazor.Tests/ATLAS.Blazor.Tests.csproj" />
   </Folder>
 </Solution>

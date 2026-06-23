@@ -1,10 +1,13 @@
 namespace ATLAS.Infrastructure
 {
     using ATLAS.Application;
+    using ATLAS.Application.Behaviors;
     using ATLAS.Application.Interfaces;
     using ATLAS.Domain.Entities;
+    using ATLAS.Domain.Events;
     using ATLAS.Domain.Interfaces;
     using ATLAS.Infrastructure.Data;
+    using ATLAS.Infrastructure.Data.SeedData;
     using ATLAS.Infrastructure.EventHandlers;
     using ATLAS.Infrastructure.Repositories;
     using ATLAS.Infrastructure.Services;
@@ -61,21 +64,34 @@ namespace ATLAS.Infrastructure
             // Register execution context — request-scoped identity + correlation tracing
             services.AddScoped<IExecutionContext, ExecutionContext>();
 
+            //----------------------
+            // Email Services (Phase E1)
+            //----------------------
+
+            // Email service (SMTP for development)
+            services.AddTransient<IEmailService, SmtpEmailService>();
+
+            // Email template renderer
+            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+            // Email event handlers (MediatR auto-discovers, but explicit for clarity)
+            services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+
+
             // Register repositories
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IPermitTypeRepository, PermitTypeRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             
+            // Register seed data loader
+            services.AddScoped<SeedDataLoader>();
+
             // Register Unit of Work
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            
-            // Register MediatR - scan both Application and Infrastructure assemblies
-            services.AddMediatR(cfg => 
-            {
-                cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly); // Application layer
-                cfg.RegisterServicesFromAssembly(typeof(AuditLogRepository).Assembly); // Infrastructure layer (for event handlers)
-            });
+            services.AddScoped<IUnitOfWork, UnitOfWork>();                     
             
             return services;
         }
@@ -97,6 +113,23 @@ namespace ATLAS.Infrastructure
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IExecutionContext, ExecutionContext>();
+
+            //----------------------
+            // Email Services (Phase E1)
+            //----------------------
+
+            // Email service (SMTP for development)
+            services.AddTransient<IEmailService, SmtpEmailService>();
+
+            // Email template renderer
+            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+            // Email event handlers (MediatR auto-discovers, but explicit for clarity)
+            services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+
             return services;
         }
     }

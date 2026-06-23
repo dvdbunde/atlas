@@ -56,19 +56,26 @@ namespace ATLAS.API.Auth
                 ("applications", "requestinfo")      => "OfficerOrAdmin",
                 ("applications", "assign")           => "OfficerOrAdmin",
 
+                // Milestone 5 - Draft workflow
+                ("applications", "draft") => "Citizen",           // POST /api/applications/draft (createDraft)
+                ("applications", "applicationsput") => "Citizen",  // PUT /api/applications/{id} (updateDraft)
+                ("applications", "submit") => "Citizen",           // POST /api/applications/{id}/submit (submitDraft)
+                ("applications", "resubmit") => "Citizen",         // POST /api/applications/{id}/resubmit (resubmitApplication)
+                ("applications", "dashboard") => "Citizen",        // GET /api/applications/citizen/dashboard (getCitizenDashboard)                
+
                 // PermitTypes — GET (list + single) = Authenticated; POST/PUT/DELETE = Admin
                 ("permittypes", "permittypesget")  => "Authenticated",
                 ("permittypes", "permittypespost") => "Admin",
                 ("permittypes", "permittypesput")  => "Admin",
                 ("permittypes", "permittypesdelete") => "Admin",
+                // Milestone 5 - Active permit types
+                ("permittypes", "active") => "Citizen",            // GET /api/permit-types/active (getActivePermitTypes)
 
                 // AuditLogs — all operations require Admin
                 ("auditlogs", _) => "Admin",
 
                 // Users: GET + Role = Admin; POST = Admin (updated spec)
-                ("users", "usersget")  => "Admin",
-                ("users", "role")      => "Admin",
-                ("users", "userspost") => "Admin", 
+                ("users", "usersget")  => "Admin",                
 
                 // Documents — authenticated users
                 ("documents", _) => "Authenticated",

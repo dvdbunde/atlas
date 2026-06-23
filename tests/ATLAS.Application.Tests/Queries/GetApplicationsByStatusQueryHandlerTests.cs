@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
-using ATLAS.Application.Queries;
+using ATLAS.Application.Queries.Applications;
 using Entities = ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
@@ -51,7 +51,7 @@ namespace ATLAS.Application.Tests.Queries
 
             // Assert
             Assert.Equal(2, result.Count);
-            Assert.All(result, dto => Assert.Equal((int)ApplicationStatus.Submitted, dto.Status));
+            Assert.All(result, dto => Assert.Equal(ApplicationStatus.Submitted, dto.Status));
         }
 
         [Fact]

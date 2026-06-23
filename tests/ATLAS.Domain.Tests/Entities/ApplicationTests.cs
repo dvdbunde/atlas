@@ -389,6 +389,271 @@ namespace ATLAS.Domain.Tests.Entities
 
         #endregion
 
+        #region AddFieldValue Tests
+
+        [Fact]
+        public void AddFieldValue_ShouldAddFieldAndRaiseNoEvent()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.ClearDomainEvents();
+
+            // Act
+            application.AddFieldValue("PropertyAddress", "123 Main St", 0);
+
+            // Assert
+            var fieldValue = Assert.Single(application.FieldValues);
+            Assert.Equal("PropertyAddress", fieldValue.FieldName);
+            Assert.Equal("123 Main St", fieldValue.Value);
+            Assert.Equal(0, fieldValue.SortOrder);
+            Assert.Equal(application.Id, fieldValue.ApplicationId);
+            // No domain events raised for field value operations
+            Assert.Empty(application.DomainEvents);
+        }
+
+        [Fact]
+        public void AddFieldValue_ShouldThrowException_WhenFieldNameIsEmpty()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() =>
+                application.AddFieldValue("", "value", 0));
+            Assert.Contains("Field name cannot be null, empty, or whitespace", exception.Message);
+        }
+
+        [Fact]
+        public void AddFieldValue_ShouldMaintainSortOrder()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act
+            application.AddFieldValue("FieldA", "A", 5);
+            application.AddFieldValue("FieldB", "B", 1);
+            application.AddFieldValue("FieldC", "C", 10);
+
+            //Assert
+            Assert.Equal(3, application.FieldValues.Count);
+            var fieldA = application.FieldValues.Single(fv => fv.FieldName == "FieldA");
+            var fieldB = application.FieldValues.Single(fv => fv.FieldName == "FieldB");
+            var fieldC = application.FieldValues.Single(fv => fv.FieldName == "FieldC");
+            Assert.Equal(5, fieldA.SortOrder);
+            Assert.Equal(1, fieldB.SortOrder);
+            Assert.Equal(10, fieldC.SortOrder);
+        }
+
+        #endregion
+
+        #region UpdateFieldValue Tests
+
+        [Fact]
+        public void UpdateFieldValue_ShouldUpdateExistingField()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.AddFieldValue("PropertyAddress", "Old value", 0);
+
+            // Act
+            application.UpdateFieldValue("PropertyAddress", "New value");
+
+            // Assert
+            Assert.Equal("New value", application.FieldValues[0].Value);
+        }
+
+        [Fact]
+        public void UpdateFieldValue_ShouldThrowException_WhenFieldNotFound()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.UpdateFieldValue("NonExistent", "value"));
+            Assert.Contains("not found", exception.Message);
+        }
+
+        #endregion
+
+        #region RemoveFieldValue Tests
+
+        [Fact]
+        public void RemoveFieldValue_ShouldRemoveExistingField()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.AddFieldValue("FieldToRemove", "value", 0);
+            application.AddFieldValue("FieldToKeep", "value", 1);
+
+            // Act
+            application.RemoveFieldValue("FieldToRemove");
+
+            // Assert
+            Assert.Single(application.FieldValues);
+            Assert.Equal("FieldToKeep", application.FieldValues[0].FieldName);
+        }
+
+        [Fact]
+        public void RemoveFieldValue_ShouldThrowException_WhenFieldNotFound()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.RemoveFieldValue("NonExistent"));
+            Assert.Contains("not found", exception.Message);
+        }
+
+        #endregion
+
+        #region AssignToOfficer Tests
+
+        [Fact]
+        public void AssignToOfficer_ShouldRaiseEvent_WhenSubmitted()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.ClearDomainEvents();
+
+            // Act
+            application.AssignToOfficer(_officerId);
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var assignEvent = Assert.IsType<ApplicationAssignedToOfficerEvent>(domainEvent);
+            Assert.Equal(application.Id, assignEvent.ApplicationId);
+            Assert.Equal(_officerId, assignEvent.OfficerId);
+        }
+
+        [Fact]
+        public void AssignToOfficer_ShouldThrowException_WhenDraft()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.AssignToOfficer(_officerId));
+            Assert.Contains("submitted or under-review", exception.Message);
+        }
+
+        [Fact]
+        public void AssignToOfficer_ShouldThrowException_WhenApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.AssignToOfficer(_officerId));
+            Assert.Contains("submitted or under-review", exception.Message);
+        }
+
+        #endregion
+
+        #region AddDocument Status Validation
+
+        [Fact]
+        public void AddDocument_ShouldThrowException_WhenApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
+            Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
+        }
+
+        [Fact]
+        public void AddDocument_ShouldThrowException_WhenRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Reject(_officerId, "IncompleteApplication", "Missing documents");
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
+            Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
+        }
+
+        [Fact]
+        public void AddDocument_ShouldRaiseDocumentUploadedEvent()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.ClearDomainEvents();
+            var documentId = Guid.NewGuid();
+
+            // Act
+            application.AddDocument(documentId, "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
+
+            // Assert
+            var domainEvent = Assert.Single(application.DomainEvents);
+            var uploadEvent = Assert.IsType<DocumentUploadedEvent>(domainEvent);
+            Assert.Equal(documentId, uploadEvent.DocumentId);
+            Assert.Equal(application.Id, uploadEvent.ApplicationId);
+            Assert.Equal(_citizenId, uploadEvent.UploadedById);
+            Assert.Equal("doc.pdf", uploadEvent.FileName);
+        }
+
+        #endregion
+
+        #region AddReview Tests
+
+        [Fact]
+        public void AddReview_ShouldAddReviewSuccessfully()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var reviewId = Guid.NewGuid();
+
+            // Act
+            application.AddReview(reviewId, _officerId, ReviewDecision.Approve, "Looks good", true, null);
+
+            // Assert
+            var review = Assert.Single(application.Reviews);
+            Assert.Equal(reviewId, review.Id);
+            Assert.Equal(_officerId, review.OfficerId);
+            Assert.Equal(ReviewDecision.Approve, review.Decision);
+        }
+
+        [Fact]
+        public void AddReview_ShouldThrowException_WhenDuplicateFinalReview()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Approve, "First", true, null);
+
+            // Act & Assert
+            var exception = Assert.Throws<DomainException>(() =>
+                application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Reject, "Second", true, "MissingDoc"));
+            Assert.Contains("already has a final review", exception.Message);
+        }
+
+        #endregion
+
+        #region ApplicationNumber Tests
+
+        [Fact]
+        public void Create_ShouldGenerateValidApplicationNumber()
+        {
+            // Arrange & Act
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Assert
+            Assert.StartsWith("PERMIT-", application.ApplicationNumber);
+            Assert.Matches(@"^PERMIT-\d{8}-\d{4}$", application.ApplicationNumber);
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private Application CreateApplicationUnderReview()

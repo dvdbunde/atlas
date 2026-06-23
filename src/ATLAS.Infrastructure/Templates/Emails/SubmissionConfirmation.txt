@@ -1,0 +1,12 @@
+Dear Citizen,
+
+Your permit application has been submitted successfully.
+
+Application Number: {{ApplicationNumber}}
+Permit Type: {{PermitTypeName}}
+Status: {{Status}}
+
+You will receive email notifications as your application is reviewed.
+
+Thank you,
+ATLAS Team

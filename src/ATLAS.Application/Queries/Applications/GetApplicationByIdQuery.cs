@@ -7,7 +7,7 @@ using ATLAS.Application.DTOs;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Queries
+namespace ATLAS.Application.Queries.Applications
 {
     public class GetApplicationByIdQuery : IRequest<ApplicationDetailDto?>
     {
@@ -77,7 +77,7 @@ namespace ATLAS.Application.Queries
             {
                 Id = application.Id,
                 ApplicationNumber = application.ApplicationNumber,
-                Status = (int)application.Status,
+                Status = application.Status,
                 SubmittedDate = application.SubmittedDate,
                 CitizenId = application.CitizenId,
                 PermitTypeId = application.PermitTypeId,
@@ -101,12 +101,15 @@ namespace ATLAS.Application.Queries
                 {
                     Id = r.Id,
                     OfficerId = r.OfficerId,
-                    Decision = (int)r.Decision,
+                    Decision = r.Decision,
                     ReasonCode = r.ReasonCode,
                     Comments = r.Comments,
                     ReviewedDate = r.ReviewedDate,
                     IsVisibleToCitizen = r.IsVisibleToCitizen
-                }).ToList()
+                }).ToList(),                
+                FieldValues = application.FieldValues.ToDictionary(
+                    fv => fv.FieldName,
+                    fv => fv.Value)
             };
         }
     }

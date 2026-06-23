@@ -28,5 +28,6 @@ namespace ATLAS.Domain.Interfaces
         // Review access methods (Reviews are owned by Application aggregate)
         Task<Entities.Review?> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default);
         Task<IEnumerable<Entities.Review>> GetReviewsByApplicationIdAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
     }
 }

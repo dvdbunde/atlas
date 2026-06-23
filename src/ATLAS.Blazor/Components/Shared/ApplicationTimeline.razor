@@ -1,0 +1,57 @@
+@namespace ATLAS.Blazor.Components.Shared
+
+@* 
+    ApplicationTimeline - Displays chronological lifecycle milestones
+    for an application. Highlights current status, shows completed past
+    statuses, and handles skipped statuses (e.g., after rejection).
+*@
+
+<div class="application-timeline" role="list" aria-label="Application Timeline">
+    @foreach (var entry in Entries)
+    {
+        //var entryId = "timeline-" + entry.Label.Replace(" ", "-").ToLowerInvariant();
+
+        <div class="timeline-item @GetStateClass(entry.State)" role="listitem" aria-current="@(entry.State == TimelineEntryState.Current ? "step" : null)">
+            <div class="timeline-marker" aria-hidden="true">
+                @GetMarkerIcon(entry.State)
+            </div>
+            <div class="timeline-content">
+                <span class="timeline-label @(entry.State == TimelineEntryState.Current ? "fw-bold" : "")">
+                    @entry.Label
+                </span>
+                <span class="timeline-state-badge">
+                    @GetStateLabel(entry.State)
+                </span>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private static string GetStateClass(TimelineEntryState state) => state switch
+    {
+        TimelineEntryState.Completed => "completed",
+        TimelineEntryState.Current => "current",
+        TimelineEntryState.Future => "future",
+        TimelineEntryState.Skipped => "skipped",
+        _ => ""
+    };
+
+    private static string GetMarkerIcon(TimelineEntryState state) => state switch
+    {
+        TimelineEntryState.Completed => "✓",
+        TimelineEntryState.Current => "●",
+        TimelineEntryState.Future => "○",
+        TimelineEntryState.Skipped => "—",
+        _ => "○"
+    };
+
+    private static string GetStateLabel(TimelineEntryState state) => state switch
+    {
+        TimelineEntryState.Completed => "Completed",
+        TimelineEntryState.Current => "Current",
+        TimelineEntryState.Future => "Pending",
+        TimelineEntryState.Skipped => "Not reached",
+        _ => ""
+    };
+}

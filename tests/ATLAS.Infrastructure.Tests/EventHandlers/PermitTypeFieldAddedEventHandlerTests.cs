@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.ValueObjects;
 using ATLAS.Infrastructure.Data;

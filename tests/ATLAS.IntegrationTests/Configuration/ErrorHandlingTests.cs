@@ -8,11 +8,11 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration
 {
-    public class ErrorHandlingTests : IClassFixture<WebApplicationFactory<Program>>
+    public class ErrorHandlingTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
 
-        public ErrorHandlingTests(WebApplicationFactory<Program> factory)
+        public ErrorHandlingTests(CustomWebApplicationFactory<Program> factory)
         {
             _client = factory.CreateClient();
         }

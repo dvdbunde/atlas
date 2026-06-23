@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Queries
+namespace ATLAS.Application.Queries.AuditLogs
 {
     public class GetAuditLogsQuery : IRequest<IEnumerable<AuditLogDto>>
     {

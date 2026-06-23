@@ -4,10 +4,10 @@ namespace ATLAS.Domain.Enums
     {
         Draft = 0,
         Submitted = 1,
-        UnderReview = 2,
-        Approved = 3,
-        Rejected = 4,
-        InfoRequested = 5,
-        Resubmitted = 6
+        UnderReview = 2,        
+        InfoRequested = 3,
+        Resubmitted = 4,
+        Approved = 5,
+        Rejected = 6
     }
 }
