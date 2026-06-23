@@ -24,7 +24,7 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 - M3: Database Persistence (EF Core, Azure SQL, Repositories) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
 - M4: Authentication (Microsoft Entra ID) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
 - M5: Permit Submission (Citizen UI, Form Validation) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
-- M6: Document Management (Azure Blob Storage, Drag-and-Drop) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M6: Document Management (Azure Blob Storage, File Upload/Download) ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
 - M7: Officer Review Workflow (Officer Dashboard, Review Workflow) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M8: Administration (Permit Types, Audit Logging) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M9: Audit & Compliance (Immutable AuditLog, 7-year Retention) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
@@ -40,7 +40,7 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 
 **Key Deliverables**:
 
-- M6: Document Management — Complete citizen-facing upload UI, Azure Blob integration ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M6: Document Management — Complete citizen-facing upload UI, Azure Blob integration ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
 - M7: Officer Review Workflow — Officer dashboard, approve/reject/request-info workflow ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M8: Administration — Permit type management, user administration, audit log viewer ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - M9: Audit & Compliance — Immutable audit trails, retention policy enforcement ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
@@ -98,7 +98,8 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 
 - **Detailed Plan**: `plans/atlas-foundation-plan.md`
 - **Product Requirements**: `docs/PRDs/atlas-mvp-prd.md`
-- **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-014)
+- **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-015)
+- **Milestone 6 Phase Plan**: `plans/milestone-06-document-management-plan.md`
 - **Future Enhancements**: `docs/design/08-extension-points.md`
 
 <!-- © Capgemini 2025 -->

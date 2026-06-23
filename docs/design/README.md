@@ -37,6 +37,7 @@ Key architectural decisions are documented as ADRs (Architecture Decision Record
 - [adr-001-clean-architecture.md](../ADRs/adr-001-clean-architecture.md) - Adoption of Clean Architecture
 - [adr-002-cqrs-mediatr.md](../ADRs/adr-002-cqrs-mediatr.md) - CQRS with MediatR pattern
 - [adr-003-azure-sql-blob.md](../ADRs/adr-003-azure-sql-blob.md) - Data storage strategy
+- [adr-015-document-storage-architecture.md](../ADRs/adr-015-document-storage-architecture.md) - Document storage design with Azure Blob, security model, and local development strategy
 
 ## Diagram Conventions
 
