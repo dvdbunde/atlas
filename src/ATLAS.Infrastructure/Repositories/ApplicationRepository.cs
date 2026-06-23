@@ -18,8 +18,7 @@ namespace ATLAS.Infrastructure.Repositories
 
         public async Task<Entities.Application?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _context.Applications
-                .AsNoTracking()
+            return await _context.Applications                
                 .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
 
@@ -58,7 +57,8 @@ namespace ATLAS.Infrastructure.Repositories
 
         public Task UpdateAsync(Entities.Application entity, CancellationToken cancellationToken = default)
         {
-            _context.Applications.Update(entity);
+            // Entity is already tracked by the DbContext after GetByIdAsync.
+            // EF Core auto-detects changes on SaveChangesAsync — no attach needed.
             return Task.CompletedTask;
         }
 

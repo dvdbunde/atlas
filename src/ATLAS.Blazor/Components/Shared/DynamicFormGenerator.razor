@@ -81,7 +81,7 @@
                             <input id="@fieldId"
                                    type="checkbox"
                                    class="form-check-input @(field.HasErrors ? "is-invalid" : "")"
-                                   checked="@(field.CurrentValue == "true")"
+                                   checked="@string.Equals(field.CurrentValue, "true", StringComparison.OrdinalIgnoreCase)"
                                    @onchange="(ChangeEventArgs e) => HandleValueChanged(field, e.Value?.ToString())"
                                    aria-describedby="@(field.HasErrors ? fieldId + "-validation" : null)" />
                             <label class="form-check-label" for="@fieldId">@field.Label</label>
