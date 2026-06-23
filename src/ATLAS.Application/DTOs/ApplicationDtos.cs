@@ -81,6 +81,7 @@ namespace ATLAS.Application.DTOs
         public FieldType Type { get; set; } 
         public bool IsRequired { get; set; }
         public string? DefaultValue { get; set; }
+        public List<string> Options { get; set; } = new();
     }
 
     /// <summary>

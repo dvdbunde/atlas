@@ -53,7 +53,7 @@ namespace ATLAS.Infrastructure.Data.SeedData
                 {
                     var fieldType = Enum.Parse<FieldType>(field.Type);
                     var defaultValue = field.DefaultValue ?? string.Empty;                    
-                    permitType.AddField(field.Name, fieldType, field.IsRequired, defaultValue);
+                    permitType.AddField(field.Name, fieldType, field.IsRequired, defaultValue, field.Options?.AsReadOnly());
                 }
 
                 await _context.PermitTypes.AddAsync(permitType);
@@ -77,6 +77,7 @@ namespace ATLAS.Infrastructure.Data.SeedData
             public string Type { get; set; }
             public bool IsRequired { get; set; }
             public string DefaultValue { get; set; }
+            public List<string> Options { get; set; }
         }
     }
 }

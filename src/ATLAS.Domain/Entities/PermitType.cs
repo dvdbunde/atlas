@@ -41,12 +41,12 @@ namespace ATLAS.Domain.Entities
         {
         }
 
-        public void AddField(string name, FieldType type, bool isRequired, string defaultValue = null)
+        public void AddField(string name, FieldType type, bool isRequired, string defaultValue = null, IReadOnlyCollection<string> options = null)
         {
             if (_fields.Any(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new DomainException($"Field '{name}' already exists");
-
-            _fields.Add(new PermitField(name, type, isRequired, defaultValue));
+        
+            _fields.Add(new PermitField(name, type, isRequired, defaultValue, options));
             AddDomainEvent(new PermitTypeFieldAddedEvent(Id, name, type));
         }
 

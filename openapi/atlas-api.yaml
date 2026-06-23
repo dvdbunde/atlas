@@ -1330,7 +1330,12 @@ components:
         defaultValue:
           type: string
           nullable: true
-          example: null        
+          example: null,
+        options:
+          type: array
+          items:
+            type: string
+          example: ["Residential", "Commercial", "Industrial"]          
       required: [name, type, isRequired]
 
     PermitTypeSummaryResponse:

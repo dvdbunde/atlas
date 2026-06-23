@@ -88,15 +88,18 @@
                         </div>
                         break;
 
-                    case FieldType.Dropdown:
-                        @* TODO M6: Support dynamic dropdown options from metadata *@
+                    case FieldType.Dropdown:                        
                         <select id="@fieldId"
                                 class="form-select @(field.HasErrors ? "is-invalid" : "")"
                                 value="@field.CurrentValue"
                                 @onchange="(ChangeEventArgs e) => HandleValueChanged(field, e.Value?.ToString())"
                                 aria-describedby="@(field.HasErrors ? fieldId + "-validation" : null)">
                             <option value="">@("Select " + field.Label.ToLower() + "...")</option>
-                        </select>
+                            @foreach (var option in field.Options)
+                            {
+                                <option value="@option">@option</option>
+                            }
+                        </select>                        
                         break;
 
                     default:

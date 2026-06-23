@@ -41,7 +41,8 @@ namespace ATLAS.Application.Queries.PermitTypes
                         Name = f.Name,
                         Type = f.Type,
                         IsRequired = f.IsRequired,
-                        DefaultValue = f.DefaultValue
+                        DefaultValue = f.DefaultValue,
+                        Options = f.Options.ToList()
                     }).ToList()
             };
         }

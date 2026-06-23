@@ -328,7 +328,8 @@ namespace ATLAS.API.Contracts.Generated
                 Name = dto.Name,
                 Type = ToApiFieldType(dto.Type),
                 IsRequired = dto.IsRequired,
-                DefaultValue = dto.DefaultValue
+                DefaultValue = dto.DefaultValue,
+                Options = dto.Options.ToList()
             };
         }
         #endregion

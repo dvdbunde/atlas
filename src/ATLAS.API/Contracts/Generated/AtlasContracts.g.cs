@@ -584,6 +584,9 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("defaultValue")]
         public string? DefaultValue { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("options")]
+        public System.Collections.Generic.ICollection<string> Options { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

@@ -60,5 +60,60 @@ namespace ATLAS.Domain.Tests.ValueObjects
             // Act & Assert
             Assert.False(field1.Equals(field2));
         }
+
+        [Fact]
+        public void Create_Dropdown_ShouldThrowException_WhenNoOptions()
+        {
+            var exception = Assert.Throws<ArgumentException>(() =>
+                new PermitField("BuildingType", FieldType.Dropdown, true, null, null));
+            Assert.Contains("at least one option", exception.Message);
+        }
+        
+        [Fact]
+        public void Create_Dropdown_ShouldThrowException_WhenEmptyOptions()
+        {
+            var exception = Assert.Throws<ArgumentException>(() =>
+                new PermitField("BuildingType", FieldType.Dropdown, true, null, Array.Empty<string>()));
+            Assert.Contains("at least one option", exception.Message);
+        }
+        
+        [Fact]
+        public void Create_Dropdown_ShouldThrowException_WhenDefaultValueNotInOptions()
+        {
+            var exception = Assert.Throws<ArgumentException>(() =>
+                new PermitField("BuildingType", FieldType.Dropdown, true, "Invalid",
+                    new[] { "Residential", "Commercial" }));
+            Assert.Contains("DefaultValue", exception.Message);
+        }
+        
+        [Fact]
+        public void Create_Dropdown_ShouldSucceed_WhenDefaultValueInOptions()
+        {
+            var field = new PermitField("BuildingType", FieldType.Dropdown, true, "Residential",
+                new[] { "Residential", "Commercial" });
+        
+            Assert.Equal("Residential", field.DefaultValue);
+            Assert.Equal(2, field.Options.Count);
+        }
+        
+        [Fact]
+        public void Equals_ShouldIncludeOptions()
+        {
+            var options = new[] { "A", "B" };
+            var field1 = new PermitField("Type", FieldType.Dropdown, true, null, options);
+            var field2 = new PermitField("Type", FieldType.Dropdown, true, null, options);
+        
+            Assert.True(field1.Equals(field2));
+            Assert.Equal(field1.GetHashCode(), field2.GetHashCode());
+        }
+        
+        [Fact]
+        public void Equals_ShouldReturnFalse_WhenOptionsDiffer()
+        {
+            var field1 = new PermitField("Type", FieldType.Dropdown, true, null, new[] { "A", "B" });
+            var field2 = new PermitField("Type", FieldType.Dropdown, true, null, new[] { "A", "C" });
+        
+            Assert.False(field1.Equals(field2));
+        }
     }
 }

@@ -19,6 +19,7 @@ public class DynamicFormFieldViewModel
     public int SortOrder { get; init; }
     public List<string> Errors { get; } = new();
     public bool HasErrors => Errors.Count > 0;
+    public List<string> Options { get; init; } = new();
 
     public static DynamicFormFieldViewModel FromFieldDefinition(FieldDefinitionDto dto)
     {
@@ -30,6 +31,7 @@ public class DynamicFormFieldViewModel
             IsRequired = dto.IsRequired,
             DefaultValue = dto.DefaultValue,
             CurrentValue = dto.DefaultValue ?? string.Empty,
+            Options = dto.Options ?? new(),
             SortOrder = 0
         };
     }
@@ -46,6 +48,7 @@ public class DynamicFormFieldViewModel
             IsRequired = dto.IsRequired,
             DefaultValue = dto.DefaultValue,
             CurrentValue = existingValue.Value,
+            Options = dto.Options ?? new(),
             SortOrder = existingValue.SortOrder
         };
     }
