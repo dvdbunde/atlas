@@ -41,8 +41,8 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
 - ✅ Submit applications for review
 - ✅ Citizen dashboard with status overview
 - ✅ Application detail view with status history
-  - Email notifications on status changes (SMTP)
-  - Confirmation workflow after submission
+- ✅ Email notifications on status changes (SMTP)
+- ✅ Confirmation workflow after submission
 
 **Next Milestone**: Milestone 6 - Document Management (see [ROADMAP.md](plans/ROADMAP.md) for details)
 
@@ -170,7 +170,6 @@ This repository includes comprehensive GitHub Copilot configuration:
 ## Where to find more information
 
 - See `.github/copilot-instructions.md` for Copilot-specific rules and configuration
-- See `CONTRIBUTING.md` for guidelines on contributing to this repository
 - See [ATLAS MVP PRD](docs/PRDs/atlas-mvp-prd.md) for complete product requirements
 
 ### Copilot Customisation
