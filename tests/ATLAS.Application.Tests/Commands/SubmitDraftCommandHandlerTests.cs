@@ -8,8 +8,10 @@ using ATLAS.Application.Interfaces;
 using ATLAS.Domain;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.ValueObjects;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -21,6 +23,7 @@ namespace ATLAS.Application.Tests.Commands
         private readonly Mock<IApplicationRepository> _mockAppRepository;
         private readonly Mock<IPermitTypeRepository> _mockPermitTypeRepository;
         private readonly Mock<ICurrentUserService> _mockCurrentUserService;
+        private readonly Mock<IMediator> _mockMediator;
         private readonly Mock<ILogger<SubmitDraftCommandHandler>> _mockLogger;
         private readonly SubmitDraftCommandHandler _handler;
         private readonly Guid _testUserId;
@@ -33,6 +36,7 @@ namespace ATLAS.Application.Tests.Commands
             _mockAppRepository = new Mock<IApplicationRepository>();
             _mockPermitTypeRepository = new Mock<IPermitTypeRepository>();
             _mockCurrentUserService = new Mock<ICurrentUserService>();
+            _mockMediator = new Mock<IMediator>();
             _mockLogger = new Mock<ILogger<SubmitDraftCommandHandler>>();
             _testUserId = Guid.NewGuid();
             _permitTypeId = Guid.NewGuid();
@@ -50,6 +54,7 @@ namespace ATLAS.Application.Tests.Commands
                 _mockAppRepository.Object,
                 _mockPermitTypeRepository.Object,
                 _mockCurrentUserService.Object,
+                _mockMediator.Object,
                 _mockLogger.Object);
         }
 
@@ -75,6 +80,27 @@ namespace ATLAS.Application.Tests.Commands
             Assert.Equal(ApplicationStatus.Submitted, _testApplication.Status);
             Assert.NotNull(_testApplication.SubmittedDate);
             _mockAppRepository.Verify(r => r.UpdateAsync(_testApplication, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_ValidCommand_ShouldPublishApplicationSubmittedEvent()
+        {
+            // Arrange
+            SetupFound();
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            _mockMediator.Verify(
+                m => m.Publish(
+                    It.Is<ApplicationSubmittedEvent>(e =>
+                        e.ApplicationId == _testApplication.Id &&
+                        e.CitizenId == _testUserId &&
+                        e.PermitTypeId == _permitTypeId),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
         }
 
         [Fact]

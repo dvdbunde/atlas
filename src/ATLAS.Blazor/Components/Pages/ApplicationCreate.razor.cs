@@ -22,9 +22,16 @@ public partial class ApplicationCreate : ComponentBase
 
     private DynamicFormGenerator _dynamicForm = default!;
 
-    protected override async Task OnInitializedAsync()
+    private bool _dataLoaded;
+  
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadPermitType();
+    if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadPermitType();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadPermitType()

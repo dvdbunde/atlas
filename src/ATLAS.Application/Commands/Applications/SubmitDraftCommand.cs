@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
+using ATLAS.Domain.Events;
 using Microsoft.Extensions.Logging;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Enums;
@@ -21,17 +22,20 @@ namespace ATLAS.Application.Commands.Applications
         private readonly IApplicationRepository _applicationRepository;
         private readonly IPermitTypeRepository _permitTypeRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMediator _mediator;                          // ADDED
         private readonly ILogger<SubmitDraftCommandHandler> _logger;
 
         public SubmitDraftCommandHandler(
             IApplicationRepository applicationRepository,
             IPermitTypeRepository permitTypeRepository,
             ICurrentUserService currentUserService,
+            IMediator mediator,                                        // ADDED
             ILogger<SubmitDraftCommandHandler> logger)
         {
             _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));        // ADDED
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -86,6 +90,11 @@ namespace ATLAS.Application.Commands.Applications
             // All validation passed, submit
             application.Submit();
             await _applicationRepository.UpdateAsync(application, cancellationToken);
+
+            // Publish domain event to trigger audit logging and email notification
+            await _mediator.Publish(
+                new ApplicationSubmittedEvent(application.Id, application.CitizenId, application.PermitTypeId),
+                cancellationToken);
 
             _logger.LogInformation("Draft application {ApplicationId} submitted", request.ApplicationId);
 

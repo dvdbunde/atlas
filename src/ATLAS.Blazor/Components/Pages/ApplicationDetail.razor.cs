@@ -20,10 +20,17 @@ public partial class ApplicationDetail : ComponentBase
 
     private ApplicationDetailViewModel _viewModel = new();
 
-    protected override async Task OnInitializedAsync()
+    private bool _dataLoaded;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadApplication();
-    }
+        if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadApplication();
+            StateHasChanged();
+        }
+    }    
 
     private async Task LoadApplication()
     {

@@ -19,10 +19,17 @@ public partial class ConfirmationPage : ComponentBase
 
     private ConfirmationViewModel _viewModel = new();
 
-    protected override async Task OnInitializedAsync()
+    private bool _dataLoaded;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadConfirmation();
-    }
+        if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadConfirmation();
+            StateHasChanged();
+        }
+    }    
 
     private async Task LoadConfirmation()
     {

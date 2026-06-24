@@ -15,9 +15,16 @@ public partial class PermitSelection : ComponentBase
 
     private PermitSelectionViewModel _viewModel = new();
 
-    protected override async Task OnInitializedAsync()
+    private bool _dataLoaded;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadPermitTypes();
+        if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadPermitTypes();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadPermitTypes()

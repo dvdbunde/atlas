@@ -26,10 +26,16 @@ public partial class ApplicationEdit : ComponentBase
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
+    private bool _dataLoaded;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadApplication();
+        if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadApplication();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadApplication()
