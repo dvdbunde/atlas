@@ -10,13 +10,16 @@ namespace ATLAS.Infrastructure
     using ATLAS.Infrastructure.Data.SeedData;
     using ATLAS.Infrastructure.EventHandlers;
     using ATLAS.Infrastructure.Repositories;
+    using ATLAS.Infrastructure.Options;
     using ATLAS.Infrastructure.Services;
+    using Azure.Storage.Blobs;
     using FluentValidation;
     using MediatR;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Options;
 
     /// <summary>
     /// Extension methods for IServiceCollection to register Infrastructure layer services
@@ -91,8 +94,24 @@ namespace ATLAS.Infrastructure
             services.AddScoped<SeedDataLoader>();
 
             // Register Unit of Work
-            services.AddScoped<IUnitOfWork, UnitOfWork>();                     
-            
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            //----------------------
+            // Document Storage (Milestone 6, Phase D2)
+            //----------------------
+
+            // Bind Storage configuration to strongly-typed options
+            services.AddOptions<StorageOptions>()
+                .Bind(configuration.GetSection(StorageOptions.SectionName))
+                .ValidateDataAnnotations();
+
+            // Register BlobStorageService as the production file storage implementation
+            services.AddScoped<IFileStorageService>(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<StorageOptions>>();
+                return new BlobStorageService(options);
+            });
+
             return services;
         }
         
@@ -129,6 +148,13 @@ namespace ATLAS.Infrastructure
             services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
             services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
             services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+
+            //----------------------
+            // Document Storage (Milestone 6, Phase D2)
+            //----------------------
+
+            // Register InMemoryFileStorageService for test environments
+            services.AddScoped<IFileStorageService, InMemoryFileStorageService>();
 
             return services;
         }
