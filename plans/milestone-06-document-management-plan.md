@@ -26,17 +26,14 @@ Deliver complete document management for citizen permit applications: upload sup
 
 ### D1 — Domain & Storage Abstractions
 
-**Est. LOC**: ~150 | **Est. Effort**: 1 session
+**Est. LOC**: ~150 → ~100 | **Est. Effort**: 1 session
 
 - Add IFileStorageService interface with FileUploadResult/FileDownloadResult records to src/ATLAS.Application/Interfaces/
-- Add BlobPath property to Document entity + update constructor validation
+- Document entity already has BlobUrl — no new storage property needed
 - Add FieldType.FileUpload = 6 to FieldType enum
 - Add DocumentDownloadedEvent to src/ATLAS.Domain/Events/
 - Deprecate DocumentType enum with [Obsolete] attribute
-- Update EF Core configuration for BlobPath (max 200 chars)
-- Update DocumentDto + mapping to include BlobPath
 - Create tests/ATLAS.Domain.Tests/Events/DocumentDownloadedEventTests.cs
-- Update DocumentTests.cs for BlobPath constructor validation
 
 ### D2 — Azure Blob Storage Integration
 

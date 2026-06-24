@@ -337,7 +337,7 @@ flowchart TD
 - `IFileStorageService` abstraction (Application layer interface + Infrastructure implementation)
 - Azure Blob Storage integration via `Azure.Storage.Blobs` SDK
 - Azurite local development configuration
-- `BlobPath` property on `Document` entity (environment-independent blob references)
+- `BlobUrl` as single persisted storage reference on `Document` entity
 - `FieldType.FileUpload` enum value for dynamic form integration
 - DocumentRequirement enforcement at upload time (per permit type rules)
 - SAS token download (1-hour expiry, read-only permission)
