@@ -164,9 +164,7 @@ namespace ATLAS.Domain.Entities
                 throw new DomainException("Cannot add documents to approved or rejected applications");
 
             var document = new Document(documentId, Id, fileName, contentType, fileSize, blobUrl, uploadedById);
-            _documents.Add(document);
-            AddDomainEvent(new DocumentUploadedEvent(documentId, Id, uploadedById, fileName));
-
+            _documents.Add(document);           
             return document;
         }
 

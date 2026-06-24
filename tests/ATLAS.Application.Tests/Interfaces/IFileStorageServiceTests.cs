@@ -80,7 +80,7 @@ namespace ATLAS.Application.Tests.Interfaces
 
             var parameters = method.GetParameters();
             Assert.Contains(parameters, p => p.Name == "fileStream" && p.ParameterType == typeof(Stream));
-            Assert.Contains(parameters, p => p.Name == "fileName" && p.ParameterType == typeof(string));
+            Assert.Contains(parameters, p => p.Name == "blobPath" && p.ParameterType == typeof(string));
             Assert.Contains(parameters, p => p.Name == "contentType" && p.ParameterType == typeof(string));
             Assert.Contains(parameters, p => p.Name == "ct" && p.ParameterType == typeof(CancellationToken));
         }

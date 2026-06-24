@@ -406,8 +406,11 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("fileSize")]
         public long FileSize { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("blobUrl")]
-        public System.Uri BlobUrl { get; set; } = default!;
+        /// <summary>
+        /// Base64-encoded file content
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("fileContent")]
+        public byte[] FileContent { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

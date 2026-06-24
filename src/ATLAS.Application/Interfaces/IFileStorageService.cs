@@ -16,17 +16,16 @@ namespace ATLAS.Application.Interfaces
     /// All blob access uses BlobUrl as the single storage reference.
     /// </summary>
     public interface IFileStorageService
-    {
+    {        
         /// <summary>
         /// Upload a file stream to blob storage.
         /// </summary>
         /// <param name="fileStream">The file content stream.</param>
-        /// <param name="fileName">The original file name.</param>
+        /// <param name="blobPath">The full blob path in format: {applicationId}/{documentId}/{fileName}.</param>
         /// <param name="contentType">The MIME content type.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A FileUploadResult with the blob URL and size.</returns>
-        Task<FileUploadResult> UploadAsync(Stream fileStream, string fileName, string contentType, CancellationToken ct = default);
-
+        Task<FileUploadResult> UploadAsync(Stream fileStream, string blobPath, string contentType, CancellationToken ct = default);
         /// <summary>
         /// Download a file from blob storage by its blob URL.
         /// </summary>

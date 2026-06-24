@@ -1209,10 +1209,11 @@ components:
         fileSize:
           type: integer
           format: int64
-        blobUrl:
+        fileContent:
           type: string
-          format: uri        
-      required: [applicationId, fileName, contentType, fileSize]
+          format: byte
+          description: Base64-encoded file content
+      required: [applicationId, fileName, contentType, fileSize, fileContent]
     
     CreatePermitTypeRequest:
       type: object

@@ -155,14 +155,17 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         
         var application3 = new ATLAS.Domain.Entities.Application(citizen.Id, signagePermit.Id, "Temporary signage for business");
         application3.AddDocument(Guid.NewGuid(), "signage_design.pdf", "application/pdf", 1024, "https://blob.test.com/signage_design.pdf", citizen.Id);    
+
+        var application4 = new ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Draft for document upload test");        
         
-        context.Applications.AddRange(new[] { application1, application2, application3 });
+        context.Applications.AddRange(new[] { application1, application2, application3, application4 });
         context.SaveChanges();
 
         // Store application IDs
         TestData.Application1Id = application1.Id;
         TestData.Application2Id = application2.Id;
         TestData.Application3Id = application3.Id;       
+        TestData.Application4Id = application4.Id;       
         
         context.SaveChanges();
 
@@ -194,6 +197,7 @@ public static class TestData
     public static Guid Application1Id { get; set; }
     public static Guid Application2Id { get; set; }
     public static Guid Application3Id { get; set; }
+    public static Guid Application4Id { get; set; }
     public static Guid Document1Id { get; set; }
     public static Guid Document2Id { get; set; }
     public static Guid Document3Id { get; set; }
@@ -223,6 +227,8 @@ public static class TestServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityResolver, IdentityResolver>();
+        services.AddScoped<IFileStorageService, InMemoryFileStorageService>();
+
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);

@@ -67,28 +67,41 @@ namespace ATLAS.Application.Commands
 
     public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCommand>
     {
+        // Allowed MIME types per PRD F-03
+        private static readonly string[] AllowedContentTypes =
+        {
+            "application/pdf",
+            "image/jpeg",
+            "image/png"
+        };
+
+        // Maximum file size: 25MB (aligned with Document entity as source of truth)
+        private const long MaxFileSizeBytes = 25 * 1024 * 1024;
+
         public UploadDocumentCommandValidator()
         {
             RuleFor(x => x.ApplicationId)
-                .NotEmpty().WithMessage("ApplicationId is required");
+                .NotEmpty().WithMessage("Application ID is required.");
+
+            RuleFor(x => x.FileContent)
+                .NotNull().WithMessage("File content is required.")
+                .Must(s => s != Stream.Null).WithMessage("File content stream cannot be null.");
 
             RuleFor(x => x.FileName)
-                .NotEmpty().WithMessage("FileName is required")
-                .MaximumLength(255).WithMessage("FileName cannot exceed 255 characters");
+                .NotEmpty().WithMessage("File name is required.")
+                .MaximumLength(255).WithMessage("File name cannot exceed 255 characters.")
+                .Must(name => !string.IsNullOrWhiteSpace(Path.GetExtension(name)))
+                    .WithMessage("File must have an extension.");
 
             RuleFor(x => x.ContentType)
-                .NotEmpty().WithMessage("ContentType is required")
-                .Must(x => x == "application/pdf" || x.StartsWith("image/"))
-                .WithMessage("Only PDF and image files are allowed");
+                .NotEmpty().WithMessage("Content type is required.")
+                .Must(ct => AllowedContentTypes.Contains(ct.ToLowerInvariant()))
+                    .WithMessage($"Content type must be one of: {string.Join(", ", AllowedContentTypes)}.");
 
             RuleFor(x => x.FileSize)
-                .GreaterThan(0).WithMessage("FileSize must be greater than 0")
-                .LessThanOrEqualTo(10 * 1024 * 1024).WithMessage("FileSize cannot exceed 10MB");
-
-            RuleFor(x => x.BlobUrl)
-                .NotEmpty().WithMessage("BlobUrl is required")
-                .Must(x => Uri.TryCreate(x, UriKind.Absolute, out _))
-                .WithMessage("BlobUrl must be a valid URL");        
+                .GreaterThan(0).WithMessage("File size must be positive.")
+                .LessThanOrEqualTo(MaxFileSizeBytes)
+                    .WithMessage($"File size cannot exceed {MaxFileSizeBytes / (1024 * 1024)}MB.");
         }
     }
 }

@@ -21,16 +21,14 @@ namespace ATLAS.API.Tests.Contracts
                 ApplicationId = applicationId,
                 FileName = fileName,
                 ContentType = contentType,
-                FileSize = fileSize,
-                BlobUrl = blobUrl
+                FileSize = fileSize                
             };
 
             // Assert
             Assert.Equal(applicationId, request.ApplicationId);
             Assert.Equal(fileName, request.FileName);
             Assert.Equal(contentType, request.ContentType);
-            Assert.Equal(fileSize, request.FileSize);
-            Assert.Equal(blobUrl, request.BlobUrl);
+            Assert.Equal(fileSize, request.FileSize);            
         }      
     }
 }

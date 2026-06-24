@@ -581,28 +581,7 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<DomainException>(() =>
                 application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
             Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
-        }
-
-        [Fact]
-        public void AddDocument_ShouldRaiseDocumentUploadedEvent()
-        {
-            // Arrange
-            var application = new Application(_citizenId, _permitTypeId, "Test notes");
-            application.ClearDomainEvents();
-            var documentId = Guid.NewGuid();
-
-            // Act
-            application.AddDocument(documentId, "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
-
-            // Assert
-            var domainEvent = Assert.Single(application.DomainEvents);
-            var uploadEvent = Assert.IsType<DocumentUploadedEvent>(domainEvent);
-            Assert.Equal(documentId, uploadEvent.DocumentId);
-            Assert.Equal(application.Id, uploadEvent.ApplicationId);
-            Assert.Equal(_citizenId, uploadEvent.UploadedById);
-            Assert.Equal("doc.pdf", uploadEvent.FileName);
-        }
-
+        }     
         #endregion
 
         #region AddReview Tests

@@ -21,7 +21,7 @@ namespace ATLAS.Infrastructure.Services
     /// <summary>
     /// Production implementation of IFileStorageService using Azure Blob Storage.
     /// Blob naming convention per ADR-015: {applicationId}/{documentId}/{fileName}
-    /// </summary>
+    /// </summary>    
     public class BlobStorageService : IFileStorageService
     {
         private readonly BlobContainerClient _containerClient;
@@ -49,24 +49,23 @@ namespace ATLAS.Infrastructure.Services
             _containerClient = blobServiceClient.GetBlobContainerClient(storageOptions.ContainerName);
         }
 
-        /// <summary>
+               /// <summary>
         /// Upload a file stream to blob storage.
-        /// blobName format: {applicationId}/{documentId}/{fileName}
+        /// blobPath format per ADR-015: {applicationId}/{documentId}/{fileName}
         /// </summary>
-        public async Task<FileUploadResult> UploadAsync(Stream fileStream, string fileName, string contentType, CancellationToken ct = default)
+        public async Task<FileUploadResult> UploadAsync(Stream fileStream, string blobPath, string contentType, CancellationToken ct = default)
         {
             if (fileStream == null)
                 throw new ArgumentNullException(nameof(fileStream));
-            if (string.IsNullOrWhiteSpace(fileName))
-                throw new ArgumentException("File name must be provided.", nameof(fileName));
+            if (string.IsNullOrWhiteSpace(blobPath))
+                throw new ArgumentException("Blob path must be provided.", nameof(blobPath));
 
-            // Fix #1: Capture stream length BEFORE upload — stream may not be seekable after Azure SDK consumes it
             long fileSize = fileStream.CanSeek ? fileStream.Length : 0;
 
             await _containerClient.CreateIfNotExistsAsync(cancellationToken: ct);
 
-            var blobName = $"{Guid.NewGuid()}/{Guid.NewGuid()}/{fileName}";
-            var blobClient = _containerClient.GetBlobClient(blobName);
+            // Use caller-provided blob path directly (ADR-015 naming applied by handler)
+            var blobClient = _containerClient.GetBlobClient(blobPath);
 
             var blobHttpHeaders = new BlobHttpHeaders
             {

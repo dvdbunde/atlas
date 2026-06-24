@@ -179,8 +179,8 @@ namespace ATLAS.Application.Tests.Validators
                 ApplicationId = Guid.NewGuid(),
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
-                FileSize = 11 * 1024 * 1024, // 11MB
-                BlobUrl = "https://blob.com/test.pdf"
+                FileSize = 35 * 1024 * 1024,
+                FileContent = new MemoryStream()
             };
 
             // Act
@@ -188,7 +188,7 @@ namespace ATLAS.Application.Tests.Validators
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "FileSize" && e.ErrorMessage == "FileSize cannot exceed 10MB");
+            Assert.Contains(result.Errors, e => e.PropertyName == "FileSize" && e.ErrorMessage.Contains("File size cannot exceed"));
         }
 
         [Fact]
@@ -202,7 +202,7 @@ namespace ATLAS.Application.Tests.Validators
                 FileName = "test.exe",
                 ContentType = "application/exe", // Invalid type
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.exe"
+                FileContent = new MemoryStream(),                
             };
 
             // Act
@@ -210,7 +210,7 @@ namespace ATLAS.Application.Tests.Validators
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "ContentType" && e.ErrorMessage.Contains("Only PDF and image files are allowed"));
+            Assert.Contains(result.Errors, e => e.PropertyName == "ContentType" && e.ErrorMessage.Contains("Content type must be one of"));
         }
 
         [Fact]
@@ -224,7 +224,7 @@ namespace ATLAS.Application.Tests.Validators
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.pdf"
+                FileContent = new MemoryStream()                
             };
 
             // Act
