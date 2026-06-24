@@ -24,10 +24,11 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 - M3: Database Persistence (EF Core, Azure SQL, Repositories) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
 - M4: Authentication (Microsoft Entra ID) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
 - M5: Permit Submission (Citizen UI, Form Validation) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
-- M6: Document Upload (Azure Blob Storage, Drag-and-Drop) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
-- M7: Application Review (Officer Dashboard, Review Workflow) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
-- M8: Audit Logging (Immutable AuditLog, 7-year Retention) ![Complete](https://img.shields.io/badge/status-Complete-brightgreen)
-- M9: Azure Deployment (App Service, Key Vault, CI/CD) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M6: Document Management (Azure Blob Storage, File Upload/Download) ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+- M7: Officer Review Workflow (Officer Dashboard, Review Workflow) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M8: Administration (Permit Types, Audit Logging) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M9: Audit & Compliance (Immutable AuditLog, 7-year Retention) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M10: Production Readiness (SSL, Custom Domain, Monitoring, Load Testing) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 
 **Owners**: Engineering Team, Product Owner
 
@@ -39,6 +40,10 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 
 **Key Deliverables**:
 
+- M6: Document Management — Complete citizen-facing upload UI, Azure Blob integration ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+- M7: Officer Review Workflow — Officer dashboard, approve/reject/request-info workflow ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M8: Administration — Permit type management, user administration, audit log viewer ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+- M9: Audit & Compliance — Immutable audit trails, retention policy enforcement ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - Go-Live (MVP Launch) — October 15, 2026 ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - Post-Launch Review & Bug Fixes ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
 - UAT with Stakeholders (Citizens, Officers, Admins) ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
@@ -86,9 +91,6 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 - **M3: Database Persistence** — EF Core with Azure SQL, repository pattern, data migrations
 - **M4: Authentication** — Microsoft Entra ID integration with role-based authorization (ADR-013)
 - **M5: Permit Submission** — Draft applications, dynamic forms, citizen dashboard, application detail/edit, confirmation workflow, email notifications (Milestone 5 — June 2026)
-- **M6: Document Upload** — Azure Blob Storage integration, upload/download, file validation
-- **M7: Application Review** — Officer dashboard, review workflow with approve/reject/request-info
-- **M8: Audit Logging** — Immutable AuditLog with 7-year retention policy (ADR-011)
 
 ---
 
@@ -96,7 +98,6 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 
 - **Detailed Plan**: `plans/atlas-foundation-plan.md`
 - **Product Requirements**: `docs/PRDs/atlas-mvp-prd.md`
-- **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-014)
+- **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-015)
+- **Milestone 6 Phase Plan**: `plans/milestone-06-document-management-plan.md`
 - **Future Enhancements**: `docs/design/08-extension-points.md`
-
-<!-- © Capgemini 2025 -->

@@ -197,4 +197,4 @@ When updating an agent, increment its version and add a changelog entry explaini
 
 If you're adding a new agent or editing an existing one, follow the repository's PR process: add the agent file under the appropriate folder, include examples and tests, and request review from the team listed in the contributing guidelines.
 
-<!-- © Capgemini 2025 -->
+

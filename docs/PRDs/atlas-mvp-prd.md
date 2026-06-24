@@ -172,8 +172,8 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 
 | ID | Requirement | Priority | Status |
 | ---- | ------------- | ---------- | ------ |
-| F-01 | Citizens can create a new permit application by selecting from active permit types | Must | ✅ Implemented |
-| F-02 | Citizens can fill out permit application forms with validation (required fields, data formats) | Must | ✅ Implemented |
+| F-01 | Citizens can create a new permit application by selecting from active permit types | Must | ✅ Implemented (see [ADR-014](../ADRs/adr-014-dynamic-permit-form-storage.md)) |
+| F-02 | Citizens can fill out permit application forms with validation (required fields, data formats) | Must | ✅ Implemented (see [ADR-014](../ADRs/adr-014-dynamic-permit-form-storage.md)) |
 | F-03 | Citizens can upload supporting documents (PDF, JPG, PNG) up to 25MB per file | Must | ✅ Implemented |
 | F-04 | Citizens can view a list of their submitted applications with current status | Must | ✅ Implemented |
 | F-05 | Citizens can view detailed status history for each application (Submitted, Under Review, Approved, Rejected) | Must | ✅ Implemented |

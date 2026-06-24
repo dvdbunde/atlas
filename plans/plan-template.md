@@ -195,5 +195,3 @@ Checklist before marking plan as ready for review:
 - [ ] Security & compliance items are noted.
 
 If you want, I can also generate a filled example plan from this template for a sample project. Specify the project details and I'll produce it.
-
-<!-- © Capgemini 2025 -->

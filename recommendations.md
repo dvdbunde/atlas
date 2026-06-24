@@ -74,7 +74,6 @@ Cross-Cutting Chat Mode Issues:
 | [plans/plan-template.md](plans/plan-template.md) | Highly granular & machine-fillable (good). | Inconsistent with Planner.chatmode estimation guidance (time vs complexity). | Refine: Decide single estimation model (duration or complexity scale).                               |
 | [plans/README.md](plans/README.md)               | Lightweight orientation.                   | Could link explicitly to template & Planner chat mode.                       | Keep: Add explicit “Authoring workflow” link cluster.                                                |
 | [plans/ROADMAP.md](plans/ROADMAP.md)             | Placeholder; minimal scaffolding.          | Risk of abandonment / outdated signal.                                       | Refine: Add status badges (Planned / In Progress / Done).                                            |
-| [plans/TODO.md](plans/TODO.md)                   | Empty; mandated as single task source.     | Zero structure invites misuse.                                               | Refine: Add example format + ownership columns.                                                      |
 | Archived Plan (enhance-copilot-instructions...)  | Strong exemplar of full template usage.    | Very large; could intimidate simple plan authors.                            | Keep: Tag as “Full Example (Comprehensive)” and add a “Lightweight example” file for small features. |
 
 ---
@@ -123,11 +122,10 @@ Cross-Cutting Chat Mode Issues:
 3. Align estimation model between Planner.chatmode and plan-template.
 4. Extract branching / commit / PR numeric limits from Developer.chatmode (retain short reference lines only).
 5. Consolidate code review checklist into engineering guideline; trim duplication in CodeReviewer.chatmode.
-6. Add structure & sample rows to [plans/TODO.md](plans/TODO.md).
-7. Expand backend.instructions with concrete error handling & observability patterns.
-8. Strengthen bdd-tests.instructions with scenario examples and anti-patterns.
-9. Introduce lightweight “Small Feature Plan Example” in plans/ for contrast with full archived plan.
-10. Add “Source Map” appendix to README linking SSOT designations.
+6. Expand backend.instructions with concrete error handling & observability patterns.
+7. Strengthen bdd-tests.instructions with scenario examples and anti-patterns.
+8. Introduce lightweight "Small Feature Plan Example" in plans/ for contrast with full archived plan.
+9. Add “Source Map” appendix to README linking SSOT designations.
 
 ---
 
@@ -154,7 +152,6 @@ Cross-Cutting Chat Mode Issues:
 | Add “Estimation Policy” subsection to plan-template + Planner mode  | Harmonization          |
 | Introduce CONTRIBUTING.md (optional)                                | Optional consolidation |
 | Expand backend.instructions minimal patterns                        | Enrichment             |
-| Enrich TODO.md with sample format                                   | Activation             |
 
 ---
 
@@ -197,7 +194,6 @@ Principles:
 | plans/plan-template.md                          | Refine      |
 | plans/README.md                                 | Keep        |
 | plans/ROADMAP.md                                | Refine      |
-| plans/TODO.md                                   | Refine      |
 | Archived plan (enhance-copilot-instructions...) | Keep        |
 | docs/engineering/code-review-guidelines.md      | Consolidate |
 
@@ -240,5 +236,3 @@ Principles:
 Primary issues: Duplication (documentation workflow, coverage rules, branch process), conflicting numeric policies (coverage, estimation), and sparse backend / BDD guidance. Remedy through an authoritative source map, lean refactors that replace repetition with references, and a central quality policy. After changes, maintenance cost and drift risk decrease; onboarding clarity increases.
 
 ...existing code...
-
-<!-- © Capgemini 2025 -->

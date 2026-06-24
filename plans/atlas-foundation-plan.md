@@ -1,9 +1,11 @@
 # ATLAS Implementation Roadmap
 
 **Project**: ATLAS (Automated Tracking & Licensing Application System)
-**Version**: 1.1 (Corrected)
-**Date**: June 3, 2026
-**Status**: ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+**Version**: 1.2 (Updated)
+**Date**: June 23, 2026
+**Status**: ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+
+## Milestones M1–M5: Complete | M6: In Progress | M7–M10: Planned
 
 ---
 
@@ -14,7 +16,7 @@ This roadmap outlines the implementation plan for ATLAS MVP as defined in [atlas
 - **Clean Architecture** (ADR-001)
 - **CQRS with MediatR** (ADR-002)
 - **Azure SQL + Blob Storage** (ADR-003)
-- **Domain-Driven Design** (ADR-004) - *Contains actual domain model*
+- **Domain-Driven Design** (ADR-004) - _Contains actual domain model_
 - **Blazor Server** (ADR-005)
 - **GitHub Actions** (ADR-006)
 - **Bicep** (ADR-007)
@@ -79,7 +81,7 @@ flowchart TD
     M3 --> M4
     M3 --> M5[M5: Permit Submission]
     M4 --> M5
-    M5 --> M6[M6: Document Upload]
+    M5 --> M6[M6: Document Management]
     M5 --> M7[M7: Application Review]
     M6 --> M7
     M7 --> M8[M8: Audit Logging]
@@ -177,7 +179,7 @@ flowchart TD
 
 **PRD Mapping**: F-01, F-02, F-09, F-10 (domain models for these features)
 
-**References**: ADR-004 (Domain-Driven Design) - *Primary reference for domain model*
+**References**: ADR-004 (Domain-Driven Design) - _Primary reference for domain model_
 
 ---
 
@@ -239,7 +241,7 @@ flowchart TD
 
 ---
 
-## Milestone 4: Authentication 🔄 IN PROGRESS**
+## Milestone 4: Authentication ✅ COMPLETE**
 
 **Objective**: Implement Microsoft Entra ID authentication for all user roles (Citizen, Officer, Admin).
 
@@ -277,20 +279,30 @@ flowchart TD
 
 ---
 
-## Milestone 5: Permit Submission
+## Milestone 5: Permit Submission ✅ COMPLETE**
 
 **Objective**: Implement citizen-facing permit application submission workflow (UC1 from PRD).
 
 **Deliverables**:
 
 - Permit type selection page (lists active permit types from F-17)
-- Permit application form with validation (F-01, F-02)
+- Dynamic form generation with 6 field types (Text, MultilineText, Number, Date, Boolean, Dropdown)
+- Draft application workflow (create, save, edit, submit)
 - Application status dashboard for citizens (F-04, F-05)
+- Application detail view with status history timeline
+- Confirmation workflow after successful submission
+- Email notifications (SMTP) on status changes (submission confirmation, approval, rejection, info request)
 - CQRS commands using MediatR (ADR-002):
   - `SubmitApplicationCommand` (invokes `Application.Submit()` from ADR-004)
-  - `SaveDraftApplicationCommand`
-- Email confirmation on submission (F-06)
-- Unit and integration tests
+  - `SaveDraftApplicationCommand`, `UpdateDraftCommand`
+  - `CreateDraftCommand`, `SubmitDraftCommand`
+- DynamicFieldValidator with custom ValidationMessageStore (no FluentValidation in UI)
+- Authentication hardening: `[Authorize(Roles = "Citizen")]` enforcement on all citizen pages
+- Blazor shared components: DynamicFormGenerator, DynamicFieldValidator, StatusBadge, ApplicationTimeline
+- ADR-014: Dynamic Permit Form Storage Strategy (ApplicationFieldValue as owned entity)
+- 80+ bUnit tests across 7 test suites, 26 application handler tests
+- Milestone 5 UI Readiness Report (Phase D8 sign-off)
+- Documentation: ADR-014, milestone-05-final-review
 
 **Acceptance Criteria**:
 
@@ -306,48 +318,60 @@ flowchart TD
 
 **Estimated Effort**: 13 SP (6.5 developer days)
 
+**Completion Date**: 2026-06-18
+
+**Next Milestone**: [Milestone 6: Document Management](#milestone-6-document-management--in-progress) — Active
+
 **PRD Mapping**: F-01, F-02, F-04, F-05, F-06, F-07 (draft applications)
 
 **References**: ADR-002 (CQRS), ADR-004 (Domain Model - `Application`)
 
 ---
 
-## Milestone 6: Document Upload
+## Milestone 6: Document Management 🔄 IN PROGRESS
 
-**Objective**: Implement document upload to Azure Blob Storage (ADR-003) with citizen-facing UI.
+**Objective**: Implement complete document management workflow with Azure Blob Storage integration, citizen upload/download UI, file validation, and authorization. Phase D0 (architecture) complete. Implementation split into 8 sub-phases D1–D8.
 
 **Deliverables**:
 
-- Azure Blob Storage integration for document storage (ADR-003)
-- Document upload component (drag-and-drop + file picker)
-- File validation: PDF, JPG, PNG, max 25MB per file (F-03)
-- `Document` entity metadata stored in Azure SQL, blobs in Storage (ADR-003)
-- Document list/view component for citizens (F-08)
-- CQRS commands using MediatR (ADR-002):
-  - `UploadDocumentCommand` (creates `Document` entity per ADR-004)
-  - `DeleteDocumentCommand`
+- `IFileStorageService` abstraction (Application layer interface + Infrastructure implementation)
+- Azure Blob Storage integration via `Azure.Storage.Blobs` SDK
+- Azurite local development configuration
+- `BlobPath` property on `Document` entity (environment-independent blob references)
+- `FieldType.FileUpload` enum value for dynamic form integration
+- DocumentRequirement enforcement at upload time (per permit type rules)
+- SAS token download (1-hour expiry, read-only permission)
+- Citizen upload UI via `DynamicFormGenerator.FileUpload` field type
+- Upload progress indicator (per PRD F-03 acceptance criteria)
+- Document list/view in ApplicationDetail page
+- Ownership and role-based authorization (upload + download)
+- Audit logging for upload and download events
+- Virus scanning extension point (`IVirusScanService` interface, MVP pass-through)
 
-**Acceptance Criteria**:
+**Implementation Phases**:
 
-- ✅ Citizens can upload PDF/JPG/PNG files up to 25MB
-- ✅ Invalid file types rejected with clear error message
-- ✅ Documents linked to `Application` (ADR-004 entity) in database
-- ✅ Citizens can download previously uploaded documents (F-08)
-- ✅ Blob storage uses private containers with SAS tokens (ADR-003)
-- ✅ 100% coverage for file validation and security paths
-- ✅ `DocumentUploadedEvent` raised on successful upload (ADR-004 domain event)
+| Phase | Name | Est. LOC | Effort |
+| --- | --- | --- | --- |
+| D1 | Domain & Storage Abstractions | ~150 | 1 session |
+| D2 | Azure Blob Storage Integration | ~350 | 1–2 sessions |
+| D3 | Upload Backend | ~350 | 1 session |
+| D4 | FileUpload Field Type | ~200 | 1 session |
+| D5 | Citizen Upload Experience | ~500 | 2–3 sessions |
+| D6 | Download & Document Viewing | ~250 | 1 session |
+| D7 | Validation & Security Hardening | ~200 | 1 session |
+| D8 | Testing & Documentation | ~400 new tests | 1–2 sessions |
 
 **Dependencies**: Milestone 3 (Database Persistence), Milestone 5 (Permit Submission)
 
-**Estimated Effort**: 10 SP (5 developer days)
+**Estimated Effort**: 14 SP (7 developer days)
 
-**PRD Mapping**: F-03, F-08
+**PRD Mapping**: F-03, F-08, F-10, F-17, F-18, F-22, NFR-02, NFR-05, NFR-16, NFR-19
 
-**References**: ADR-003 (Azure Blob Storage), ADR-004 (Document entity)
+**References**: ADR-003 (Azure Blob Storage), ADR-004 (Document entity), ADR-015 (Document Storage Architecture)
 
 ---
 
-## Milestone 7: Application Review
+## Milestone 7: Officer Review Workflow
 
 **Objective**: Implement permit officer dashboard and review workflow (UC2 from PRD).
 
@@ -386,9 +410,9 @@ flowchart TD
 
 ---
 
-## Milestone 8: Audit Logging
+## Milestone 8: Administration
 
-**Objective**: Implement comprehensive audit trail for compliance (UC3 from PRD, F-20).
+**Objective**: Implement administrative features — permit type management, user administration, audit log viewer, and system configuration.
 
 **Deliverables**:
 
@@ -426,9 +450,9 @@ flowchart TD
 
 ---
 
-## Milestone 9: Azure Deployment
+## Milestone 9: Audit & Compliance
 
-**Objective**: Deploy ATLAS to Azure App Service with full infrastructure as code (ADR-007: Bicep).
+**Objective**: Implement comprehensive audit trail for compliance (UC3 from PRD, F-20), data retention policies, and deploy ATLAS to Azure App Service with full infrastructure as code (ADR-007: Bicep).
 
 **Deliverables**:
 
@@ -474,11 +498,11 @@ flowchart TD
 | M3 | Database Persistence | 13 | 6.5 | M2 | ADR-002, ADR-003, ADR-004 |
 | M4 | Authentication | 8 | 4 | M1, M3 | ADR-008 |
 | M5 | Permit Submission | 13 | 6.5 | M3, M4 | ADR-002, ADR-004 |
-| M6 | Document Upload | 10 | 5 | M3, M5 | ADR-003, ADR-004 |
+| M6 | Document Management | 14 | 7 | M3, M5 | ADR-003, ADR-004, ADR-015 |
 | M7 | Application Review | 15 | 7.5 | M5, M6, M4 | ADR-002, ADR-004 |
 | M8 | Audit Logging | 10 | 5 | M7, M4 | ADR-004 (Domain Events) |
 | M9 | Azure Deployment | 10 | 5 | M8 | ADR-003, ADR-005, ADR-007, ADR-008 |
-| **Total** | | **97 SP** | **48.5 days** | | |
+| **Total** | | **101 SP** | **50.5 days** | | |
 
 **Assumptions**:
 
@@ -514,7 +538,16 @@ flowchart TD
 - [ADR-006: GitHub Actions](docs/ADRs/adr-006-github-actions.md)
 - [ADR-007: Bicep](docs/ADRs/adr-007-bicep.md)
 - [ADR-008: Microsoft Entra ID](docs/ADRs/adr-008-microsoft-entra-id.md)
+- [ADR-015: Document Storage Architecture](docs/ADRs/adr-015-document-storage-architecture.md)
 - [Quality & Coverage Policy](.github/copilot-instructions.md#quality-policy)
+
+**Corrections Made in v1.2**:
+
+- ✅ M6 rebranded from "Document Upload" to "Document Management" with D1–D8 phase breakdown
+- ✅ M6 effort updated to 14 SP (7 days) reflecting full scope
+- ✅ ADR-015 added for document storage architecture
+- ✅ Effort totals updated to 101 SP / 50.5 days
+- ✅ ROADMAP.md updated: M6 → In Progress
 
 **Corrections Made in v1.1**:
 
@@ -523,5 +556,3 @@ flowchart TD
 - ✅ All 8 ADRs properly referenced where applicable
 - ✅ PRD functional requirements (F-01 to F-23) correctly mapped
 - ✅ Domain events from ADR-004 included in milestones 2, 7, and 8
-
-<!-- © Capgemini 2025 -->

@@ -139,4 +139,4 @@ SECTION PURPOSE: Encourage living docs and CI-ready behavior.
 5. Tag scenarios appropriately and configure CI to run fast suites on PRs (e.g., `@smoke`) and full suites nightly.
 6. Keep step definitions DRY; refactor when duplication creeps in.
 
-<!-- © Capgemini 2025 -->
+

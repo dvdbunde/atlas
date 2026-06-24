@@ -87,4 +87,4 @@ This chat mode does not restate the flow. Use the canonical source of truth (SSO
 -->
 - Reference: See `.github/instructions/docs.instructions.md#documentation-process-flow` for the canonical mermaid flow.
 
-<!-- © Capgemini 2025 -->
+

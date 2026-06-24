@@ -73,4 +73,4 @@ How to interpret: Apply these requirements in full; include at least one positiv
 
 
 
-<!-- © Capgemini 2025 -->
+

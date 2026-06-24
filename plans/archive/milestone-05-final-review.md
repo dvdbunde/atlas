@@ -1,3 +1,11 @@
+---
+
+> **Historical record** — Milestone 5 was completed successfully (June 2026).
+> See [`plans/atlas-foundation-plan.md`](../atlas-foundation-plan.md) for current status.
+> This review document is preserved for reference only; the "NO-GO" verdict below has been superseded.
+
+---
+
 # ATLAS Milestone 05 final review
 
 Documentation Review Findings

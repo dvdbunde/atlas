@@ -17,5 +17,3 @@ Architecture docs that are specific to this repository should live here. Organiz
 ### External Architecture documents
 
 - (Add links to external architecture documents or diagrams)
-
-<!-- © Capgemini 2025 -->

@@ -108,4 +108,4 @@ Where helpful, add short implementation notes and suggested acceptance tests tha
 - Do not publish without confirming with the requester or PRD owner.
 </CRITICAL_REQUIREMENT>
 
-<!-- © Capgemini 2025 -->
+

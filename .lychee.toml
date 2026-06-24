@@ -5,7 +5,7 @@
 exclude = [
   "https://img.shields.io/",
   "https://badgen.net/",
-  "https://github.com/capgemini/template-github-copilot/actions",
+  "https://github.com/dvdbunde/atlas/actions",
 ]
 
 # Accept 429/403 as warnings instead of failures for rate-limited hosts
@@ -20,5 +20,3 @@ accept_pattern = [
   "^mailto:",
   "^#",
 ]
-
-# © Capgemini 2025

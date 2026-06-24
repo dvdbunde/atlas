@@ -13,5 +13,3 @@ N.B. This file is written for humans and AI. GitHub Copilot consumes it via [VS 
 - **Assign Reviewers**: Assign at least one reviewer to your PR.
 - **Address Feedback**: Respond to all comments and address the feedback.
 - **Merge**: Once the PR is approved, it can be merged into the main branch. Use "Squash and Merge" to keep the commit history clean.
-
-<!-- © Capgemini 2025 -->

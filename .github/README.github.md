@@ -79,4 +79,4 @@ References:
 - Copilot repository instructions: [copilot-instructions.md](./copilot-instructions.md)
 
 
-<!-- © Capgemini 2025 -->
+
