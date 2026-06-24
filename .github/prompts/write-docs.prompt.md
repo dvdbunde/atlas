@@ -55,4 +55,4 @@ If inputs are missing/ambiguous/conflicting, follow the input collection and val
 
 If you can clearly identify any inputs from the conversation immediately prior to this, check with the user that you have understood those inputs correctly. Else, if you can't clearly identify any inputs from the conversation immediately prior to this, prompt the user for each input. Map their responses to the documentation inputs: purpose and scope, target audience, key features and functionalities, and existing documentation.
 
-<!-- © Capgemini 2025 -->
+

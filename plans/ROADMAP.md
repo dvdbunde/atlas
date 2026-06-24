@@ -101,5 +101,3 @@ Example: `Q4 2025 — Platform auth hardening` ![In Progress](https://img.shield
 - **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-015)
 - **Milestone 6 Phase Plan**: `plans/milestone-06-document-management-plan.md`
 - **Future Enhancements**: `docs/design/08-extension-points.md`
-
-<!-- © Capgemini 2025 -->

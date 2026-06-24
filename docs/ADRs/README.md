@@ -29,5 +29,3 @@ Add links to ADRs in sequential order using the naming convention \dr-NNNN-titl
 ## ADR Template
 
 Use [adr-template.md](adr-template.md) when creating new ADRs.
-
-<!-- © Capgemini 2025 -->

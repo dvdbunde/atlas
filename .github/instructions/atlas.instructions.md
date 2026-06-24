@@ -453,5 +453,3 @@ Before generating ATLAS code, verify:
 - [ ] Are Blazor components WCAG 2.1 AA compliant?
 - [ ] Is CQRS pattern followed (commands vs queries)?
 - [ ] Are MediatR pipelines used for cross-cutting concerns?
-
-<!-- © Capgemini 2026 -->

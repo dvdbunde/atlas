@@ -83,5 +83,3 @@ How to use:
 - Branch/PR workflow, naming, commit conventions, PR size and review SLA: see `.github/copilot-instructions.md`.
 - Coverage targets and hot/error/security path requirements: see `.github/copilot-instructions.md#quality-policy`.
 - Pull request author checklist: see `docs/engineering/pull-request-guidelines.md`.
-
-<!-- © Capgemini 2025 -->

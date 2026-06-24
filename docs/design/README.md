@@ -64,5 +64,3 @@ All diagrams use [Mermaid](https://mermaid.js.org/) syntax for version-controlle
 4. Understand **Aggregate Roots** and **Bounded Contexts** for DDD patterns
 5. Follow the **Data Flow** diagrams for process understanding
 6. Review **Extension Points** for future architecture evolution
-
-<!-- © Capgemini 2025 -->

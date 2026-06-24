@@ -21,4 +21,3 @@ jobs:
         run: |
           node scripts/validate-policy.js
 
-# © Capgemini 2025

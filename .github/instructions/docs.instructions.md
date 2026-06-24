@@ -178,4 +178,4 @@ flowchart TD
 ```
 
 
-<!-- © Capgemini 2025 -->
+

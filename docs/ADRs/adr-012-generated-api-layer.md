@@ -97,5 +97,3 @@ Replace manually maintained controllers with NSwag-generated controllers using:
 - **REF-003**: [OpenAPI Specification](../openapi/atlas-api.yaml)
 - **REF-004**: [NSwag Documentation](https://github.com/RicoSuter/NSwag)
 - **REF-005**: [Phase 4 Plan](../../memories/session/plan.md)
-
-<!-- © Capgemini 2025 -->

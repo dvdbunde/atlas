@@ -556,5 +556,3 @@ flowchart TD
 - ✅ All 8 ADRs properly referenced where applicable
 - ✅ PRD functional requirements (F-01 to F-23) correctly mapped
 - ✅ Domain events from ADR-004 included in milestones 2, 7, and 8
-
-<!-- © Capgemini 2025 -->

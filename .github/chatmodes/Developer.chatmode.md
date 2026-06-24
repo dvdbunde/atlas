@@ -423,4 +423,4 @@ PROMPTING TECHNIQUES: Specific examples that can be emulated.
 
 
 
-<!-- © Capgemini 2025 -->
+

@@ -122,5 +122,3 @@ Add a `PermitFieldId` foreign key column to `ApplicationFieldValue` that directl
 - **REF-004**: [ApplicationConfiguration.cs](../../src/ATLAS.Infrastructure/Data/Configurations/ApplicationConfiguration.cs) — EF Core OwnsMany configuration
 - **REF-005**: [ApplicationFieldValue.cs](../../src/ATLAS.Domain/Entities/ApplicationFieldValue.cs) — Entity implementation
 - **REF-006**: [Application.cs](../../src/ATLAS.Domain/Entities/Application.cs) — Aggregate root with FieldValues collection
-
-<!-- © Capgemini 2025 -->

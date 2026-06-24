@@ -219,5 +219,3 @@ Enforcement: Handler checks currentUser.UserId == application.CitizenId. Applica
 - **REF-003**: ADR-011 -- Data Lifecycle Management (blob retention policies)
 - **REF-004**: PRD F-03, F-08, F-10, C-04, NFR-16, NFR-19
 - **REF-005**: Milestone 6 Phase Plan (plans/milestone-06-document-management-plan.md)
-
-<!-- © Capgemini 2025 -->

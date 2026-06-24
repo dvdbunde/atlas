@@ -86,4 +86,4 @@ PROMPTING: XML block for machine-checkable rules.
 - Avoid `any`; if unavoidable, annotate with a TODO and reason.
 </PROCESS_REQUIREMENTS>
 
-<!-- © Capgemini 2025 -->
+

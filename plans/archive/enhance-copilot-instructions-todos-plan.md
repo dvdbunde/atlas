@@ -254,7 +254,7 @@ The implementation will preserve the existing file structure and formatting whil
 ## 16. Compliance, security & privacy considerations
 
 - **Data Classification**: Documentation content only, no sensitive data involved
-- **Repository Standards**: Must maintain consistency with existing Capgemini template repository standards
+- **Repository Standards**: Must maintain consistency with existing template repository standards
 - **AI Safety**: Instructions must not create opportunities for AI assistants to make unauthorized changes
 
 ## 17. Communication plan
@@ -263,13 +263,7 @@ The implementation will preserve the existing file structure and formatting whil
 - **Issue Escalation**: Immediate notification if conflicts or ambiguities are discovered
 - **Completion Notification**: Final notification with summary of changes and validation results
 
-## 18. Related documents & links
-
-- Current file: `/Users/stuartwilliams/src/github.com/capgemini/template-github-copilot/.github/copilot-instructions.md`
-- Referenced files: `AGENTS.md`, `README.md`, `settings.json`
-- Plan template: `/Users/stuartwilliams/src/github.com/capgemini/template-github-copilot/plans/plan-template.md`
-
-## 19. Appendix (examples, data samples, migration mappings)
+## 18. Appendix (examples, data samples, migration mappings)
 
 ### Current TODO Items Inventory
 
@@ -310,5 +304,3 @@ The implementation will preserve the existing file structure and formatting whil
 - [x] Estimates present and normalized to hours
 - [x] At least one test/validation approach is defined
 - [x] Security & compliance items are noted
-
-<!-- © Capgemini 2025 -->

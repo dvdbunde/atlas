@@ -35,17 +35,14 @@ ATLAS is built with modern Microsoft technologies and hosted on Azure:
 - ✅ FluentValidation for command validation
 - ✅ Microsoft Entra ID authentication & authorization (Milestone 4)
 - ✅ Permit Submission workflow (Milestone 5):
-  - Browse permit types with dynamic form fields
-  - Create and save draft applications
-  - Edit draft applications with dynamic forms
-  - Submit applications for review
-  - Citizen dashboard with status overview
-  - Application detail view with status history
+- ✅Browse permit types with dynamic form fields
+- ✅ Create and save draft applications
+- ✅Edit draft applications with dynamic forms
+- ✅ Submit applications for review
+- ✅ Citizen dashboard with status overview
+- ✅ Application detail view with status history
   - Email notifications on status changes (SMTP)
   - Confirmation workflow after submission
-
-- ⚠️ 1 test failing (concurrency test with InMemory provider)
-- ⚠️ Azure Key Vault integration simplified for development
 
 **Next Milestone**: Milestone 6 - Document Management (see [ROADMAP.md](plans/ROADMAP.md) for details)
 
@@ -235,8 +232,6 @@ Notes:
 
 - Chat modes and prompts should reference these SSOT files. Avoid duplicating numeric thresholds, templates, or process steps in multiple places.
 - CI tasks (if added) should validate adherence to SSOT anchors where practical.
-
-<!-- © Capgemini 2025 -->
 
 ## Getting Started
 

@@ -51,4 +51,4 @@
 - Check for breaking changes (major version bump if breaking)
 - Verify partial controllers implement all interface methods
 
-<!-- © Capgemini 2025 -->
+

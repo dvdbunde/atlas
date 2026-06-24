@@ -56,9 +56,6 @@ This creates a self-documenting system for understanding how AI instructions wor
 
 **Audience:** Primarily GitHub Copilot. This file provides Copilot-specific instructions and configuration for this repository.
 
-**Repository Context:**
-This repository is a GitHub Template created by Capgemini's AI & Software Engineering team. It contains practical, portable, and useful examples of Copilot configuration for real-world projects.
-
 **Copilot Guidance:**
 - Follow the configuration and best practices outlined here when assisting in this repository.
 - Reference `README.md` for general orientation and project goals.
@@ -438,4 +435,4 @@ The `.github` directory contains several subdirectories and files that organize 
 - `workflows/`: Intended for GitHub Actions workflow files, which automate CI/CD and other repository tasks. (Currently empty, but will be expanded.)
 
 Refer to the main README.md for a full overview of repository goals and usage.
-<!-- © Capgemini 2025 -->
+

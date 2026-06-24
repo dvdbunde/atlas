@@ -179,5 +179,3 @@ flowchart TD
 - **ADR-004**: Domain-Driven Design (Document entity, Application aggregate)
 - **ADR-015**: Document Storage Architecture (this milestone's design decisions)
 - **PRD**: F-03 (upload), F-08 (download), F-10 (officer view), C-04 (Azure Blob constraint)
-
-<!-- © Capgemini 2025 -->

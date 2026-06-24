@@ -198,4 +198,4 @@ When updating a mode, increment its version and add a changelog entry explaining
 
 If you're adding a new mode or editing an existing one, follow the repository's PR process: add the mode file under the appropriate folder, include examples and tests, and request review from the team listed in the contributing guidelines.
 
-<!-- © Capgemini 2025 -->
+
