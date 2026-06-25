@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "Citizen")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
+@using ATLAS.Domain.Enums
 
 <PageTitle>@("Application " + (_viewModel.ApplicationNumber ?? "Detail"))</PageTitle>
 
@@ -76,7 +77,34 @@
                         {
                             <div class="mb-3">
                                 <label class="fw-semibold">@field.Label</label>
-                                <p class="form-control-plaintext">@field.Value</p>
+                                @if (field.Type == FieldType.FileUpload)
+                                {
+                                    if (field.Documents.Count > 0)
+                                    {
+                                        foreach (var doc in field.Documents)
+                                        {
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                                <span>@doc.FileName</span>
+                                                <small class="text-muted">(@(doc.FileSize / 1024)KB)</small>
+                                                <a href="/api/documents/@doc.Id/download"
+                                                   class="btn btn-sm btn-outline-primary"
+                                                   target="_blank"
+                                                   title="Download @doc.FileName">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="form-control-plaintext text-muted">No document uploaded</p>
+                                    }
+                                }
+                                else
+                                {
+                                    <p class="form-control-plaintext">@field.Value</p>
+                                }
                             </div>
                         }
 

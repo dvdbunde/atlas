@@ -587,13 +587,14 @@ paths:
             format: uuid
           description: Document ID
       responses:
-        '200':
-          description: Document file stream
-          content:
-            application/octet-stream:
+        '302':
+          description: Redirect to secure SAS URI for download
+          headers:
+            Location:
               schema:
                 type: string
-                format: binary
+                format: uri
+              description: Short-lived SAS URI for blob download
         '404':
           $ref: '#/components/responses/NotFound'
         '401':

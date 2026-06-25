@@ -11,6 +11,7 @@ using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Commands;
 using System.Threading.Tasks;
+using ATLAS.Application.Queries.Documents;
 
 namespace ATLAS.API.Controllers
 {
@@ -56,8 +57,14 @@ namespace ATLAS.API.Controllers
 
         public override async Task<IActionResult> Download(Guid documentId)
         {
-            // TODO: Implement document download
-            return StatusCode(501);
+            var query = new DownloadDocumentQuery { DocumentId = documentId };
+            var result = await _mediator.Send(query, default);
+        
+            if (result == null)
+                return NotFound();
+        
+            // 302 redirect to the SAS URI — browser downloads directly from Azure
+            return Redirect(result.SasUri);
         }
     }
 }

@@ -125,5 +125,12 @@ namespace ATLAS.Infrastructure.Repositories
             
             return application?.FieldValues ?? Enumerable.Empty<Entities.ApplicationFieldValue>();
         }
+
+        public async Task<Entities.Application?> GetByDocumentIdAsync(Guid documentId, CancellationToken ct = default)
+        {
+            return await _context.Applications
+                .Where(a => a.Documents.Any(d => d.Id == documentId))
+                .FirstOrDefaultAsync(ct);
+        }
     }
 }

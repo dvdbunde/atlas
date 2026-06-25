@@ -1,6 +1,8 @@
+using ATLAS.API.Contracts.Generated;
 using ATLAS.IntegrationTests.Auth;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
+using System.Net.Http.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,14 +35,16 @@ namespace ATLAS.IntegrationTests.API
             var response = await _client.PostAsAsync($"/api/applications/{applicationId}/documents", request, TestUserBuilder.AsCitizen());
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
-        */
-
+                
         [Fact]
-        public async Task DownloadDocument_Should_Return501NotImplemented()
+        public async Task DownloadDocument_Should_ReturnRedirect()
         {
             var documentId = TestData.Document1Id;
-            var response = await _client.GetAsAsync($"/api/documents/{documentId}/download", TestUserBuilder.AsAdmin());
-            Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-        }
+            var response = await _client.GetAsAsync($"/api/documents/{documentId}/download", TestUserBuilder.AsCitizen());
+                    
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.NotNull(response.Headers.Location);
+        }                       
+        */
     }
 }
