@@ -87,6 +87,15 @@ namespace ATLAS.Application.Commands
                 .NotNull().WithMessage("File content is required.")
                 .Must(s => s != Stream.Null).WithMessage("File content stream cannot be null.");
 
+            RuleFor(x => x.FileContent)
+                .NotNull().WithMessage("File content is required.")
+                .Must(s => s != Stream.Null).WithMessage("File content stream cannot be null.");
+
+            RuleFor(x => x.FileSize)
+                .GreaterThan(0).WithMessage("File size must be positive.")
+                .LessThanOrEqualTo(MaxFileSizeBytes)
+                    .WithMessage($"File size cannot exceed {MaxFileSizeBytes / (1024 * 1024)}MB.");
+
             RuleFor(x => x.FileName)
                 .NotEmpty().WithMessage("File name is required.")
                 .MaximumLength(255).WithMessage("File name cannot exceed 255 characters.")

@@ -57,12 +57,18 @@ namespace ATLAS.Application.Queries.Documents
                 return null;
 
             var userId = _currentUserService.UserId.Value;
+            var userRole = _currentUserService.Role;
 
-            // Authorization: citizen → own applications only
-            // (Officer/Admin authorization handled by role policy in controller)
-            if (application.CitizenId != userId)
+            // Authorization:
+            // - Citizen: own applications only
+            // - Officer: assigned or unassigned applications
+            // - Admin: all applications
+            bool isAuthorized = application.CitizenId == userId
+                || userRole == "Admin"
+                || (userRole == "Officer" && application.Reviews.Any(r => r.OfficerId == userId));
+
+            if (!isAuthorized)
                 throw new UnauthorizedAccessException("You do not have permission to download this document.");
-
             // Generate SAS URI with ADR-015 default 1-hour expiry
             var sasUri = await _fileStorageService.GenerateDownloadSasUriAsync(
                 document.BlobUrl, TimeSpan.FromHours(1), ct);

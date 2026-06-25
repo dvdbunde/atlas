@@ -25,17 +25,20 @@ namespace ATLAS.Application.Commands
         private readonly IFileStorageService _fileStorageService;
         private readonly IMediator _mediator;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IVirusScanner _virusScanner;
 
         public UploadDocumentCommandHandler(
             IApplicationRepository repository,
             IPermitTypeRepository permitTypeRepository,
             IFileStorageService fileStorageService,
+            IVirusScanner virusScanner,
             IMediator mediator,
             ICurrentUserService currentUserService)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
             _fileStorageService = fileStorageService ?? throw new ArgumentNullException(nameof(fileStorageService));
+            _virusScanner = virusScanner ?? throw new ArgumentNullException(nameof(virusScanner));
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
@@ -77,11 +80,30 @@ namespace ATLAS.Application.Commands
                         $"File size {request.FileSize} bytes exceeds the maximum of {matched.MaxFileSizeBytes} bytes for {matched.DocumentType}.");
             }
 
+            // Step 4b: Virus scan (pass-through for MVP)
+            var scanResult = await _virusScanner.ScanAsync(
+                request.FileContent, request.FileName, cancellationToken);
+            if (!scanResult.IsClean)
+            {
+                throw new InvalidOperationException(
+                    $"File rejected by security scan: {scanResult.ThreatName ?? "Unknown threat"}.");
+            }
+
             // Step 5: Upload file via IFileStorageService with ADR-015 naming
             var documentId = Guid.NewGuid();
             var blobPath = $"{request.ApplicationId}/{documentId}/{request.FileName}";
-            var uploadResult = await _fileStorageService.UploadAsync(
-                request.FileContent, blobPath, request.ContentType, cancellationToken);
+
+            FileUploadResult uploadResult;
+            try
+            {
+                uploadResult = await _fileStorageService.UploadAsync(
+                    request.FileContent, blobPath, request.ContentType, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not ArgumentException and not ArgumentNullException)
+            {
+                throw new InvalidOperationException(
+                    "An error occurred while uploading the file. Please try again later.", ex);
+            }
 
             // Step 6-7: Create Document entity and attach to aggregate
             var document = application.AddDocument(

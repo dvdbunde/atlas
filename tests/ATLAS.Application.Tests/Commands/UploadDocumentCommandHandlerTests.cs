@@ -22,6 +22,7 @@ namespace ATLAS.Application.Tests.Commands
         private readonly Mock<IFileStorageService> _mockFileStorageService;
         private readonly Mock<IMediator> _mockMediator;
         private readonly Mock<ICurrentUserService> _mockCurrentUserService;
+        private readonly Mock<IVirusScanner> _mockVirusScanner;
         private readonly UploadDocumentCommandHandler _handler;
         private readonly Guid _testUserId;
 
@@ -32,6 +33,7 @@ namespace ATLAS.Application.Tests.Commands
             _mockFileStorageService = new Mock<IFileStorageService>();
             _mockMediator = new Mock<IMediator>();
             _mockCurrentUserService = new Mock<ICurrentUserService>();
+            _mockVirusScanner = new Mock<IVirusScanner>();
             _testUserId = Guid.NewGuid();
 
             _mockCurrentUserService.Setup(s => s.UserId).Returns(_testUserId);
@@ -40,6 +42,7 @@ namespace ATLAS.Application.Tests.Commands
                 _mockRepository.Object,
                 _mockPermitTypeRepository.Object,
                 _mockFileStorageService.Object,
+                _mockVirusScanner.Object,
                 _mockMediator.Object,
                 _mockCurrentUserService.Object);
         }
@@ -62,6 +65,8 @@ namespace ATLAS.Application.Tests.Commands
 
             var permitType = new PermitType("Test Permit", "Description", 100m);
 
+            _mockVirusScanner.Setup(s => s.ScanAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new VirusScanResult { IsClean = true });
             _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);
             _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
@@ -94,6 +99,7 @@ namespace ATLAS.Application.Tests.Commands
             _mockMediator.Verify(m => m.Publish(
                 It.Is<DocumentUploadedEvent>(e => e.ApplicationId == applicationId),
                 It.IsAny<CancellationToken>()), Times.Once);
+            _mockVirusScanner.Verify(s => s.ScanAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -160,6 +166,8 @@ namespace ATLAS.Application.Tests.Commands
                 .GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             idField?.SetValue(application, applicationId);
 
+            _mockVirusScanner.Setup(s => s.ScanAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new VirusScanResult { IsClean = true });
             _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);
             _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -188,6 +196,7 @@ namespace ATLAS.Application.Tests.Commands
             Assert.NotNull(capturedBlobPath);
             Assert.StartsWith(applicationId.ToString(), capturedBlobPath!);
             Assert.EndsWith("site-plan.pdf", capturedBlobPath!);
+            _mockVirusScanner.Verify(s => s.ScanAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

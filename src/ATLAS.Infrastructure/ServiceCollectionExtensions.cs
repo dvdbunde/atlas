@@ -96,14 +96,11 @@ namespace ATLAS.Infrastructure
             // Register Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            //----------------------
-            // Document Storage (Milestone 6, Phase D2)
-            //----------------------
-
             // Bind Storage configuration to strongly-typed options
             services.AddOptions<StorageOptions>()
                 .Bind(configuration.GetSection(StorageOptions.SectionName))
-                .ValidateDataAnnotations();
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
             // Register BlobStorageService as the production file storage implementation
             services.AddScoped<IFileStorageService>(sp =>
@@ -111,6 +108,9 @@ namespace ATLAS.Infrastructure
                 var options = sp.GetRequiredService<IOptions<StorageOptions>>();
                 return new BlobStorageService(options);
             });
+
+            // Register virus scanner (pass-through for MVP)
+            services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
 
             return services;
         }
@@ -148,6 +148,7 @@ namespace ATLAS.Infrastructure
             services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
             services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
             services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+            services.AddScoped<INotificationHandler<DocumentDownloadedEvent>, DocumentDownloadedEventHandler>();
 
             //----------------------
             // Document Storage (Milestone 6, Phase D2)
@@ -155,6 +156,9 @@ namespace ATLAS.Infrastructure
 
             // Register InMemoryFileStorageService for test environments
             services.AddScoped<IFileStorageService, InMemoryFileStorageService>();
+
+            // Register virus scanner (pass-through for MVP)
+            services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
 
             return services;
         }
