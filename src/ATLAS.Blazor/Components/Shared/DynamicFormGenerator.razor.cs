@@ -30,6 +30,9 @@ public partial class DynamicFormGenerator : ComponentBase
     private DynamicFormFieldViewModel[] _orderedFields = Array.Empty<DynamicFormFieldViewModel>();
     private readonly DynamicFormModel _formModel = new();
 
+    [Parameter]
+    public EventCallback<DynamicFormFieldViewModel> OnFileSelected { get; set; }
+
     protected override void OnParametersSet()
     {
         _editContext = new EditContext(_formModel);
@@ -77,13 +80,22 @@ public partial class DynamicFormGenerator : ComponentBase
         await OnSubmit.InvokeAsync();
     }
 
-    private void HandleFileSelected(DynamicFormFieldViewModel field, InputFileChangeEventArgs e)
+    private async Task HandleFileSelected(DynamicFormFieldViewModel field, InputFileChangeEventArgs e)
     {
         var file = e.GetMultipleFiles().FirstOrDefault();
         if (file is not null)
         {
             field.SelectedFileName = file.Name;
-            field.CurrentValue = file.Name; // Store file name for validation
+            field.CurrentValue = file.Name;
+
+            // Read file content into memory for upload
+            using var stream = file.OpenReadStream(maxAllowedSize: 30 * 1024 * 1024); // 30MB buffer
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            field.SelectedFileContent = memoryStream.ToArray();
+
+            // Notify parent to trigger upload
+            await OnFileSelected.InvokeAsync(field);
         }
     }
 }

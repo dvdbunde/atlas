@@ -128,12 +128,22 @@
 
                     case FieldType.FileUpload:
                         <div class="file-upload-wrapper">
-                                <InputFile id="@fieldId"
-                                       class="@(field.HasErrors ? "form-control is-invalid" : "form-control")"
-                                       OnChange="@((InputFileChangeEventArgs e) => HandleFileSelected(field, e))"
-                                       aria-describedby="@(field.HasErrors ? fieldId + "-validation" : null)" />
+                            <InputFile id="@fieldId"
+                                   class="@(field.HasErrors ? "form-control is-invalid" : "form-control")"
+                                   OnChange="@((InputFileChangeEventArgs e) => HandleFileSelected(field, e))"
+                                   disabled="@field.IsUploading"
+                                   aria-describedby="@(field.HasErrors ? fieldId + "-validation" : null)" />
 
-                            @if (!string.IsNullOrEmpty(field.SelectedFileName))
+                            @if (field.IsUploading)
+                            {
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                        Uploading...
+                                    </small>
+                                </div>
+                            }
+                            else if (!string.IsNullOrEmpty(field.SelectedFileName))
                             {
                                 <div class="mt-1">
                                     <small class="text-muted">
@@ -159,6 +169,34 @@
                                             <span class="ms-2">Max @(field.MaxFileSizeBytes.Value / (1024 * 1024))MB</span>
                                         }
                                     </small>
+                                </div>
+                            }
+
+                            @if (field.UploadFailed)
+                            {
+                                <div class="mt-1 text-danger">
+                                    <small>
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        @field.UploadErrorMessage
+                                    </small>
+                                </div>
+                            }
+
+                            @* Uploaded documents list *@
+                            @if (field.UploadedDocuments.Count > 0)
+                            {
+                                <div class="mt-2">
+                                    <small class="text-muted fw-bold">Uploaded:</small>
+                                    @foreach (var doc in field.UploadedDocuments)
+                                    {
+                                        <div class="ms-2">
+                                            <small>
+                                                <i class="bi bi-file-earmark-check text-success"></i>
+                                                @doc.FileName
+                                                <span class="text-muted">(@(doc.FileSize / 1024)KB)</span>
+                                            </small>
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>

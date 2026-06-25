@@ -122,5 +122,95 @@ namespace ATLAS.Blazor.Tests.Components.Shared
             Assert.True(field.HasErrors);
             Assert.Contains(field.Errors, e => e.Contains("required"));
         }       
+    
+
+        [Fact]
+        public void ShouldShowUploadProgress_WhenUploading()
+        {
+            // Arrange
+            var field = new DynamicFormFieldViewModel
+            {
+                FieldName = "SitePlan",
+                Label = "Site Plan",
+                Type = FieldType.FileUpload,
+                IsUploading = true
+            };
+
+            // Act
+            var cut = Render<DynamicFormGenerator>(parameters => parameters
+                .Add(p => p.Fields, new[] { field })
+                .Add(p => p.Mode, FormFieldMode.Edit));
+
+            // Assert
+            cut.Markup.Contains("Uploading...");
+        }
+
+        [Fact]
+        public void ShouldShowUploadError_WhenUploadFails()
+        {
+            // Arrange
+            var field = new DynamicFormFieldViewModel
+            {
+                FieldName = "SitePlan",
+                Label = "Site Plan",
+                Type = FieldType.FileUpload,
+                UploadFailed = true,
+                UploadErrorMessage = "Upload failed. Please try again."
+            };
+
+            // Act
+            var cut = Render<DynamicFormGenerator>(parameters => parameters
+                .Add(p => p.Fields, new[] { field })
+                .Add(p => p.Mode, FormFieldMode.Edit));
+
+            // Assert
+            cut.Markup.Contains("Upload failed");
+        }
+
+        [Fact]
+        public void ShouldShowUploadedDocuments_WhenDocumentsExist()
+        {
+            // Arrange
+            var field = new DynamicFormFieldViewModel
+            {
+                FieldName = "SitePlan",
+                Label = "Site Plan",
+                Type = FieldType.FileUpload,
+                UploadedDocuments = new()
+                {
+                    new() { FileName = "site-plan.pdf", FileSize = 2048, UploadedDate = DateTime.UtcNow }
+                }
+            };
+
+            // Act
+            var cut = Render<DynamicFormGenerator>(parameters => parameters
+                .Add(p => p.Fields, new[] { field })
+                .Add(p => p.Mode, FormFieldMode.Edit));
+
+            // Assert
+            cut.Markup.Contains("site-plan.pdf");
+            Assert.Contains("2KB", cut.Markup);
+        }
+
+        [Fact]
+        public void ShouldDisableInputFile_WhenUploading()
+        {
+            // Arrange
+            var field = new DynamicFormFieldViewModel
+            {
+                FieldName = "SitePlan",
+                Label = "Site Plan",
+                Type = FieldType.FileUpload,
+                IsUploading = true
+            };
+
+            // Act
+            var cut = Render<DynamicFormGenerator>(parameters => parameters
+                .Add(p => p.Fields, new[] { field })
+                .Add(p => p.Mode, FormFieldMode.Edit));
+
+            // Assert
+            Assert.Contains("disabled", cut.Markup);
+        }
     }
 }

@@ -23,7 +23,11 @@ public class DynamicFormFieldViewModel
     public string? SelectedFileName { get; set; }
     public string? AllowedExtensions { get; init; }
     public long? MaxFileSizeBytes { get; init; }
-    public List<DocumentDto> UploadedDocuments { get; set; } = new();
+    public List<DocumentDto> UploadedDocuments { get; set; } = new();        
+    public byte[]? SelectedFileContent { get; set; }
+    public bool IsUploading { get; set; }
+    public bool UploadFailed { get; set; }
+    public string? UploadErrorMessage { get; set; }
 
     public static DynamicFormFieldViewModel FromFieldDefinition(FieldDefinitionDto dto)
     {
