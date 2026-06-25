@@ -76,4 +76,14 @@ public partial class DynamicFormGenerator : ComponentBase
         // Always invoke the parent callback — parent decides whether to proceed
         await OnSubmit.InvokeAsync();
     }
+
+    private void HandleFileSelected(DynamicFormFieldViewModel field, InputFileChangeEventArgs e)
+    {
+        var file = e.GetMultipleFiles().FirstOrDefault();
+        if (file is not null)
+        {
+            field.SelectedFileName = file.Name;
+            field.CurrentValue = file.Name; // Store file name for validation
+        }
+    }
 }

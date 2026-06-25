@@ -32,9 +32,33 @@
 
             @if (Mode == FormFieldMode.ReadOnly)
             {
-                <p id="@fieldId" class="form-control-plaintext">
-                    @(string.IsNullOrEmpty(field.CurrentValue) ? "\u2014" : field.CurrentValue)
-                </p>
+                @if (field.Type == FieldType.FileUpload)
+                {
+                    if (field.UploadedDocuments.Count > 0)
+                    {
+                        foreach (var doc in field.UploadedDocuments)
+                        {
+                            <div class="mb-1">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>@doc.FileName</span>
+                                <small class="text-muted ms-2">(@(doc.FileSize / 1024)KB)</small>
+                                @* D5: Wire download link here *@
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p id="@fieldId" class="form-control-plaintext text-muted">
+                            No document uploaded
+                        </p>
+                    }
+                }
+                else
+                {
+                    <p id="@fieldId" class="form-control-plaintext">
+                        @(string.IsNullOrEmpty(field.CurrentValue) ? "\u2014" : field.CurrentValue)
+                    </p>
+                }
             }
             else
             {
@@ -100,6 +124,44 @@
                                 <option value="@option">@option</option>
                             }
                         </select>                        
+                        break;
+
+                    case FieldType.FileUpload:
+                        <div class="file-upload-wrapper">
+                                <InputFile id="@fieldId"
+                                       class="@(field.HasErrors ? "form-control is-invalid" : "form-control")"
+                                       OnChange="@((InputFileChangeEventArgs e) => HandleFileSelected(field, e))"
+                                       aria-describedby="@(field.HasErrors ? fieldId + "-validation" : null)" />
+
+                            @if (!string.IsNullOrEmpty(field.SelectedFileName))
+                            {
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        <i class="bi bi-file-earmark"></i>
+                                        @field.SelectedFileName
+                                        @if (field.MaxFileSizeBytes.HasValue)
+                                        {
+                                            <span class="ms-2">(Max: @(field.MaxFileSizeBytes.Value / (1024 * 1024))MB)</span>
+                                        }
+                                    </small>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mt-1">
+                                    <small class="text-muted">
+                                        @if (!string.IsNullOrEmpty(field.AllowedExtensions))
+                                        {
+                                            <span>Accepted: @field.AllowedExtensions</span>
+                                        }
+                                        @if (field.MaxFileSizeBytes.HasValue)
+                                        {
+                                            <span class="ms-2">Max @(field.MaxFileSizeBytes.Value / (1024 * 1024))MB</span>
+                                        }
+                                    </small>
+                                </div>
+                            }
+                        </div>
                         break;
 
                     default:

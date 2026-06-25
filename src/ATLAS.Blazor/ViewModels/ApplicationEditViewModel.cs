@@ -40,11 +40,11 @@ public class ApplicationEditViewModel
         PermitDescription = permitType.Description;
         ApplicationNumber = application.ApplicationNumber;
         Status = application.Status;
-
-        Fields = permitType.Fields.Select(fd =>
+    
+        var fields = permitType.Fields.Select(fd =>
         {
             var hasExistingValue = application.FieldValues.TryGetValue(fd.Name, out var existingValue);
-
+    
             return new DynamicFormFieldViewModel
             {
                 FieldName = fd.Name,
@@ -54,8 +54,24 @@ public class ApplicationEditViewModel
                 DefaultValue = fd.DefaultValue,
                 CurrentValue = hasExistingValue ? existingValue : (fd.DefaultValue ?? string.Empty),
                 Options = fd.Options ?? new(),
-                SortOrder = 0
+                SortOrder = 0,
+                AllowedExtensions = fd.AllowedExtensions,
+                MaxFileSizeBytes = fd.MaxFileSizeBytes
             };
         }).ToList();
+    
+        // D4: Merge document requirements as FileUpload fields
+        foreach (var req in permitType.DocumentRequirements)
+        {
+            var uploadedDocs = application.Documents
+                .Where(d => d.FileName.EndsWith(req.DocumentType, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+    
+            var field = DynamicFormFieldViewModel.FromDocumentRequirement(req);
+            field.UploadedDocuments = uploadedDocs;
+            fields.Add(field);
+        }
+    
+        Fields = fields;
     }
 }

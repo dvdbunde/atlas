@@ -19,7 +19,11 @@ public class DynamicFormFieldViewModel
     public int SortOrder { get; init; }
     public List<string> Errors { get; } = new();
     public bool HasErrors => Errors.Count > 0;
-    public List<string> Options { get; init; } = new();
+    public List<string> Options { get; init; } = new();    
+    public string? SelectedFileName { get; set; }
+    public string? AllowedExtensions { get; init; }
+    public long? MaxFileSizeBytes { get; init; }
+    public List<DocumentDto> UploadedDocuments { get; set; } = new();
 
     public static DynamicFormFieldViewModel FromFieldDefinition(FieldDefinitionDto dto)
     {
@@ -32,7 +36,9 @@ public class DynamicFormFieldViewModel
             DefaultValue = dto.DefaultValue,
             CurrentValue = dto.DefaultValue ?? string.Empty,
             Options = dto.Options ?? new(),
-            SortOrder = 0
+            SortOrder = 0,
+            AllowedExtensions = dto.AllowedExtensions,
+            MaxFileSizeBytes = dto.MaxFileSizeBytes
         };
     }
 
@@ -49,7 +55,28 @@ public class DynamicFormFieldViewModel
             DefaultValue = dto.DefaultValue,
             CurrentValue = existingValue.Value,
             Options = dto.Options ?? new(),
-            SortOrder = existingValue.SortOrder
+            SortOrder = existingValue.SortOrder,
+            AllowedExtensions = dto.AllowedExtensions,
+            MaxFileSizeBytes = dto.MaxFileSizeBytes
+        };
+    }
+
+    /// <summary>
+    /// Creates a FileUpload field from a DocumentRequirementDto.
+    /// </summary>
+    public static DynamicFormFieldViewModel FromDocumentRequirement(DocumentRequirementDto req)
+    {
+        return new DynamicFormFieldViewModel
+        {
+            FieldName = req.DocumentType,
+            Label = req.DocumentType,
+            Type = FieldType.FileUpload,
+            IsRequired = req.IsRequired,
+            DefaultValue = null,
+            CurrentValue = string.Empty,
+            SortOrder = 0,
+            AllowedExtensions = req.AllowedExtensions,
+            MaxFileSizeBytes = req.MaxFileSizeBytes
         };
     }
 }
