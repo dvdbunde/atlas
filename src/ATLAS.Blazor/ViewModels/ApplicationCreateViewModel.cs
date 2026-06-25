@@ -25,17 +25,8 @@ public class ApplicationCreateViewModel
         PermitTypeId = dto.Id;
         PermitName = dto.Name;
         PermitDescription = dto.Description;
-    
-        var fields = dto.Fields
+        Fields = dto.Fields
             .Select(DynamicFormFieldViewModel.FromFieldDefinition)
             .ToList();
-    
-        // D4: Merge document requirements as FileUpload fields
-        foreach (var req in dto.DocumentRequirements)
-        {
-            fields.Add(DynamicFormFieldViewModel.FromDocumentRequirement(req));
-        }
-    
-        Fields = fields;
     }
 }

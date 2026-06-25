@@ -73,7 +73,6 @@ namespace ATLAS.Application.DTOs
         public decimal Fee { get; set; }
         public bool IsActive { get; set; }
         public List<FieldDefinitionDto> Fields { get; set; } = new();
-        public List<DocumentRequirementDto> DocumentRequirements { get; set; } = new();
     }
 
     public class FieldDefinitionDto
@@ -121,17 +120,5 @@ namespace ATLAS.Application.DTOs
         public ApplicationStatus Status { get; set; }
         public DateTime? SubmittedDate { get; set; }
         public DateTime? LastUpdated { get; set; }
-    }
-
-    /// <summary>
-    /// UI-oriented document requirement information for FileUpload fields.
-    /// Maps from Domain.ValueObjects.DocumentRequirement.
-    /// </summary>
-    public class DocumentRequirementDto
-    {
-        public string DocumentType { get; set; } = string.Empty;
-        public bool IsRequired { get; set; }
-        public string AllowedExtensions { get; set; } = string.Empty; // comma-separated
-        public long MaxFileSizeBytes { get; set; }
-    }
+    }    
 }

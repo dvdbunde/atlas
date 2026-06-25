@@ -1,4 +1,3 @@
-using ATLAS.Application.DTOs;
 using ATLAS.Blazor.Components.Shared;
 using ATLAS.Blazor.FormModel;
 using ATLAS.Blazor.ViewModels;
@@ -122,29 +121,6 @@ namespace ATLAS.Blazor.Tests.Components.Shared
             // Assert
             Assert.True(field.HasErrors);
             Assert.Contains(field.Errors, e => e.Contains("required"));
-        }
-
-        [Fact]
-        public void FromDocumentRequirement_ShouldCreateFileUploadField()
-        {
-            // Arrange
-            var req = new DocumentRequirementDto
-            {
-                DocumentType = "Site Plan",
-                IsRequired = true,
-                AllowedExtensions = ".pdf,.png,.jpg",
-                MaxFileSizeBytes = 10 * 1024 * 1024
-            };
-
-            // Act
-            var field = DynamicFormFieldViewModel.FromDocumentRequirement(req);
-
-            // Assert
-            Assert.Equal("Site Plan", field.Label);
-            Assert.Equal(FieldType.FileUpload, field.Type);
-            Assert.True(field.IsRequired);
-            Assert.Equal(".pdf,.png,.jpg", field.AllowedExtensions);
-            Assert.Equal(10 * 1024 * 1024, field.MaxFileSizeBytes);
-        }
+        }       
     }
 }

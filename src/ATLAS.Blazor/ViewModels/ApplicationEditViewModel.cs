@@ -60,16 +60,13 @@ public class ApplicationEditViewModel
             };
         }).ToList();
     
-        // D4: Merge document requirements as FileUpload fields
-        foreach (var req in permitType.DocumentRequirements)
+        // D4: Attach uploaded documents to FileUpload fields (field name matches document type)
+        foreach (var field in fields.Where(f => f.Type == FieldType.FileUpload))
         {
-            var uploadedDocs = application.Documents
-                .Where(d => d.FileName.EndsWith(req.DocumentType, StringComparison.OrdinalIgnoreCase))
+            var matchingDocs = application.Documents
+                .Where(d => d.FileName.StartsWith(field.FieldName, StringComparison.OrdinalIgnoreCase))
                 .ToList();
-    
-            var field = DynamicFormFieldViewModel.FromDocumentRequirement(req);
-            field.UploadedDocuments = uploadedDocs;
-            fields.Add(field);
+            field.UploadedDocuments = matchingDocs;
         }
     
         Fields = fields;

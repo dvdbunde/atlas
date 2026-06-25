@@ -59,24 +59,5 @@ public class DynamicFormFieldViewModel
             AllowedExtensions = dto.AllowedExtensions,
             MaxFileSizeBytes = dto.MaxFileSizeBytes
         };
-    }
-
-    /// <summary>
-    /// Creates a FileUpload field from a DocumentRequirementDto.
-    /// </summary>
-    public static DynamicFormFieldViewModel FromDocumentRequirement(DocumentRequirementDto req)
-    {
-        return new DynamicFormFieldViewModel
-        {
-            FieldName = req.DocumentType,
-            Label = req.DocumentType,
-            Type = FieldType.FileUpload,
-            IsRequired = req.IsRequired,
-            DefaultValue = null,
-            CurrentValue = string.Empty,
-            SortOrder = 0,
-            AllowedExtensions = req.AllowedExtensions,
-            MaxFileSizeBytes = req.MaxFileSizeBytes
-        };
-    }
+    }   
 }

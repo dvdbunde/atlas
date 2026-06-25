@@ -77,7 +77,7 @@ Deliver complete document management for citizen permit applications: upload sup
 - Update DynamicFieldValidator — FileUpload validation rules
 - Update FieldDefinitionDto mapping to expose document requirement metadata
 - Update PermitTypeDto to include document requirements
-- Update ApplicationEditViewModel/ApplicationCreateViewModel — merge document requirements into field list as FileUpload fields
+- Consume the FileUpload field definitions already exposed by the Application layer.
 - Create tests/ATLAS.Blazor.Tests/Components/DynamicFormGeneratorFileUploadTests.cs
 
 ### D5 — Citizen Upload Experience
