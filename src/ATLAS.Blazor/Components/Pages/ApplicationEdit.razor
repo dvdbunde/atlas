@@ -52,7 +52,7 @@
 
         <DynamicFormGenerator @ref="_dynamicForm"
                               Fields="@_viewModel.Fields"
-                              Mode="FormFieldMode.Edit">
+                              Mode="FormFieldMode.Edit" 
                               OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))">
             <div class="mt-4">
                 <button type="button"
