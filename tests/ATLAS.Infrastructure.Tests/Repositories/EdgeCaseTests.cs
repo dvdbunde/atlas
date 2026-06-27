@@ -58,11 +58,10 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task Review_WithNullReasonCodeForReject_ShouldStillPersist()
         {
             // Arrange - Reject decision typically needs reason code, but domain handles this
-            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
-            var reviewId = Guid.NewGuid();
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
             
             // Domain method sets default reason code if null for Reject
-            var review = application.AddReview(reviewId, Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, null);
+            var review = application.AddReview(Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, null);
             
             // Act
             await _applicationRepo.AddAsync(application);

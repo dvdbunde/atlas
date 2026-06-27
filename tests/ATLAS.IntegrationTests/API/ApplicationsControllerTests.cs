@@ -92,9 +92,11 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task RequestInfo_Should_Return200OK()
         {
-            var applicationId = TestData.Application1Id;
+            var applicationId = TestData.Application6Id;
             var request = new RequestInfoRequest {ApplicationId = applicationId, Message = "Please provide additional information" };
             var response = await _client.PostAsAsync($"/api/applications/{applicationId}/request-info", request, TestUserBuilder.AsAdmin());
+            _output.WriteLine($"Response: {response.StatusCode}");
+            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 

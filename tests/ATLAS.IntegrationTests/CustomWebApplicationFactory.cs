@@ -162,9 +162,14 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         application5.AddDocument(Guid.NewGuid(),"building_plan-2.pdf", "application/pdf", 1024, "https://blob.test.com/building_plan-2.pdf", citizen.Id);
         application5.Submit();
         application5.StartReview(officer.Id);
+
+        var application6 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for request info test");
+        application6.AddDocument(Guid.NewGuid(),"building_plan-2.pdf", "application/pdf", 1024, "https://blob.test.com/building_plan-2.pdf", citizen.Id);
+        application6.Submit();
+        application6.StartReview(officer.Id);
         
         
-        context.Applications.AddRange(new[] { application1, application2, application3, application4, application5 });
+        context.Applications.AddRange(new[] { application1, application2, application3, application4, application5, application6 });
         context.SaveChanges();
 
         // Store application IDs
@@ -173,6 +178,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         TestData.Application3Id = application3.Id;       
         TestData.Application4Id = application4.Id;       
         TestData.Application5Id = application5.Id;       
+        TestData.Application6Id = application6.Id;       
         
         context.SaveChanges();
 
@@ -181,6 +187,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         TestData.Document2Id = application2.Documents[0].Id;
         TestData.Document3Id = application3.Documents[0].Id;
         TestData.Document4Id = application5.Documents[0].Id;
+        TestData.Document5Id = application6.Documents[0].Id;
 
         // Seed Audit Logs
         var audit1 = new AuditLog(citizen.Id, "ApplicationSubmitted", "Application", application1.Id, "Application submitted", "127.0.0.1");
@@ -207,10 +214,12 @@ public static class TestData
     public static Guid Application3Id { get; set; }
     public static Guid Application4Id { get; set; }
     public static Guid Application5Id { get; set; }
+    public static Guid Application6Id { get; set; }
     public static Guid Document1Id { get; set; }
     public static Guid Document2Id { get; set; }
     public static Guid Document3Id { get; set; }
     public static Guid Document4Id { get; set; }
+    public static Guid Document5Id { get; set; }
 }
 
 public static class TestServiceCollectionExtensions
