@@ -179,6 +179,22 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Equal(_officerId, approvedEvent.OfficerId);
         }
 
+        [Fact]
+        public void Approve_ShouldCreateReview()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+        
+            // Act
+            application.Approve(_officerId, "Approved");
+        
+            // Assert
+            var review = Assert.Single(application.Reviews);
+            Assert.Equal(ReviewDecision.Approve, review.Decision);
+            Assert.Equal(_officerId, review.OfficerId);
+            Assert.True(review.IsVisibleToCitizen);
+        }
+
         #endregion
 
         #region Reject Tests
@@ -298,6 +314,22 @@ namespace ATLAS.Domain.Tests.Entities
             var infoEvent = Assert.IsType<ApplicationInfoRequestedEvent>(domainEvent);
             Assert.Equal(application.Id, infoEvent.ApplicationId);
             Assert.Equal(_officerId, infoEvent.OfficerId);
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldCreateReview()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+        
+            // Act
+            application.RequestInfo(_officerId, "Please provide additional documentation");
+        
+            // Assert
+            var review = Assert.Single(application.Reviews);
+            Assert.Equal(ReviewDecision.RequestInfo, review.Decision);
+            Assert.Equal(_officerId, review.OfficerId);
+            Assert.True(review.IsVisibleToCitizen);
         }
 
         #endregion

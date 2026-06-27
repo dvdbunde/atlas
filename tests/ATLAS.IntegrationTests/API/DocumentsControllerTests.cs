@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace ATLAS.IntegrationTests.API
 {
+    [Collection("Sequential Integration Tests")]
     public class DocumentsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;

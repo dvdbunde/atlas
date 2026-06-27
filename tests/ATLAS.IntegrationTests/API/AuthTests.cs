@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace ATLAS.IntegrationTests.API;
 
+[Collection("Sequential Integration Tests")]
 public class AuthTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
 
     public AuthTests(CustomWebApplicationFactory<Program> factory)
-    {
+    {           
         _client = factory.CreateClient();
     }
 

@@ -21,6 +21,9 @@ using Microsoft.Extensions.Options;
 
 namespace ATLAS.IntegrationTests;
 
+[CollectionDefinition("Sequential Integration Tests", DisableParallelization = true)]
+public class SequentialIntegrationTestsCollection { }
+
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -96,6 +99,19 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         builder.UseSetting("Logging:Console:IncludeScopes", "true");
     }
 
+    /// <summary>
+    /// Drops and recreates the InMemory database with fresh seed data.
+    /// Call from the test constructor to get a clean DB per test.
+    /// </summary>
+    public void ResetDatabase()
+    {
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
+        SeedTestData(context);
+    }
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         var host = base.CreateHost(builder);
@@ -118,11 +134,12 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     private void SeedTestData(ApplicationDbContext context)
     {
         // Seed PermitTypes (IsActive = true by default)
+         var parkingPermit = new PermitType("Parking Permit", "parking spaces", 150.00m);
         var buildingPermit = new PermitType("Building Permit", "For construction and renovations", 150.00m);
         var eventPermit = new PermitType("Event Permit", "For public events and gatherings", 75.00m);
         var signagePermit = new PermitType("Signage Permit", "For temporary signage", 25.00m);
         
-        context.PermitTypes.AddRange(new[] { buildingPermit, eventPermit, signagePermit });
+        context.PermitTypes.AddRange(new[] { buildingPermit, eventPermit, signagePermit, parkingPermit });
 
         // Seed Users
         var citizen = new User(Guid.NewGuid(), "citizen@test.com", "John", "Doe", UserRole.Citizen);
@@ -135,6 +152,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         context.SaveChanges();
 
         // Store seeded IDs for tests to use
+        TestData.ParkingPermitTypeId = parkingPermit.Id;
         TestData.BuildingPermitTypeId = buildingPermit.Id;
         TestData.EventPermitTypeId = eventPermit.Id;
         TestData.SignagePermitTypeId = signagePermit.Id;
@@ -203,6 +221,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 // Static class to expose seeded IDs to tests
 public static class TestData
 {
+    public static Guid ParkingPermitTypeId { get; set; }
     public static Guid BuildingPermitTypeId { get; set; }
     public static Guid EventPermitTypeId { get; set; }
     public static Guid SignagePermitTypeId { get; set; }

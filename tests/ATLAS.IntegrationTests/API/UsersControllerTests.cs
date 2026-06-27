@@ -8,6 +8,7 @@ using ATLAS.IntegrationTests;
 
 namespace ATLAS.IntegrationTests.API
 {
+    [Collection("Sequential Integration Tests")]
     public class UsersControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;

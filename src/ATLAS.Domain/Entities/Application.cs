@@ -118,6 +118,9 @@ namespace ATLAS.Domain.Entities
             Status = ApplicationStatus.Approved;
             ReviewedDate = DateTime.UtcNow;
             OfficerNotes += $"[APPROVED {DateTime.UtcNow} by {officerId}]: {comments}";
+
+            AddReview(officerId, ReviewDecision.Approve, comments, true);
+
             AddDomainEvent(new ApplicationApprovedEvent(Id, officerId));
         }
 
@@ -146,6 +149,9 @@ namespace ATLAS.Domain.Entities
 
             Status = ApplicationStatus.InfoRequested;
             OfficerNotes += $"[INFO REQUESTED {DateTime.UtcNow} by {officerId}]: {message}";
+
+            AddReview(officerId, ReviewDecision.RequestInfo, message, true);
+
             AddDomainEvent(new ApplicationInfoRequestedEvent(Id, officerId, message));
         }
 

@@ -5,6 +5,7 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.API
 {
+    [Collection("Sequential Integration Tests")]
     public class AuditLogsControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;

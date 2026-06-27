@@ -6,6 +6,7 @@ using ATLAS.IntegrationTests;
 
 namespace ATLAS.IntegrationTests.API
 {
+    [Collection("Sequential Integration Tests")]
     public class PermitTypesControllerTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
@@ -61,7 +62,7 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task UpdatePermitType_Should_Return200OK()
         {
-            var permitTypeId = TestData.BuildingPermitTypeId;
+            var permitTypeId = TestData.ParkingPermitTypeId;
             var request = new
             {
                 permitTypeId = permitTypeId.ToString(),
