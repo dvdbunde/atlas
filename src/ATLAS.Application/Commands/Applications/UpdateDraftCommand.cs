@@ -12,7 +12,7 @@ using ATLAS.Domain;
 
 namespace ATLAS.Application.Commands.Applications
 {
-    public class UpdateDraftCommand : IRequest<Unit>
+    public class UpdateDraftCommand : ICommand<Unit>
     {
         public Guid ApplicationId { get; set; }
         public string CitizenNotes { get; set; } = string.Empty;

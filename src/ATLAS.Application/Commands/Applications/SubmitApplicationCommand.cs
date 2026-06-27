@@ -10,7 +10,7 @@ using ATLAS.Domain.Events;
 namespace ATLAS.Application.Commands
 {
     [Obsolete("Use CreateDraftCommand + SubmitDraftCommand instead")]
-    public class SubmitApplicationCommand : IRequest<Guid>
+    public class SubmitApplicationCommand : ICommand<Guid>
     {
         public Guid PermitTypeId { get; set; }
         public string CitizenNotes { get; set; } = string.Empty;

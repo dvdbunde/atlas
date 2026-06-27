@@ -76,7 +76,7 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task RejectApplication_Should_Return200OK()
         {
-            var applicationId = TestData.Application1Id;
+            var applicationId = TestData.Application5Id;
             var request = new RejectApplicationRequest 
             { 
                 ApplicationId = applicationId,
@@ -84,6 +84,8 @@ namespace ATLAS.IntegrationTests.API
                 Comments = "Rejected" 
             };
             var response = await _client.PostAsAsync($"/api/applications/{applicationId}/reject", request, TestUserBuilder.AsAdmin());
+            _output.WriteLine($"Response: {response.StatusCode}");
+            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 

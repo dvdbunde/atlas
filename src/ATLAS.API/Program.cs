@@ -30,6 +30,8 @@ builder.Services.AddMediatR(cfg =>
     
     // User synchronization pipeline behavior — runs before every request handler
     cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
+
+    cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
 });
 
 // Register FluentValidation validators from Application layer

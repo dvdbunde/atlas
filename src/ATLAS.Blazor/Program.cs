@@ -40,6 +40,7 @@ builder.Services.AddMediatR(cfg =>
     // Add pipeline behaviors
     cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.ValidationBehavior<,>));
     cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.UserSynchronizationBehavior<,>));
+    cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.TransactionBehavior<,>));
 });
 
 // Register UI pages for Microsoft.Identity.Web login/logout

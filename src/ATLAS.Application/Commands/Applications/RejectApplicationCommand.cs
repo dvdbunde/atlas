@@ -8,7 +8,7 @@ using ATLAS.Domain.Interfaces;
 
 namespace ATLAS.Application.Commands
 {
-    public class RejectApplicationCommand : IRequest<bool>
+    public class RejectApplicationCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public string ReasonCode { get; set; } = string.Empty;

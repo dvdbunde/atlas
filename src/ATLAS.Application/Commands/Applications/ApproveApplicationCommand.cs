@@ -9,7 +9,7 @@ using ATLAS.Domain.Events;
 
 namespace ATLAS.Application.Commands
 {
-    public class ApproveApplicationCommand : IRequest<bool>
+    public class ApproveApplicationCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public string Comments { get; set; } = string.Empty;

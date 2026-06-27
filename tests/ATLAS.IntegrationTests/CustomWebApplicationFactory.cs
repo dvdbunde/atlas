@@ -157,8 +157,14 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         application3.AddDocument(Guid.NewGuid(), "signage_design.pdf", "application/pdf", 1024, "https://blob.test.com/signage_design.pdf", citizen.Id);    
 
         var application4 = new ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Draft for document upload test");        
+
+        var application5 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for rejection test");
+        application5.AddDocument(Guid.NewGuid(),"building_plan-2.pdf", "application/pdf", 1024, "https://blob.test.com/building_plan-2.pdf", citizen.Id);
+        application5.Submit();
+        application5.StartReview(officer.Id);
         
-        context.Applications.AddRange(new[] { application1, application2, application3, application4 });
+        
+        context.Applications.AddRange(new[] { application1, application2, application3, application4, application5 });
         context.SaveChanges();
 
         // Store application IDs
@@ -166,6 +172,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         TestData.Application2Id = application2.Id;
         TestData.Application3Id = application3.Id;       
         TestData.Application4Id = application4.Id;       
+        TestData.Application5Id = application5.Id;       
         
         context.SaveChanges();
 
@@ -173,6 +180,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         TestData.Document1Id = application1.Documents[0].Id;
         TestData.Document2Id = application2.Documents[0].Id;
         TestData.Document3Id = application3.Documents[0].Id;
+        TestData.Document4Id = application5.Documents[0].Id;
 
         // Seed Audit Logs
         var audit1 = new AuditLog(citizen.Id, "ApplicationSubmitted", "Application", application1.Id, "Application submitted", "127.0.0.1");
@@ -198,9 +206,11 @@ public static class TestData
     public static Guid Application2Id { get; set; }
     public static Guid Application3Id { get; set; }
     public static Guid Application4Id { get; set; }
+    public static Guid Application5Id { get; set; }
     public static Guid Document1Id { get; set; }
     public static Guid Document2Id { get; set; }
     public static Guid Document3Id { get; set; }
+    public static Guid Document4Id { get; set; }
 }
 
 public static class TestServiceCollectionExtensions
@@ -235,6 +245,7 @@ public static class TestServiceCollectionExtensions
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly);
             cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
         });            
         
         return services;

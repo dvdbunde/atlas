@@ -8,7 +8,7 @@ using ATLAS.Domain.Events;
 
 namespace ATLAS.Application.Commands
 {    
-    public class UpdatePermitTypeCommand : IRequest<bool>
+    public class UpdatePermitTypeCommand : ICommand<bool>
     {
         public Guid PermitTypeId { get; set; }
         public string? Name { get; set; }

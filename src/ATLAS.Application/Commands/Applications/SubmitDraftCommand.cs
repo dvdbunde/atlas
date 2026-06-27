@@ -12,7 +12,7 @@ using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.Commands.Applications
 {
-    public class SubmitDraftCommand : IRequest<Unit>
+    public class SubmitDraftCommand : ICommand<Unit>
     {
         public Guid ApplicationId { get; set; }
     }

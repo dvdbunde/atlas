@@ -10,7 +10,7 @@ using ATLAS.Application.Interfaces;
 
 namespace ATLAS.Application.Commands.Applications
 {
-    public class CreateDraftCommand : IRequest<Guid>
+    public class CreateDraftCommand : ICommand<Guid>
     {
         public Guid PermitTypeId { get; set; }
         public string CitizenNotes { get; set; } = string.Empty;

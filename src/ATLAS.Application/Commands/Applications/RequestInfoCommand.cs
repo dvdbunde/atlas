@@ -8,7 +8,7 @@ using ATLAS.Application.Interfaces;
 
 namespace ATLAS.Application.Commands
 {
-    public class RequestInfoCommand : IRequest<bool>
+    public class RequestInfoCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public string Message { get; set; } = string.Empty;

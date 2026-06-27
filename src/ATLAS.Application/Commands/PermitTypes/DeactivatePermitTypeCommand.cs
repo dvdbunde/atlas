@@ -8,7 +8,7 @@ using ATLAS.Domain.Events;
 
 namespace ATLAS.Application.Commands
 {
-    public class DeactivatePermitTypeCommand : IRequest<bool>
+    public class DeactivatePermitTypeCommand : ICommand<bool>
     {
         public Guid PermitTypeId { get; set; }
         public Guid DeactivatedByAdminId { get; set; }

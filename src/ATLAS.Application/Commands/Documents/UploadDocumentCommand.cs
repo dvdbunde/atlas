@@ -9,7 +9,7 @@ using ATLAS.Domain.Interfaces;
 
 namespace ATLAS.Application.Commands
 {
-    public class UploadDocumentCommand : IRequest<bool>
+    public class UploadDocumentCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public Stream FileContent { get; set; } = Stream.Null;

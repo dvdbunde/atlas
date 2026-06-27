@@ -9,7 +9,7 @@ using ATLAS.Domain.Interfaces;
 
 namespace ATLAS.Application.Commands
 {
-    public class AssignToOfficerCommand : IRequest<bool>
+    public class AssignToOfficerCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public Guid OfficerId { get; set; }

@@ -8,7 +8,7 @@ using ATLAS.Domain.Events;
 
 namespace ATLAS.Application.Commands
 {
-    public class CreatePermitTypeCommand : IRequest<Guid>
+    public class CreatePermitTypeCommand : ICommand<Guid>
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
