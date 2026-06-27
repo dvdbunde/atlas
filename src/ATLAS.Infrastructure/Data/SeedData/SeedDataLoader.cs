@@ -56,6 +56,20 @@ namespace ATLAS.Infrastructure.Data.SeedData
                     permitType.AddField(field.Name, fieldType, field.IsRequired, defaultValue, field.Options?.AsReadOnly());
                 }
 
+                // M6: Seed document requirements
+                if (pt.DocumentRequirements != null)
+                {
+                    foreach (var req in pt.DocumentRequirements)
+                    {
+                        var extensions = req.AllowedFileTypes?.ToArray() ?? Array.Empty<string>();
+                        permitType.AddDocumentRequirement(
+                            req.DocumentType,
+                            req.IsRequired,
+                            extensions,
+                            req.MaxFileSizeBytes);
+                    }
+                }
+
                 await _context.PermitTypes.AddAsync(permitType);
             }
 
@@ -63,12 +77,13 @@ namespace ATLAS.Infrastructure.Data.SeedData
             _logger.LogInformation("Seeded {Count} permit types.", permitTypes.Count);
         }
 
-        private class PermitTypeSeedModel
+               private class PermitTypeSeedModel
         {
             public string Name { get; set; }
             public string Description { get; set; }
             public decimal Fee { get; set; }
             public List<FieldSeedModel> Fields { get; set; }
+            public List<DocumentRequirementSeedModel> DocumentRequirements { get; set; }
         }
 
         private class FieldSeedModel
@@ -78,6 +93,14 @@ namespace ATLAS.Infrastructure.Data.SeedData
             public bool IsRequired { get; set; }
             public string DefaultValue { get; set; }
             public List<string> Options { get; set; }
+        }
+
+        private class DocumentRequirementSeedModel
+        {
+            public string DocumentType { get; set; }
+            public bool IsRequired { get; set; }
+            public string[] AllowedFileTypes { get; set; }
+            public long MaxFileSizeBytes { get; set; }
         }
     }
 }
