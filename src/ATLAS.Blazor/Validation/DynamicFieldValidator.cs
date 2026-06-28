@@ -62,17 +62,11 @@ public class DynamicFieldValidator : ComponentBase, IDisposable
             CurrentEditContext!.Model,
             field.FieldName);
     
-        if (field.Type == FieldType.FileUpload)
-        {
-            // Client-side: check if a file has been selected
-            if (field.IsRequired && string.IsNullOrWhiteSpace(field.SelectedFileName))
+            if (field.Type == FieldType.FileUpload)
             {
-                var message = $"{field.Label} is required.";
-                _messageStore!.Add(fieldIdentifier, message);
-                field.Errors.Add(message);
+                // Document uploads are validated at submission time, not during draft editing
+                return;
             }
-            return;
-        }
     
         if (field.IsRequired && string.IsNullOrWhiteSpace(field.CurrentValue))
         {

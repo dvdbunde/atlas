@@ -87,6 +87,36 @@ namespace ATLAS.Application.Commands.Applications
                     throw new InvalidOperationException($"Required field '{requiredField}' must have a value");
             }
 
+            // Rule 4: All required document fields must have at least one uploaded document
+            var requiredDocFields = permitType.Fields
+                .Where(f => f.Type == FieldType.FileUpload && f.IsRequired)
+                .ToList();
+
+            if (requiredDocFields.Any())
+            {
+                var missingDocs = new List<string>();
+                foreach (var docField in requiredDocFields)
+                {
+                    var hasDocument = (application.Documents ?? Enumerable.Empty<Document>())
+                        .Any(d => d.FileName.StartsWith(
+                            docField.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (!hasDocument)
+                    {
+                        missingDocs.Add(docField.Name);
+                    }
+                }
+
+                if (missingDocs.Any())
+                {
+                    var message = "The following required documents are still missing:" +
+                                  Environment.NewLine +
+                                  string.Join(Environment.NewLine,
+                                      missingDocs.Select(m => $"- {m}"));
+                    throw new InvalidOperationException(message);
+                }
+            }
+
             // All validation passed, submit
             application.Submit();
             await _applicationRepository.UpdateAsync(application, cancellationToken);

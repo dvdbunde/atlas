@@ -251,11 +251,18 @@ public partial class ApplicationEdit : ComponentBase
 
             Navigation.NavigateTo($"/applications/confirmation/{_viewModel.ApplicationId}");
         }
+        catch (InvalidOperationException ex)
+        {
+            // Submission validation failures (including missing required documents)
+            _viewModel.SubmitHasError = true;
+            _viewModel.SubmitErrorMessage = ex.Message;
+            Logger.LogWarning(ex, "Submission validation failed for application {ApplicationId}", _viewModel.ApplicationId);
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to submit application {ApplicationId}", _viewModel.ApplicationId);
             _viewModel.SubmitHasError = true;
-            _viewModel.SubmitErrorMessage = "We were unable to submit your application. Please fix any validation errors and try again.";
+            _viewModel.SubmitErrorMessage = "We were unable to submit your application. Please try again.";
         }
         finally
         {

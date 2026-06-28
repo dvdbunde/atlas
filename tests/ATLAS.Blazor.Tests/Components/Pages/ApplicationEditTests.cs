@@ -338,6 +338,6 @@ public class ApplicationEditTests : BunitContext
         cut.Find("button.btn-success").Click();
 
         var alert = cut.Find(".alert-danger");
-        Assert.Contains("unable to submit", alert.TextContent);
+        Assert.Contains("Submit failed", alert.TextContent);
     }
 }
