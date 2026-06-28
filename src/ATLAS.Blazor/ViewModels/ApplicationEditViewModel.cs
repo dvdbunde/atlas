@@ -21,6 +21,7 @@ public class ApplicationEditViewModel
     public bool HasError { get; set; }
     public string? ErrorMessage { get; set; }
     public bool SaveSuccess { get; set; }
+    public bool CreatedSuccess { get; set; } = false;
     public bool IsLoaded => !IsLoading && !HasError;
     public bool IsSubmitting { get; set; }
     public bool SubmitHasError { get; set; }

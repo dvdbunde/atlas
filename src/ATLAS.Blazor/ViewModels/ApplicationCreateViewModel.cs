@@ -16,7 +16,6 @@ public class ApplicationCreateViewModel
     public bool IsSaving { get; set; }
     public bool HasError { get; set; }
     public string? ErrorMessage { get; set; }
-    public bool SaveSuccess { get; set; }
     public Guid CreatedApplicationId { get; set; }
     public bool IsLoaded => !IsLoading && !HasError;
 

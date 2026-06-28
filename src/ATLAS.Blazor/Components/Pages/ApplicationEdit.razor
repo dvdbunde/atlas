@@ -39,6 +39,17 @@
             &middot; Status: <StatusBadge Status="@_viewModel.Status" />
         </p>
 
+        @if (_viewModel.CreatedSuccess)
+        {
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading">Draft created successfully</h4>
+                <p>Your draft application has been created. You can now continue editing, add documents, or submit the application.</p>
+                <button class="btn btn-outline-success" @onclick="DismissCreatedSuccess">
+                    Continue Editing
+                </button>
+            </div>
+        }
+
         @if (_viewModel.SaveSuccess)
         {
             <div class="alert alert-success" role="alert">

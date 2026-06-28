@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Components;
 namespace ATLAS.Blazor.Components.Pages;
 
 public partial class ApplicationCreate : ComponentBase
-{
+{    
     [Parameter]
     public Guid PermitTypeId { get; set; }
 
@@ -26,6 +26,9 @@ public partial class ApplicationCreate : ComponentBase
     private DynamicFormGenerator _dynamicForm = default!;
 
     private bool _dataLoaded;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
   
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -97,8 +100,7 @@ public partial class ApplicationCreate : ComponentBase
 
             var applicationId = await Mediator.Send(command);
 
-            _viewModel.SaveSuccess = true;
-            _viewModel.CreatedApplicationId = applicationId;
+            Navigation.NavigateTo($"/applications/edit/{applicationId}?created=true");
         }
         catch (Exception ex)
         {

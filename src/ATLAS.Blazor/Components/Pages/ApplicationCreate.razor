@@ -36,46 +36,32 @@
     {
         <h1 class="mb-2">@_viewModel.PermitName</h1>
         <p class="text-muted mb-4">@_viewModel.PermitDescription</p>
-
-        @if (_viewModel.SaveSuccess)
-        {
-            <div class="alert alert-success" role="alert">
-                <h4 class="alert-heading">Draft saved</h4>
-                <p>Your application has been saved as a draft.</p>
-                <a href="/applications/edit/@_viewModel.CreatedApplicationId"
-                   class="btn btn-primary">
-                    Continue Editing
-                </a>
+        
+        <DynamicFormGenerator @ref="_dynamicForm" 
+                    Fields="@_viewModel.Fields" 
+                    Mode="FormFieldMode.Edit"
+                    OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))">
+            <div class="mt-4">
+                <button type="button"
+                        class="btn btn-primary btn-lg"
+                        disabled="@_viewModel.IsSaving"
+                        @onclick="SaveDraft">
+                    @if (_viewModel.IsSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span>Save Draft</span>
+                    }
+                </button>
             </div>
-        }
-        else
-        {
-            <DynamicFormGenerator @ref="_dynamicForm" 
-                      Fields="@_viewModel.Fields" 
-                      Mode="FormFieldMode.Edit"
-                      OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))">
-                <div class="mt-4">
-                    <button type="button"
-                            class="btn btn-primary btn-lg"
-                            disabled="@_viewModel.IsSaving"
-                            @onclick="SaveDraft">
-                        @if (_viewModel.IsSaving)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                            <span>Saving...</span>
-                        }
-                        else
-                        {
-                            <span>Save Draft</span>
-                        }
-                    </button>
-                </div>
-            </DynamicFormGenerator>
+        </DynamicFormGenerator>
 
-            @if (_viewModel.IsSaving)
-            {
-                <div class="mt-3 text-muted" role="status">Saving your draft application...</div>
-            }
-        }
+        @if (_viewModel.IsSaving)
+        {
+            <div class="mt-3 text-muted" role="status">Saving your draft application...</div>
+        }       
     }
 </div>

@@ -13,6 +13,9 @@ namespace ATLAS.Blazor.Components.Pages;
 
 public partial class ApplicationEdit : ComponentBase
 {
+    [SupplyParameterFromQuery(Name = "created")]
+    public bool? Created { get; set; }
+
     [Parameter]
     public Guid Id { get; set; }
 
@@ -76,6 +79,11 @@ public partial class ApplicationEdit : ComponentBase
             }
 
             _viewModel.Load(application, permitType);
+
+            if (Created == true)
+            {
+                _viewModel.CreatedSuccess = true;
+            }
         }   
         catch (Exception ex)
         {
@@ -209,6 +217,11 @@ public partial class ApplicationEdit : ComponentBase
     private void DismissSuccess()
     {
         _viewModel.SaveSuccess = false;
+    }
+
+    private void DismissCreatedSuccess()
+    {
+        _viewModel.CreatedSuccess = false;
     }
 
     private async Task SubmitApplication()
