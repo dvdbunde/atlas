@@ -8,6 +8,7 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration
 {
+    [Collection("Sequential Integration Tests")]
     public class ErrorHandlingTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;

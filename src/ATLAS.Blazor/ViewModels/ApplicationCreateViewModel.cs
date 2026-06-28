@@ -16,7 +16,6 @@ public class ApplicationCreateViewModel
     public bool IsSaving { get; set; }
     public bool HasError { get; set; }
     public string? ErrorMessage { get; set; }
-    public Guid CreatedApplicationId { get; set; }
     public bool IsLoaded => !IsLoading && !HasError;
 
     public void LoadFromDto(PermitTypeDto dto)

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration
 {
+    [Collection("Sequential Integration Tests")]
     public class ConcurrencyHandlingTests
     {
         private readonly ApplicationDbContext _context1;
