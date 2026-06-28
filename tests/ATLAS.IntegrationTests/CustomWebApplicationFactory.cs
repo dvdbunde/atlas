@@ -134,7 +134,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     private void SeedTestData(ApplicationDbContext context)
     {
         // Seed PermitTypes (IsActive = true by default)
-         var parkingPermit = new PermitType("Parking Permit", "parking spaces", 150.00m);
+        var parkingPermit = new PermitType("Parking Permit", "parking spaces", 150.00m);
         var buildingPermit = new PermitType("Building Permit", "For construction and renovations", 150.00m);
         var eventPermit = new PermitType("Event Permit", "For public events and gatherings", 75.00m);
         var signagePermit = new PermitType("Signage Permit", "For temporary signage", 25.00m);
@@ -164,49 +164,23 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         var application1 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for home renovation");
         application1.AddDocument(Guid.NewGuid(),"building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
         application1.Submit();
-        application1.StartReview(officer.Id);
-        //application1.Approve(officer.Id, "Approved - meets all requirements");
-        
-        var application2 = new  ATLAS.Domain.Entities.Application(citizen.Id, eventPermit.Id, "Annual community event permit");
-        application2.AddDocument(Guid.NewGuid(), "event_layout.pdf", "application/pdf", 3072, "https://blob.test.com/event_layout.pdf", citizen.Id);    
-        application2.Submit();
-        
-        var application3 = new ATLAS.Domain.Entities.Application(citizen.Id, signagePermit.Id, "Temporary signage for business");
-        application3.AddDocument(Guid.NewGuid(), "signage_design.pdf", "application/pdf", 1024, "https://blob.test.com/signage_design.pdf", citizen.Id);    
+        application1.StartReview(officer.Id);                               
 
-        var application4 = new ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Draft for document upload test");        
-
-        var application5 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for rejection test");
-        application5.AddDocument(Guid.NewGuid(),"building_plan-2.pdf", "application/pdf", 1024, "https://blob.test.com/building_plan-2.pdf", citizen.Id);
-        application5.Submit();
-        application5.StartReview(officer.Id);
-
-        var application6 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for request info test");
-        application6.AddDocument(Guid.NewGuid(),"building_plan-2.pdf", "application/pdf", 1024, "https://blob.test.com/building_plan-2.pdf", citizen.Id);
-        application6.Submit();
-        application6.StartReview(officer.Id);
+        var application2 = new ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Draft for document upload test");              
         
         
-        context.Applications.AddRange(new[] { application1, application2, application3, application4, application5, application6 });
+        context.Applications.AddRange(new[] { application1, application2 });
         context.SaveChanges();
 
         // Store application IDs
-        TestData.Application1Id = application1.Id;
-        TestData.Application2Id = application2.Id;
-        TestData.Application3Id = application3.Id;       
-        TestData.Application4Id = application4.Id;       
-        TestData.Application5Id = application5.Id;       
-        TestData.Application6Id = application6.Id;       
-        
+        TestData.Application1Id = application1.Id;        
+        TestData.Application2Id = application2.Id;       
+                
         context.SaveChanges();
 
         // Store document IDs
-        TestData.Document1Id = application1.Documents[0].Id;
-        TestData.Document2Id = application2.Documents[0].Id;
-        TestData.Document3Id = application3.Documents[0].Id;
-        TestData.Document4Id = application5.Documents[0].Id;
-        TestData.Document5Id = application6.Documents[0].Id;
-
+        TestData.Document1Id = application1.Documents[0].Id;        
+        
         // Seed Audit Logs
         var audit1 = new AuditLog(citizen.Id, "ApplicationSubmitted", "Application", application1.Id, "Application submitted", "127.0.0.1");
         var audit2 = new AuditLog(officer.Id, "ApplicationApproved", "Application", application1.Id, "Application approved", "127.0.0.1");
@@ -228,17 +202,9 @@ public static class TestData
     public static Guid CitizenUserId { get; set; }
     public static Guid OfficerUserId { get; set; }
     public static Guid AdminUserId { get; set; }
-    public static Guid Application1Id { get; set; }
-    public static Guid Application2Id { get; set; }
-    public static Guid Application3Id { get; set; }
-    public static Guid Application4Id { get; set; }
-    public static Guid Application5Id { get; set; }
-    public static Guid Application6Id { get; set; }
-    public static Guid Document1Id { get; set; }
-    public static Guid Document2Id { get; set; }
-    public static Guid Document3Id { get; set; }
-    public static Guid Document4Id { get; set; }
-    public static Guid Document5Id { get; set; }
+    public static Guid Application1Id { get; set; }        
+    public static Guid Application2Id { get; set; }    
+    public static Guid Document1Id { get; set; }        
 }
 
 public static class TestServiceCollectionExtensions
@@ -266,6 +232,7 @@ public static class TestServiceCollectionExtensions
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityResolver, IdentityResolver>();
         services.AddScoped<IFileStorageService, InMemoryFileStorageService>();
+        services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
 
         services.AddMediatR(cfg =>
         {

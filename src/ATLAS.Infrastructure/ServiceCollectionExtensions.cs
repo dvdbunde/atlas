@@ -113,54 +113,6 @@ namespace ATLAS.Infrastructure
             services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
 
             return services;
-        }
-        
-        /// <summary>
-        /// Registers Infrastructure layer services with default configuration.
-        /// Convenience overload for environments where full configuration isn't available
-        /// (e.g., tests). Still registers HTTP context accessor and current user service.
-        /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <returns>The service collection for fluent chaining</returns>
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services)
-        {
-            if (services == null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
-
-            services.AddHttpContextAccessor();
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<IExecutionContext, ExecutionContext>();
-
-            //----------------------
-            // Email Services (Phase E1)
-            //----------------------
-
-            // Email service (SMTP for development)
-            services.AddTransient<IEmailService, SmtpEmailService>();
-
-            // Email template renderer
-            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
-
-            // Email event handlers (MediatR auto-discovers, but explicit for clarity)
-            services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();
-            services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
-            services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
-            services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
-            services.AddScoped<INotificationHandler<DocumentDownloadedEvent>, DocumentDownloadedEventHandler>();
-
-            //----------------------
-            // Document Storage (Milestone 6, Phase D2)
-            //----------------------
-
-            // Register InMemoryFileStorageService for test environments
-            services.AddScoped<IFileStorageService, InMemoryFileStorageService>();
-
-            // Register virus scanner (pass-through for MVP)
-            services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
-
-            return services;
-        }
+        }       
     }
 }

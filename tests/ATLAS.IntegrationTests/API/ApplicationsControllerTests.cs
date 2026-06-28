@@ -84,7 +84,7 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task RejectApplication_Should_Return200OK()
         {
-            var applicationId = TestData.Application5Id;
+            var applicationId = TestData.Application1Id;
             var request = new RejectApplicationRequest 
             { 
                 ApplicationId = applicationId,
@@ -100,7 +100,7 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task RequestInfo_Should_Return200OK()
         {
-            var applicationId = TestData.Application6Id;
+            var applicationId = TestData.Application1Id;
             var request = new RequestInfoRequest {ApplicationId = applicationId, Message = "Please provide additional information" };
             var response = await _client.PostAsAsync($"/api/applications/{applicationId}/request-info", request, TestUserBuilder.AsAdmin());
             _output.WriteLine($"Response: {response.StatusCode}");
@@ -111,7 +111,7 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task AssignToOfficer_Should_Return200OK()
         {
-            var applicationId = TestData.Application2Id;
+            var applicationId = TestData.Application1Id;
             var request = new { officerId = TestData.OfficerUserId };
             var response = await _client.PostAsAsync($"/api/applications/{applicationId}/assign", request, TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -141,7 +141,7 @@ namespace ATLAS.IntegrationTests.API
         public async Task RejectApplication_Should_CreateReview()
         {
             // Arrange
-            var applicationId = TestData.Application5Id;
+            var applicationId = TestData.Application1Id;
             var request = new RejectApplicationRequest 
             { 
                 ApplicationId = applicationId,
@@ -167,7 +167,7 @@ namespace ATLAS.IntegrationTests.API
         public async Task RequestInfo_Should_CreateReview()
         {
             // Arrange
-            var applicationId = TestData.Application6Id;
+            var applicationId = TestData.Application1Id;
             var request = new RequestInfoRequest { ApplicationId = applicationId, Message = "Please provide additional information" };
             
             // Act
@@ -186,8 +186,8 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task FullReviewChain_SubmitThenApprove_ShouldCreateExactlyOneReview()
         {
-            // Arrange — create a draft, then treat it like app5 (submitted + under review)
-            var appId = TestData.Application5Id; // Already Submitted + UnderReview in seed
+            // Arrange — create a draft, then treat it like app1 (submitted + under review)
+            var appId = TestData.Application1Id; // Already Submitted + UnderReview in seed
         
             // Act — approve
             var approveRequest = new ApproveApplicationRequest { ApplicationId = appId, Comments = "Looks good" };

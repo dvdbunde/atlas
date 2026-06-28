@@ -19,12 +19,12 @@ namespace ATLAS.IntegrationTests.API
             _client = factory.CreateClient();
             _output = output;
         }
-
-        /*  
+        
+        /*
         [Fact]
         public async Task UploadDocument_Should_ReturnNoContent()
         {
-            var applicationId = TestData.Application4Id;
+            var applicationId = TestData.Application2Id;
             var request = new
             {
                 applicationId = applicationId.ToString(),
@@ -34,6 +34,8 @@ namespace ATLAS.IntegrationTests.API
                 fileContent = Convert.ToBase64String(new byte[] { 0x25, 0x50, 0x44, 0x46 }) // PDF magic bytes as base64
             };
             var response = await _client.PostAsAsync($"/api/applications/{applicationId}/documents", request, TestUserBuilder.AsCitizen());
+            _output.WriteLine($"Response: {response.StatusCode}");
+            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
                 
@@ -43,9 +45,12 @@ namespace ATLAS.IntegrationTests.API
             var documentId = TestData.Document1Id;
             var response = await _client.GetAsAsync($"/api/documents/{documentId}/download", TestUserBuilder.AsCitizen());
                     
-            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            _output.WriteLine($"Response: {response.StatusCode}");
+            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");                    
+            
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);            
             Assert.NotNull(response.Headers.Location);
-        }                       
+        }                               
         */
     }
 }
