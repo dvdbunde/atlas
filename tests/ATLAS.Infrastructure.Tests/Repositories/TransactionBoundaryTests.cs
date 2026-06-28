@@ -68,7 +68,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
-            var review = application.AddReview(Guid.NewGuid(), ReviewDecision.Approve, "Approved comment", true, null);
+            var review = application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved comment", true, null);
             
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();

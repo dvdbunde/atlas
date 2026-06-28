@@ -101,8 +101,8 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             var application1 = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes 1");
             var application2 = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes 2");
             
-            application1.AddReview(Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
-            application2.AddReview(Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, "Incomplete");
+            application1.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
+            application2.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, "Incomplete");
 
             _context.Applications.AddRange(application1, application2);
             await _context.SaveChangesAsync();

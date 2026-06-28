@@ -119,7 +119,7 @@ namespace ATLAS.Domain.Entities
             ReviewedDate = DateTime.UtcNow;
             OfficerNotes += $"[APPROVED {DateTime.UtcNow} by {officerId}]: {comments}";
 
-            AddReview(officerId, ReviewDecision.Approve, comments, true);
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Approve, comments, true);
 
             AddDomainEvent(new ApplicationApprovedEvent(Id, officerId));
         }
@@ -137,7 +137,7 @@ namespace ATLAS.Domain.Entities
             OfficerNotes += $"[REJECTED {DateTime.UtcNow} by {officerId}]: Reason: {reasonCode}. {comments}";
             
             // Create review with reason code
-            AddReview(officerId, ReviewDecision.Reject, comments, true, reasonCode);
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Reject, comments, true, reasonCode);
             
             AddDomainEvent(new ApplicationRejectedEvent(Id, officerId, reasonCode));
         }
@@ -150,7 +150,7 @@ namespace ATLAS.Domain.Entities
             Status = ApplicationStatus.InfoRequested;
             OfficerNotes += $"[INFO REQUESTED {DateTime.UtcNow} by {officerId}]: {message}";
 
-            AddReview(officerId, ReviewDecision.RequestInfo, message, true);
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.RequestInfo, message, true);
 
             AddDomainEvent(new ApplicationInfoRequestedEvent(Id, officerId, message));
         }
@@ -214,7 +214,7 @@ namespace ATLAS.Domain.Entities
             _fieldValues.Remove(fieldValue);
         }
 
-        public Review AddReview(Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
+         public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
         {
             // Note: Status check is done by the calling method (Submit, Approve, Reject, etc.)
             // This allows internal calls from Reject() before status changes to Rejected
@@ -223,7 +223,7 @@ namespace ATLAS.Domain.Entities
             if (_reviews.Any(r => r.Decision == ReviewDecision.Approve || r.Decision == ReviewDecision.Reject))
                 throw new DomainException("Application already has a final review");
 
-            var review = new Review(Id, officerId, decision, comments, isVisibleToCitizen, reasonCode);
+            var review = new Review(reviewId, Id, officerId, decision, comments, isVisibleToCitizen, reasonCode);
             _reviews.Add(review);
 
             return review;

@@ -7,6 +7,7 @@ namespace ATLAS.Domain.Tests.Entities
 {
     public class ReviewTests
     {        
+        private readonly Guid _reviewId = Guid.NewGuid();
         private readonly Guid _citizenId = Guid.NewGuid();
         private readonly Guid _permitTypeId = Guid.NewGuid();
         private readonly Guid _officerId = Guid.NewGuid();
@@ -27,12 +28,14 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act
             var review = application.AddReview(                
+                _reviewId,
                 _officerId, 
                 ReviewDecision.Approve, 
                 "Approved - meets all requirements", 
                 true);
 
-            // Assert            
+            // Assert        
+            Assert.Equal(_reviewId, review.Id);    
             Assert.Equal(application.Id, review.ApplicationId);
             Assert.Equal(_officerId, review.OfficerId);
             Assert.Equal(ReviewDecision.Approve, review.Decision);
@@ -48,7 +51,8 @@ namespace ATLAS.Domain.Tests.Entities
             var application = CreateApplicationUnderReview();
 
             // Act
-            var review = application.AddReview(                
+            var review = application.AddReview(   
+                _reviewId,             
                 _officerId, 
                 ReviewDecision.Reject,                 
                 "Missing required documents", 
@@ -61,6 +65,23 @@ namespace ATLAS.Domain.Tests.Entities
         }     
 
         [Fact]
+        public void Create_ShouldThrowException_WhenIdIsEmpty()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() => 
+                application.AddReview(
+                    Guid.Empty, 
+                    _officerId, 
+                    ReviewDecision.Approve, 
+                    "Approved", 
+                    true));
+            Assert.Contains("Review ID cannot be empty", exception.Message);
+        }
+
+        [Fact]
         public void Create_ShouldThrowException_WhenOfficerIdIsEmpty()
         {
             // Arrange
@@ -68,7 +89,8 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                application.AddReview(                    
+                application.AddReview(    
+                    _reviewId,                
                     Guid.Empty, 
                     ReviewDecision.Approve, 
                     "Approved", 
@@ -84,6 +106,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act - Should succeed (status check is done by calling method like Reject())
             var review = application.AddReview(                
+                _reviewId,
                 _officerId, 
                 ReviewDecision.Approve, 
                 "Approved", 
@@ -91,6 +114,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Assert
             Assert.NotNull(review);            
+            Assert.Equal(_reviewId, review.Id);
         }
     }
 }

@@ -27,19 +27,19 @@ namespace ATLAS.Infrastructure.Services
         /// Upload a file stream to in-memory storage.
         /// Generates a blob URL with the format: https://inmemory.blob/{guid}/{guid}/{fileName}
         /// </summary>
-        public Task<FileUploadResult> UploadAsync(Stream fileStream, string fileName, string contentType, CancellationToken ct = default)
+        public Task<FileUploadResult> UploadAsync(Stream fileStream, string blobPath, string contentType, CancellationToken ct = default)
         {
             if (fileStream == null)
                 throw new ArgumentNullException(nameof(fileStream));
-            if (string.IsNullOrWhiteSpace(fileName))
-                throw new ArgumentException("File name must be provided.", nameof(fileName));
+
+            if (string.IsNullOrWhiteSpace(blobPath))
+                throw new ArgumentException("Blob path must be provided.", nameof(blobPath));
 
             var memoryStream = new MemoryStream();
             fileStream.CopyTo(memoryStream);
             memoryStream.Position = 0;
 
-            var blobName = $"{Guid.NewGuid()}/{Guid.NewGuid()}/{fileName}";
-            var blobUrl = $"https://inmemory.blob/{blobName}";
+            var blobUrl = $"https://inmemory.blob/{blobPath}";
 
             var blob = new InMemoryBlob(memoryStream, contentType);
             _blobs[blobUrl] = blob;

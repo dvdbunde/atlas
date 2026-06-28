@@ -40,7 +40,7 @@ namespace ATLAS.Domain.Tests.Aggregates
             
             // Manually add a review with Reject decision but no reason code
             
-            application.AddReview(_officerId, ReviewDecision.Reject, null, true, null);
+            application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Reject, null, true, null);
 
             var aggregate = new ApplicationAggregate(application);
 
@@ -111,8 +111,8 @@ namespace ATLAS.Domain.Tests.Aggregates
             application.Submit();
             application.StartReview(_officerId);
             
-            // Manually set status to UnderReview but add an approved review            
-            application.AddReview(_officerId, ReviewDecision.Approve, "Approved", true, null);
+            // Manually set status to UnderReview but add an approved review                        
+            application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Approve, "Approved", true, null);
             
             // Force status to UnderReview (simulating invalid state)
             // Note: This would require reflection or a special constructor in real scenario

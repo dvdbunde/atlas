@@ -622,13 +622,15 @@ namespace ATLAS.Domain.Tests.Entities
         public void AddReview_ShouldAddReviewSuccessfully()
         {
             // Arrange
+            var reviewId = Guid.NewGuid();
             var application = new Application(_citizenId, _permitTypeId, "Test notes");            
 
             // Act
-            application.AddReview(_officerId, ReviewDecision.Approve, "Looks good", true, null);
+            application.AddReview(reviewId, _officerId, ReviewDecision.Approve, "Looks good", true, null);
 
-            // Assert
+            // Assert                        
             var review = Assert.Single(application.Reviews);            
+            Assert.Equal(reviewId, review.Id);
             Assert.Equal(_officerId, review.OfficerId);
             Assert.Equal(ReviewDecision.Approve, review.Decision);
         }
@@ -638,11 +640,11 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Arrange
             var application = new Application(_citizenId, _permitTypeId, "Test notes");
-            application.AddReview(_officerId, ReviewDecision.Approve, "First", true, null);
+            application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Approve, "First", true, null);
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() =>
-                application.AddReview(_officerId, ReviewDecision.Reject, "Second", true, "MissingDoc"));
+                application.AddReview(Guid.NewGuid(), _officerId, ReviewDecision.Reject, "Second", true, "MissingDoc"));
             Assert.Contains("already has a final review", exception.Message);
         }
 

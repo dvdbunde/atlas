@@ -57,7 +57,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         {
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
-            application.AddReview(Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
+            application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
 
             // Act
             await _applicationRepo.AddAsync(application);
@@ -96,7 +96,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
-            application.AddReview(Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
+            application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
             
             await _applicationRepo.AddAsync(application);
             await _context.SaveChangesAsync();

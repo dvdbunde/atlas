@@ -190,6 +190,14 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         
         context.SaveChanges();
     }
+
+    public HttpClient CreateClientWithoutRedirects()
+    {
+        return CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+    }
 }
 
 // Static class to expose seeded IDs to tests
@@ -231,7 +239,7 @@ public static class TestServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityResolver, IdentityResolver>();
-        services.AddScoped<IFileStorageService, InMemoryFileStorageService>();
+        services.AddSingleton<IFileStorageService, InMemoryFileStorageService>();
         services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
 
         services.AddMediatR(cfg =>
@@ -244,5 +252,5 @@ public static class TestServiceCollectionExtensions
         });            
         
         return services;
-    }
+    }    
 }

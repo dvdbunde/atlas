@@ -61,7 +61,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
             
             // Domain method sets default reason code if null for Reject
-            var review = application.AddReview(Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, null);
+            var review = application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, null);
             
             // Act
             await _applicationRepo.AddAsync(application);

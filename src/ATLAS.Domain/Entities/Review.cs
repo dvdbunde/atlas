@@ -14,16 +14,18 @@ namespace ATLAS.Domain.Entities
         public bool IsVisibleToCitizen { get; private set; }
 
         // Make constructor internal to enforce aggregate boundary
-        internal Review(Guid applicationId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
-        {            
-            
+        internal Review(Guid id, Guid applicationId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Review ID cannot be empty", nameof(id));
+
             if (applicationId == Guid.Empty)
                 throw new ArgumentException("Application ID cannot be empty", nameof(applicationId));
             
             if (officerId == Guid.Empty)
                 throw new ArgumentException("Officer ID cannot be empty", nameof(officerId));
 
-            Id = Guid.Empty;
+            Id = id;
             ApplicationId = applicationId;
             OfficerId = officerId;
             Decision = decision;

@@ -57,6 +57,7 @@ namespace ATLAS.Infrastructure.Services
         {
             if (fileStream == null)
                 throw new ArgumentNullException(nameof(fileStream));
+                
             if (string.IsNullOrWhiteSpace(blobPath))
                 throw new ArgumentException("Blob path must be provided.", nameof(blobPath));
 
