@@ -59,7 +59,7 @@ Immutable objects defined by their attributes (no identity):
 
 Clusters of entities/value objects treated as a unit for data changes:
 
-- **Application Aggregate Root** - Ensures application state transitions are valid. Contains `Document` and `Review` entities. Uses `ApplicationAggregate` class to enforce complex invariants.
+- **Application Aggregate Root** - Ensures application state transitions are valid. Contains `Document` and `Review` entities. `Application` IS the aggregate root — invariants are enforced directly by `Application` entity methods (`Submit`, `Approve`, `Reject`, `AddReview`, etc.) and the `internal` constructors on owned entities (`Document`, `Review`, `ApplicationFieldValue`).
 - **PermitType Aggregate Root** - `PermitType` IS the aggregate root (no separate aggregate class needed). Contains `PermitField` and `DocumentRequirement` value objects.
 - **User Aggregate Root** - `User` IS the aggregate root (no separate aggregate class needed). Simple entity with no child entities.
 
@@ -113,8 +113,6 @@ src/ATLAS.Domain/
 │   ├── DocumentType.cs
 │   ├── PermitField.cs
 │   └── DocumentRequirement.cs
-├── Aggregates/
-│   └── ApplicationAggregate.cs
 ├── Events/
 │   ├── ApplicationSubmittedEvent.cs
 │   ├── ApplicationApprovedEvent.cs

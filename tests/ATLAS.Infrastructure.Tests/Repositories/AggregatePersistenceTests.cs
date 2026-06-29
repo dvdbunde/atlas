@@ -31,7 +31,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task ApplicationAggregate_WithDocuments_ShouldPersistAndRetrieve()
+        public async Task Application_WithDocuments_ShouldPersistAndRetrieve()
         {
             // Arrange - Application IS the aggregate root with Documents and Reviews as owned entities
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
@@ -53,7 +53,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task ApplicationAggregate_WithReviews_ShouldPersistAndRetrieve()
+        public async Task Application_WithReviews_ShouldPersistAndRetrieve()
         {
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
@@ -91,7 +91,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task ApplicationAggregate_Delete_ShouldCascadeDeleteOwnedEntities()
+        public async Task Application_Delete_ShouldCascadeDeleteOwnedEntities()
         {
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");

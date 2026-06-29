@@ -10,7 +10,7 @@ An **Aggregate** is a cluster of associated objects treated as a unit for data c
 
 ## ATLAS Aggregate Roots
 
-Based on the domain model, ATLAS has three aggregate roots. Note: `PermitType` and `User` ARE the aggregate roots themselves - they don't need separate aggregate classes. Only `Application` requires an aggregate class to enforce complex invariants.
+Based on the domain model, ATLAS has three aggregate roots. `PermitType` and `User` ARE the aggregate roots themselves — they don't need separate aggregate classes. `Application` IS also its own aggregate root — invariants are enforced directly by `Application` entity methods and `internal` constructors on owned entities (`Document`, `Review`, `ApplicationFieldValue`).
 
 ---
 
@@ -18,7 +18,7 @@ Based on the domain model, ATLAS has three aggregate roots. Note: `PermitType` a
 
 **Root Entity:** `Application`
 
-**Aggregate Class:** `ApplicationAggregate` (enforces invariants for Application and its child entities)
+**Aggregate Class:** `Application` (root entity — invariants enforced directly by entity methods `Submit`, `Approve`, `Reject`, `AddReview`, `AddDocument`, `RemoveDocument` and `internal` constructors on owned entities)
 
 **Aggregate Members:**
 
@@ -191,7 +191,7 @@ User (Root)
 
 | Aggregate | Rationale |
 | ----------- | ------------ |
-| **Application** | Documents and Reviews only exist in context of an Application. They cannot be shared across applications. All status transitions must be atomic. Requires `ApplicationAggregate` class to enforce complex invariants. |
+| **Application** | Documents and Reviews only exist in context of an Application. They cannot be shared across applications. All status transitions must be atomic. Invariants are enforced directly by `Application` entity methods — no separate aggregate wrapper class is needed. |
 | **PermitType** | Fields and DocumentRequirements define the structure of a permit type. They are configuration data that only makes sense within the PermitType context. `PermitType` IS the aggregate root - no separate aggregate class needed. |
 | **User** | Simple entity with no child objects. Could be split into separate aggregates for Citizen, Officer, Admin but kept unified for MVP simplicity. `User` IS the aggregate root - no separate aggregate class needed. |
 

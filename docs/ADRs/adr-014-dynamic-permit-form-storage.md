@@ -29,7 +29,7 @@ The existing architecture had the following relevant elements:
 
 - **`PermitField`** (Value Object): Defines field configuration (name, type, required, default value) for a permit type
 - **`Application`** (Aggregate Root): Owns `Document` and `Review` entities via EF Core `OwnsMany`
-- **`ApplicationAggregate`**: Enforces invariants for application state transitions
+- **`Application`** (Aggregate Root): Enforces invariants directly through entity methods (`Submit`, `Approve`, `Reject`, `AddReview`, `AddDocument`) and `internal` constructors on owned entities
 - **`PermitType`** (Entity): Defines permit categories with configurable fields and requirements
 
 ## Decision
