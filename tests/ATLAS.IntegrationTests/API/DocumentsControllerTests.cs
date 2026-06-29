@@ -97,5 +97,73 @@ namespace ATLAS.IntegrationTests.API
         {
             Converters = { new JsonStringEnumConverter() }
         };                               
+
+        [Fact]
+        public async Task DeleteDocument_ShouldReturnNoContent()
+        {
+            var applicationId = TestData.Application2Id;
+
+            // Arrange — first upload a document to delete
+            var uploadRequest = new
+            {
+                applicationId = applicationId.ToString(),
+                fileName = "todelete.pdf",
+                contentType = "application/pdf",
+                fileSize = 1024,
+                fileContent = Convert.ToBase64String(new byte[] { 0x25, 0x50, 0x44, 0x46 })
+            };
+
+            var uploadResponse = await _client.PostAsAsync(
+                $"/api/applications/{applicationId}/documents",
+                uploadRequest,
+                TestUserBuilder.AsCitizen());
+
+            _output.WriteLine($"Upload Response: {uploadResponse.StatusCode}");
+            Assert.Equal(HttpStatusCode.NoContent, uploadResponse.StatusCode);
+
+            // Get the document ID from the application detail
+            var detailResponse = await _client.GetAsAsync(
+                $"/api/applications/{applicationId}",
+                TestUserBuilder.AsCitizen());
+
+            detailResponse.EnsureSuccessStatusCode();
+            var detail = await detailResponse.Content.ReadFromJsonAsync<ApplicationDetailResponse>(_jsonOptions);
+            Assert.NotNull(detail);
+            Assert.NotEmpty(detail.Documents);
+
+            var uploadedDoc = detail.Documents.Last(d => d.FileName == "todelete.pdf");
+
+            // Act — delete the document
+            var deleteResponse = await _client.DeleteAsAsync(
+                $"/api/applications/{applicationId}/documents/{uploadedDoc.Id}",
+                TestUserBuilder.AsCitizen());
+
+            _output.WriteLine($"Delete Response: {deleteResponse.StatusCode}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteDocument_ShouldReturnUnauthorized_WhenNotOwnApplication()
+        {
+            var applicationId = TestData.Application2Id;
+
+            // Try to delete using a different citizen role
+            var otherCitizen = TestUserBuilder.AsUser(Guid.NewGuid(), "Other-Citizen", "other-citizen@test.com", "Citizen");
+
+            var deleteResponse = await _client.DeleteAsAsync(
+                $"/api/applications/{applicationId}/documents/{Guid.NewGuid()}",
+                otherCitizen);
+
+            _output.WriteLine($"Delete Response (unauthorized): {deleteResponse.StatusCode}");
+            _output.WriteLine($"Response Content: {await deleteResponse.Content.ReadAsStringAsync()}");
+
+            // Assert — expect 403 or 404 depending on authorization handling
+            Assert.True(
+                deleteResponse.StatusCode == HttpStatusCode.Forbidden ||
+                deleteResponse.StatusCode == HttpStatusCode.Unauthorized ||
+                deleteResponse.StatusCode == HttpStatusCode.NotFound);
+        }
     }
 }

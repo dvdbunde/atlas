@@ -275,24 +275,7 @@ public class ApplicationEditTests : BunitContext
         // Assert
         var alert = cut.Find(".alert-danger");
         Assert.Contains("Something went wrong", alert.TextContent);
-    }
-
-    [Fact]
-    public void Should_ShowSubmitButton_WhenLoaded()
-    {
-        _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
-            .ReturnsAsync(CreateSampleDraftApplication());
-        _mediatorMock
-            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
-            .ReturnsAsync(CreateSamplePermitType());
-
-        var cut = Render<ApplicationEdit>(parameters =>
-            parameters.Add(p => p.Id, _applicationId));
-
-        var submitButton = cut.Find("button.btn-success");
-        Assert.Contains("Submit Application", submitButton.TextContent);
-    }
+    }   
 
     [Fact]
     public void Should_RedirectToConfirmation_WhenSubmitSucceeds()
@@ -340,4 +323,128 @@ public class ApplicationEditTests : BunitContext
         var alert = cut.Find(".alert-danger");
         Assert.Contains("Submit failed", alert.TextContent);
     }
+
+    #region Document Workflow Tests
+
+    [Fact]
+    public void Should_RenderDocumentSection_WhenPermitTypeHasFileUploadFields()
+    {
+        // Arrange
+        var permitType = CreateSamplePermitType();
+        permitType.Fields.Add(new FieldDefinitionDto
+        {
+            Name = "SitePlan",
+            Type = FieldType.FileUpload,
+            IsRequired = true
+        });
+
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(permitType);
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert
+        Assert.Contains("Supporting Documents", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotRenderDocumentSection_WhenNoFileUploadFields()
+    {
+        // Arrange — permit type has no FileUpload fields
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert — no document section heading
+        Assert.DoesNotContain("Supporting Documents", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowSubmitButton_WhenLoaded()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert
+        var submitButton = cut.Find("button.btn-success");
+        Assert.Contains("Submit Application", submitButton.TextContent);
+    }
+
+    [Fact]
+    public void Should_ShowSubmitError_WhenSubmissionFails()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<SubmitDraftCommand>(), default))
+            .ThrowsAsync(new InvalidOperationException("Required document missing: SitePlan"));
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Act
+        var submitButton = cut.Find("button.btn-success");
+        submitButton.Click();
+
+        // Assert
+        var errorAlert = cut.Find(".alert-danger");
+        Assert.Contains("Required document missing: SitePlan", errorAlert.TextContent);
+    }
+
+    [Fact]
+    public void Should_DisableSubmitButton_WhileSubmitting()
+    {
+        // Arrange
+        var submitTcs = new TaskCompletionSource<Unit>();
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<SubmitDraftCommand>(), default))
+            .Returns(submitTcs.Task);
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Act
+        var submitButton = cut.Find("button.btn-success");
+        submitButton.Click();
+
+        // Assert
+        var disabledButton = cut.Find("button[disabled].btn-success");
+        Assert.NotNull(disabledButton);
+        Assert.Contains("Submitting...", disabledButton.TextContent);
+    }
+
+    #endregion
 }

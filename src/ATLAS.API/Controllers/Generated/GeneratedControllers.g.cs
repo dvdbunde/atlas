@@ -181,7 +181,19 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="applicationId">Application ID</param>
         /// <returns>Document uploaded successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents", Name = "uploadDocument")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Documents(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> DocumentsPost(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body);
+
+        /// <summary>
+        /// Delete document
+        /// </summary>
+        /// <remarks>
+        /// Delete a document from an application and remove its blob from storage
+        /// </remarks>
+        /// <param name="applicationId">Application ID</param>
+        /// <param name="documentId">Document ID</param>
+        /// <returns>Document deleted successfully</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents/{documentId}", Name = "deleteDocument")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DocumentsDelete(System.Guid applicationId, System.Guid documentId);
 
         /// <summary>
         /// Download document

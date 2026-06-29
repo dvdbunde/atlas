@@ -24,12 +24,23 @@ namespace ATLAS.API.Controllers
         public DocumentsController(IMediator mediator)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        }
+        }      
 
-        public override async Task<ActionResult<bool>> Documents(
-            Guid applicationId,
-            UploadDocumentRequest body)
+        public override async Task<IActionResult> Download(Guid documentId)
         {
+            var query = new DownloadDocumentQuery { DocumentId = documentId };
+            var result = await _mediator.Send(query, default);
+        
+            if (result == null)
+                return NotFound();
+        
+            // 302 redirect to the SAS URI — browser downloads directly from Azure
+            return Redirect(result.SasUri);
+        }      
+
+        public override async Task<ActionResult<bool>> DocumentsPost(Guid applicationId, [FromBody] UploadDocumentRequest body)
+        {
+            
             // Map from request — file stream, metadata extracted by model binding
             // Note: UploadDocumentRequest contract will need to carry file metadata
             // Controller extracts file content from the request (IFormFile or base64)
@@ -54,16 +65,24 @@ namespace ATLAS.API.Controllers
             return NoContent();
         }
 
-        public override async Task<IActionResult> Download(Guid documentId)
+        public override async Task<IActionResult> DocumentsDelete(Guid applicationId, Guid documentId)
         {
-            var query = new DownloadDocumentQuery { DocumentId = documentId };
-            var result = await _mediator.Send(query, default);
-        
-            if (result == null)
-                return NotFound();
-        
-            // 302 redirect to the SAS URI — browser downloads directly from Azure
-            return Redirect(result.SasUri);
+            try
+            {
+                var command = new DeleteDocumentCommand
+                {
+                    ApplicationId = applicationId,
+                    DocumentId = documentId
+                };
+
+                await _mediator.Send(command, default);
+
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
     }
 }

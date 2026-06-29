@@ -242,5 +242,136 @@ namespace ATLAS.Application.Tests.Commands
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _handler.Handle(null!, CancellationToken.None));
         }
+
+        #region Document Validation Tests (Rule 4)
+
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenRequiredDocumentMissing()
+        {
+            // Arrange
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            permitType.AddField("PropertyAddress", FieldType.Text, true);
+            permitType.AddField("SitePlan", FieldType.FileUpload, true); // required document
+            permitType.AddField("LotSize", FieldType.Number, false);
+
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
+            application.AddFieldValue("PropertyAddress", "123 Main St", 0);
+            application.AddFieldValue("SitePlan", "site-plan.pdf", 1);
+            application.AddFieldValue("LotSize", "5000", 2);
+            // No document uploaded for "SitePlan"
+
+            _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitType.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _handler.Handle(command, CancellationToken.None));
+            Assert.Contains("required documents", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("SitePlan", exception.Message);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldPass_WhenRequiredDocumentsPresent()
+        {
+            // Arrange
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            permitType.AddField("PropertyAddress", FieldType.Text, true);
+            permitType.AddField("SitePlan", FieldType.FileUpload, true); // required document
+            permitType.AddField("LotSize", FieldType.Number, false);
+
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
+            application.AddFieldValue("PropertyAddress", "123 Main St", 0);
+            application.AddFieldValue("SitePlan", "site-plan.pdf", 1);
+            application.AddFieldValue("LotSize", "5000", 2);      
+            // Upload matching document
+            application.AddDocument(
+                Guid.NewGuid(), "SitePlan_v1.pdf", "application/pdf", 2048,
+                "https://blob.url/siteplan.pdf", _testUserId);
+
+            _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitType.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act — should not throw
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ApplicationStatus.Submitted, application.Status);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldPass_WhenOptionalDocumentsMissing()
+        {
+            // Arrange
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            permitType.AddField("PropertyAddress", FieldType.Text, true);
+            permitType.AddField("SitePlan", FieldType.FileUpload, true);  // required
+            permitType.AddField("ExtraPhoto", FieldType.FileUpload, false); // optional — no upload needed
+
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
+            application.AddFieldValue("PropertyAddress", "123 Main St", 0);
+            application.AddFieldValue("SitePlan", "site-plan.pdf", 1);
+            // Upload required document
+            application.AddDocument(
+                Guid.NewGuid(), "SitePlan_final.pdf", "application/pdf", 2048,
+                "https://blob.url/siteplan.pdf", _testUserId);
+            // No upload for optional ExtraPhoto — should be ignored
+
+            _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitType.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act — should not throw
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(ApplicationStatus.Submitted, application.Status);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldReportAllMissingDocuments()
+        {
+            // Arrange
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            permitType.AddField("PropertyAddress", FieldType.Text, true);
+            permitType.AddField("ProofOfIdentity", FieldType.FileUpload, true);
+            permitType.AddField("SitePlan", FieldType.FileUpload, true);
+            permitType.AddField("EnvironmentalAssessment", FieldType.FileUpload, true);
+            permitType.AddField("LotSize", FieldType.Number, false);
+
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
+            application.AddFieldValue("PropertyAddress", "123 Main St", 0);
+            application.AddFieldValue("ProofOfIdentity", "identity.pdf", 1);            
+            application.AddFieldValue("SitePlan", "site-plan.pdf", 2);            
+            application.AddFieldValue("EnvironmentalAssessment", "environment.pdf", 3);
+            application.AddFieldValue("LotSize", "5000", 4);
+            // No documents uploaded for any of the 3 required file fields
+
+            _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitType.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _handler.Handle(command, CancellationToken.None));
+            Assert.Contains("ProofOfIdentity", exception.Message);
+            Assert.Contains("SitePlan", exception.Message);
+            Assert.Contains("EnvironmentalAssessment", exception.Message);
+        }
+
+        #endregion
     }
 }

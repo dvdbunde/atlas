@@ -676,5 +676,159 @@ namespace ATLAS.Domain.Tests.Entities
         }
 
         #endregion
+
+        #region Document Management Tests
+
+        [Fact]
+        public void AddDocument_ShouldAddDocumentToList()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var documentId = Guid.NewGuid();
+
+            // Act
+            var document = application.AddDocument(
+                documentId,
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+
+            // Assert
+            Assert.Single(application.Documents);
+            Assert.Equal(documentId, document.Id);
+            Assert.Equal("test.pdf", document.FileName);
+        }
+
+        [Fact]
+        public void AddDocument_ShouldThrow_WhenApplicationIsApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.AddDocument(
+                    Guid.NewGuid(),
+                    "test.pdf",
+                    "application/pdf",
+                    1024,
+                    "https://blob.url/test.pdf",
+                    _citizenId));
+        }
+
+        [Fact]
+        public void AddDocument_ShouldThrow_WhenApplicationIsRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Reject(_officerId, "INCOMPLETE", "Missing documents");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.AddDocument(
+                    Guid.NewGuid(),
+                    "test.pdf",
+                    "application/pdf",
+                    1024,
+                    "https://blob.url/test.pdf",
+                    _citizenId));
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldRemoveDocumentFromList()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var documentId = Guid.NewGuid();
+            application.AddDocument(
+                documentId,
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+
+            // Act
+            application.RemoveDocument(documentId);
+
+            // Assert
+            Assert.Empty(application.Documents);
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldThrow_WhenDocumentNotFound()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.RemoveDocument(Guid.NewGuid()));
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldThrow_WhenApplicationIsApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            var documentId = Guid.NewGuid();
+            application.AddDocument(
+                documentId,
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+            application.ClearDomainEvents();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.RemoveDocument(documentId));
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldThrow_WhenApplicationIsRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            var documentId = Guid.NewGuid();
+            application.AddDocument(
+                documentId,
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+            application.ClearDomainEvents();
+            application.Reject(_officerId, "INCOMPLETE", "Missing docs");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.RemoveDocument(documentId));
+        }
+
+        [Fact]
+        public void MultipleDocuments_ShouldAllBeAccessible()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var doc1Id = Guid.NewGuid();
+            var doc2Id = Guid.NewGuid();
+
+            // Act
+            application.AddDocument(doc1Id, "doc1.pdf", "application/pdf", 1024, "https://blob.url/1", _citizenId);
+            application.AddDocument(doc2Id, "doc2.pdf", "application/pdf", 2048, "https://blob.url/2", _citizenId);
+
+            // Assert
+            Assert.Equal(2, application.Documents.Count);
+            Assert.Contains(application.Documents, d => d.Id == doc1Id);
+            Assert.Contains(application.Documents, d => d.Id == doc2Id);
+        }
+
+        #endregion
     }
 }
