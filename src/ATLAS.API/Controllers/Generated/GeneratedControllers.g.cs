@@ -49,17 +49,6 @@ namespace ATLAS.API.Controllers.Generated
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> ApplicationsGet([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? citizenId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? officerId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? status = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? search = null);
 
         /// <summary>
-        /// Submit new application
-        /// </summary>
-        /// <remarks>
-        /// Submit a new permit application
-        /// </remarks>
-        /// <returns>Application created successfully</returns>
-        [System.Obsolete]
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications", Name = "submitApplication")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> ApplicationsPost([Microsoft.AspNetCore.Mvc.FromBody] SubmitApplicationRequest body);
-
-        /// <summary>
         /// Get application by ID
         /// </summary>
         /// <remarks>

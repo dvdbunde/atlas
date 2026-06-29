@@ -92,8 +92,7 @@ namespace ATLAS.Application.Queries.Applications
                     Id = d.Id,
                     FileName = d.FileName,
                     ContentType = d.ContentType,
-                    FileSize = d.FileSize,
-                    BlobUrl = d.BlobUrl,
+                    FileSize = d.FileSize,                    
                     UploadedDate = d.UploadedDate,
                     UploadedById = d.UploadedById
                 }).ToList(),

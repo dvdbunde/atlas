@@ -5,18 +5,6 @@ using System;
 
 namespace ATLAS.Application.Commands.Validators
 {
-    public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplicationCommand>
-    {
-        public SubmitApplicationCommandValidator()
-        {          
-            RuleFor(x => x.PermitTypeId)
-                .NotEmpty().WithMessage("PermitTypeId is required");
-
-            RuleFor(x => x.CitizenNotes)
-                .MaximumLength(2000).WithMessage("Citizen notes cannot exceed 2000 characters");
-        }
-    }
-
     public class ApproveApplicationCommandValidator : AbstractValidator<ApproveApplicationCommand>
     {
         public ApproveApplicationCommandValidator()

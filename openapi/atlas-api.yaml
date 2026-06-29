@@ -95,44 +95,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
       security:
-        - EntraID: ['Citizen', 'Officer', 'Admin']
-    
-    post:
-      tags: [Applications]
-      summary: Submit new application
-      description: Submit a new permit application
-      operationId: submitApplication
-      deprecated: true
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SubmitApplicationRequest'
-            examples:
-              standardApplication:
-                summary: Standard permit application
-                value:
-                  citizenId: '12345678-1234-1234-1234-123456789012'
-                  permitTypeId: '87654321-4321-4321-4321-210987654321'
-                  citizenNotes: 'Need permit for business operations'
-      responses:
-        '201':
-          description: Application created successfully
-          content:
-            application/json:
-              schema:
-                type: string
-                format: uuid
-              example: '11111111-2222-3333-4444-555555555555'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-      security:
-        - EntraID: ['Citizen', 'Officer', 'Admin']
+        - EntraID: ['Citizen', 'Officer', 'Admin']     
 
   /api/applications/{id}:
     get:
@@ -1054,18 +1017,14 @@ components:
         fileSize:
           type: integer
           format: int64
-          example: 2048576
-        blobUrl:
-          type: string
-          format: uri
-          example: 'https://atlasstorage.blob.core.windows.net/documents/permit-application.pdf'
+          example: 2048576       
         uploadedDate:
           type: string
           format: date-time
         uploadedById:
           type: string
           format: uuid
-      required: [id, fileName, contentType, fileSize, blobUrl, uploadedDate]
+      required: [id, fileName, contentType, fileSize, uploadedDate]
     
     ReviewResponse:
       type: object
@@ -1174,18 +1133,7 @@ components:
                 type: array
                 items:
                   type: string
-          required: [errors]
-    
-    SubmitApplicationRequest:
-      type: object
-      properties:        
-        permitTypeId:
-          type: string
-          format: uuid
-        citizenNotes:
-          type: string
-          default: ''
-      required: [permitTypeId]
+          required: [errors]       
     
     ApproveApplicationRequest:
       type: object

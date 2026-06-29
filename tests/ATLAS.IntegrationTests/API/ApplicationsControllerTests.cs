@@ -40,21 +40,7 @@ namespace ATLAS.IntegrationTests.API
             var citizenId = TestData.CitizenUserId;
             var response = await _client.GetAsAsync($"/api/applications?citizenId={citizenId}", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task SubmitApplication_Should_Return201Created()
-        {
-            var request = new
-            {
-                permitTypeId = TestData.BuildingPermitTypeId,
-                citizenNotes = "Test application"
-            };
-            var response = await _client.PostAsAsync("/api/applications", request, TestUserBuilder.AsAdmin());
-            _output.WriteLine($"Response: {response.StatusCode}");
-            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
-            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        }
+        }      
 
         [Fact]
         public async Task GetApplicationById_WithValidId_Should_Return200OK()

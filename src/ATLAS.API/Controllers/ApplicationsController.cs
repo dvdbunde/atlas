@@ -60,24 +60,6 @@ namespace ATLAS.API.Controllers
             return response;
         }
 
-        public override async Task<ActionResult<Guid>> ApplicationsPost(
-            SubmitApplicationRequest body)
-        {
-            var command = new SubmitApplicationCommand
-            {
-                PermitTypeId = body.PermitTypeId,
-                CitizenNotes = body.CitizenNotes
-            };
-
-             var applicationId = await _mediator.Send(command, default);
-    
-            // 🆕 Return 201 Created with location header
-            return CreatedAtAction(
-                nameof(ApplicationsGet), 
-                new { id = applicationId }, 
-                applicationId);    
-        }
-
         public override async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGet(
             Guid id)
         {

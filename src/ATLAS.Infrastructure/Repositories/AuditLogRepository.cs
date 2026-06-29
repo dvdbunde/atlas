@@ -55,14 +55,12 @@ namespace ATLAS.Infrastructure.Repositories
 
         public Task UpdateAsync(AuditLog entity, CancellationToken cancellationToken = default)
         {
-            _context.AuditLogs.Update(entity);
-            return Task.CompletedTask;
+            throw new NotImplementedException("Updating an AuditLog is not possible");
         }
 
         public Task DeleteAsync(AuditLog entity, CancellationToken cancellationToken = default)
         {
-            _context.AuditLogs.Remove(entity);
-            return Task.CompletedTask;
+            throw new NotImplementedException("Deleting an AuditLog is not possible");
         }
 
         public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)

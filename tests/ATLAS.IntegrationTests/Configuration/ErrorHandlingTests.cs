@@ -1,4 +1,5 @@
 using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Documents;
 using ATLAS.Application.Commands.Validators;
 using Xunit;
 
@@ -41,10 +42,10 @@ namespace ATLAS.IntegrationTests.Configuration
         public void ValidationException_ShouldMapTo400WithErrors()
         {
             // Arrange
-            var validator = new SubmitApplicationCommandValidator();
-            var command = new SubmitApplicationCommand
+            var validator = new UploadDocumentCommandValidator();
+            var command = new UploadDocumentCommand
             {                
-                PermitTypeId = Guid.Empty // Invalid
+                ApplicationId = Guid.Empty // Invalid
             };
 
             // Act

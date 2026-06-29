@@ -114,9 +114,6 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("fileSize")]
         public long FileSize { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("blobUrl")]
-        public System.Uri BlobUrl { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("uploadedDate")]
         public DateTimeOffset UploadedDate { get; set; } = default!;
 
@@ -279,27 +276,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("errors")]
         public System.Collections.Generic.IDictionary<string, System.Collections.Generic.ICollection<string>> Errors { get; set; } = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.ICollection<string>>();
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class SubmitApplicationRequest
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("permitTypeId")]
-        public System.Guid PermitTypeId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("citizenNotes")]
-        public string CitizenNotes { get; set; } = "";
-
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
 
     }
 
