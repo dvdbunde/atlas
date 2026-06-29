@@ -32,6 +32,8 @@ public partial class ApplicationEdit : ComponentBase
 
     private bool _dataLoaded;
 
+    private ElementReference _submitErrorAlert;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_dataLoaded)
@@ -305,8 +307,16 @@ public partial class ApplicationEdit : ComponentBase
         catch (InvalidOperationException ex)
         {
             // Submission validation failures (including missing required documents)
-            _viewModel.SubmitHasError = true;
+            _viewModel.SubmitHasError = true;            
             _viewModel.SubmitErrorMessage = ex.Message;
+
+            // Focus the error alert for screen readers
+            _ = Task.Run(async () => 
+            {
+                await Task.Delay(100); // Wait for render
+                await _submitErrorAlert.FocusAsync();
+            });
+
             Logger.LogWarning(ex, "Submission validation failed for application {ApplicationId}", _viewModel.ApplicationId);
         }
         catch (Exception ex)
@@ -314,6 +324,13 @@ public partial class ApplicationEdit : ComponentBase
             Logger.LogError(ex, "Failed to submit application {ApplicationId}", _viewModel.ApplicationId);
             _viewModel.SubmitHasError = true;
             _viewModel.SubmitErrorMessage = "We were unable to submit your application. Please try again.";
+
+            // Focus the error alert for screen readers
+            _ = Task.Run(async () => 
+            {
+                await Task.Delay(100); // Wait for render
+                await _submitErrorAlert.FocusAsync();
+            });
         }
         finally
         {
