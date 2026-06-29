@@ -1,0 +1,159 @@
+@using Microsoft.AspNetCore.Components.Forms
+@namespace ATLAS.Blazor.Components.Shared
+
+@* 
+    DocumentRequirementCard - Displays a single permit document requirement as a card.
+    Shows requirement info, upload status, uploaded documents, and action controls.
+*@
+
+<div class="card mb-3 @(Field.IsDocumentRequirementSatisfied ? "border-success" : Field.IsRequired ? "border-warning" : "")">
+    <div class="card-body">
+        @* Header: Requirement name and required/optional badge *@
+        <div class="d-flex align-items-center mb-2">
+            <h6 class="card-title mb-0 flex-grow-1">@Field.Label</h6>
+            @if (Field.IsRequired)
+            {
+                <span class="badge bg-danger ms-2">Required</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary ms-2">Optional</span>
+            }
+        </div>
+
+        @* Description *@
+        @if (!string.IsNullOrEmpty(Field.AllowedExtensions) || Field.MaxFileSizeBytes.HasValue)
+        {
+            <p class="card-text text-muted small mb-2">
+                @if (!string.IsNullOrEmpty(Field.AllowedExtensions))
+                {
+                    <span>Accepted: @Field.AllowedExtensions</span>
+                }
+                @if (Field.MaxFileSizeBytes.HasValue)
+                {
+                    <span class="ms-2">Max @(Field.MaxFileSizeBytes.Value / (1024 * 1024))MB</span>
+                }
+            </p>
+        }
+
+        @* Status indicator *@
+        <div class="mb-2">
+            @if (Field.IsDocumentRequirementSatisfied)
+            {
+                <span class="badge bg-success">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    @(Field.IsRequired ? "Uploaded" : "Uploaded")
+                </span>
+            }
+            else if (Field.IsRequired)
+            {
+                <span class="badge bg-warning text-dark">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    Missing
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-light text-muted">
+                    <i class="bi bi-dash-circle me-1"></i>
+                    Not supplied
+                </span>
+            }
+        </div>
+
+        @* Uploaded documents *@
+        @if (Field.UploadedDocuments.Count > 0)
+        {
+            <div class="mb-2">
+                @foreach (var doc in Field.UploadedDocuments)
+                {
+                    <div class="d-flex align-items-center border rounded p-2 mb-1 bg-light">
+                        <div class="flex-grow-1">
+                            <small class="fw-bold d-block">@doc.FileName</small>
+                            <small class="text-muted">
+                                @(doc.FileSize / 1024)KB
+                                @if (doc.UploadedDate != default)
+                                {
+                                    <span class="mx-1">|</span>
+                                    <span>Uploaded @doc.UploadedDate.ToString("d MMMM yyyy")</span>
+                                }
+                            </small>
+                        </div>
+                        @if (AllowFileUpload)
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-danger btn-sm ms-2"
+                                    disabled="@(Field.IsDeleting || Field.IsUploading)"
+                                    @onclick="() => OnDocumentDeleted.InvokeAsync((Field, doc.Id))"
+                                    aria-label="Remove @doc.FileName">
+                                @if (Field.IsDeleting)
+                                {
+                                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-trash"></i>
+                                }
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted small mb-2">
+                <em>
+                    @if (Field.IsDocumentRequirementSatisfied)
+                    {
+                        <span>Document on file.</span>
+                    }
+                    else
+                    {
+                        <span>No document uploaded.</span>
+                    }
+                </em>
+            </p>
+        }
+
+        @* Upload controls *@
+        @if (AllowFileUpload)
+        {
+            <div class="mt-2">
+                <InputFile class="form-control form-control-sm"
+                           OnChange="@(async (InputFileChangeEventArgs e) => await HandleFileSelected(e))"
+                           disabled="@Field.IsUploading" />
+
+                @if (Field.IsUploading)
+                {
+                    <div class="mt-1">
+                        <small class="text-muted">
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                            Uploading...
+                        </small>
+                    </div>
+                }
+
+                @if (Field.UploadFailed && !string.IsNullOrEmpty(Field.UploadErrorMessage))
+                {
+                    <div class="mt-1 text-danger">
+                        <small>
+                            <i class="bi bi-exclamation-triangle"></i>
+                            @Field.UploadErrorMessage
+                        </small>
+                    </div>
+                }
+
+                @if (Field.DeleteFailed && !string.IsNullOrEmpty(Field.DeleteErrorMessage))
+                {
+                    <div class="mt-1 text-danger">
+                        <small>
+                            <i class="bi bi-exclamation-triangle"></i>
+                            @Field.DeleteErrorMessage
+                        </small>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
