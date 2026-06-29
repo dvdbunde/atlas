@@ -1,7 +1,8 @@
 using System;
 using System.IO;
 using System.Text;
-using ATLAS.Application.Commands;
+using ATLAS.Application.Commands.Documents;
+using ATLAS.Application.Commands.Validators;
 using FluentValidation.TestHelper;
 using Xunit;
 

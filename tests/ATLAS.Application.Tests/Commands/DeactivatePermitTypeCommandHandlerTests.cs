@@ -7,6 +7,7 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using Moq;
 using Xunit;
+using ATLAS.Application.Commands.PermitTypes;
 
 namespace ATLAS.Application.Tests.Commands
 {

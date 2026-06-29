@@ -1,13 +1,10 @@
 using ATLAS.Application.Interfaces;
 using MediatR;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using ATLAS.Application.Commands;
 using Entities = ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using Moq;
 using Xunit;
+using ATLAS.Application.Commands.Applications;
 
 namespace ATLAS.Application.Tests.Commands
 {

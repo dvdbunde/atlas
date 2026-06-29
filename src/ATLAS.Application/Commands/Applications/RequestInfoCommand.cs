@@ -6,7 +6,7 @@ using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Application.Interfaces;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
     public class RequestInfoCommand : ICommand<bool>
     {

@@ -7,7 +7,7 @@ using ATLAS.Domain.Enums;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
     public class AssignToOfficerCommand : ICommand<bool>
     {

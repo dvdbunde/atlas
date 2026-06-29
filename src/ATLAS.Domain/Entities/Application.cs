@@ -174,6 +174,24 @@ namespace ATLAS.Domain.Entities
             return document;
         }
 
+        /// <summary>
+        /// Removes a document from this application.
+        /// Only allowed when the application is in an editable state.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to remove.</param>
+        /// <exception cref="DomainException">Thrown when the document is not found or the application is not editable.</exception>
+        public void RemoveDocument(Guid documentId)
+        {
+            if (Status == ApplicationStatus.Approved || Status == ApplicationStatus.Rejected)
+                throw new DomainException("Cannot remove documents from approved or rejected applications");
+
+            var document = _documents.FirstOrDefault(d => d.Id == documentId);
+            if (document == null)
+                throw new DomainException($"Document '{documentId}' not found in this application");
+
+            _documents.Remove(document);
+        }
+
         public ApplicationFieldValue AddFieldValue(string fieldName, string value, int sortOrder)
         {
             if (string.IsNullOrWhiteSpace(fieldName))

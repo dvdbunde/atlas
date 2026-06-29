@@ -1,7 +1,6 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using ATLAS.Application.Commands;
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Documents;
+using ATLAS.Application.Commands.Validators;
 using FluentValidation;
 using Xunit;
 

@@ -9,9 +9,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Contracts.Generated;
-using ATLAS.Application.Commands;
-using System.Threading.Tasks;
 using ATLAS.Application.Queries.Documents;
+using ATLAS.Application.Commands.Documents;
 
 namespace ATLAS.API.Controllers
 {

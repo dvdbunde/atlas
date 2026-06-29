@@ -36,6 +36,9 @@ public partial class DynamicFormGenerator : ComponentBase
     [Parameter]
     public bool AllowFileUpload { get; set; } = true;
 
+    [Parameter]
+    public EventCallback<(DynamicFormFieldViewModel Field, Guid DocumentId)> OnDocumentDeleted { get; set; }
+
     protected override void OnParametersSet()
     {
         _editContext = new EditContext(_formModel);

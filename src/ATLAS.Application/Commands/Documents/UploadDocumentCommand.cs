@@ -7,7 +7,7 @@ using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Documents
 {
     public class UploadDocumentCommand : ICommand<bool>
     {

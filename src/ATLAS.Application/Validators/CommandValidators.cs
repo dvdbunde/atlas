@@ -1,7 +1,9 @@
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Documents;
 using FluentValidation;
 using System;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Validators
 {
     public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplicationCommand>
     {

@@ -1,9 +1,5 @@
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Validators;
 using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration
@@ -45,8 +41,8 @@ namespace ATLAS.IntegrationTests.Configuration
         public void ValidationException_ShouldMapTo400WithErrors()
         {
             // Arrange
-            var validator = new ATLAS.Application.Commands.SubmitApplicationCommandValidator();
-            var command = new ATLAS.Application.Commands.SubmitApplicationCommand
+            var validator = new SubmitApplicationCommandValidator();
+            var command = new SubmitApplicationCommand
             {                
                 PermitTypeId = Guid.Empty // Invalid
             };

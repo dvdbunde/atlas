@@ -7,7 +7,7 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.Events;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
     public class ApproveApplicationCommand : ICommand<bool>
     {

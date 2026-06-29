@@ -65,7 +65,8 @@
                               Fields="@_viewModel.Fields"
                               Mode="FormFieldMode.Edit" 
                               AllowFileUpload="true"
-                              OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))">
+                              OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))"
+                              OnDocumentDeleted="@(args => HandleDocumentDeleted(args))">
             <div class="mt-4">
                 <button type="button"
                         class="btn btn-primary btn-lg"

@@ -1,6 +1,5 @@
-using ATLAS.Application.Commands;
 using ATLAS.Application.Commands.Applications;
-using ATLAS.Application.DTOs;
+using ATLAS.Application.Commands.Documents;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Shared;
@@ -199,6 +198,58 @@ public partial class ApplicationEdit : ComponentBase
         finally
         {
             field.IsUploading = false;
+        }
+    }
+
+    private async Task HandleDocumentDeleted((DynamicFormFieldViewModel Field, Guid DocumentId) args)
+    {
+        if (args.Field is null || args.DocumentId == Guid.Empty)
+            return;
+
+        var field = args.Field;
+        
+        field.IsDeleting = true;
+        field.DeleteFailed = false;
+        field.DeleteErrorMessage = null;
+
+        try
+        {
+            var command = new DeleteDocumentCommand
+            {
+                ApplicationId = _viewModel.ApplicationId,
+                DocumentId = args.DocumentId
+            };
+
+            await Mediator.Send(command);
+
+            // Remove from local list
+            field.UploadedDocuments.RemoveAll(d => d.Id == args.DocumentId);
+
+            Logger.LogInformation(
+                "Document {DocumentId} deleted from application {ApplicationId}",
+                args.DocumentId,
+                _viewModel.ApplicationId);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            field.DeleteFailed = true;
+            field.DeleteErrorMessage = "You can only delete documents from your own applications.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            field.DeleteFailed = true;
+            field.DeleteErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete document {DocumentId} from application {ApplicationId}",
+                args.DocumentId, _viewModel.ApplicationId);
+            field.DeleteFailed = true;
+            field.DeleteErrorMessage = "Failed to delete document. Please try again.";
+        }
+        finally
+        {
+            field.IsDeleting = false;
         }
     }
 

@@ -12,6 +12,7 @@ using ATLAS.Domain.ValueObjects;
 using MediatR;
 using Moq;
 using Xunit;
+using ATLAS.Application.Commands.Documents;
 
 namespace ATLAS.Application.Tests.Commands
 {

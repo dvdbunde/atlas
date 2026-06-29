@@ -28,6 +28,17 @@ public class DynamicFormFieldViewModel
     public bool IsUploading { get; set; }
     public bool UploadFailed { get; set; }
     public string? UploadErrorMessage { get; set; }
+    public bool IsDeleting { get; set; }
+    public bool DeleteFailed { get; set; }
+    public string? DeleteErrorMessage { get; set; }
+
+    /// <summary>
+    /// Indicates whether the document requirement for this field has been satisfied.
+    /// Returns true for non-FileUpload fields, optional file fields, or file fields with
+    /// at least one uploaded document.
+    /// </summary>
+    public bool IsDocumentRequirementSatisfied =>
+        Type != FieldType.FileUpload || !IsRequired || UploadedDocuments.Count > 0;
 
     public static DynamicFormFieldViewModel FromFieldDefinition(FieldDefinitionDto dto)
     {

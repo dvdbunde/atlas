@@ -7,7 +7,7 @@ using Entities = ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.Events;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
     [Obsolete("Use CreateDraftCommand + SubmitDraftCommand instead")]
     public class SubmitApplicationCommand : ICommand<Guid>
