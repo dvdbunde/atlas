@@ -151,24 +151,10 @@ namespace ATLAS.Infrastructure.Services
             return true;
         }
 
-        /// <summary>
-        /// Extract a BlobClient from a full blob URL by parsing the blob name relative to the container.
-        /// Fix #4: Trim leading '/' from AbsolutePath to avoid SDK path resolution issues.
-        /// </summary>
         private BlobClient GetBlobClientFromUrl(string blobUrl)
         {
-            var blobUri = new Uri(blobUrl);
-
-            // Azure SDK GetBlobClient expects the relative blob path without leading slash.
-            // AbsolutePath returns "/containerName/path/to/blob" — trim leading '/' and container prefix.
-            var absolutePath = blobUri.AbsolutePath.TrimStart('/');
-            // Remove the container name prefix to get the blob name
-            var containerPrefix = _containerClient.Name + "/";
-            var blobName = absolutePath.StartsWith(containerPrefix, StringComparison.OrdinalIgnoreCase)
-                ? absolutePath[containerPrefix.Length..]
-                : absolutePath;
-
-            return _containerClient.GetBlobClient(blobName);
+            var blobUriBuilder = new BlobUriBuilder(new Uri(blobUrl));
+            return _containerClient.GetBlobClient(blobUriBuilder.BlobName);
         }
 
         /// <summary>

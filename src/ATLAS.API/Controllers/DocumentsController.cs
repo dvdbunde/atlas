@@ -11,19 +11,22 @@ using ATLAS.API.Controllers.Generated;
 using ATLAS.API.Contracts.Generated;
 using ATLAS.Application.Queries.Documents;
 using ATLAS.Application.Commands.Documents;
+using Microsoft.AspNetCore.Hosting;
 
 namespace ATLAS.API.Controllers
 {
     [ApiController]    
     [Produces("application/json")]
     public sealed class DocumentsController : DocumentsControllerBase
-    {
+    {        
         private readonly IMediator _mediator;
+        private readonly IWebHostEnvironment _env;
 
         [ActivatorUtilitiesConstructor]
-        public DocumentsController(IMediator mediator)
+        public DocumentsController(IMediator mediator, IWebHostEnvironment env)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _env = env ?? throw new ArgumentNullException(nameof(env));
         }      
 
         public override async Task<IActionResult> Download(Guid documentId)
@@ -34,7 +37,20 @@ namespace ATLAS.API.Controllers
             if (result == null)
                 return NotFound();
         
-            // 302 redirect to the SAS URI — browser downloads directly from Azure
+            // Development (Azurite): proxy through server to avoid CORS issues.
+            // Production (Azure Storage): 302 redirect for direct client download.
+            if (_env.IsDevelopment())
+            {
+                using var httpClient = new HttpClient();
+                using var blobResponse = await httpClient.GetAsync(result.SasUri);
+            
+                if (!blobResponse.IsSuccessStatusCode)
+                    return StatusCode((int)blobResponse.StatusCode,
+                        "Failed to retrieve document from storage.");
+            
+                var contentBytes = await blobResponse.Content.ReadAsByteArrayAsync();
+                return File(contentBytes, result.ContentType, result.FileName);
+            }
             return Redirect(result.SasUri);
         }      
 

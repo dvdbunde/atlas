@@ -1,5 +1,7 @@
+using ATLAS.Application.Queries.Documents;
 using ATLAS.Blazor.Components;
 using ATLAS.Infrastructure;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
@@ -68,6 +70,35 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapGet("/documents/{documentId:guid}/download", async (
+    Guid documentId,
+    IMediator mediator,
+    IWebHostEnvironment env) =>
+{
+    var query = new DownloadDocumentQuery { DocumentId = documentId };
+    var result = await mediator.Send(query);
+
+    if (result == null)
+        return Results.NotFound();
+
+    // Development (Azurite): proxy through server to avoid CORS.
+    // Production (Azure Storage): 302 redirect for direct client download.
+    if (env.IsDevelopment())
+    {
+        using var httpClient = new HttpClient();
+        using var blobResponse = await httpClient.GetAsync(result.SasUri);
+
+        if (!blobResponse.IsSuccessStatusCode)
+            return Results.Problem("Failed to retrieve document from storage.",
+                statusCode: (int)blobResponse.StatusCode);
+
+        var contentBytes = await blobResponse.Content.ReadAsByteArrayAsync();
+        return Results.File(contentBytes, result.ContentType, result.FileName);
+    }
+
+    return Results.Redirect(result.SasUri);
+});
 
 // Map login/logout endpoints from Microsoft.Identity.Web.UI
 app.MapRazorPages();
