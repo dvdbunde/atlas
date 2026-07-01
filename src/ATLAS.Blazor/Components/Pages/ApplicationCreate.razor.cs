@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Components;
 namespace ATLAS.Blazor.Components.Pages;
 
 public partial class ApplicationCreate : ComponentBase
-{
+{    
     [Parameter]
     public Guid PermitTypeId { get; set; }
 
@@ -22,9 +22,19 @@ public partial class ApplicationCreate : ComponentBase
 
     private DynamicFormGenerator _dynamicForm = default!;
 
-    protected override async Task OnInitializedAsync()
+    private bool _dataLoaded;
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+  
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadPermitType();
+    if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadPermitType();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadPermitType()
@@ -87,8 +97,7 @@ public partial class ApplicationCreate : ComponentBase
 
             var applicationId = await Mediator.Send(command);
 
-            _viewModel.SaveSuccess = true;
-            _viewModel.CreatedApplicationId = applicationId;
+            Navigation.NavigateTo($"/applications/edit/{applicationId}?created=true");
         }
         catch (Exception ex)
         {
@@ -100,5 +109,5 @@ public partial class ApplicationCreate : ComponentBase
         {
             _viewModel.IsSaving = false;
         }
-    }
+    } 
 }

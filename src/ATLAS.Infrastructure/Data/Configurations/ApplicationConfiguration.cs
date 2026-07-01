@@ -25,6 +25,8 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.OwnsMany(a => a.Documents, doc =>
             {
                 doc.HasKey(d => d.Id);
+                doc.Property(d => d.Id).ValueGeneratedNever();
+                doc.Property(d => d.DocumentType).IsRequired().HasMaxLength(100);
                 doc.Property(d => d.FileName).IsRequired().HasMaxLength(255);
                 doc.Property(d => d.ContentType).IsRequired().HasMaxLength(100);
                 doc.Property(d => d.BlobUrl).IsRequired().HasMaxLength(500);
@@ -33,17 +35,18 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.OwnsMany(a => a.Reviews, review =>
             {
                 review.HasKey(r => r.Id);
+                review.Property(r => r.Id).ValueGeneratedNever();
                 review.Property(r => r.Decision).IsRequired();
                 review.Property(r => r.ReasonCode).HasMaxLength(50).IsRequired(false);
                 review.Property(r => r.Comments).HasMaxLength(2000);
                 review.HasOne<Entities.User>().WithMany().HasForeignKey(r => r.OfficerId).IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
             });
-
-            // Configure ApplicationFieldValue as owned entity (Phase A - Milestone 5)
+            
             builder.OwnsMany(a => a.FieldValues, field =>
             {
                 field.HasKey(f => f.Id);
+                field.Property(f => f.Id).ValueGeneratedNever();
                 field.Property(f => f.ApplicationId).IsRequired();
                 field.Property(f => f.FieldName).IsRequired().HasMaxLength(100);
                 field.Property(f => f.Value).IsRequired();

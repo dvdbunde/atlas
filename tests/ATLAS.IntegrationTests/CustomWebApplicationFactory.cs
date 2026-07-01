@@ -21,6 +21,9 @@ using Microsoft.Extensions.Options;
 
 namespace ATLAS.IntegrationTests;
 
+[CollectionDefinition("Sequential Integration Tests", DisableParallelization = true)]
+public class SequentialIntegrationTestsCollection { }
+
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> where TProgram : class
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -96,6 +99,19 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         builder.UseSetting("Logging:Console:IncludeScopes", "true");
     }
 
+    /// <summary>
+    /// Drops and recreates the InMemory database with fresh seed data.
+    /// Call from the test constructor to get a clean DB per test.
+    /// </summary>
+    public void ResetDatabase()
+    {
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        context.Database.EnsureDeleted();
+        context.Database.EnsureCreated();
+        SeedTestData(context);
+    }
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         var host = base.CreateHost(builder);
@@ -118,11 +134,12 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
     private void SeedTestData(ApplicationDbContext context)
     {
         // Seed PermitTypes (IsActive = true by default)
+        var parkingPermit = new PermitType("Parking Permit", "parking spaces", 150.00m);
         var buildingPermit = new PermitType("Building Permit", "For construction and renovations", 150.00m);
         var eventPermit = new PermitType("Event Permit", "For public events and gatherings", 75.00m);
         var signagePermit = new PermitType("Signage Permit", "For temporary signage", 25.00m);
         
-        context.PermitTypes.AddRange(new[] { buildingPermit, eventPermit, signagePermit });
+        context.PermitTypes.AddRange(new[] { buildingPermit, eventPermit, signagePermit, parkingPermit });
 
         // Seed Users
         var citizen = new User(Guid.NewGuid(), "citizen@test.com", "John", "Doe", UserRole.Citizen);
@@ -135,6 +152,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         context.SaveChanges();
 
         // Store seeded IDs for tests to use
+        TestData.ParkingPermitTypeId = parkingPermit.Id;
         TestData.BuildingPermitTypeId = buildingPermit.Id;
         TestData.EventPermitTypeId = eventPermit.Id;
         TestData.SignagePermitTypeId = signagePermit.Id;
@@ -144,33 +162,25 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 
         // Seed Applications (using seeded users and permit types)
         var application1 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for home renovation");
-        application1.AddDocument(Guid.NewGuid(),"building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
+        application1.AddDocument(Guid.NewGuid(), "Building Permit","building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
         application1.Submit();
-        application1.StartReview(officer.Id);
-        //application1.Approve(officer.Id, "Approved - meets all requirements");
+        application1.StartReview(officer.Id);                               
+
+        var application2 = new ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Draft for document upload test");              
         
-        var application2 = new  ATLAS.Domain.Entities.Application(citizen.Id, eventPermit.Id, "Annual community event permit");
-        application2.AddDocument(Guid.NewGuid(), "event_layout.pdf", "application/pdf", 3072, "https://blob.test.com/event_layout.pdf", citizen.Id);    
-        application2.Submit();
         
-        var application3 = new ATLAS.Domain.Entities.Application(citizen.Id, signagePermit.Id, "Temporary signage for business");
-        application3.AddDocument(Guid.NewGuid(), "signage_design.pdf", "application/pdf", 1024, "https://blob.test.com/signage_design.pdf", citizen.Id);    
-        
-        context.Applications.AddRange(new[] { application1, application2, application3 });
+        context.Applications.AddRange(new[] { application1, application2 });
         context.SaveChanges();
 
         // Store application IDs
-        TestData.Application1Id = application1.Id;
-        TestData.Application2Id = application2.Id;
-        TestData.Application3Id = application3.Id;       
-        
+        TestData.Application1Id = application1.Id;        
+        TestData.Application2Id = application2.Id;       
+                
         context.SaveChanges();
 
         // Store document IDs
-        TestData.Document1Id = application1.Documents[0].Id;
-        TestData.Document2Id = application2.Documents[0].Id;
-        TestData.Document3Id = application3.Documents[0].Id;
-
+        TestData.Document1Id = application1.Documents[0].Id;        
+        
         // Seed Audit Logs
         var audit1 = new AuditLog(citizen.Id, "ApplicationSubmitted", "Application", application1.Id, "Application submitted", "127.0.0.1");
         var audit2 = new AuditLog(officer.Id, "ApplicationApproved", "Application", application1.Id, "Application approved", "127.0.0.1");
@@ -180,23 +190,29 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         
         context.SaveChanges();
     }
+
+    public HttpClient CreateClientWithoutRedirects()
+    {
+        return CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+    }
 }
 
 // Static class to expose seeded IDs to tests
 public static class TestData
 {
+    public static Guid ParkingPermitTypeId { get; set; }
     public static Guid BuildingPermitTypeId { get; set; }
     public static Guid EventPermitTypeId { get; set; }
     public static Guid SignagePermitTypeId { get; set; }
     public static Guid CitizenUserId { get; set; }
     public static Guid OfficerUserId { get; set; }
     public static Guid AdminUserId { get; set; }
-    public static Guid Application1Id { get; set; }
-    public static Guid Application2Id { get; set; }
-    public static Guid Application3Id { get; set; }
-    public static Guid Document1Id { get; set; }
-    public static Guid Document2Id { get; set; }
-    public static Guid Document3Id { get; set; }
+    public static Guid Application1Id { get; set; }        
+    public static Guid Application2Id { get; set; }    
+    public static Guid Document1Id { get; set; }        
 }
 
 public static class TestServiceCollectionExtensions
@@ -223,14 +239,18 @@ public static class TestServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IIdentityResolver, IdentityResolver>();
+        services.AddSingleton<IFileStorageService, InMemoryFileStorageService>();
+        services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
+
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Application.AssemblyMarker).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(ATLAS.Infrastructure.AssemblyMarker).Assembly);
             cfg.AddOpenBehavior(typeof(UserSynchronizationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
         });            
         
         return services;
-    }
+    }    
 }

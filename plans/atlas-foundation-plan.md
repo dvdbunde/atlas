@@ -45,7 +45,7 @@ This roadmap outlines the implementation plan for ATLAS MVP as defined in [atlas
 
 **Aggregates** (Domain Layer):
 
-- `ApplicationAggregate` - Ensures application state transitions are valid. Contains `Document` and `Review` entities. Uses `ApplicationAggregate` class to enforce complex invariants.
+- `Application` - Aggregate root for permit applications. Contains `Document` and `Review` entities. Invariants enforced directly by `Application` entity methods — no separate aggregate wrapper class.
 - `PermitType` - IS the aggregate root (no separate aggregate class needed). Contains `PermitField` and `DocumentRequirement` value objects.
 - `User` - IS the aggregate root (no separate aggregate class needed). Simple entity with no child entities.
 
@@ -159,7 +159,7 @@ flowchart TD
 - `User` entity for system users (Citizens, Officers, Administrators)
 - `AuditLog` entity for immutable audit trail (7-year retention)
 - Value objects: `ApplicationStatus`, `DocumentType`, `PermitField`, `DocumentRequirement`
-- Aggregates: `ApplicationAggregate` (contains Document, Review), `PermitType` (root), `User` (root)
+- Aggregates: `Application` (root — contains Document, Review, ApplicationFieldValue), `PermitType` (root), `User` (root)
 - Domain events: `ApplicationSubmittedEvent`, `ApplicationApprovedEvent`, `ApplicationRejectedEvent`, `ApplicationInfoRequestedEvent`, `DocumentUploadedEvent`, `UserRoleChangedEvent`
 - Unit tests for all domain logic (≥95% coverage per Quality Policy)
 
@@ -337,7 +337,7 @@ flowchart TD
 - `IFileStorageService` abstraction (Application layer interface + Infrastructure implementation)
 - Azure Blob Storage integration via `Azure.Storage.Blobs` SDK
 - Azurite local development configuration
-- `BlobPath` property on `Document` entity (environment-independent blob references)
+- `BlobUrl` as single persisted storage reference on `Document` entity
 - `FieldType.FileUpload` enum value for dynamic form integration
 - DocumentRequirement enforcement at upload time (per permit type rules)
 - SAS token download (1-hour expiry, read-only permission)

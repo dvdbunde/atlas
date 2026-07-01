@@ -21,6 +21,7 @@ public class ApplicationEditViewModel
     public bool HasError { get; set; }
     public string? ErrorMessage { get; set; }
     public bool SaveSuccess { get; set; }
+    public bool CreatedSuccess { get; set; } = false;
     public bool IsLoaded => !IsLoading && !HasError;
     public bool IsSubmitting { get; set; }
     public bool SubmitHasError { get; set; }
@@ -40,11 +41,11 @@ public class ApplicationEditViewModel
         PermitDescription = permitType.Description;
         ApplicationNumber = application.ApplicationNumber;
         Status = application.Status;
-
-        Fields = permitType.Fields.Select(fd =>
+    
+        var fields = permitType.Fields.Select(fd =>
         {
             var hasExistingValue = application.FieldValues.TryGetValue(fd.Name, out var existingValue);
-
+    
             return new DynamicFormFieldViewModel
             {
                 FieldName = fd.Name,
@@ -54,8 +55,21 @@ public class ApplicationEditViewModel
                 DefaultValue = fd.DefaultValue,
                 CurrentValue = hasExistingValue ? existingValue : (fd.DefaultValue ?? string.Empty),
                 Options = fd.Options ?? new(),
-                SortOrder = 0
+                SortOrder = 0,
+                AllowedExtensions = fd.AllowedExtensions,
+                MaxFileSizeBytes = fd.MaxFileSizeBytes
             };
         }).ToList();
+    
+        // D4: Attach uploaded documents to FileUpload fields (field name matches document type)
+        foreach (var field in fields.Where(f => f.Type == FieldType.FileUpload))
+        {
+            var matchingDocs = application.Documents
+                .Where(d => d.DocumentType.StartsWith(field.FieldName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            field.UploadedDocuments = matchingDocs;
+        }
+    
+        Fields = fields;
     }
 }

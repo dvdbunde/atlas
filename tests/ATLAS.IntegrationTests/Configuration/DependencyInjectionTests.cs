@@ -4,6 +4,7 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration;
 
+[Collection("Sequential Integration Tests")]
 public class DependencyInjectionTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
     private readonly CustomWebApplicationFactory<Program> _factory;

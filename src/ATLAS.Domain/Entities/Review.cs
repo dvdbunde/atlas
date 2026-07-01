@@ -18,7 +18,7 @@ namespace ATLAS.Domain.Entities
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Review ID cannot be empty", nameof(id));
-            
+
             if (applicationId == Guid.Empty)
                 throw new ArgumentException("Application ID cannot be empty", nameof(applicationId));
             

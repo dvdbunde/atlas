@@ -1,4 +1,5 @@
 using ATLAS.Blazor.ViewModels;
+using ATLAS.Domain.Enums;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -60,7 +61,13 @@ public class DynamicFieldValidator : ComponentBase, IDisposable
         var fieldIdentifier = new FieldIdentifier(
             CurrentEditContext!.Model,
             field.FieldName);
-
+    
+            if (field.Type == FieldType.FileUpload)
+            {
+                // Document uploads are validated at submission time, not during draft editing
+                return;
+            }
+    
         if (field.IsRequired && string.IsNullOrWhiteSpace(field.CurrentValue))
         {
             var message = $"{field.Label} is required.";

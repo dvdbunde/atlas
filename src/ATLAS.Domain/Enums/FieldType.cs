@@ -7,6 +7,7 @@ namespace ATLAS.Domain.Enums
         Number = 2,
         Date = 3,
         Boolean = 4,
-        Dropdown = 5
+        Dropdown = 5,
+        FileUpload = 6
     }
 }

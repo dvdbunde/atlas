@@ -105,6 +105,12 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         public System.Guid Id { get; set; } = default!;
 
+        /// <summary>
+        /// The DocumentRequirement type this document satisfies
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("documentType")]
+        public string DocumentType { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("fileName")]
         public string FileName { get; set; } = default!;
 
@@ -113,9 +119,6 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("fileSize")]
         public long FileSize { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("blobUrl")]
-        public System.Uri BlobUrl { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("uploadedDate")]
         public DateTimeOffset UploadedDate { get; set; } = default!;
@@ -283,27 +286,6 @@ namespace ATLAS.API.Contracts.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class SubmitApplicationRequest
-    {
-
-        [System.Text.Json.Serialization.JsonPropertyName("permitTypeId")]
-        public System.Guid PermitTypeId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("citizenNotes")]
-        public string CitizenNotes { get; set; } = "";
-
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
-
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ApproveApplicationRequest
     {
 
@@ -397,6 +379,12 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
 
+        /// <summary>
+        /// The DocumentRequirement.DocumentType this file satisfies
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("documentType")]
+        public string DocumentType { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("fileName")]
         public string FileName { get; set; } = default!;
 
@@ -406,8 +394,11 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("fileSize")]
         public long FileSize { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("blobUrl")]
-        public System.Uri BlobUrl { get; set; } = default!;
+        /// <summary>
+        /// Base64-encoded file content
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("fileContent")]
+        public byte[] FileContent { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -703,41 +694,6 @@ namespace ATLAS.API.Contracts.Generated
 
     }
 
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class FileResponse : System.IDisposable
-    {
-        private System.IDisposable? _client;
-        private System.IDisposable? _response;
-
-        public int StatusCode { get; private set; }
-
-        public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
-
-        public System.IO.Stream Stream { get; private set; }
-
-        public bool IsPartial
-        {
-            get { return StatusCode == 206; }
-        }
-
-        public FileResponse(int statusCode, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.IO.Stream stream, System.IDisposable? client, System.IDisposable? response)
-        {
-            StatusCode = statusCode;
-            Headers = headers;
-            Stream = stream;
-            _client = client;
-            _response = response;
-        }
-
-        public void Dispose()
-        {
-            Stream.Dispose();
-            if (_response != null)
-                _response.Dispose();
-            if (_client != null)
-                _client.Dispose();
-        }
-    }
 
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]

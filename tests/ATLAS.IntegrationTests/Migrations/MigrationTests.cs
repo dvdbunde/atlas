@@ -8,6 +8,7 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Migrations
 {
+    [Collection("Sequential Integration Tests")]
     public class MigrationTests
     {
         [Fact]

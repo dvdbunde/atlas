@@ -9,7 +9,7 @@ using ATLAS.Application.Interfaces;
 
 namespace ATLAS.Application.Commands.Applications
 {
-    public class ResubmitApplicationCommand : IRequest<Unit>
+    public class ResubmitApplicationCommand : ICommand<Unit>
     {
         public Guid ApplicationId { get; set; }
     }

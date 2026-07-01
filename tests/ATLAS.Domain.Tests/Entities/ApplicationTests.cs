@@ -179,6 +179,22 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Equal(_officerId, approvedEvent.OfficerId);
         }
 
+        [Fact]
+        public void Approve_ShouldCreateReview()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+        
+            // Act
+            application.Approve(_officerId, "Approved");
+        
+            // Assert
+            var review = Assert.Single(application.Reviews);
+            Assert.Equal(ReviewDecision.Approve, review.Decision);
+            Assert.Equal(_officerId, review.OfficerId);
+            Assert.True(review.IsVisibleToCitizen);
+        }
+
         #endregion
 
         #region Reject Tests
@@ -298,6 +314,22 @@ namespace ATLAS.Domain.Tests.Entities
             var infoEvent = Assert.IsType<ApplicationInfoRequestedEvent>(domainEvent);
             Assert.Equal(application.Id, infoEvent.ApplicationId);
             Assert.Equal(_officerId, infoEvent.OfficerId);
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldCreateReview()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+        
+            // Act
+            application.RequestInfo(_officerId, "Please provide additional documentation");
+        
+            // Assert
+            var review = Assert.Single(application.Reviews);
+            Assert.Equal(ReviewDecision.RequestInfo, review.Decision);
+            Assert.Equal(_officerId, review.OfficerId);
+            Assert.True(review.IsVisibleToCitizen);
         }
 
         #endregion
@@ -566,7 +598,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() =>
-                application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
+                application.AddDocument(Guid.NewGuid(), "Building Permit","doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
             Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
         }
 
@@ -579,30 +611,9 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() =>
-                application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
+                application.AddDocument(Guid.NewGuid(),"Building Permit", "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
             Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
-        }
-
-        [Fact]
-        public void AddDocument_ShouldRaiseDocumentUploadedEvent()
-        {
-            // Arrange
-            var application = new Application(_citizenId, _permitTypeId, "Test notes");
-            application.ClearDomainEvents();
-            var documentId = Guid.NewGuid();
-
-            // Act
-            application.AddDocument(documentId, "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId);
-
-            // Assert
-            var domainEvent = Assert.Single(application.DomainEvents);
-            var uploadEvent = Assert.IsType<DocumentUploadedEvent>(domainEvent);
-            Assert.Equal(documentId, uploadEvent.DocumentId);
-            Assert.Equal(application.Id, uploadEvent.ApplicationId);
-            Assert.Equal(_citizenId, uploadEvent.UploadedById);
-            Assert.Equal("doc.pdf", uploadEvent.FileName);
-        }
-
+        }     
         #endregion
 
         #region AddReview Tests
@@ -611,14 +622,14 @@ namespace ATLAS.Domain.Tests.Entities
         public void AddReview_ShouldAddReviewSuccessfully()
         {
             // Arrange
-            var application = new Application(_citizenId, _permitTypeId, "Test notes");
             var reviewId = Guid.NewGuid();
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");            
 
             // Act
             application.AddReview(reviewId, _officerId, ReviewDecision.Approve, "Looks good", true, null);
 
-            // Assert
-            var review = Assert.Single(application.Reviews);
+            // Assert                        
+            var review = Assert.Single(application.Reviews);            
             Assert.Equal(reviewId, review.Id);
             Assert.Equal(_officerId, review.OfficerId);
             Assert.Equal(ReviewDecision.Approve, review.Decision);
@@ -662,6 +673,166 @@ namespace ATLAS.Domain.Tests.Entities
             application.Submit();
             application.StartReview(_officerId);
             return application;
+        }
+
+        #endregion
+
+        #region Document Management Tests
+
+        [Fact]
+        public void AddDocument_ShouldAddDocumentToList()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var documentId = Guid.NewGuid();
+
+            // Act
+            var document = application.AddDocument(
+                documentId,
+                "Building Permit",
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+
+            // Assert
+            Assert.Single(application.Documents);
+            Assert.Equal(documentId, document.Id);
+            Assert.Equal("test.pdf", document.FileName);
+        }
+
+        [Fact]
+        public void AddDocument_ShouldThrow_WhenApplicationIsApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.AddDocument(
+                    Guid.NewGuid(),
+                    "ParkingPermit",
+                    "test.pdf",
+                    "application/pdf",
+                    1024,
+                    "https://blob.url/test.pdf",
+                    _citizenId));
+        }
+
+        [Fact]
+        public void AddDocument_ShouldThrow_WhenApplicationIsRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Reject(_officerId, "INCOMPLETE", "Missing documents");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.AddDocument(
+                    Guid.NewGuid(),
+                    "ParkingPermit",
+                    "test.pdf",
+                    "application/pdf",
+                    1024,
+                    "https://blob.url/test.pdf",
+                    _citizenId));
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldRemoveDocumentFromList()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var documentId = Guid.NewGuid();
+            application.AddDocument(
+                documentId,
+                "ParkingPermit",
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+
+            // Act
+            application.RemoveDocument(documentId);
+
+            // Assert
+            Assert.Empty(application.Documents);
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldThrow_WhenDocumentNotFound()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.RemoveDocument(Guid.NewGuid()));
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldThrow_WhenApplicationIsApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            var documentId = Guid.NewGuid();
+            application.AddDocument(
+                documentId,
+                "ParkingPermit",
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+            application.ClearDomainEvents();
+            application.Approve(_officerId, "Approved");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.RemoveDocument(documentId));
+        }
+
+        [Fact]
+        public void RemoveDocument_ShouldThrow_WhenApplicationIsRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            var documentId = Guid.NewGuid();
+            application.AddDocument(
+                documentId,
+                "ParkingPermit",
+                "test.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/test.pdf",
+                _citizenId);
+            application.ClearDomainEvents();
+            application.Reject(_officerId, "INCOMPLETE", "Missing docs");
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() =>
+                application.RemoveDocument(documentId));
+        }
+
+        [Fact]
+        public void MultipleDocuments_ShouldAllBeAccessible()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var doc1Id = Guid.NewGuid();
+            var doc2Id = Guid.NewGuid();
+
+            // Act
+            application.AddDocument(doc1Id, "ParkingPermit", "doc1.pdf", "application/pdf", 1024, "https://blob.url/1", _citizenId);
+            application.AddDocument(doc2Id, "ParkingPermit", "doc2.pdf", "application/pdf", 2048, "https://blob.url/2", _citizenId);
+
+            // Assert
+            Assert.Equal(2, application.Documents.Count);
+            Assert.Contains(application.Documents, d => d.Id == doc1Id);
+            Assert.Contains(application.Documents, d => d.Id == doc2Id);
         }
 
         #endregion

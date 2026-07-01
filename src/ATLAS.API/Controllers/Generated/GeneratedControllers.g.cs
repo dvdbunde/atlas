@@ -49,17 +49,6 @@ namespace ATLAS.API.Controllers.Generated
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> ApplicationsGet([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? citizenId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? officerId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? status = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? search = null);
 
         /// <summary>
-        /// Submit new application
-        /// </summary>
-        /// <remarks>
-        /// Submit a new permit application
-        /// </remarks>
-        /// <returns>Application created successfully</returns>
-        [System.Obsolete]
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications", Name = "submitApplication")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> ApplicationsPost([Microsoft.AspNetCore.Mvc.FromBody] SubmitApplicationRequest body);
-
-        /// <summary>
         /// Get application by ID
         /// </summary>
         /// <remarks>
@@ -181,7 +170,19 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="applicationId">Application ID</param>
         /// <returns>Document uploaded successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents", Name = "uploadDocument")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Documents(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> DocumentsPost(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body);
+
+        /// <summary>
+        /// Delete document
+        /// </summary>
+        /// <remarks>
+        /// Delete a document from an application and remove its blob from storage
+        /// </remarks>
+        /// <param name="applicationId">Application ID</param>
+        /// <param name="documentId">Document ID</param>
+        /// <returns>Document deleted successfully</returns>
+        [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents/{documentId}", Name = "deleteDocument")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DocumentsDelete(System.Guid applicationId, System.Guid documentId);
 
         /// <summary>
         /// Download document
@@ -190,7 +191,6 @@ namespace ATLAS.API.Controllers.Generated
         /// Download a document from Azure Blob Storage
         /// </remarks>
         /// <param name="documentId">Document ID</param>
-        /// <returns>Document file stream</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/documents/{documentId}/download", Name = "downloadDocument")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Download(System.Guid documentId);
 
@@ -327,43 +327,6 @@ namespace ATLAS.API.Controllers.Generated
     }
 
     
-
-    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class FileResponse : System.IDisposable
-    {
-        private System.IDisposable? _client;
-        private System.IDisposable? _response;
-
-        public int StatusCode { get; private set; }
-
-        public System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> Headers { get; private set; }
-
-        public System.IO.Stream Stream { get; private set; }
-
-        public bool IsPartial
-        {
-            get { return StatusCode == 206; }
-        }
-
-        public FileResponse(int statusCode, System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IEnumerable<string>> headers, System.IO.Stream stream, System.IDisposable? client, System.IDisposable? response)
-        {
-            StatusCode = statusCode;
-            Headers = headers;
-            Stream = stream;
-            _client = client;
-            _response = response;
-        }
-
-        public void Dispose()
-        {
-            Stream.Dispose();
-            if (_response != null)
-                _response.Dispose();
-            if (_client != null)
-                _client.Dispose();
-        }
-    }
-
 
 
 }

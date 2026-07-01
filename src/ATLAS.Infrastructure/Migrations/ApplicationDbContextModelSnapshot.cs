@@ -216,7 +216,6 @@ namespace ATLAS.Infrastructure.Migrations
                     b.OwnsMany("ATLAS.Domain.Entities.ApplicationFieldValue", "FieldValues", b1 =>
                         {
                             b1.Property<Guid>("Id")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<Guid>("ApplicationId")
@@ -253,7 +252,6 @@ namespace ATLAS.Infrastructure.Migrations
                     b.OwnsMany("ATLAS.Domain.Entities.Document", "Documents", b1 =>
                         {
                             b1.Property<Guid>("Id")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<Guid>("ApplicationId")
@@ -271,6 +269,11 @@ namespace ATLAS.Infrastructure.Migrations
 
                             b1.Property<DateTime>("CreatedDate")
                                 .HasColumnType("datetime2");
+
+                            b1.Property<string>("DocumentType")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
 
                             b1.Property<string>("FileName")
                                 .IsRequired()
@@ -302,7 +305,6 @@ namespace ATLAS.Infrastructure.Migrations
                     b.OwnsMany("ATLAS.Domain.Entities.Review", "Reviews", b1 =>
                         {
                             b1.Property<Guid>("Id")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<Guid>("ApplicationId")

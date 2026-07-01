@@ -1,9 +1,10 @@
 using ATLAS.Application.Commands.Applications;
-using ATLAS.Application.DTOs;
+using ATLAS.Application.Commands.Documents;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Shared;
 using ATLAS.Blazor.ViewModels;
+using ATLAS.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Components;
  
@@ -11,6 +12,9 @@ namespace ATLAS.Blazor.Components.Pages;
 
 public partial class ApplicationEdit : ComponentBase
 {
+    [SupplyParameterFromQuery(Name = "created")]
+    public bool? Created { get; set; }
+
     [Parameter]
     public Guid Id { get; set; }
 
@@ -26,10 +30,18 @@ public partial class ApplicationEdit : ComponentBase
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
+    private bool _dataLoaded;
 
-    protected override async Task OnInitializedAsync()
+    private ElementReference _submitErrorAlert;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadApplication();
+        if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadApplication();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadApplication()
@@ -68,6 +80,11 @@ public partial class ApplicationEdit : ComponentBase
             }
 
             _viewModel.Load(application, permitType);
+
+            if (Created == true)
+            {
+                _viewModel.CreatedSuccess = true;
+            }
         }   
         catch (Exception ex)
         {
@@ -124,9 +141,141 @@ public partial class ApplicationEdit : ComponentBase
         }
     }
 
+    private async Task HandleFileSelected(DynamicFormFieldViewModel field)
+    {
+        if (field.Type != FieldType.FileUpload || field.SelectedFileContent is null)
+            return;
+
+        field.IsUploading = true;
+        field.UploadFailed = false;
+        field.UploadErrorMessage = null;
+
+        try
+        {
+            var command = new UploadDocumentCommand
+            {
+                ApplicationId = _viewModel.ApplicationId,
+                DocumentType = field.FieldName,
+                FileContent = new MemoryStream(field.SelectedFileContent),
+                FileName = field.SelectedFileName ?? "document",
+                ContentType = GetContentType(field.SelectedFileName ?? ""),
+                FileSize = field.SelectedFileContent.Length
+            };
+
+            await Mediator.Send(command);
+
+            // Refresh application to show uploaded documents
+            var appQuery = new GetApplicationByIdQuery { ApplicationId = _viewModel.ApplicationId };
+            var application = await Mediator.Send(appQuery);
+
+            if (application is not null)
+            {
+                // Reload fields with updated documents
+                var permitQuery = new GetPermitTypeByIdQuery { PermitTypeId = _viewModel.PermitTypeId };
+                var permitType = await Mediator.Send(permitQuery);
+                if (permitType is not null)
+                {
+                    _viewModel.Load(application, permitType);
+                }
+            }
+
+            field.SelectedFileName = null;
+            field.SelectedFileContent = null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            field.UploadFailed = true;
+            field.UploadErrorMessage = "You can only upload to your own applications.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            field.UploadFailed = true;
+            field.UploadErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Upload failed for field {FieldName}", field.FieldName);
+            field.UploadFailed = true;
+            field.UploadErrorMessage = "Upload failed. Please try again.";
+        }
+        finally
+        {
+            field.IsUploading = false;
+        }
+    }
+
+    private async Task HandleDocumentDeleted((DynamicFormFieldViewModel Field, Guid DocumentId) args)
+    {
+        if (args.Field is null || args.DocumentId == Guid.Empty)
+            return;
+
+        var field = args.Field;
+        
+        field.IsDeleting = true;
+        field.DeleteFailed = false;
+        field.DeleteErrorMessage = null;
+
+        try
+        {
+            var command = new DeleteDocumentCommand
+            {
+                ApplicationId = _viewModel.ApplicationId,
+                DocumentId = args.DocumentId
+            };
+
+            await Mediator.Send(command);
+
+            // Remove from local list
+            field.UploadedDocuments.RemoveAll(d => d.Id == args.DocumentId);
+
+            Logger.LogInformation(
+                "Document {DocumentId} deleted from application {ApplicationId}",
+                args.DocumentId,
+                _viewModel.ApplicationId);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            field.DeleteFailed = true;
+            field.DeleteErrorMessage = "You can only delete documents from your own applications.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            field.DeleteFailed = true;
+            field.DeleteErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete document {DocumentId} from application {ApplicationId}",
+                args.DocumentId, _viewModel.ApplicationId);
+            field.DeleteFailed = true;
+            field.DeleteErrorMessage = "Failed to delete document. Please try again.";
+        }
+        finally
+        {
+            field.IsDeleting = false;
+        }
+    }
+
+    private static string GetContentType(string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return ext switch
+        {
+            ".pdf" => "application/pdf",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+    }
+
     private void DismissSuccess()
     {
         _viewModel.SaveSuccess = false;
+    }
+
+    private void DismissCreatedSuccess()
+    {
+        _viewModel.CreatedSuccess = false;
     }
 
     private async Task SubmitApplication()
@@ -156,11 +305,33 @@ public partial class ApplicationEdit : ComponentBase
 
             Navigation.NavigateTo($"/applications/confirmation/{_viewModel.ApplicationId}");
         }
+        catch (InvalidOperationException ex)
+        {
+            // Submission validation failures (including missing required documents)
+            _viewModel.SubmitHasError = true;            
+            _viewModel.SubmitErrorMessage = ex.Message;
+
+            // Focus the error alert for screen readers
+            _ = Task.Run(async () => 
+            {
+                await Task.Delay(100); // Wait for render
+                await _submitErrorAlert.FocusAsync();
+            });
+
+            Logger.LogWarning(ex, "Submission validation failed for application {ApplicationId}", _viewModel.ApplicationId);
+        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to submit application {ApplicationId}", _viewModel.ApplicationId);
             _viewModel.SubmitHasError = true;
-            _viewModel.SubmitErrorMessage = "We were unable to submit your application. Please fix any validation errors and try again.";
+            _viewModel.SubmitErrorMessage = "We were unable to submit your application. Please try again.";
+
+            // Focus the error alert for screen readers
+            _ = Task.Run(async () => 
+            {
+                await Task.Delay(100); // Wait for render
+                await _submitErrorAlert.FocusAsync();
+            });
         }
         finally
         {

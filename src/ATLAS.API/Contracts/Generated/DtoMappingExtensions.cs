@@ -156,9 +156,9 @@ namespace ATLAS.API.Contracts.Generated
             {
                 Id = response.Id,
                 FileName = response.FileName,
+                DocumentType = response.DocumentType,
                 ContentType = response.ContentType,
-                FileSize = response.FileSize,
-                BlobUrl = response.BlobUrl?.ToString() ?? string.Empty, // Uri → string
+                FileSize = response.FileSize,                
                 UploadedDate = response.UploadedDate.DateTime, // DateTimeOffset → DateTime
                 UploadedById = response.UploadedById
             };
@@ -169,10 +169,10 @@ namespace ATLAS.API.Contracts.Generated
             return new DocumentResponse
             {
                 Id = dto.Id,
-                FileName = dto.FileName,
+                DocumentType = dto.DocumentType,
+                FileName = dto.FileName,                
                 ContentType = dto.ContentType,
-                FileSize = dto.FileSize,
-                BlobUrl = new Uri(dto.BlobUrl), // string → Uri
+                FileSize = dto.FileSize,                
                 UploadedDate = new DateTimeOffset(dto.UploadedDate),
                 UploadedById = dto.UploadedById
             };

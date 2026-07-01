@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
 using ATLAS.Domain.Interfaces;
+using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.Queries.PermitTypes
 {  
@@ -35,7 +36,7 @@ namespace ATLAS.Application.Queries.PermitTypes
                 Name = permitType.Name,
                 Description = permitType.Description,
                 Fee = permitType.Fee,
-                IsActive = permitType.IsActive,
+                IsActive = permitType.IsActive,                                                                
                 Fields = permitType.Fields.Select(f => new FieldDefinitionDto
                     {
                         Name = f.Name,
@@ -43,7 +44,16 @@ namespace ATLAS.Application.Queries.PermitTypes
                         IsRequired = f.IsRequired,
                         DefaultValue = f.DefaultValue,
                         Options = f.Options.ToList()
-                    }).ToList()
+                    })
+                    .Concat(permitType.DocumentRequirements.Select(r => new FieldDefinitionDto
+                    {
+                        Name = r.DocumentType,                        
+                        Type = FieldType.FileUpload,
+                        IsRequired = r.IsRequired,                        
+                        AllowedExtensions = string.Join(",", r.AllowedExtensions),
+                        MaxFileSizeBytes = r.MaxFileSizeBytes
+                    }))
+                    .ToList()
             };
         }
     }

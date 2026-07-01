@@ -15,10 +15,17 @@ public partial class CitizenDashboard : ComponentBase
 
     private CitizenDashboardViewModel _viewModel = new();
 
-    protected override async Task OnInitializedAsync()
+    private bool _dataLoaded;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadDashboard();
-    }
+        if (firstRender && !_dataLoaded)
+        {
+            _dataLoaded = true;
+            await LoadDashboard();
+            StateHasChanged();
+        }
+    }    
 
     private async Task LoadDashboard()
     {

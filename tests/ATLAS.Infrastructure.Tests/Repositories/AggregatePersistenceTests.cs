@@ -31,14 +31,14 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task ApplicationAggregate_WithDocuments_ShouldPersistAndRetrieve()
+        public async Task Application_WithDocuments_ShouldPersistAndRetrieve()
         {
             // Arrange - Application IS the aggregate root with Documents and Reviews as owned entities
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var doc1Id = Guid.NewGuid();
             var doc2Id = Guid.NewGuid();
-            application.AddDocument(doc1Id, "doc1.pdf", "application/pdf", 1024, "http://blob1.url", Guid.NewGuid());
-            application.AddDocument(doc2Id, "doc2.pdf", "application/pdf", 2048, "http://blob2.url", Guid.NewGuid());
+            application.AddDocument(doc1Id, "ParkingPermit", "doc1.pdf", "application/pdf", 1024, "http://blob1.url", Guid.NewGuid());
+            application.AddDocument(doc2Id, "BuildingPermit", "doc2.pdf", "application/pdf", 2048, "http://blob2.url", Guid.NewGuid());
 
             // Act - Save aggregate through ApplicationRepository
             await _applicationRepo.AddAsync(application);
@@ -53,12 +53,11 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task ApplicationAggregate_WithReviews_ShouldPersistAndRetrieve()
+        public async Task Application_WithReviews_ShouldPersistAndRetrieve()
         {
             // Arrange
-            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
-            var reviewId = Guid.NewGuid();
-            application.AddReview(reviewId, Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
+            application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
 
             // Act
             await _applicationRepo.AddAsync(application);
@@ -92,11 +91,11 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task ApplicationAggregate_Delete_ShouldCascadeDeleteOwnedEntities()
+        public async Task Application_Delete_ShouldCascadeDeleteOwnedEntities()
         {
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
-            application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
+            application.AddDocument(Guid.NewGuid(), "ParkingPermit", "doc.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved", true, null);
             
             await _applicationRepo.AddAsync(application);

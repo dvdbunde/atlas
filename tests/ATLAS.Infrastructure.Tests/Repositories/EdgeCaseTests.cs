@@ -51,18 +51,17 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             
             // Act & Assert - Domain constructor validates blob URL
             Assert.Throws<ArgumentException>(() => 
-                application.AddDocument(Guid.NewGuid(), "test.pdf", "application/pdf", 1024, null, Guid.NewGuid()));
+                application.AddDocument(Guid.NewGuid(), "Building Permit", "test.pdf", "application/pdf", 1024, null, Guid.NewGuid()));
         }
 
         [Fact]
         public async Task Review_WithNullReasonCodeForReject_ShouldStillPersist()
         {
             // Arrange - Reject decision typically needs reason code, but domain handles this
-            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
-            var reviewId = Guid.NewGuid();
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
             
             // Domain method sets default reason code if null for Reject
-            var review = application.AddReview(reviewId, Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, null);
+            var review = application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Reject, "Rejected", true, null);
             
             // Act
             await _applicationRepo.AddAsync(application);

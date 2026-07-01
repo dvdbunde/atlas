@@ -95,44 +95,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
       security:
-        - EntraID: ['Citizen', 'Officer', 'Admin']
-    
-    post:
-      tags: [Applications]
-      summary: Submit new application
-      description: Submit a new permit application
-      operationId: submitApplication
-      deprecated: true
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SubmitApplicationRequest'
-            examples:
-              standardApplication:
-                summary: Standard permit application
-                value:
-                  citizenId: '12345678-1234-1234-1234-123456789012'
-                  permitTypeId: '87654321-4321-4321-4321-210987654321'
-                  citizenNotes: 'Need permit for business operations'
-      responses:
-        '201':
-          description: Application created successfully
-          content:
-            application/json:
-              schema:
-                type: string
-                format: uuid
-              example: '11111111-2222-3333-4444-555555555555'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-      security:
-        - EntraID: ['Citizen', 'Officer', 'Admin']
+        - EntraID: ['Citizen', 'Officer', 'Admin']     
 
   /api/applications/{id}:
     get:
@@ -389,6 +352,41 @@ paths:
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
 
+  /api/applications/{applicationId}/documents/{documentId}:
+    delete:
+      tags: [Documents]
+      summary: Delete document
+      description: Delete a document from an application and remove its blob from storage
+      operationId: deleteDocument
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Document ID
+      responses:
+        '204':
+          description: Document deleted successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Citizen', 'Officer', 'Admin']        
+
   /api/applications/draft:
     post:
       tags: [Applications]
@@ -587,13 +585,14 @@ paths:
             format: uuid
           description: Document ID
       responses:
-        '200':
-          description: Document file stream
-          content:
-            application/octet-stream:
+        '302':
+          description: Redirect to secure SAS URI for download
+          headers:
+            Location:
               schema:
                 type: string
-                format: binary
+                format: uri
+              description: Short-lived SAS URI for blob download
         '404':
           $ref: '#/components/responses/NotFound'
         '401':
@@ -1009,6 +1008,9 @@ components:
         id:
           type: string
           format: uuid
+        documentType:                  
+          type: string                 
+          description: "The DocumentRequirement type this document satisfies"
         fileName:
           type: string
           example: 'permit-application.pdf'
@@ -1018,18 +1020,14 @@ components:
         fileSize:
           type: integer
           format: int64
-          example: 2048576
-        blobUrl:
-          type: string
-          format: uri
-          example: 'https://atlasstorage.blob.core.windows.net/documents/permit-application.pdf'
+          example: 2048576       
         uploadedDate:
           type: string
           format: date-time
         uploadedById:
           type: string
           format: uuid
-      required: [id, fileName, contentType, fileSize, blobUrl, uploadedDate]
+      required: [id, documentType, fileName, contentType, fileSize, uploadedDate]
     
     ReviewResponse:
       type: object
@@ -1138,18 +1136,7 @@ components:
                 type: array
                 items:
                   type: string
-          required: [errors]
-    
-    SubmitApplicationRequest:
-      type: object
-      properties:        
-        permitTypeId:
-          type: string
-          format: uuid
-        citizenNotes:
-          type: string
-          default: ''
-      required: [permitTypeId]
+          required: [errors]       
     
     ApproveApplicationRequest:
       type: object
@@ -1202,6 +1189,9 @@ components:
         applicationId:
           type: string
           format: uuid
+        documentType:                       
+          type: string                      
+          description: "The DocumentRequirement.DocumentType this file satisfies"
         fileName:
           type: string
         contentType:
@@ -1209,10 +1199,11 @@ components:
         fileSize:
           type: integer
           format: int64
-        blobUrl:
+        fileContent:
           type: string
-          format: uri        
-      required: [applicationId, fileName, contentType, fileSize]
+          format: byte
+          description: Base64-encoded file content
+      required: [applicationId, documentType, fileName, contentType, fileSize, fileContent]
     
     CreatePermitTypeRequest:
       type: object

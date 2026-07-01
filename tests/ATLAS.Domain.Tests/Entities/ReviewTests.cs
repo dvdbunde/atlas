@@ -6,7 +6,7 @@ using Xunit;
 namespace ATLAS.Domain.Tests.Entities
 {
     public class ReviewTests
-    {
+    {        
         private readonly Guid _reviewId = Guid.NewGuid();
         private readonly Guid _citizenId = Guid.NewGuid();
         private readonly Guid _permitTypeId = Guid.NewGuid();
@@ -27,15 +27,15 @@ namespace ATLAS.Domain.Tests.Entities
             var application = CreateApplicationUnderReview();
 
             // Act
-            var review = application.AddReview(
-                _reviewId,                 
+            var review = application.AddReview(                
+                _reviewId,
                 _officerId, 
                 ReviewDecision.Approve, 
                 "Approved - meets all requirements", 
                 true);
 
-            // Assert
-            Assert.Equal(_reviewId, review.Id);
+            // Assert        
+            Assert.Equal(_reviewId, review.Id);    
             Assert.Equal(application.Id, review.ApplicationId);
             Assert.Equal(_officerId, review.OfficerId);
             Assert.Equal(ReviewDecision.Approve, review.Decision);
@@ -51,8 +51,8 @@ namespace ATLAS.Domain.Tests.Entities
             var application = CreateApplicationUnderReview();
 
             // Act
-            var review = application.AddReview(
-                _reviewId, 
+            var review = application.AddReview(   
+                _reviewId,             
                 _officerId, 
                 ReviewDecision.Reject,                 
                 "Missing required documents", 
@@ -62,7 +62,7 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Equal(ReviewDecision.Reject, review.Decision);
             Assert.Equal("IncompleteApplication", review.ReasonCode);
             Assert.False(review.IsVisibleToCitizen);
-        }
+        }     
 
         [Fact]
         public void Create_ShouldThrowException_WhenIdIsEmpty()
@@ -89,8 +89,8 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                application.AddReview(
-                    _reviewId, 
+                application.AddReview(    
+                    _reviewId,                
                     Guid.Empty, 
                     ReviewDecision.Approve, 
                     "Approved", 
@@ -105,15 +105,15 @@ namespace ATLAS.Domain.Tests.Entities
             var application = new Application(_citizenId, _permitTypeId, "Initial notes");
 
             // Act - Should succeed (status check is done by calling method like Reject())
-            var review = application.AddReview(
-                _reviewId, 
+            var review = application.AddReview(                
+                _reviewId,
                 _officerId, 
                 ReviewDecision.Approve, 
                 "Approved", 
                 true);
 
             // Assert
-            Assert.NotNull(review);
+            Assert.NotNull(review);            
             Assert.Equal(_reviewId, review.Id);
         }
     }

@@ -12,15 +12,24 @@ namespace ATLAS.Domain.Entities
         public DateTime UploadedDate { get; private set; }
         public Guid UploadedById { get; private set; }
 
+        /// <summary>
+        /// The DocumentRequirement.DocumentType that this uploaded document satisfies.
+        /// This is the business key from the PermitType's DocumentRequirement value object.
+        /// </summary>
+        public string DocumentType { get; private set; }
+
         // Make constructor internal to enforce aggregate boundary
-        internal Document(Guid id, Guid applicationId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
+        internal Document(Guid id, Guid applicationId, string documentType, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Document ID cannot be empty", nameof(id));
 
             if (applicationId == Guid.Empty)
                 throw new ArgumentException("Application ID cannot be empty", nameof(applicationId));
-        
+
+            if (string.IsNullOrWhiteSpace(documentType))
+                throw new ArgumentException("Document type cannot be empty", nameof(documentType));
+            
             if (string.IsNullOrWhiteSpace(fileName))
                 throw new ArgumentException("File name cannot be empty", nameof(fileName));
             
@@ -44,6 +53,7 @@ namespace ATLAS.Domain.Entities
 
             Id = id;
             ApplicationId = applicationId;
+            DocumentType = documentType;
             FileName = fileName;
             ContentType = contentType;
             FileSize = fileSize;

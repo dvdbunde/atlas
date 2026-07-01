@@ -7,9 +7,9 @@ using ATLAS.Domain.Enums;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
-    public class AssignToOfficerCommand : IRequest<bool>
+    public class AssignToOfficerCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public Guid OfficerId { get; set; }

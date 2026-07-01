@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ATLAS.Domain\ATLAS.Domain.csproj" />
     <ProjectReference Include="..\..\src\ATLAS.API\ATLAS.Api.csproj" />
+    <ProjectReference Include="..\..\src\ATLAS.Infrastructure\ATLAS.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

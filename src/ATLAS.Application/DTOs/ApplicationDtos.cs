@@ -37,10 +37,10 @@ namespace ATLAS.Application.DTOs
     public class DocumentDto
     {
         public Guid Id { get; set; }
+        public string DocumentType { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public string ContentType { get; set; } = string.Empty;
         public long FileSize { get; set; }
-        public string BlobUrl { get; set; } = string.Empty;
         public DateTime UploadedDate { get; set; }
         public Guid UploadedById { get; set; }
     }
@@ -82,6 +82,8 @@ namespace ATLAS.Application.DTOs
         public bool IsRequired { get; set; }
         public string? DefaultValue { get; set; }
         public List<string> Options { get; set; } = new();
+        public string? AllowedExtensions { get; set; }
+        public long? MaxFileSizeBytes { get; set; }
     }
 
     /// <summary>
@@ -118,5 +120,5 @@ namespace ATLAS.Application.DTOs
         public ApplicationStatus Status { get; set; }
         public DateTime? SubmittedDate { get; set; }
         public DateTime? LastUpdated { get; set; }
-    }
+    }    
 }

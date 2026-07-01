@@ -7,9 +7,9 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.Events;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
-    public class ApproveApplicationCommand : IRequest<bool>
+    public class ApproveApplicationCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public string Comments { get; set; } = string.Empty;

@@ -47,17 +47,37 @@ public class ApplicationDetailViewModel
         OfficerName = application.OfficerName;
 
         // Map field definitions with existing values
-        Fields = permitType.Fields.Select(fd =>
+        var fieldList = new List<FieldDisplayViewModel>();
+        foreach (var fd in permitType.Fields)
         {
-            application.FieldValues.TryGetValue(fd.Name, out var existingValue);
-
-            return new FieldDisplayViewModel
+            if (fd.Type == FieldType.FileUpload)
             {
-                Label = fd.Name,
-                Value = existingValue ?? fd.DefaultValue ?? string.Empty
-            };
-        }).Where(f => !string.IsNullOrEmpty(f.Value))
-          .ToList();
+                var matchingDocs = application.Documents
+                    .Where(d => d.DocumentType.StartsWith(fd.Name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                fieldList.Add(new FieldDisplayViewModel
+                {
+                    Label = fd.Name,
+                    Value = string.Empty,
+                    Type = FieldType.FileUpload,
+                    Documents = matchingDocs
+                });
+            }
+            else
+            {
+                application.FieldValues.TryGetValue(fd.Name, out var existingValue);
+                var val = existingValue ?? fd.DefaultValue ?? string.Empty;
+                if (!string.IsNullOrEmpty(val))
+                {
+                    fieldList.Add(new FieldDisplayViewModel
+                    {
+                        Label = fd.Name,
+                        Value = val
+                    });
+                }
+            }
+        }
+        Fields = fieldList;
 
         // Build timeline entries
         TimelineEntries = BuildTimeline(application.Status);
@@ -127,6 +147,9 @@ public class FieldDisplayViewModel
 {
     public string Label { get; init; } = string.Empty;
     public string Value { get; init; } = string.Empty;
+    // D6: FileUpload field support
+    public FieldType? Type { get; init; }
+    public List<DocumentDto> Documents { get; init; } = new();
 }
 
 /// <summary>

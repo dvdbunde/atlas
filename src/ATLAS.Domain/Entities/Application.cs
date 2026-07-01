@@ -118,6 +118,9 @@ namespace ATLAS.Domain.Entities
             Status = ApplicationStatus.Approved;
             ReviewedDate = DateTime.UtcNow;
             OfficerNotes += $"[APPROVED {DateTime.UtcNow} by {officerId}]: {comments}";
+
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Approve, comments, true);
+
             AddDomainEvent(new ApplicationApprovedEvent(Id, officerId));
         }
 
@@ -146,6 +149,9 @@ namespace ATLAS.Domain.Entities
 
             Status = ApplicationStatus.InfoRequested;
             OfficerNotes += $"[INFO REQUESTED {DateTime.UtcNow} by {officerId}]: {message}";
+
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.RequestInfo, message, true);
+
             AddDomainEvent(new ApplicationInfoRequestedEvent(Id, officerId, message));
         }
 
@@ -158,16 +164,35 @@ namespace ATLAS.Domain.Entities
             AddDomainEvent(new ApplicationResubmittedEvent(Id, CitizenId));
         }
 
-        public Document AddDocument(Guid documentId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
+        public Document AddDocument(Guid documentId, string documentType, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
         {
             if (Status == ApplicationStatus.Approved || Status == ApplicationStatus.Rejected)
                 throw new DomainException("Cannot add documents to approved or rejected applications");
 
-            var document = new Document(documentId, Id, fileName, contentType, fileSize, blobUrl, uploadedById);
-            _documents.Add(document);
-            AddDomainEvent(new DocumentUploadedEvent(documentId, Id, uploadedById, fileName));
+            if (string.IsNullOrWhiteSpace(documentType))
+                throw new DomainException("Document type is required");
 
+            var document = new Document(documentId, Id, documentType, fileName, contentType, fileSize, blobUrl, uploadedById);
+            _documents.Add(document);           
             return document;
+        }
+
+        /// <summary>
+        /// Removes a document from this application.
+        /// Only allowed when the application is in an editable state.
+        /// </summary>
+        /// <param name="documentId">The ID of the document to remove.</param>
+        /// <exception cref="DomainException">Thrown when the document is not found or the application is not editable.</exception>
+        public void RemoveDocument(Guid documentId)
+        {
+            if (Status == ApplicationStatus.Approved || Status == ApplicationStatus.Rejected)
+                throw new DomainException("Cannot remove documents from approved or rejected applications");
+
+            var document = _documents.FirstOrDefault(d => d.Id == documentId);
+            if (document == null)
+                throw new DomainException($"Document '{documentId}' not found in this application");
+
+            _documents.Remove(document);
         }
 
         public ApplicationFieldValue AddFieldValue(string fieldName, string value, int sortOrder)
@@ -210,7 +235,7 @@ namespace ATLAS.Domain.Entities
             _fieldValues.Remove(fieldValue);
         }
 
-        public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
+         public Review AddReview(Guid reviewId, Guid officerId, ReviewDecision decision, string comments, bool isVisibleToCitizen, string reasonCode = null)
         {
             // Note: Status check is done by the calling method (Submit, Approve, Reject, etc.)
             // This allows internal calls from Reject() before status changes to Rejected

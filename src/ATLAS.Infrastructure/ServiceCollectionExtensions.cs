@@ -10,13 +10,16 @@ namespace ATLAS.Infrastructure
     using ATLAS.Infrastructure.Data.SeedData;
     using ATLAS.Infrastructure.EventHandlers;
     using ATLAS.Infrastructure.Repositories;
+    using ATLAS.Infrastructure.Options;
     using ATLAS.Infrastructure.Services;
+    using Azure.Storage.Blobs;
     using FluentValidation;
     using MediatR;
     using Microsoft.AspNetCore.Http;
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Options;
 
     /// <summary>
     /// Extension methods for IServiceCollection to register Infrastructure layer services
@@ -91,46 +94,25 @@ namespace ATLAS.Infrastructure
             services.AddScoped<SeedDataLoader>();
 
             // Register Unit of Work
-            services.AddScoped<IUnitOfWork, UnitOfWork>();                     
-            
-            return services;
-        }
-        
-        /// <summary>
-        /// Registers Infrastructure layer services with default configuration.
-        /// Convenience overload for environments where full configuration isn't available
-        /// (e.g., tests). Still registers HTTP context accessor and current user service.
-        /// </summary>
-        /// <param name="services">The service collection</param>
-        /// <returns>The service collection for fluent chaining</returns>
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services)
-        {
-            if (services == null)
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // Bind Storage configuration to strongly-typed options
+            services.AddOptions<StorageOptions>()
+                .Bind(configuration.GetSection(StorageOptions.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            // Register BlobStorageService as the production file storage implementation
+            services.AddScoped<IFileStorageService>(sp =>
             {
-                throw new ArgumentNullException(nameof(services));
-            }
+                var options = sp.GetRequiredService<IOptions<StorageOptions>>();
+                return new BlobStorageService(options);
+            });
 
-            services.AddHttpContextAccessor();
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
-            services.AddScoped<IExecutionContext, ExecutionContext>();
-
-            //----------------------
-            // Email Services (Phase E1)
-            //----------------------
-
-            // Email service (SMTP for development)
-            services.AddTransient<IEmailService, SmtpEmailService>();
-
-            // Email template renderer
-            services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
-
-            // Email event handlers (MediatR auto-discovers, but explicit for clarity)
-            services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();
-            services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
-            services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
-            services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+            // Register virus scanner (pass-through for MVP)
+            services.AddScoped<IVirusScanner, PassThroughVirusScanner>();
 
             return services;
-        }
+        }       
     }
 }

@@ -6,9 +6,9 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.Events;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.PermitTypes
 {
-    public class CreatePermitTypeCommand : IRequest<Guid>
+    public class CreatePermitTypeCommand : ICommand<Guid>
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

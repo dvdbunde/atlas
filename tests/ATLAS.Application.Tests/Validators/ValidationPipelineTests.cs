@@ -1,90 +1,13 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using ATLAS.Application.Commands;
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Documents;
+using ATLAS.Application.Commands.Validators;
 using FluentValidation;
 using Xunit;
 
 namespace ATLAS.Application.Tests.Validators
 {
     public class ValidationPipelineTests
-    {
-        #region SubmitApplicationCommandValidator Tests
-
-        [Fact]
-        public void SubmitApplicationCommand_ShouldPass_WhenValid()
-        {
-            // Arrange
-            var validator = new SubmitApplicationCommandValidator();
-            var command = new SubmitApplicationCommand
-            {
-                PermitTypeId = Guid.NewGuid(),
-                CitizenNotes = "Test notes"
-            };
-
-            // Act
-            var result = validator.Validate(command);
-
-            // Assert
-            Assert.True(result.IsValid);
-        }
-
-        [Fact]
-        public void SubmitApplicationCommand_ShouldPass_WhenPermitTypeIdProvided()
-        {
-            // Arrange
-            var validator = new SubmitApplicationCommandValidator();
-            var command = new SubmitApplicationCommand
-            {
-                PermitTypeId = Guid.NewGuid()
-            };
-
-            // Act
-            var result = validator.Validate(command);
-
-            // Assert
-            Assert.True(result.IsValid);
-        }
-
-        [Fact]
-        public void SubmitApplicationCommand_ShouldFail_WhenPermitTypeIdEmpty()
-        {
-            // Arrange
-            var validator = new SubmitApplicationCommandValidator();
-            var command = new SubmitApplicationCommand
-            {
-                PermitTypeId = Guid.Empty
-            };
-
-            // Act
-            var result = validator.Validate(command);
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "PermitTypeId" && e.ErrorMessage == "PermitTypeId is required");
-        }
-
-        [Fact]
-        public void SubmitApplicationCommand_ShouldFail_WhenCitizenNotesTooLong()
-        {
-            // Arrange
-            var validator = new SubmitApplicationCommandValidator();
-            var command = new SubmitApplicationCommand
-            {
-                PermitTypeId = Guid.NewGuid(),
-                CitizenNotes = new string('A', 2001) // Exceeds 2000 chars
-            };
-
-            // Act
-            var result = validator.Validate(command);
-
-            // Assert
-            Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "CitizenNotes" && e.ErrorMessage == "Citizen notes cannot exceed 2000 characters");
-        }
-
-        #endregion
-
+    {        
         #region ApproveApplicationCommandValidator Tests
 
         [Fact]
@@ -179,8 +102,8 @@ namespace ATLAS.Application.Tests.Validators
                 ApplicationId = Guid.NewGuid(),
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
-                FileSize = 11 * 1024 * 1024, // 11MB
-                BlobUrl = "https://blob.com/test.pdf"
+                FileSize = 35 * 1024 * 1024,
+                FileContent = new MemoryStream()
             };
 
             // Act
@@ -188,7 +111,7 @@ namespace ATLAS.Application.Tests.Validators
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "FileSize" && e.ErrorMessage == "FileSize cannot exceed 10MB");
+            Assert.Contains(result.Errors, e => e.PropertyName == "FileSize" && e.ErrorMessage.Contains("File size cannot exceed"));
         }
 
         [Fact]
@@ -202,7 +125,7 @@ namespace ATLAS.Application.Tests.Validators
                 FileName = "test.exe",
                 ContentType = "application/exe", // Invalid type
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.exe"
+                FileContent = new MemoryStream(),                
             };
 
             // Act
@@ -210,7 +133,7 @@ namespace ATLAS.Application.Tests.Validators
 
             // Assert
             Assert.False(result.IsValid);
-            Assert.Contains(result.Errors, e => e.PropertyName == "ContentType" && e.ErrorMessage.Contains("Only PDF and image files are allowed"));
+            Assert.Contains(result.Errors, e => e.PropertyName == "ContentType" && e.ErrorMessage.Contains("Content type must be one of"));
         }
 
         [Fact]
@@ -221,10 +144,11 @@ namespace ATLAS.Application.Tests.Validators
             var command = new UploadDocumentCommand
             {
                 ApplicationId = Guid.NewGuid(),
+                DocumentType = "Building Permit",
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024,
-                BlobUrl = "https://blob.com/test.pdf"
+                FileContent = new MemoryStream()                
             };
 
             // Act

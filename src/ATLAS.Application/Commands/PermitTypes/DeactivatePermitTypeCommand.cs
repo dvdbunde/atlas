@@ -6,9 +6,9 @@ using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.Events;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.PermitTypes
 {
-    public class DeactivatePermitTypeCommand : IRequest<bool>
+    public class DeactivatePermitTypeCommand : ICommand<bool>
     {
         public Guid PermitTypeId { get; set; }
         public Guid DeactivatedByAdminId { get; set; }

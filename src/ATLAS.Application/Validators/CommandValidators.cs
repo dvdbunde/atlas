@@ -1,20 +1,10 @@
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Documents;
 using FluentValidation;
 using System;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Validators
 {
-    public class SubmitApplicationCommandValidator : AbstractValidator<SubmitApplicationCommand>
-    {
-        public SubmitApplicationCommandValidator()
-        {          
-            RuleFor(x => x.PermitTypeId)
-                .NotEmpty().WithMessage("PermitTypeId is required");
-
-            RuleFor(x => x.CitizenNotes)
-                .MaximumLength(2000).WithMessage("Citizen notes cannot exceed 2000 characters");
-        }
-    }
-
     public class ApproveApplicationCommandValidator : AbstractValidator<ApproveApplicationCommand>
     {
         public ApproveApplicationCommandValidator()
@@ -67,28 +57,54 @@ namespace ATLAS.Application.Commands
 
     public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCommand>
     {
+        // Allowed MIME types per PRD F-03
+        private static readonly string[] AllowedContentTypes =
+        {
+            "application/pdf",
+            "image/jpeg",
+            "image/png"
+        };
+
+        // Maximum file size: 25MB (aligned with Document entity as source of truth)
+        private const long MaxFileSizeBytes = 25 * 1024 * 1024;
+
         public UploadDocumentCommandValidator()
         {
             RuleFor(x => x.ApplicationId)
-                .NotEmpty().WithMessage("ApplicationId is required");
+                .NotEmpty().WithMessage("Application ID is required.");
 
-            RuleFor(x => x.FileName)
-                .NotEmpty().WithMessage("FileName is required")
-                .MaximumLength(255).WithMessage("FileName cannot exceed 255 characters");
+            RuleFor(x => x.FileContent)
+                .NotNull().WithMessage("File content is required.")
+                .Must(s => s != Stream.Null).WithMessage("File content stream cannot be null.");
 
-            RuleFor(x => x.ContentType)
-                .NotEmpty().WithMessage("ContentType is required")
-                .Must(x => x == "application/pdf" || x.StartsWith("image/"))
-                .WithMessage("Only PDF and image files are allowed");
+            RuleFor(x => x.FileContent)
+                .NotNull().WithMessage("File content is required.")
+                .Must(s => s != Stream.Null).WithMessage("File content stream cannot be null.");
+
+            RuleFor(x => x.DocumentType)
+                .NotEmpty().WithMessage("Document type is required.")
+                .MaximumLength(100).WithMessage("Document type cannot exceed 100 characters.");
 
             RuleFor(x => x.FileSize)
-                .GreaterThan(0).WithMessage("FileSize must be greater than 0")
-                .LessThanOrEqualTo(10 * 1024 * 1024).WithMessage("FileSize cannot exceed 10MB");
+                .GreaterThan(0).WithMessage("File size must be positive.")
+                .LessThanOrEqualTo(MaxFileSizeBytes)
+                    .WithMessage($"File size cannot exceed {MaxFileSizeBytes / (1024 * 1024)}MB.");
 
-            RuleFor(x => x.BlobUrl)
-                .NotEmpty().WithMessage("BlobUrl is required")
-                .Must(x => Uri.TryCreate(x, UriKind.Absolute, out _))
-                .WithMessage("BlobUrl must be a valid URL");        
+            RuleFor(x => x.FileName)
+                .NotEmpty().WithMessage("File name is required.")
+                .MaximumLength(255).WithMessage("File name cannot exceed 255 characters.")
+                .Must(name => !string.IsNullOrWhiteSpace(Path.GetExtension(name)))
+                    .WithMessage("File must have an extension.");
+
+            RuleFor(x => x.ContentType)
+                .NotEmpty().WithMessage("Content type is required.")
+                .Must(ct => AllowedContentTypes.Contains(ct.ToLowerInvariant()))
+                    .WithMessage($"Content type must be one of: {string.Join(", ", AllowedContentTypes)}.");
+
+            RuleFor(x => x.FileSize)
+                .GreaterThan(0).WithMessage("File size must be positive.")
+                .LessThanOrEqualTo(MaxFileSizeBytes)
+                    .WithMessage($"File size cannot exceed {MaxFileSizeBytes / (1024 * 1024)}MB.");
         }
     }
 }

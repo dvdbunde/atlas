@@ -15,8 +15,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
                 Id = Guid.NewGuid(),
                 FileName = "permit.pdf",
                 ContentType = "application/pdf",
-                FileSize = 1024000,
-                BlobUrl = new Uri("https://storage.blob.core.windows.net/documents/permit.pdf"),
+                FileSize = 1024000,                
                 UploadedDate = DateTimeOffset.UtcNow
             };
 
@@ -24,8 +23,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.NotEqual(Guid.Empty, response.Id);
             Assert.Equal("permit.pdf", response.FileName);
             Assert.Equal("application/pdf", response.ContentType);
-            Assert.Equal(1024000, response.FileSize);
-            Assert.NotNull(response.BlobUrl);
+            Assert.Equal(1024000, response.FileSize);            
             Assert.NotNull(response.UploadedDate);
         }
 
@@ -39,8 +37,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.Equal(default(Guid), response.Id);
             Assert.Null(response.FileName);
             Assert.Null(response.ContentType);
-            Assert.Equal(0, response.FileSize);
-            Assert.Null(response.BlobUrl);
+            Assert.Equal(0, response.FileSize);            
             Assert.Equal(default(DateTimeOffset), response.UploadedDate);
         }
     }

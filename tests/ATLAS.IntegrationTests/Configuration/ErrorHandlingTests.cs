@@ -1,13 +1,11 @@
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using ATLAS.Application.Commands.Applications;
+using ATLAS.Application.Commands.Documents;
+using ATLAS.Application.Commands.Validators;
 using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration
 {
+    [Collection("Sequential Integration Tests")]
     public class ErrorHandlingTests : IClassFixture<CustomWebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
@@ -44,10 +42,10 @@ namespace ATLAS.IntegrationTests.Configuration
         public void ValidationException_ShouldMapTo400WithErrors()
         {
             // Arrange
-            var validator = new ATLAS.Application.Commands.SubmitApplicationCommandValidator();
-            var command = new ATLAS.Application.Commands.SubmitApplicationCommand
+            var validator = new UploadDocumentCommandValidator();
+            var command = new UploadDocumentCommand
             {                
-                PermitTypeId = Guid.Empty // Invalid
+                ApplicationId = Guid.Empty // Invalid
             };
 
             // Act

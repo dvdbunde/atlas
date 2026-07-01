@@ -29,5 +29,10 @@ namespace ATLAS.Domain.Interfaces
         Task<Entities.Review?> GetReviewByIdAsync(Guid reviewId, CancellationToken cancellationToken = default);
         Task<IEnumerable<Entities.Review>> GetReviewsByApplicationIdAsync(Guid applicationId, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Finds the application that contains the specified document.
+        /// Returns null if no application contains the document.
+        /// </summary>
+        Task<Entities.Application?> GetByDocumentIdAsync(Guid documentId, CancellationToken ct = default);
     }
 }

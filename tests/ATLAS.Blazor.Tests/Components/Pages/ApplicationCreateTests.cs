@@ -5,6 +5,7 @@ using ATLAS.Blazor.Components.Pages;
 using ATLAS.Blazor.ViewModels;
 using ATLAS.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
@@ -150,7 +151,7 @@ public class ApplicationCreateTests : BunitContext
     }
 
     [Fact]
-    public void Should_ShowSuccessState_WhenDraftSaved()
+    public void Should_NavigateToEditPage_WhenDraftSaved()
     {
         // Arrange
         var appId = Guid.NewGuid();
@@ -162,6 +163,7 @@ public class ApplicationCreateTests : BunitContext
             .Setup(m => m.Send(It.IsAny<CreateDraftCommand>(), default))
             .ReturnsAsync(appId);
 
+        var navigationManager = Services.GetRequiredService<NavigationManager>();
         var cut = Render<ApplicationCreate>(parameters =>
             parameters.Add(p => p.PermitTypeId, _permitTypeId));
 
@@ -171,37 +173,8 @@ public class ApplicationCreateTests : BunitContext
         var saveButton = cut.Find("button.btn-primary");
         saveButton.Click();
 
-        // Assert
-        var successAlert = cut.Find(".alert-success");
-        Assert.NotNull(successAlert);
-        Assert.Contains("Draft saved", successAlert.TextContent);
-    }
-
-    [Fact]
-    public void Should_ShowContinueEditingLink_AfterDraftSaved()
-    {
-        // Arrange
-        var appId = Guid.NewGuid();
-        _mediatorMock
-            .SetupSequence(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
-            .ReturnsAsync(CreateSamplePermitType());
-
-        _mediatorMock
-            .Setup(m => m.Send(It.IsAny<CreateDraftCommand>(), default))
-            .ReturnsAsync(appId);
-
-        var cut = Render<ApplicationCreate>(parameters =>
-            parameters.Add(p => p.PermitTypeId, _permitTypeId));
-
-        // Act - populate required fields, then save
-        cut.Find("input[type='text']").Change("123 Main St");
-        cut.Find("input[type='number']").Change("2000");
-        var saveButton = cut.Find("button.btn-primary");
-        saveButton.Click();
-
-        // Assert
-        var editLink = cut.Find("a.btn-primary");
-        Assert.EndsWith($"/applications/edit/{appId}", editLink.GetAttribute("href"));
+        // Assert - navigation to edit page with created flag
+        Assert.EndsWith($"/applications/edit/{appId}?created=true", navigationManager.Uri);
     }
 
     [Fact]

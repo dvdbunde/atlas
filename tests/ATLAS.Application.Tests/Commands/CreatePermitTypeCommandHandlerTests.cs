@@ -2,12 +2,12 @@ using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using ATLAS.Application.Commands;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using Moq;
 using Xunit;
+using ATLAS.Application.Commands.PermitTypes;
 
 namespace ATLAS.Application.Tests.Commands
 {

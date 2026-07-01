@@ -5,13 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
+using ATLAS.Domain.Events;
 using Microsoft.Extensions.Logging;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.Commands.Applications
 {
-    public class SubmitDraftCommand : IRequest<Unit>
+    public class SubmitDraftCommand : ICommand<Unit>
     {
         public Guid ApplicationId { get; set; }
     }
@@ -21,17 +22,20 @@ namespace ATLAS.Application.Commands.Applications
         private readonly IApplicationRepository _applicationRepository;
         private readonly IPermitTypeRepository _permitTypeRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMediator _mediator;                          // ADDED
         private readonly ILogger<SubmitDraftCommandHandler> _logger;
 
         public SubmitDraftCommandHandler(
             IApplicationRepository applicationRepository,
             IPermitTypeRepository permitTypeRepository,
             ICurrentUserService currentUserService,
+            IMediator mediator,                                        // ADDED
             ILogger<SubmitDraftCommandHandler> logger)
         {
             _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
             _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));        // ADDED
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -57,8 +61,10 @@ namespace ATLAS.Application.Commands.Applications
             if (permitType == null)
                 throw new ArgumentException($"Permit type {application.PermitTypeId} not found");
 
-            // Rule 1: Every FieldValue must reference an existing PermitField name
-            var fieldNames = permitType.Fields.Select(f => f.Name).ToList();
+            // Rule 1: Every FieldValue must reference an existing PermitField or DocumentRequirement name
+            var fieldNames = permitType.Fields.Select(f => f.Name)
+                .Concat(permitType.DocumentRequirements.Select(r => r.DocumentType))
+                .ToList();
             foreach (var fieldValue in application.FieldValues)
             {
                 if (!fieldNames.Contains(fieldValue.FieldName, StringComparer.OrdinalIgnoreCase))
@@ -83,9 +89,39 @@ namespace ATLAS.Application.Commands.Applications
                     throw new InvalidOperationException($"Required field '{requiredField}' must have a value");
             }
 
+            // Rule 4: All required document requirements must have at least one uploaded document.
+            // Uses explicit DocumentType association — no filename parsing.
+            var missingDocs = new List<string>();
+            var uploadedDocTypes = application.Documents
+                .Select(d => d.DocumentType)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var docReq in permitType.DocumentRequirements.Where(r => r.IsRequired))
+            {
+                if (!uploadedDocTypes.Contains(docReq.DocumentType))
+                {
+                    missingDocs.Add(docReq.DocumentType);
+                }
+            }
+
+            if (missingDocs.Any())
+            {
+                var message = "The following required documents are still missing:" +
+                              Environment.NewLine +
+                              string.Join(Environment.NewLine,
+                                  missingDocs.Select(m => $"- {m}"));
+                throw new InvalidOperationException(message);
+            }            
+
             // All validation passed, submit
             application.Submit();
             await _applicationRepository.UpdateAsync(application, cancellationToken);
+
+            // Publish domain event to trigger audit logging and email notification
+            await _mediator.Publish(
+                new ApplicationSubmittedEvent(application.Id, application.CitizenId, application.PermitTypeId),
+                cancellationToken);
 
             _logger.LogInformation("Draft application {ApplicationId} submitted", request.ApplicationId);
 

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace ATLAS.IntegrationTests.Configuration
 {
+    [Collection("Sequential Integration Tests")]
     public class ValueObjectPersistenceTests
     {
         [Fact]

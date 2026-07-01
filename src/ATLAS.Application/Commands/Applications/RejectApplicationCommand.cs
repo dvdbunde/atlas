@@ -6,9 +6,9 @@ using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 
-namespace ATLAS.Application.Commands
+namespace ATLAS.Application.Commands.Applications
 {
-    public class RejectApplicationCommand : IRequest<bool>
+    public class RejectApplicationCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
         public string ReasonCode { get; set; } = string.Empty;

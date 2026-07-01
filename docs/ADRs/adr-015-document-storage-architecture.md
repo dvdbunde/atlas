@@ -52,12 +52,12 @@ Define an IFileStorageService interface in the Application layer to preserve Cle
 public interface IFileStorageService
 {
     Task<FileUploadResult> UploadAsync(Stream fileStream, string fileName, string contentType, CancellationToken ct = default);
-    Task<FileDownloadResult?> DownloadAsync(string blobPath, CancellationToken ct = default);
-    Task<string> GenerateDownloadSasUriAsync(string blobPath, TimeSpan expiry, CancellationToken ct = default);
-    Task<bool> DeleteAsync(string blobPath, CancellationToken ct = default);
+    Task<FileDownloadResult?> DownloadAsync(string blobUrl, CancellationToken ct = default);
+    Task<string> GenerateDownloadSasUriAsync(string blobUrl, TimeSpan expiry, CancellationToken ct = default);
+    Task<bool> DeleteAsync(string blobUrl, CancellationToken ct = default);
 }
 
-public record FileUploadResult(string BlobPath, string BlobUrl, long Size);
+public record FileUploadResult(string BlobUrl, long Size);
 public record FileDownloadResult(Stream Content, string ContentType, string FileName);
 ```
 
@@ -88,11 +88,11 @@ Rationale:
 - ApplicationId prefix groups documents logically for listing
 - DocumentId prefix prevents name collisions across uploads
 - GUID prefixes eliminate path traversal risk
-- Blob path is stored independently of the full URL via a new BlobPath property on the Document entity
+- Blob URL is the single persisted storage reference; no separate BlobPath property is stored
 
 ### 4. Metadata Persistence
 
-The existing Document entity is extended with a BlobPath property:
+The existing Document entity uses BlobUrl as the single persisted storage reference. No BlobPath property is introduced:
 
 | Property | Type | Purpose |
 | ---------- | ------ | --------- |
@@ -101,8 +101,7 @@ The existing Document entity is extended with a BlobPath property:
 | FileName | string | Original user-friendly filename |
 | ContentType | string | MIME type |
 | FileSize | long | Size in bytes |
-| BlobPath | string (NEW) | Environment-independent blob path |
-| BlobUrl | string | Full URL to blob |
+| BlobUrl | string | Full URL to blob (single storage reference) |
 | UploadedDate | DateTime | When uploaded |
 | UploadedById | Guid | Who uploaded |
 
@@ -182,7 +181,7 @@ Enforcement: Handler checks currentUser.UserId == application.CitizenId. Applica
 - **POS-001**: Clean separation of concerns -- IFileStorageService in Application layer preserves Clean Architecture rules
 - **POS-002**: Blob naming with GUIDs eliminates path traversal and collision risks
 - **POS-003**: SAS tokens provide direct, scalable downloads without proxying through app server
-- **POS-004**: BlobPath decouples metadata from environment-specific URL format
+- **POS-004**: BlobUrl is the single persisted storage reference, eliminating redundant blob path metadata
 - **POS-005**: Azurite provides realistic local development without Azure dependency
 
 ### Negative

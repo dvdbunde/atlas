@@ -16,7 +16,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
                 FileName = "permit.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024000,
-                BlobUrl = new Uri("https://storage.blob.core.windows.net/documents/permit.pdf")
+                FileContent = new byte[] { 0x25, 0x50, 0x44, 0x46 } // PDF magic bytes
             };
 
             // Assert
@@ -24,7 +24,8 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.Equal("permit.pdf", request.FileName);
             Assert.Equal("application/pdf", request.ContentType);
             Assert.Equal(1024000, request.FileSize);
-            Assert.NotNull(request.BlobUrl);
+            Assert.NotNull(request.FileContent);
+            Assert.True(request.FileContent.Length > 0);
         }
 
         [Fact]
@@ -38,7 +39,7 @@ namespace ATLAS.API.Tests.Contracts.Generated
             Assert.Null(request.FileName);
             Assert.Null(request.ContentType);
             Assert.Equal(0, request.FileSize);
-            Assert.Null(request.BlobUrl);
+            Assert.Null(request.FileContent);
         }
     }
 }

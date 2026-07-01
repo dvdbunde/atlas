@@ -30,6 +30,15 @@ public partial class DynamicFormGenerator : ComponentBase
     private DynamicFormFieldViewModel[] _orderedFields = Array.Empty<DynamicFormFieldViewModel>();
     private readonly DynamicFormModel _formModel = new();
 
+    [Parameter]
+    public EventCallback<DynamicFormFieldViewModel> OnFileSelected { get; set; }
+
+    [Parameter]
+    public bool AllowFileUpload { get; set; } = true;
+
+    [Parameter]
+    public EventCallback<(DynamicFormFieldViewModel Field, Guid DocumentId)> OnDocumentDeleted { get; set; }
+
     protected override void OnParametersSet()
     {
         _editContext = new EditContext(_formModel);

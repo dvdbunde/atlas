@@ -42,6 +42,26 @@
         "DefaultValue": "Residential",
         "Options": ["Residential", "Commercial", "Industrial"]
       }
+    ],
+    "DocumentRequirements": [
+      {
+        "DocumentType": "Site Plan",
+        "IsRequired": true,
+        "AllowedFileTypes": [".pdf", ".png", ".jpg"],
+        "MaxFileSizeBytes": 25165824
+      },
+      {
+        "DocumentType": "Architectural Drawings",
+        "IsRequired": true,
+        "AllowedFileTypes": [".pdf"],
+        "MaxFileSizeBytes": 25165824
+      },
+      {
+        "DocumentType": "Property Photos",
+        "IsRequired": false,
+        "AllowedFileTypes": [".png", ".jpg"],
+        "MaxFileSizeBytes": 10485760
+      }
     ]
   },
   {
@@ -87,11 +107,25 @@
         "DefaultValue": "Retail",
         "Options": ["Retail", "Service", "Manufacturing"]
       }
+    ],
+    "DocumentRequirements": [
+      {
+        "DocumentType": "Business Registration Certificate",
+        "IsRequired": true,
+        "AllowedFileTypes": [".pdf"],
+        "MaxFileSizeBytes": 10485760
+      },
+      {
+        "DocumentType": "Insurance Certificate",
+        "IsRequired": false,
+        "AllowedFileTypes": [".pdf"],
+        "MaxFileSizeBytes": 10485760
+      }
     ]
   },
   {
     "Name": "Parking Permit",
-    "Description": "Permit for reserved parking spaces",
+    "Description": "Permit for reserved parking spaces in city-operated lots",
     "Fee": 50.00,
     "IsActive": true,
     "Fields": [
@@ -125,6 +159,79 @@
         "Type": "Boolean",
         "IsRequired": true,
         "DefaultValue": "false"
+      }
+    ],
+    "DocumentRequirements": [
+      {
+        "DocumentType": "Vehicle Registration",
+        "IsRequired": true,
+        "AllowedFileTypes": [".pdf", ".png", ".jpg"],
+        "MaxFileSizeBytes": 10485760
+      },
+      {
+        "DocumentType": "Proof of Address",
+        "IsRequired": true,
+        "AllowedFileTypes": [".pdf", ".png", ".jpg"],
+        "MaxFileSizeBytes": 5242880
+      }
+    ]
+  },
+  {
+    "Name": "Event Permit",
+    "Description": "Permit for organizing public events, festivals, and gatherings",
+    "Fee": 75.00,
+    "IsActive": true,
+    "Fields": [
+      {
+        "Name": "EventName",
+        "Type": "Text",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "EventDescription",
+        "Type": "MultilineText",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "ExpectedAttendance",
+        "Type": "Number",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "EventDate",
+        "Type": "Date",
+        "IsRequired": true,
+        "DefaultValue": null
+      },
+      {
+        "Name": "RequiresRoadClosure",
+        "Type": "Boolean",
+        "IsRequired": true,
+        "DefaultValue": "false"
+      },
+      {
+        "Name": "EventType",
+        "Type": "Dropdown",
+        "IsRequired": true,
+        "DefaultValue": "Festival",
+        "Options": ["Festival", "Concert", "Market", "Parade", "Sports"]
+      }
+    ],
+    "DocumentRequirements": [
+      {
+        "DocumentType": "Event Layout Plan",
+        "IsRequired": true,
+        "AllowedFileTypes": [".pdf"],
+        "MaxFileSizeBytes": 25165824
+      },
+      {
+        "DocumentType": "Public Liability Insurance",
+        "IsRequired": false,
+        "AllowedFileTypes": [".pdf"],
+        "MaxFileSizeBytes": 10485760
       }
     ]
   }

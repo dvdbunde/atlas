@@ -31,7 +31,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var documentId = Guid.NewGuid();
-            application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
+            application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
@@ -50,7 +50,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var documentId = Guid.NewGuid();
-            application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
+            application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
@@ -67,15 +67,14 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         public async Task GetReviewByIdAsync_WhenReviewExists_ShouldReturnReview()
         {
             // Arrange
-            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
-            var reviewId = Guid.NewGuid();
-            var review = application.AddReview(reviewId, Guid.NewGuid(), ReviewDecision.Approve, "Approved comment", true, null);
+            var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");            
+            var review = application.AddReview(Guid.NewGuid(), Guid.NewGuid(), ReviewDecision.Approve, "Approved comment", true, null);
             
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
 
             // Act
-            var retrievedReview = await _repository.GetReviewByIdAsync(reviewId);
+            var retrievedReview = await _repository.GetReviewByIdAsync(review.Id);
 
             // Assert
             Assert.NotNull(retrievedReview);
