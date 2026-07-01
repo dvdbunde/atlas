@@ -65,7 +65,7 @@ public class ApplicationEditViewModel
         foreach (var field in fields.Where(f => f.Type == FieldType.FileUpload))
         {
             var matchingDocs = application.Documents
-                .Where(d => d.FileName.StartsWith(field.FieldName, StringComparison.OrdinalIgnoreCase))
+                .Where(d => d.DocumentType.StartsWith(field.FieldName, StringComparison.OrdinalIgnoreCase))
                 .ToList();
             field.UploadedDocuments = matchingDocs;
         }

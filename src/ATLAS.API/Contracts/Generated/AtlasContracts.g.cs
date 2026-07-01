@@ -105,6 +105,12 @@ namespace ATLAS.API.Contracts.Generated
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         public System.Guid Id { get; set; } = default!;
 
+        /// <summary>
+        /// The DocumentRequirement type this document satisfies
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("documentType")]
+        public string DocumentType { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("fileName")]
         public string FileName { get; set; } = default!;
 
@@ -372,6 +378,12 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
+
+        /// <summary>
+        /// The DocumentRequirement.DocumentType this file satisfies
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("documentType")]
+        public string DocumentType { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("fileName")]
         public string FileName { get; set; } = default!;

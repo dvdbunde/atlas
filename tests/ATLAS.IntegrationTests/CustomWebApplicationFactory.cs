@@ -162,7 +162,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
 
         // Seed Applications (using seeded users and permit types)
         var application1 = new  ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Initial application for home renovation");
-        application1.AddDocument(Guid.NewGuid(),"building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
+        application1.AddDocument(Guid.NewGuid(), "Building Permit","building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
         application1.Submit();
         application1.StartReview(officer.Id);                               
 

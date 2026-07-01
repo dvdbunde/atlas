@@ -51,7 +51,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             
             // Act & Assert - Domain constructor validates blob URL
             Assert.Throws<ArgumentException>(() => 
-                application.AddDocument(Guid.NewGuid(), "test.pdf", "application/pdf", 1024, null, Guid.NewGuid()));
+                application.AddDocument(Guid.NewGuid(), "Building Permit", "test.pdf", "application/pdf", 1024, null, Guid.NewGuid()));
         }
 
         [Fact]

@@ -1008,6 +1008,9 @@ components:
         id:
           type: string
           format: uuid
+        documentType:                  
+          type: string                 
+          description: "The DocumentRequirement type this document satisfies"
         fileName:
           type: string
           example: 'permit-application.pdf'
@@ -1024,7 +1027,7 @@ components:
         uploadedById:
           type: string
           format: uuid
-      required: [id, fileName, contentType, fileSize, uploadedDate]
+      required: [id, documentType, fileName, contentType, fileSize, uploadedDate]
     
     ReviewResponse:
       type: object
@@ -1186,6 +1189,9 @@ components:
         applicationId:
           type: string
           format: uuid
+        documentType:                       
+          type: string                      
+          description: "The DocumentRequirement.DocumentType this file satisfies"
         fileName:
           type: string
         contentType:
@@ -1197,7 +1203,7 @@ components:
           type: string
           format: byte
           description: Base64-encoded file content
-      required: [applicationId, fileName, contentType, fileSize, fileContent]
+      required: [applicationId, documentType, fileName, contentType, fileSize, fileContent]
     
     CreatePermitTypeRequest:
       type: object

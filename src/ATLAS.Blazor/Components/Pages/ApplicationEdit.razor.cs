@@ -155,6 +155,7 @@ public partial class ApplicationEdit : ComponentBase
             var command = new UploadDocumentCommand
             {
                 ApplicationId = _viewModel.ApplicationId,
+                DocumentType = field.FieldName,
                 FileContent = new MemoryStream(field.SelectedFileContent),
                 FileName = field.SelectedFileName ?? "document",
                 ContentType = GetContentType(field.SelectedFileName ?? ""),

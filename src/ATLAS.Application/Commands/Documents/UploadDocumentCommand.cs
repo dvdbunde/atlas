@@ -12,6 +12,7 @@ namespace ATLAS.Application.Commands.Documents
     public class UploadDocumentCommand : ICommand<bool>
     {
         public Guid ApplicationId { get; set; }
+        public string DocumentType { get; set; } = string.Empty;
         public Stream FileContent { get; set; } = Stream.Null;
         public string FileName { get; set; } = string.Empty;
         public string ContentType { get; set; } = string.Empty;
@@ -62,18 +63,26 @@ namespace ATLAS.Application.Commands.Documents
             if (application.CitizenId != uploadedById)
                 throw new UnauthorizedAccessException("You can only upload documents to your own applications.");
 
-            // Step 4: Validate against DocumentRequirement if permit type defines any
+            // Step 4: Validate DocumentType against DocumentRequirement if permit type defines any
+            if (string.IsNullOrWhiteSpace(request.DocumentType))
+                throw new InvalidOperationException("DocumentType is required.");
+
             var permitType = await _permitTypeRepository.GetByIdAsync(application.PermitTypeId, cancellationToken);
             if (permitType?.DocumentRequirements.Count > 0)
             {
-                var ext = Path.GetExtension(request.FileName);
                 var matched = permitType.DocumentRequirements
-                    .FirstOrDefault(r => r.AllowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase));
+                    .FirstOrDefault(r => r.DocumentType.Equals(request.DocumentType, StringComparison.OrdinalIgnoreCase));
 
                 if (matched == null)
                     throw new InvalidOperationException(
-                        $"File type '{ext}' is not accepted for this permit type. " +
-                        $"Accepted types: {string.Join(", ", permitType.DocumentRequirements.SelectMany(r => r.AllowedExtensions))}");
+                        $"Document type '{request.DocumentType}' is not defined for this permit type. " +
+                        $"Accepted types: {string.Join(", ", permitType.DocumentRequirements.Select(r => r.DocumentType))}");
+
+                var ext = Path.GetExtension(request.FileName);
+                if (!matched.AllowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                    throw new InvalidOperationException(
+                        $"File type '{ext}' is not accepted for document type '{request.DocumentType}'. " +
+                        $"Accepted extensions: {string.Join(", ", matched.AllowedExtensions)}");
 
                 if (request.FileSize > matched.MaxFileSizeBytes)
                     throw new InvalidOperationException(
@@ -107,7 +116,7 @@ namespace ATLAS.Application.Commands.Documents
 
             // Step 6-7: Create Document entity and attach to aggregate
             var document = application.AddDocument(
-                documentId, request.FileName, request.ContentType,
+                documentId, request.DocumentType, request.FileName, request.ContentType,
                 request.FileSize, uploadResult.BlobUrl, uploadedById);
 
             // Step 8: Persist changes
@@ -119,6 +128,6 @@ namespace ATLAS.Application.Commands.Documents
                 cancellationToken);
 
             return true;
-        }
+        }        
     }
 }

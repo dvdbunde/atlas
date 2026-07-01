@@ -42,6 +42,7 @@ namespace ATLAS.Application.Tests.Commands
             var application = new Domain.Entities.Application(citizenId, Guid.NewGuid(), "Test notes");
             application.AddDocument(
                 Guid.NewGuid(),
+                "Building Permit",
                 "test.pdf",
                 "application/pdf",
                 1024,
@@ -129,7 +130,7 @@ namespace ATLAS.Application.Tests.Commands
             // Arrange
             var otherUserId = Guid.NewGuid();
             var application = new Domain.Entities.Application(otherUserId, Guid.NewGuid(), "Test");
-            application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url/doc.pdf", otherUserId);
+            application.AddDocument(Guid.NewGuid(), "Building Permit", "doc.pdf", "application/pdf", 1024, "https://blob.url/doc.pdf", otherUserId);
 
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);
@@ -150,7 +151,7 @@ namespace ATLAS.Application.Tests.Commands
         {
             // Arrange
             var application = new Domain.Entities.Application(_testUserId, Guid.NewGuid(), "Test");
-            application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url/doc.pdf", _testUserId);
+            application.AddDocument(Guid.NewGuid(), "Building Permit", "doc.pdf", "application/pdf", 1024, "https://blob.url/doc.pdf", _testUserId);
             application.Submit();
 
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))

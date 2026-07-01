@@ -26,6 +26,7 @@ namespace ATLAS.Infrastructure.Data.Configurations
             {
                 doc.HasKey(d => d.Id);
                 doc.Property(d => d.Id).ValueGeneratedNever();
+                doc.Property(d => d.DocumentType).IsRequired().HasMaxLength(100);
                 doc.Property(d => d.FileName).IsRequired().HasMaxLength(255);
                 doc.Property(d => d.ContentType).IsRequired().HasMaxLength(100);
                 doc.Property(d => d.BlobUrl).IsRequired().HasMaxLength(500);

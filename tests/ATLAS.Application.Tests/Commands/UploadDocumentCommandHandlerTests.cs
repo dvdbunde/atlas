@@ -80,6 +80,7 @@ namespace ATLAS.Application.Tests.Commands
             var command = new UploadDocumentCommand
             {
                 ApplicationId = applicationId,
+                DocumentType = "Building Plans",
                 FileContent = content,
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
@@ -186,6 +187,7 @@ namespace ATLAS.Application.Tests.Commands
             var command = new UploadDocumentCommand
             {
                 ApplicationId = applicationId,
+                DocumentType = "Building Plans",
                 FileContent = new MemoryStream(Encoding.UTF8.GetBytes("test")),
                 FileName = "site-plan.pdf",
                 ContentType = "application/pdf",
@@ -221,6 +223,7 @@ namespace ATLAS.Application.Tests.Commands
             var command = new UploadDocumentCommand
             {
                 ApplicationId = applicationId,
+                DocumentType = "InvalidType",   
                 FileContent = new MemoryStream(Encoding.UTF8.GetBytes("test")),
                 FileName = "document.exe",
                 ContentType = "application/x-msdownload",
@@ -252,12 +255,89 @@ namespace ATLAS.Application.Tests.Commands
             var command = new UploadDocumentCommand
             {
                 ApplicationId = applicationId,
+                DocumentType = "Site Plan",
                 FileContent = new MemoryStream(Encoding.UTF8.GetBytes("test")),
                 FileName = "doc.pdf",
                 ContentType = "application/pdf",
                 FileSize = 2000 // exceeds 1000
             };
 
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Handle_ShouldSetDocumentTypeOnDocument_WhenUploadSucceeds()
+        {
+            // Arrange
+            var applicationId = Guid.NewGuid();
+            var permitTypeId = Guid.NewGuid();
+            var citizenId = _testUserId;
+        
+            var application = new ATLAS.Domain.Entities.Application(citizenId, permitTypeId, "Test notes");
+            application.ClearDomainEvents();
+        
+            var idField = typeof(ATLAS.Domain.Entities.Application)
+                .GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            idField?.SetValue(application, applicationId);
+        
+            var permitType = new PermitType("Test Permit", "Description", 100m);
+        
+            _mockVirusScanner.Setup(s => s.ScanAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new VirusScanResult { IsClean = true });
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+            _mockFileStorageService.Setup(s => s.UploadAsync(
+                    It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FileUploadResult("https://blob.url/doc.pdf", 1024));
+        
+            var command = new UploadDocumentCommand
+            {
+                ApplicationId = applicationId,
+                DocumentType = "SitePlan",
+                FileContent = new MemoryStream(Encoding.UTF8.GetBytes("test")),
+                FileName = "house-final-v7.pdf",   // arbitrary name
+                ContentType = "application/pdf",
+                FileSize = 1024
+            };
+        
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+        
+            // Assert — DocumentType is persisted on the Document entity
+            var uploadedDoc = application.Documents.Single();
+            Assert.Equal("SitePlan", uploadedDoc.DocumentType);
+            Assert.Equal("house-final-v7.pdf", uploadedDoc.FileName);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenDocumentTypeIsEmpty()
+        {
+            // Arrange
+            var applicationId = Guid.NewGuid();
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, Guid.NewGuid(), "Test");
+            application.ClearDomainEvents();
+        
+            var idField = typeof(ATLAS.Domain.Entities.Application)
+                .GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            idField?.SetValue(application, applicationId);
+        
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+        
+            var command = new UploadDocumentCommand
+            {
+                ApplicationId = applicationId,
+                DocumentType = "",             // empty
+                FileContent = new MemoryStream(Encoding.UTF8.GetBytes("test")),
+                FileName = "doc.pdf",
+                ContentType = "application/pdf",
+                FileSize = 1024
+            };
+        
+            // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _handler.Handle(command, CancellationToken.None));
         }

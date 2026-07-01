@@ -53,7 +53,7 @@ public class ApplicationDetailViewModel
             if (fd.Type == FieldType.FileUpload)
             {
                 var matchingDocs = application.Documents
-                    .Where(d => d.FileName.StartsWith(fd.Name, StringComparison.OrdinalIgnoreCase))
+                    .Where(d => d.DocumentType.StartsWith(fd.Name, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 fieldList.Add(new FieldDisplayViewModel
                 {

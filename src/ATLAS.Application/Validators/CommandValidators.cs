@@ -81,6 +81,10 @@ namespace ATLAS.Application.Commands.Validators
                 .NotNull().WithMessage("File content is required.")
                 .Must(s => s != Stream.Null).WithMessage("File content stream cannot be null.");
 
+            RuleFor(x => x.DocumentType)
+                .NotEmpty().WithMessage("Document type is required.")
+                .MaximumLength(100).WithMessage("Document type cannot exceed 100 characters.");
+
             RuleFor(x => x.FileSize)
                 .GreaterThan(0).WithMessage("File size must be positive.")
                 .LessThanOrEqualTo(MaxFileSizeBytes)

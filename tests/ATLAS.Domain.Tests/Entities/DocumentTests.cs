@@ -16,7 +16,8 @@ namespace ATLAS.Domain.Tests.Entities
             // Arrange & Act
             var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Initial notes");
             var document = application.AddDocument(
-                _documentId,                 
+                _documentId,           
+                "ParkingPermit",      
                 "application.pdf", 
                 "application/pdf", 
                 1024 * 1024, // 1MB
@@ -42,6 +43,7 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddDocument(
                     Guid.Empty, 
+                    "ParkingPermit",
                     "file.pdf", 
                     "application/pdf", 
                     1024, 
@@ -58,6 +60,7 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddDocument(
                     _documentId, 
+                    "ParkingPermit",
                     "", 
                     "application/pdf", 
                     1024, 
@@ -77,6 +80,7 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddDocument(
                     _documentId, 
+                    "ParkingPermit",
                     longFileName, 
                     "application/pdf", 
                     1024, 
@@ -96,6 +100,7 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddDocument(
                     _documentId, 
+                    "ParkingPermit",
                     "file.pdf", 
                     "application/pdf", 
                     largeFileSize, 
@@ -112,12 +117,50 @@ namespace ATLAS.Domain.Tests.Entities
             var exception = Assert.Throws<ArgumentException>(() => 
                 application.AddDocument(
                     _documentId, 
+                    "ParkingPermit",
                     "file.pdf", 
                     "application/pdf", 
                     1024, 
                     "", 
                     _uploadedById));
             Assert.Contains("Blob URL cannot be empty", exception.Message);
+        }
+
+        [Fact]
+        public void Create_ShouldStoreDocumentType()
+        {
+            // Arrange
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Notes");
+        
+            // Act
+            var document = application.AddDocument(
+                _documentId,
+                "SitePlan",                    // DocumentType
+                "site-plan.pdf",
+                "application/pdf",
+                1024,
+                "https://blob.url/siteplan.pdf",
+                _uploadedById);
+        
+            // Assert
+            Assert.Equal("SitePlan", document.DocumentType);
+        }
+        
+        [Fact]
+        public void Create_ShouldThrowException_WhenDocumentTypeIsEmpty()
+        {
+            // Act & Assert
+            var application = new Application(Guid.NewGuid(), Guid.NewGuid(), "Notes");
+            var exception = Assert.Throws<DomainException>(() =>
+                application.AddDocument(
+                    _documentId,
+                    "",                        // empty DocumentType
+                    "file.pdf",
+                    "application/pdf",
+                    1024,
+                    "https://blob.url",
+                    _uploadedById));
+            Assert.Contains("Document type is required", exception.Message);
         }
     }
 }

@@ -29,14 +29,13 @@ namespace ATLAS.IntegrationTests.API
             var request = new
             {
                 applicationId = applicationId.ToString(),
+                documentType = "Building Permit",
                 fileName = "aaa.pdf",
                 contentType = "application/pdf",
                 fileSize = 1024,
                 fileContent = Convert.ToBase64String(new byte[] { 0x25, 0x50, 0x44, 0x46 }) // PDF magic bytes as base64
             };
-            var response = await _client.PostAsAsync($"/api/applications/{applicationId}/documents", request, TestUserBuilder.AsCitizen());
-            _output.WriteLine($"Response: {response.StatusCode}");
-            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
+            var response = await _client.PostAsAsync($"/api/applications/{applicationId}/documents", request, TestUserBuilder.AsCitizen());            
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
         
@@ -49,6 +48,7 @@ namespace ATLAS.IntegrationTests.API
             var uploadRequest = new
             {
                 applicationId = applicationId.ToString(),
+                documentType = "Building Permit",
                 fileName = "test.pdf",
                 contentType = "application/pdf",
                 fileSize = 1024,
@@ -107,6 +107,7 @@ namespace ATLAS.IntegrationTests.API
             var uploadRequest = new
             {
                 applicationId = applicationId.ToString(),
+                documentType = "Building Permit",
                 fileName = "todelete.pdf",
                 contentType = "application/pdf",
                 fileSize = 1024,
@@ -138,7 +139,8 @@ namespace ATLAS.IntegrationTests.API
                 $"/api/applications/{applicationId}/documents/{uploadedDoc.Id}",
                 TestUserBuilder.AsCitizen());
 
-            _output.WriteLine($"Delete Response: {deleteResponse.StatusCode}");
+            _output.WriteLine($"Delete Response: {deleteResponse.StatusCode}");            
+            _output.WriteLine($"Response Content: {await deleteResponse.Content.ReadAsStringAsync()}");
 
             // Assert
             Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
@@ -164,6 +166,44 @@ namespace ATLAS.IntegrationTests.API
                 deleteResponse.StatusCode == HttpStatusCode.Forbidden ||
                 deleteResponse.StatusCode == HttpStatusCode.Unauthorized ||
                 deleteResponse.StatusCode == HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task UploadArbitraryFilename_ShouldSucceed_WhenDocumentTypeMatchesRequirement()
+        {
+            var applicationId = TestData.Application2Id;
+        
+            // Upload a file with an arbitrary name that doesn't hint at its purpose
+            var uploadRequest = new
+            {
+                applicationId = applicationId.ToString(),
+                documentType = "SitePlan",                       // explicit association
+                fileName = "house-final-v7.pdf",                 // arbitrary name
+                contentType = "application/pdf",
+                fileSize = 2048,
+                fileContent = Convert.ToBase64String(new byte[] { 0x25, 0x50, 0x44, 0x46 })
+            };
+        
+            var uploadResponse = await _client.PostAsAsync(
+                $"/api/applications/{applicationId}/documents",
+                uploadRequest,
+                TestUserBuilder.AsCitizen());
+        
+            _output.WriteLine($"Upload Response: {uploadResponse.StatusCode}");
+            Assert.Equal(HttpStatusCode.NoContent, uploadResponse.StatusCode);
+        
+            // Verify the document appears in the application detail
+            var detailResponse = await _client.GetAsAsync(
+                $"/api/applications/{applicationId}",
+                TestUserBuilder.AsCitizen());
+        
+            detailResponse.EnsureSuccessStatusCode();
+            var detail = await detailResponse.Content.ReadFromJsonAsync<ApplicationDetailResponse>(_jsonOptions);
+            Assert.NotNull(detail);
+        
+            var uploadedDoc = detail.Documents.Last(d => d.FileName == "house-final-v7.pdf");
+            Assert.Equal("SitePlan", uploadedDoc.DocumentType);
+            Assert.Equal("house-final-v7.pdf", uploadedDoc.FileName);
         }
     }
 }

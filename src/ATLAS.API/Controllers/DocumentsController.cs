@@ -49,6 +49,7 @@ namespace ATLAS.API.Controllers
             var command = new UploadDocumentCommand
             {
                 ApplicationId = applicationId,
+                DocumentType = body.DocumentType,
                 FileContent = body.FileContent is { Length: > 0 }
                     ? new MemoryStream(body.FileContent)
                     : Stream.Null,

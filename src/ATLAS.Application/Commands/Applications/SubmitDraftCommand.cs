@@ -61,8 +61,10 @@ namespace ATLAS.Application.Commands.Applications
             if (permitType == null)
                 throw new ArgumentException($"Permit type {application.PermitTypeId} not found");
 
-            // Rule 1: Every FieldValue must reference an existing PermitField name
-            var fieldNames = permitType.Fields.Select(f => f.Name).ToList();
+            // Rule 1: Every FieldValue must reference an existing PermitField or DocumentRequirement name
+            var fieldNames = permitType.Fields.Select(f => f.Name)
+                .Concat(permitType.DocumentRequirements.Select(r => r.DocumentType))
+                .ToList();
             foreach (var fieldValue in application.FieldValues)
             {
                 if (!fieldNames.Contains(fieldValue.FieldName, StringComparer.OrdinalIgnoreCase))
@@ -87,35 +89,30 @@ namespace ATLAS.Application.Commands.Applications
                     throw new InvalidOperationException($"Required field '{requiredField}' must have a value");
             }
 
-            // Rule 4: All required document fields must have at least one uploaded document
-            var requiredDocFields = permitType.Fields
-                .Where(f => f.Type == FieldType.FileUpload && f.IsRequired)
-                .ToList();
+            // Rule 4: All required document requirements must have at least one uploaded document.
+            // Uses explicit DocumentType association — no filename parsing.
+            var missingDocs = new List<string>();
+            var uploadedDocTypes = application.Documents
+                .Select(d => d.DocumentType)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            if (requiredDocFields.Any())
+            foreach (var docReq in permitType.DocumentRequirements.Where(r => r.IsRequired))
             {
-                var missingDocs = new List<string>();
-                foreach (var docField in requiredDocFields)
+                if (!uploadedDocTypes.Contains(docReq.DocumentType))
                 {
-                    var hasDocument = (application.Documents ?? Enumerable.Empty<Document>())
-                        .Any(d => d.FileName.StartsWith(
-                            docField.Name, StringComparison.OrdinalIgnoreCase));
-
-                    if (!hasDocument)
-                    {
-                        missingDocs.Add(docField.Name);
-                    }
-                }
-
-                if (missingDocs.Any())
-                {
-                    var message = "The following required documents are still missing:" +
-                                  Environment.NewLine +
-                                  string.Join(Environment.NewLine,
-                                      missingDocs.Select(m => $"- {m}"));
-                    throw new InvalidOperationException(message);
+                    missingDocs.Add(docReq.DocumentType);
                 }
             }
+
+            if (missingDocs.Any())
+            {
+                var message = "The following required documents are still missing:" +
+                              Environment.NewLine +
+                              string.Join(Environment.NewLine,
+                                  missingDocs.Select(m => $"- {m}"));
+                throw new InvalidOperationException(message);
+            }            
 
             // All validation passed, submit
             application.Submit();

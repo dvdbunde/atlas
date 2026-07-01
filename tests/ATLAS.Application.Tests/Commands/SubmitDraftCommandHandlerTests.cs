@@ -250,9 +250,10 @@ namespace ATLAS.Application.Tests.Commands
         {
             // Arrange
             var permitType = new PermitType("Building Permit", "Desc", 100m);
-            permitType.AddField("PropertyAddress", FieldType.Text, true);
-            permitType.AddField("SitePlan", FieldType.FileUpload, true); // required document
+            permitType.AddField("PropertyAddress", FieldType.Text, true);            
             permitType.AddField("LotSize", FieldType.Number, false);
+
+            permitType.AddDocumentRequirement("SitePlan", true, [".pdf"], 2048); // required document
 
             var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
             application.AddFieldValue("PropertyAddress", "123 Main St", 0);
@@ -289,7 +290,7 @@ namespace ATLAS.Application.Tests.Commands
             application.AddFieldValue("LotSize", "5000", 2);      
             // Upload matching document
             application.AddDocument(
-                Guid.NewGuid(), "SitePlan_v1.pdf", "application/pdf", 2048,
+                Guid.NewGuid(),"Building Permit", "SitePlan_v1.pdf", "application/pdf", 2048,
                 "https://blob.url/siteplan.pdf", _testUserId);
 
             _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -320,7 +321,7 @@ namespace ATLAS.Application.Tests.Commands
             application.AddFieldValue("SitePlan", "site-plan.pdf", 1);
             // Upload required document
             application.AddDocument(
-                Guid.NewGuid(), "SitePlan_final.pdf", "application/pdf", 2048,
+                Guid.NewGuid(), "Building Permit", "SitePlan_final.pdf", "application/pdf", 2048,
                 "https://blob.url/siteplan.pdf", _testUserId);
             // No upload for optional ExtraPhoto — should be ignored
 
@@ -349,6 +350,10 @@ namespace ATLAS.Application.Tests.Commands
             permitType.AddField("EnvironmentalAssessment", FieldType.FileUpload, true);
             permitType.AddField("LotSize", FieldType.Number, false);
 
+            permitType.AddDocumentRequirement("ProofOfIdentity", true, [".pdf"], 2048);
+            permitType.AddDocumentRequirement("SitePlan", true, [".pdf"], 2048);            
+            permitType.AddDocumentRequirement("EnvironmentalAssessment", true, [".pdf"], 2048);                                   
+
             var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
             application.AddFieldValue("PropertyAddress", "123 Main St", 0);
             application.AddFieldValue("ProofOfIdentity", "identity.pdf", 1);            
@@ -370,6 +375,40 @@ namespace ATLAS.Application.Tests.Commands
             Assert.Contains("ProofOfIdentity", exception.Message);
             Assert.Contains("SitePlan", exception.Message);
             Assert.Contains("EnvironmentalAssessment", exception.Message);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldPass_WhenDocumentTypeMatches_RegardlessOfFilename()
+        {
+            // Verify that the validation uses Document.DocumentType, not filename
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            permitType.AddField("PropertyAddress", FieldType.Text, true);
+            permitType.AddDocumentRequirement("SitePlan", true, [".pdf"], 2048);
+        
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, permitType.Id, "Notes");
+            application.AddFieldValue("PropertyAddress", "123 Main St", 0);
+            // Upload with an arbitrary filename that doesn't hint at "SitePlan"
+            application.AddDocument(
+                Guid.NewGuid(),
+                "SitePlan",                        // DocumentType matches the requirement
+                "house-final-v7.pdf",              // arbitrary filename
+                "application/pdf",
+                2048,
+                "https://blob.url/house-final-v7.pdf",
+                _testUserId);
+        
+            _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitType.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+        
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+        
+            // Act — should not throw despite the arbitrary filename
+            await _handler.Handle(command, CancellationToken.None);
+        
+            // Assert
+            Assert.Equal(ApplicationStatus.Submitted, application.Status);
         }
 
         #endregion

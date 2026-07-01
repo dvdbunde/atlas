@@ -598,7 +598,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() =>
-                application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
+                application.AddDocument(Guid.NewGuid(), "Building Permit","doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
             Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
         }
 
@@ -611,7 +611,7 @@ namespace ATLAS.Domain.Tests.Entities
 
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() =>
-                application.AddDocument(Guid.NewGuid(), "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
+                application.AddDocument(Guid.NewGuid(),"Building Permit", "doc.pdf", "application/pdf", 1024, "https://blob.url", _citizenId));
             Assert.Contains("Cannot add documents to approved or rejected applications", exception.Message);
         }     
         #endregion
@@ -689,6 +689,7 @@ namespace ATLAS.Domain.Tests.Entities
             // Act
             var document = application.AddDocument(
                 documentId,
+                "Building Permit",
                 "test.pdf",
                 "application/pdf",
                 1024,
@@ -712,6 +713,7 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Throws<DomainException>(() =>
                 application.AddDocument(
                     Guid.NewGuid(),
+                    "ParkingPermit",
                     "test.pdf",
                     "application/pdf",
                     1024,
@@ -730,6 +732,7 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Throws<DomainException>(() =>
                 application.AddDocument(
                     Guid.NewGuid(),
+                    "ParkingPermit",
                     "test.pdf",
                     "application/pdf",
                     1024,
@@ -745,6 +748,7 @@ namespace ATLAS.Domain.Tests.Entities
             var documentId = Guid.NewGuid();
             application.AddDocument(
                 documentId,
+                "ParkingPermit",
                 "test.pdf",
                 "application/pdf",
                 1024,
@@ -777,6 +781,7 @@ namespace ATLAS.Domain.Tests.Entities
             var documentId = Guid.NewGuid();
             application.AddDocument(
                 documentId,
+                "ParkingPermit",
                 "test.pdf",
                 "application/pdf",
                 1024,
@@ -798,6 +803,7 @@ namespace ATLAS.Domain.Tests.Entities
             var documentId = Guid.NewGuid();
             application.AddDocument(
                 documentId,
+                "ParkingPermit",
                 "test.pdf",
                 "application/pdf",
                 1024,
@@ -820,8 +826,8 @@ namespace ATLAS.Domain.Tests.Entities
             var doc2Id = Guid.NewGuid();
 
             // Act
-            application.AddDocument(doc1Id, "doc1.pdf", "application/pdf", 1024, "https://blob.url/1", _citizenId);
-            application.AddDocument(doc2Id, "doc2.pdf", "application/pdf", 2048, "https://blob.url/2", _citizenId);
+            application.AddDocument(doc1Id, "ParkingPermit", "doc1.pdf", "application/pdf", 1024, "https://blob.url/1", _citizenId);
+            application.AddDocument(doc2Id, "ParkingPermit", "doc2.pdf", "application/pdf", 2048, "https://blob.url/2", _citizenId);
 
             // Assert
             Assert.Equal(2, application.Documents.Count);

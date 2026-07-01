@@ -130,12 +130,12 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             await _context.SaveChangesAsync();
 
             // Act
-            await _repository.UpdateAsync(auditLog);
-            await _context.SaveChangesAsync();
+            var exception = await Assert.ThrowsAsync<NotSupportedException>(() => 
+                _repository.UpdateAsync(auditLog));           
+            
 
-            // Assert - AuditLog is immutable, but EF Core allows updating
-            var updated = await _context.AuditLogs.FirstOrDefaultAsync(al => al.Id == auditLog.Id);
-            Assert.NotNull(updated);
+            // Assert - AuditLog is immutable, should not be allowed to update
+            Assert.Contains("Updating an AuditLog is not supported", exception.Message);                                 
         }
 
         [Fact]
@@ -147,12 +147,11 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             await _context.SaveChangesAsync();
 
             // Act
-            await _repository.DeleteAsync(auditLog);
-            await _context.SaveChangesAsync();
+              var exception = await Assert.ThrowsAsync<NotSupportedException>(() => 
+                _repository.DeleteAsync(auditLog));                                  
 
-            // Assert
-            var deleted = await _context.AuditLogs.FirstOrDefaultAsync(al => al.Id == auditLog.Id);
-            Assert.Null(deleted);
+            // Assert - AuditLog is immutable, should not be allowed to delete
+            Assert.Contains("Deleting an AuditLog is not supported", exception.Message);                                 
         }
 
         [Fact]

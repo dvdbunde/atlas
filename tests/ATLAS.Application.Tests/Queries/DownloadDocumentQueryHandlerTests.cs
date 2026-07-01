@@ -51,7 +51,7 @@ namespace ATLAS.Application.Tests.Queries
             idProp?.SetValue(application, applicationId);
 
             // Add document
-            var doc = application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "https://blob.url/test.pdf", _testUserId);
+            var doc = application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "https://blob.url/test.pdf", _testUserId);
 
             _mockRepository.Setup(r => r.GetByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);
@@ -92,7 +92,7 @@ namespace ATLAS.Application.Tests.Queries
             var application = new ATLAS.Domain.Entities.Application(otherUserId, Guid.NewGuid(), "Test");
             var idProp = typeof(ATLAS.Domain.Entities.Application).GetProperty("Id");
             idProp?.SetValue(application, Guid.NewGuid());
-            application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "https://blob.url", otherUserId);
+            application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "https://blob.url", otherUserId);
 
             _mockRepository.Setup(r => r.GetByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);
@@ -114,7 +114,7 @@ namespace ATLAS.Application.Tests.Queries
             // Arrange
             var documentId = Guid.NewGuid();
             var application = new ATLAS.Domain.Entities.Application(_testUserId, Guid.NewGuid(), "Test");
-            application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "https://blob.url/test.pdf", _testUserId);
+            application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "https://blob.url/test.pdf", _testUserId);
 
             _mockRepository.Setup(r => r.GetByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);

@@ -37,6 +37,7 @@ namespace ATLAS.Application.DTOs
     public class DocumentDto
     {
         public Guid Id { get; set; }
+        public string DocumentType { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
         public string ContentType { get; set; } = string.Empty;
         public long FileSize { get; set; }

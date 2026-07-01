@@ -84,6 +84,7 @@ namespace ATLAS.Application.Tests.Validators
             {
                 ApplicationId = Guid.NewGuid(),
                 FileContent = new MemoryStream(Encoding.UTF8.GetBytes("test")),
+                DocumentType = "Building Permit",
                 FileName = "document.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024

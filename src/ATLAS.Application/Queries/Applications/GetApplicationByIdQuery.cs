@@ -90,6 +90,7 @@ namespace ATLAS.Application.Queries.Applications
                 Documents = application.Documents.Select(d => new DocumentDto
                 {
                     Id = d.Id,
+                    DocumentType = d.DocumentType,
                     FileName = d.FileName,
                     ContentType = d.ContentType,
                     FileSize = d.FileSize,                    

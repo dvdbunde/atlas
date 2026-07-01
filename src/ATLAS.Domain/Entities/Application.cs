@@ -164,12 +164,15 @@ namespace ATLAS.Domain.Entities
             AddDomainEvent(new ApplicationResubmittedEvent(Id, CitizenId));
         }
 
-        public Document AddDocument(Guid documentId, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
+        public Document AddDocument(Guid documentId, string documentType, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)
         {
             if (Status == ApplicationStatus.Approved || Status == ApplicationStatus.Rejected)
                 throw new DomainException("Cannot add documents to approved or rejected applications");
 
-            var document = new Document(documentId, Id, fileName, contentType, fileSize, blobUrl, uploadedById);
+            if (string.IsNullOrWhiteSpace(documentType))
+                throw new DomainException("Document type is required");
+
+            var document = new Document(documentId, Id, documentType, fileName, contentType, fileSize, blobUrl, uploadedById);
             _documents.Add(document);           
             return document;
         }

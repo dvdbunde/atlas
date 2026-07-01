@@ -31,7 +31,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var documentId = Guid.NewGuid();
-            application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
+            application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
@@ -50,7 +50,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             // Arrange
             var application = new Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             var documentId = Guid.NewGuid();
-            application.AddDocument(documentId, "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
+            application.AddDocument(documentId, "ParkingPermit", "test.pdf", "application/pdf", 1024, "http://blob.url", Guid.NewGuid());
             
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();

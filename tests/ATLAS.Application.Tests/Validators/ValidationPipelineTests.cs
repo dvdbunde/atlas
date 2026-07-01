@@ -144,6 +144,7 @@ namespace ATLAS.Application.Tests.Validators
             var command = new UploadDocumentCommand
             {
                 ApplicationId = Guid.NewGuid(),
+                DocumentType = "Building Permit",
                 FileName = "test.pdf",
                 ContentType = "application/pdf",
                 FileSize = 1024,
