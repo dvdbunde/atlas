@@ -41,7 +41,7 @@ public class OfficerDashboardControllerTests
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerDashboardQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
-        var action = await _controller.DashboardGet();
+        var action = await _controller.GetOfficerDashboard();
         var ok = Assert.IsType<OkObjectResult>(action.Result);
         var returned = Assert.IsType<OfficerDashboardResult>(ok.Value);
 
@@ -52,7 +52,7 @@ public class OfficerDashboardControllerTests
     [Fact]
     public void OfficerDashboard_ShouldRequireOfficerOrAdminPolicy()
     {
-        var method = typeof(ApplicationsController).GetMethod("DashboardGet");
+        var method = typeof(ApplicationsController).GetMethod("GetOfficerDashboard");
         var attr = method!.GetCustomAttribute<AuthorizeAttribute>();
 
         Assert.NotNull(attr);

@@ -33,7 +33,7 @@ namespace ATLAS.API.Controllers
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));         
         }
 
-        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> ApplicationsGet(
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> GetApplications(
             Guid? citizenId = null,
             Guid? officerId = null,
             string? status = null,
@@ -62,7 +62,7 @@ namespace ATLAS.API.Controllers
             return response;
         }
 
-        public override async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGet(
+        public override async Task<ActionResult<ApplicationDetailResponse>> GetApplicationById(
             Guid id)
         {
             var query = new GetApplicationByIdQuery { ApplicationId = id };
@@ -76,7 +76,7 @@ namespace ATLAS.API.Controllers
             return result.ToResponse();
         }
 
-        public override async Task<ActionResult<bool>> Approve(
+        public override async Task<ActionResult<bool>> ApproveApplication(
             Guid id, ApproveApplicationRequest body)
         {
             var command = new ApproveApplicationCommand
@@ -95,7 +95,7 @@ namespace ATLAS.API.Controllers
             return Ok(true); // ← 200 OK with true            
         }
 
-        public override async Task<ActionResult<bool>> Reject(
+        public override async Task<ActionResult<bool>> RejectApplication(
             Guid id, RejectApplicationRequest body)
         {
             var command = new RejectApplicationCommand
@@ -134,7 +134,7 @@ namespace ATLAS.API.Controllers
             return Ok(true);
         }
 
-        public override async Task<ActionResult<bool>> Assign(
+        public override async Task<ActionResult<bool>> AssignToOfficer(
             Guid id, AssignToOfficerRequest body)
         {
             var command = new AssignToOfficerCommand
@@ -153,7 +153,7 @@ namespace ATLAS.API.Controllers
             return Ok(true);
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> ApplicationsPut(Guid id, [FromBody] UpdateDraftRequest body)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> UpdateDraft(Guid id, [FromBody] UpdateDraftRequest body)
         {
             var command = new UpdateDraftCommand
             {
@@ -178,7 +178,7 @@ namespace ATLAS.API.Controllers
             return Ok(application.ToResponse());
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> Draft([FromBody] CreateDraftRequest body)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> CreateDraft([FromBody] CreateDraftRequest body)
         {
             var command = new Application.Commands.Applications.CreateDraftCommand
             {
@@ -201,12 +201,12 @@ namespace ATLAS.API.Controllers
             }
 
             return CreatedAtAction(
-                nameof(ApplicationsGet),
+                nameof(GetApplications),
                 new { id = applicationId },
                 result.ToResponse());
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> Submit(Guid id)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> SubmitDraft(Guid id)
         {
             var command = new SubmitDraftCommand
             {
@@ -227,7 +227,7 @@ namespace ATLAS.API.Controllers
             return Ok(result.ToResponse());
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> Resubmit(Guid id)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> ResubmitDraft(Guid id)
         {
             var command = new ResubmitApplicationCommand
             {
@@ -250,7 +250,7 @@ namespace ATLAS.API.Controllers
 
         [HttpGet("citizen/dashboard")]
         [Authorize(Policy = "Citizen")]
-        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> DashboardGet()
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> GetCitizenDashboard()
         {
             var query = new GetCitizenDashboardQuery();
             var results = await _mediator.Send(query, default);
@@ -267,7 +267,7 @@ namespace ATLAS.API.Controllers
 
         [HttpGet("officer/dashboard")]
         [Authorize(Policy = "OfficerOrAdmin")]
-        public override async Task<ActionResult<Contracts.Generated.OfficerDashboardResult>> DashboardGet(
+        public override async Task<ActionResult<Contracts.Generated.OfficerDashboardResult>> GetOfficerDashboard(
             [FromQuery] SortBy? sortBy = null,
             [FromQuery] bool? sortDescending = null,
             [FromQuery] int? pageNumber = null, 
@@ -300,6 +300,6 @@ namespace ATLAS.API.Controllers
                     result.Add(s);
             }
             return result.Count > 0 ? result : null;
-        }
+        }                
     }
 }

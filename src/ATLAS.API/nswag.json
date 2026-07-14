@@ -24,7 +24,7 @@
     "additionalNamespaceUsages": [
       "ATLAS.API.Contracts.Generated"
     ],
-    "operationGenerationMode": "MultipleClientsFromFirstTagAndPathSegments",
+    "operationGenerationMode": "MultipleClientsFromFirstTagAndOperationId",
     "routeNamingStrategy": "OperationId",
     "useActionResultType": true 
   },

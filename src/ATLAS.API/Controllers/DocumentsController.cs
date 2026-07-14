@@ -29,7 +29,7 @@ namespace ATLAS.API.Controllers
             _env = env ?? throw new ArgumentNullException(nameof(env));
         }      
 
-        public override async Task<IActionResult> Download(Guid documentId)
+        public override async Task<IActionResult> DownloadDocument(Guid documentId)
         {
             var query = new DownloadDocumentQuery { DocumentId = documentId };
             var result = await _mediator.Send(query, default);
@@ -54,7 +54,7 @@ namespace ATLAS.API.Controllers
             return Redirect(result.SasUri);
         }      
 
-        public override async Task<ActionResult<bool>> DocumentsPost(Guid applicationId, [FromBody] UploadDocumentRequest body)
+        public override async Task<ActionResult<bool>> UploadDocument(Guid applicationId, [FromBody] UploadDocumentRequest body)
         {
             
             // Map from request — file stream, metadata extracted by model binding
@@ -82,7 +82,7 @@ namespace ATLAS.API.Controllers
             return NoContent();
         }
 
-        public override async Task<IActionResult> DocumentsDelete(Guid applicationId, Guid documentId)
+        public override async Task<IActionResult> DeleteDocument(Guid applicationId, Guid documentId)
         {
             try
             {

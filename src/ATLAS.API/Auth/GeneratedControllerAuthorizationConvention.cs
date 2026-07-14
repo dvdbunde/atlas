@@ -49,33 +49,36 @@ namespace ATLAS.API.Auth
             return (controller.ToLowerInvariant(), action.ToLowerInvariant()) switch
             {
                 // Applications
-                ("applications", "applicationsget")  => "Authenticated",
-                ("applications", "applicationspost") => "Authenticated",
-                ("applications", "approve")          => "OfficerOrAdmin",
-                ("applications", "reject")           => "OfficerOrAdmin",
-                ("applications", "requestinfo")      => "OfficerOrAdmin",
-                ("applications", "assign")           => "OfficerOrAdmin",
+                ("applications", "getapplications")        => "Authenticated",
+                ("applications", "getapplicationbyid")     => "Authenticated",
+                ("applications", "approveapplication")     => "OfficerOrAdmin",
+                ("applications", "rejectapplication")       => "OfficerOrAdmin",
+                ("applications", "requestinfo")             => "OfficerOrAdmin",
+                ("applications", "assigntoofficer")         => "OfficerOrAdmin",
 
                 // Milestone 5 - Draft workflow
-                ("applications", "draft") => "Citizen",           // POST /api/applications/draft (createDraft)
-                ("applications", "applicationsput") => "Citizen",  // PUT /api/applications/{id} (updateDraft)
-                ("applications", "submit") => "Citizen",           // POST /api/applications/{id}/submit (submitDraft)
-                ("applications", "resubmit") => "Citizen",         // POST /api/applications/{id}/resubmit (resubmitApplication)
-                ("applications", "dashboard") => "Citizen",        // GET /api/applications/citizen/dashboard (getCitizenDashboard)                
+                ("applications", "createdraft")             => "Citizen",  // POST /api/applications/draft
+                ("applications", "updatedraft")             => "Citizen",  // PUT /api/applications/{id}
+                ("applications", "submitdraft")             => "Citizen",  // POST /api/applications/{id}/submit
+                ("applications", "resubmitdraft")           => "Citizen",  // POST /api/applications/{id}/resubmit
+                ("applications", "getcitizendashboard")     => "Citizen",  // GET /api/applications/citizen/dashboard
+                ("applications", "getofficerdashboard")     => "OfficerOrAdmin", // GET /api/applications/officer/dashboard
 
                 // PermitTypes — GET (list + single) = Authenticated; POST/PUT/DELETE = Admin
-                ("permittypes", "permittypesget")  => "Authenticated",
-                ("permittypes", "permittypespost") => "Admin",
-                ("permittypes", "permittypesput")  => "Admin",
-                ("permittypes", "permittypesdelete") => "Admin",
+                ("permittypes", "getpermittypes")           => "Authenticated",
+                ("permittypes", "createpermittype")         => "Admin",
+                ("permittypes", "getpermittypebyid")        => "Authenticated",
+                ("permittypes", "updatepermittype")         => "Admin",
+                ("permittypes", "deactivatepermittype")     => "Admin",
                 // Milestone 5 - Active permit types
-                ("permittypes", "active") => "Citizen",            // GET /api/permit-types/active (getActivePermitTypes)
+                ("permittypes", "getactivepermittypes")     => "Citizen",   // GET /api/permit-types/active
 
                 // AuditLogs — all operations require Admin
                 ("auditlogs", _) => "Admin",
 
-                // Users: GET + Role = Admin; POST = Admin (updated spec)
-                ("users", "usersget")  => "Admin",                
+                // Users: ALL -> Admin
+                ("users", "getusers")  => "Admin",
+                ("users", "getuserbyid") => "Admin",
 
                 // Documents — authenticated users
                 ("documents", _) => "Authenticated",

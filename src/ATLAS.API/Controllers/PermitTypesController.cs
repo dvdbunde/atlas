@@ -26,7 +26,7 @@ namespace ATLAS.API.Controllers
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> PermittypesGet(bool? includeInactive = false)
+        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> GetPermitTypes(bool? includeInactive = false)
         {
             var query = new GetPermitTypesQuery { IncludeInactive = includeInactive ?? false };
             var results = await _mediator.Send(query, default);
@@ -38,7 +38,7 @@ namespace ATLAS.API.Controllers
             return Ok(response);
         }
 
-        public override async Task<ActionResult<Guid>> PermittypesPost(CreatePermitTypeRequest body)
+        public override async Task<ActionResult<Guid>> CreatePermitType(CreatePermitTypeRequest body)
         {
             var command = new CreatePermitTypeCommand
             {
@@ -47,10 +47,10 @@ namespace ATLAS.API.Controllers
                 Fee = body.Fee
             };
             var permitTypeId = await _mediator.Send(command, default);
-            return CreatedAtAction(nameof(PermittypesGet), new { id = permitTypeId }, permitTypeId);
+            return CreatedAtAction(nameof(GetPermitTypes), new { id = permitTypeId }, permitTypeId);
         }
 
-        public override async Task<ActionResult<PermitTypeResponse>> PermittypesGet(Guid id)
+        public override async Task<ActionResult<PermitTypeResponse>> GetPermitTypeById(Guid id)
         {
             var query = new GetPermitTypeByIdQuery { PermitTypeId = id };
             var result = await _mediator.Send(query, default);
@@ -59,7 +59,7 @@ namespace ATLAS.API.Controllers
             return Ok(result.ToResponse());
         }
 
-        public override async Task<ActionResult<bool>> PermittypesPut(Guid id, UpdatePermitTypeRequest body)
+        public override async Task<ActionResult<bool>> UpdatePermitType(Guid id, UpdatePermitTypeRequest body)
         {
             var command = new UpdatePermitTypeCommand
             {
@@ -80,7 +80,7 @@ namespace ATLAS.API.Controllers
             return Ok(true);
         }
 
-        public override async Task<ActionResult<bool>> PermittypesDelete(Guid id)
+        public override async Task<ActionResult<bool>> DeactivatePermitType(Guid id)
         {
             var command = new DeactivatePermitTypeCommand { PermitTypeId = id };
             var result = await _mediator.Send(command, default);
@@ -92,7 +92,7 @@ namespace ATLAS.API.Controllers
             return NoContent(); // ← 204 for successful DELETE
         }
 
-        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> Active()
+        public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> GetActivePermitTypes()
         {
             var query = new GetActivePermitTypesQuery();
             var results = await _mediator.Send(query, default);
@@ -104,6 +104,6 @@ namespace ATLAS.API.Controllers
             }
             
             return Ok(response);
-        }
+        }      
     }
 }

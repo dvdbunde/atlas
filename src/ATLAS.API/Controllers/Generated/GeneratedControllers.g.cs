@@ -46,7 +46,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="search">Search term for application number or citizen name</param>
         /// <returns>List of applications</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications", Name = "getApplications")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> ApplicationsGet([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? citizenId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? officerId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? status = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? search = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> GetApplications([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? citizenId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? officerId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? status = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? search = null);
 
         /// <summary>
         /// Get application by ID
@@ -57,7 +57,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}", Name = "getApplicationById")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationDetailResponse>> ApplicationsGet(System.Guid id);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationDetailResponse>> GetApplicationById(System.Guid id);
 
         /// <summary>
         /// Update draft application
@@ -68,7 +68,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Draft updated</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}", Name = "updateDraft")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> ApplicationsPut(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdateDraftRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> UpdateDraft(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdateDraftRequest body);
 
         /// <summary>
         /// Approve application
@@ -79,7 +79,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application approved successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/approve", Name = "approveApplication")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Approve(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] ApproveApplicationRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> ApproveApplication(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] ApproveApplicationRequest body);
 
         /// <summary>
         /// Reject application
@@ -90,7 +90,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application rejected successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/reject", Name = "rejectApplication")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Reject(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RejectApplicationRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> RejectApplication(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RejectApplicationRequest body);
 
         /// <summary>
         /// Request additional information
@@ -112,7 +112,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application assigned successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/assign", Name = "assignToOfficer")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> Assign(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignToOfficerRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> AssignToOfficer(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignToOfficerRequest body);
 
         /// <summary>
         /// Create draft application
@@ -122,7 +122,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Draft created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/draft", Name = "createDraft")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Draft([Microsoft.AspNetCore.Mvc.FromBody] CreateDraftRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> CreateDraft([Microsoft.AspNetCore.Mvc.FromBody] CreateDraftRequest body);
 
         /// <summary>
         /// Submit draft application
@@ -133,7 +133,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Draft submitted successfully; status transitions from Draft to Submitted</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/submit", Name = "submitDraft")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Submit(System.Guid id);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> SubmitDraft(System.Guid id);
 
         /// <summary>
         /// Resubmit application
@@ -144,7 +144,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Application ID</param>
         /// <returns>Application resubmitted successfully; status transitions from InfoRequested to Resubmitted</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/resubmit", Name = "resubmitDraft")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> Resubmit(System.Guid id);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<ApplicationSummaryResponse>> ResubmitDraft(System.Guid id);
 
         /// <summary>
         /// Get citizen dashboard
@@ -154,7 +154,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Dashboard retrieved with the current citizen's applications (drafts and submitted)</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/citizen/dashboard", Name = "getCitizenDashboard")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> DashboardGet();
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> GetCitizenDashboard();
 
         /// <summary>
         /// Get officer dashboard
@@ -165,7 +165,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="statuses">Comma-separated statuses (Submitted, UnderReview, InfoRequested)</param>
         /// <returns>Officer dashboard summary</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/officer/dashboard", Name = "getOfficerDashboard")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<OfficerDashboardResult>> DashboardGet([Microsoft.AspNetCore.Mvc.FromQuery] SortBy? sortBy = null, [Microsoft.AspNetCore.Mvc.FromQuery] bool? sortDescending = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageNumber = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageSize = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? statuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<OfficerDashboardResult>> GetOfficerDashboard([Microsoft.AspNetCore.Mvc.FromQuery] SortBy? sortBy = null, [Microsoft.AspNetCore.Mvc.FromQuery] bool? sortDescending = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageNumber = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageSize = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? statuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null);
 
     }
 
@@ -181,7 +181,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="applicationId">Application ID</param>
         /// <returns>Document uploaded successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents", Name = "uploadDocument")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> DocumentsPost(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> UploadDocument(System.Guid applicationId, [Microsoft.AspNetCore.Mvc.FromBody] UploadDocumentRequest body);
 
         /// <summary>
         /// Delete document
@@ -193,7 +193,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="documentId">Document ID</param>
         /// <returns>Document deleted successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/documents/{documentId}", Name = "deleteDocument")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DocumentsDelete(System.Guid applicationId, System.Guid documentId);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DeleteDocument(System.Guid applicationId, System.Guid documentId);
 
         /// <summary>
         /// Download document
@@ -203,7 +203,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <param name="documentId">Document ID</param>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/documents/{documentId}/download", Name = "downloadDocument")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> Download(System.Guid documentId);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> DownloadDocument(System.Guid documentId);
 
     }
 
@@ -219,7 +219,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="includeInactive">Include inactive permit types in results</param>
         /// <returns>List of permit types</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permittypes", Name = "getPermitTypes")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeSummaryResponse>>> PermittypesGet([Microsoft.AspNetCore.Mvc.FromQuery] bool? includeInactive = false);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeSummaryResponse>>> GetPermitTypes([Microsoft.AspNetCore.Mvc.FromQuery] bool? includeInactive = false);
 
         /// <summary>
         /// Create permit type
@@ -229,7 +229,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Permit type created successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/permittypes", Name = "createPermitType")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> PermittypesPost([Microsoft.AspNetCore.Mvc.FromBody] CreatePermitTypeRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Guid>> CreatePermitType([Microsoft.AspNetCore.Mvc.FromBody] CreatePermitTypeRequest body);
 
         /// <summary>
         /// Get permit type by ID
@@ -240,7 +240,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Permit type ID</param>
         /// <returns>Permit type details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "getPermitTypeById")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<PermitTypeResponse>> PermittypesGet(System.Guid id);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<PermitTypeResponse>> GetPermitTypeById(System.Guid id);
 
         /// <summary>
         /// Update permit type
@@ -251,7 +251,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Permit type ID</param>
         /// <returns>Permit type updated successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "updatePermitType")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesPut(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdatePermitTypeRequest body);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> UpdatePermitType(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] UpdatePermitTypeRequest body);
 
         /// <summary>
         /// Deactivate permit type
@@ -262,7 +262,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">Permit type ID</param>
         /// <returns>Permit type deactivated successfully</returns>
         [Microsoft.AspNetCore.Mvc.HttpDelete, Microsoft.AspNetCore.Mvc.Route("api/permittypes/{id}", Name = "deactivatePermitType")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> PermittypesDelete(System.Guid id);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> DeactivatePermitType(System.Guid id);
 
         /// <summary>
         /// Get active permit types
@@ -272,7 +272,7 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Active permit types</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/permit-types/active", Name = "getActivePermitTypes")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeSummaryResponse>>> Active();
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<PermitTypeSummaryResponse>>> GetActivePermitTypes();
 
     }
 
@@ -288,7 +288,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="role">Filter by user role</param>
         /// <returns>List of users</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/users", Name = "getUsers")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<UserResponse>>> UsersGet([Microsoft.AspNetCore.Mvc.FromQuery] string? role = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<UserResponse>>> GetUsers([Microsoft.AspNetCore.Mvc.FromQuery] string? role = null);
 
         /// <summary>
         /// Get user by ID
@@ -299,7 +299,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="id">User ID</param>
         /// <returns>User details</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/users/{id}", Name = "getUserById")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserResponse>> UsersGet(System.Guid id);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<UserResponse>> GetUserById(System.Guid id);
 
     }
 
@@ -319,7 +319,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="entityId">Filter by entity ID</param>
         /// <returns>List of audit logs</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs", Name = "getAuditLogs")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> Auditlogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? entityId = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> GetAuditLogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? entityId = null);
 
         /// <summary>
         /// Export audit logs to CSV
@@ -333,7 +333,7 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="dateTo">Filter by date (to)</param>
         /// <returns>CSV file</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs/export", Name = "exportAuditLogs")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> Export([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> ExportAuditLogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null);
 
     }
 
