@@ -154,7 +154,18 @@ namespace ATLAS.API.Controllers.Generated
         /// </remarks>
         /// <returns>Dashboard retrieved with the current citizen's applications (drafts and submitted)</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/citizen/dashboard", Name = "getCitizenDashboard")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> Dashboard();
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationSummaryResponse>>> DashboardGet();
+
+        /// <summary>
+        /// Get officer dashboard
+        /// </summary>
+        /// <remarks>
+        /// Retrieve a paged, filtered, sorted summary of applications in the officer workflow
+        /// </remarks>
+        /// <param name="statuses">Comma-separated statuses (Submitted, UnderReview, InfoRequested)</param>
+        /// <returns>Officer dashboard summary</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/officer/dashboard", Name = "getOfficerDashboard")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<OfficerDashboardResult>> DashboardGet([Microsoft.AspNetCore.Mvc.FromQuery] SortBy? sortBy = null, [Microsoft.AspNetCore.Mvc.FromQuery] bool? sortDescending = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageNumber = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageSize = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? statuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null);
 
     }
 

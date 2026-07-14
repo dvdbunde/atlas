@@ -629,6 +629,97 @@ namespace ATLAS.API.Contracts.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OfficerDashboardResult
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("items")]
+        public System.Collections.Generic.ICollection<OfficerDashboardItem> Items { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("totalCount")]
+        public int TotalCount { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("pageNumber")]
+        public int PageNumber { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("pageSize")]
+        public int PageSize { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("totalPages")]
+        public int TotalPages { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class OfficerDashboardItem
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
+        public System.Guid ApplicationId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("applicationNumber")]
+        public string ApplicationNumber { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("permitTypeName")]
+        public string PermitTypeName { get; set; } = default!;
+
+        /// <summary>
+        /// Application status
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("status")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<OfficerDashboardItemStatus>))]
+        public OfficerDashboardItemStatus Status { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("citizenName")]
+        public string CitizenName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("submittedDate")]
+        public DateTimeOffset? SubmittedDate { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("lastUpdated")]
+        public DateTimeOffset? LastUpdated { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("assignedOfficerName")]
+        public string? AssignedOfficerName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("documentCount")]
+        public int DocumentCount { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("allRequiredDocumentsUploaded")]
+        public bool AllRequiredDocumentsUploaded { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum SortBy
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"LastUpdated")]
+        LastUpdated = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"SubmittedDate")]
+        SubmittedDate = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ApplicationSummaryResponseStatus
     {
 
@@ -691,6 +782,33 @@ namespace ATLAS.API.Contracts.Generated
 
         [System.Runtime.Serialization.EnumMember(Value = @"Dropdown")]
         Dropdown = 5,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum OfficerDashboardItemStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Draft")]
+        Draft = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Submitted")]
+        Submitted = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"UnderReview")]
+        UnderReview = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"InfoRequested")]
+        InfoRequested = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Resubmitted")]
+        Resubmitted = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Approved")]
+        Approved = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Rejected")]
+        Rejected = 6,
 
     }
 

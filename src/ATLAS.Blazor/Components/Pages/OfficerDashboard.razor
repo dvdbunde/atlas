@@ -1,0 +1,97 @@
+@page "/officer/dashboard"
+@attribute [Authorize(Roles = "Officer")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.ViewModels
+
+<PageTitle>Officer Dashboard</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Officer Dashboard</li>
+        </ol>
+    </nav>
+    <h1 class="mb-4">Applications Awaiting Review</h1>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading applications...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadDashboard">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.IsEmpty)
+    {
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No applications awaiting review</h4>
+            <p>There are currently no applications in the officer workflow.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Filters -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Status</label>
+                <select class="form-select" @bind="SelectedStatusText" @bind:after="OnFilterChanged">
+                    <option value="">All statuses</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="UnderReview">Under Review</option>
+                    <option value="InfoRequested">Info Requested</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Permit Type</label>
+                <select class="form-select" @bind="SelectedPermitTypeText" @bind:after="OnFilterChanged">
+                    <option value="">All permit types</option>
+                    @foreach (var pt in _viewModel.PermitTypes)
+                    {
+                        <option value="@pt.Id">@pt.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sort by</label>
+                <select class="form-select" @bind="SelectedSortText" @bind:after="OnSortChanged">
+                    <option value="LastUpdated">Last Updated</option>
+                    <option value="SubmittedDate">Submitted Date</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Responsive card grid -->
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+            @foreach (var app in _viewModel.Applications)
+            {
+                <div class="col">
+                    <ApplicationSummaryCard Application="app" />
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        <nav class="mt-4" aria-label="Dashboard pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(_viewModel.PageNumber <= 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(_viewModel.PageNumber - 1)">Previous</button>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">Page @_viewModel.PageNumber of @_viewModel.TotalPages</span>
+                </li>
+                <li class="page-item @(_viewModel.PageNumber >= _viewModel.TotalPages ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(_viewModel.PageNumber + 1)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

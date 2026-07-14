@@ -121,4 +121,22 @@ namespace ATLAS.Application.DTOs
         public DateTime? SubmittedDate { get; set; }
         public DateTime? LastUpdated { get; set; }
     }    
+
+    /// <summary>
+    /// Summary DTO for a single application on the officer dashboard.
+    /// Contains only the fields needed for the summary card — never the full aggregate.
+    /// </summary>
+    public class OfficerDashboardDto
+    {
+        public Guid ApplicationId { get; set; }
+        public string ApplicationNumber { get; set; } = string.Empty;
+        public string PermitTypeName { get; set; } = string.Empty;
+        public ApplicationStatus Status { get; set; }
+        public string CitizenName { get; set; } = string.Empty;
+        public DateTime? SubmittedDate { get; set; }
+        public DateTime? LastUpdated { get; set; }
+        public string? AssignedOfficerName { get; set; }
+        public int DocumentCount { get; set; }
+        public bool AllRequiredDocumentsUploaded { get; set; }
+    }
 }

@@ -602,6 +602,58 @@ paths:
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
 
+  /api/applications/officer/dashboard:
+    get:
+      tags: [Applications]
+      summary: Get officer dashboard
+      description: Retrieve a paged, filtered, sorted summary of applications in the officer workflow
+      operationId: getOfficerDashboard
+      parameters:
+        - name: statuses
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses (Submitted, UnderReview, InfoRequested)
+        - name: permitTypeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [LastUpdated, SubmittedDate]
+          default: LastUpdated
+        - name: sortDescending
+          in: query
+          schema:
+            type: boolean
+          default: true
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+          default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+          default: 20
+      responses:
+        '200':
+          description: Officer dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficerDashboardResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']        
+
   /api/permittypes:
     get:
       tags: [PermitTypes]
@@ -1360,6 +1412,54 @@ components:
               items:
                 $ref: '#/components/schemas/FieldDefinitionResponse'
           required: [id, name, description, fee, isActive, fields]      
+
+    OfficerDashboardResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerDashboardItem'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    OfficerDashboardItem:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        applicationNumber:
+          type: string
+        permitTypeName:
+          type: string
+        status:
+          type: string
+          description: Application status
+          enum: [Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected]
+        citizenName:
+          type: string
+        submittedDate:
+          type: string
+          format: date-time
+          nullable: true
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+        assignedOfficerName:
+          type: string
+          nullable: true
+        documentCount:
+          type: integer
+        allRequiredDocumentsUploaded:
+          type: boolean          
   
   responses:
     Unauthorized:

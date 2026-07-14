@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ATLAS.Application.Commands.Applications;
 using ATLAS.Application.Queries.Applications;
+using ATLAS.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ATLAS.API.Controllers
 {
@@ -246,7 +248,9 @@ namespace ATLAS.API.Controllers
             return Ok(result.ToResponse());
         }
 
-        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> Dashboard()
+        [HttpGet("citizen/dashboard")]
+        [Authorize(Policy = "Citizen")]
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> DashboardGet()
         {
             var query = new GetCitizenDashboardQuery();
             var results = await _mediator.Send(query, default);
@@ -258,6 +262,44 @@ namespace ATLAS.API.Controllers
             }
             
             return Ok(response);
+        }
+
+
+        [HttpGet("officer/dashboard")]
+        [Authorize(Policy = "OfficerOrAdmin")]
+        public override async Task<ActionResult<Contracts.Generated.OfficerDashboardResult>> DashboardGet(
+            [FromQuery] SortBy? sortBy = null,
+            [FromQuery] bool? sortDescending = null,
+            [FromQuery] int? pageNumber = null, 
+            [FromQuery] int? pageSize = null, 
+            [FromQuery] string? statuses = null, 
+            [FromQuery] Guid? permitTypeId = null)
+        {
+             var query = new GetOfficerDashboardQuery
+            {
+                Statuses = ParseStatuses(statuses),
+                PermitTypeId = permitTypeId,                
+                SortBy = sortBy == SortBy.SubmittedDate ? OfficerDashboardSortBy.SubmittedDate : OfficerDashboardSortBy.LastUpdated,
+                SortDescending = sortDescending ?? false,
+                PageNumber = pageNumber ?? 1,
+                PageSize = pageSize ?? 10
+            };
+
+            var result = await _mediator.Send(query, default);
+            return Ok(result);
+        }
+
+
+        private static List<ApplicationStatus>? ParseStatuses(string? statuses)
+        {
+            if (string.IsNullOrWhiteSpace(statuses)) return null;
+            var result = new List<ApplicationStatus>();
+            foreach (var part in statuses.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (Enum.TryParse<ApplicationStatus>(part.Trim(), out var s))
+                    result.Add(s);
+            }
+            return result.Count > 0 ? result : null;
         }
     }
 }
