@@ -167,6 +167,17 @@ namespace ATLAS.API.Controllers.Generated
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/officer/dashboard", Name = "getOfficerDashboard")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<OfficerDashboardResult>> GetOfficerDashboard([Microsoft.AspNetCore.Mvc.FromQuery] SortBy? sortBy = null, [Microsoft.AspNetCore.Mvc.FromQuery] bool? sortDescending = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageNumber = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageSize = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? statuses = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? permitTypeId = null);
 
+        /// <summary>
+        /// Get officer application review
+        /// </summary>
+        /// <remarks>
+        /// Read-only officer case review projection for a single application
+        /// </remarks>
+        /// <param name="applicationId">Application ID</param>
+        /// <returns>Officer application review</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/officer/{applicationId}", Name = "getOfficerApplicationReview")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<OfficerApplicationReviewResponse>> GetOfficerApplicationReview(System.Guid applicationId);
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]

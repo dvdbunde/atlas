@@ -41,7 +41,7 @@ public class ApplicationSummaryCardTests : BunitContext
             .Add(p => p.Application, vm));
 
         var link = cut.Find("a.btn-primary");
-        Assert.EndsWith($"/officer/review/{vm.ApplicationId}", link.GetAttribute("href"));
+        Assert.EndsWith($"/officer/applications/{vm.ApplicationId}", link.GetAttribute("href"));
         Assert.Contains("Open Application", link.TextContent);
     }
 

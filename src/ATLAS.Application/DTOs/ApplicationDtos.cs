@@ -139,4 +139,59 @@ namespace ATLAS.Application.DTOs
         public int DocumentCount { get; set; }
         public bool AllRequiredDocumentsUploaded { get; set; }
     }
+
+        /// <summary>Purpose-built read-only projection for the officer review page.</summary>
+    public class OfficerApplicationReviewDto
+    {
+        public Guid ApplicationId { get; set; }
+        public string ApplicationNumber { get; set; } = string.Empty;
+        public ApplicationStatus Status { get; set; }
+        public string PermitTypeName { get; set; } = string.Empty;
+        public string PermitTypeDescription { get; set; } = string.Empty;
+        public DateTime? SubmittedDate { get; set; }
+        public DateTime? LastUpdated { get; set; }
+        public Guid CitizenId { get; set; }
+        public string CitizenName { get; set; } = string.Empty;
+        public string CitizenEmail { get; set; } = string.Empty;
+        public string? AssignedOfficerName { get; set; }
+        public string CitizenNotes { get; set; } = string.Empty;
+        public List<OfficerFieldValueDto> FieldValues { get; set; } = new();
+        public List<OfficerDocumentRequirementDto> DocumentRequirements { get; set; } = new();
+        public List<OfficerReviewDto> Reviews { get; set; } = new();
+    }
+    
+    public class OfficerFieldValueDto
+    {
+        public string FieldName { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public FieldType FieldType { get; set; }
+    }
+    
+    public class OfficerDocumentRequirementDto
+    {
+        public string DocumentType { get; set; } = string.Empty;
+        public bool IsRequired { get; set; }
+        public bool IsSatisfied { get; set; }
+        public List<OfficerDocumentDto> UploadedDocuments { get; set; } = new();
+    }
+    
+    public class OfficerDocumentDto
+    {
+        public Guid Id { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
+        public long FileSize { get; set; }
+        public DateTime UploadedDate { get; set; }
+    }
+    
+    public class OfficerReviewDto
+    {
+        public Guid Id { get; set; }
+        public Guid OfficerId { get; set; }
+        public ReviewDecision Decision { get; set; }
+        public string? ReasonCode { get; set; }
+        public string Comments { get; set; } = string.Empty;
+        public DateTime ReviewedDate { get; set; }
+    }
 }

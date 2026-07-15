@@ -351,6 +351,117 @@ namespace ATLAS.API.Contracts.Generated
         }
         #endregion
 
+        #region OfficerApplicationReview: Dto → Response
+        public static OfficerApplicationReviewResponse ToResponse(this OfficerApplicationReviewDto dto)
+        {
+            if (dto == null) return null!;
+
+            var response = new OfficerApplicationReviewResponse
+            {
+                ApplicationId = dto.ApplicationId,
+                ApplicationNumber = dto.ApplicationNumber,
+                Status = ToOfficerApiStatus(dto.Status),
+                PermitTypeName = dto.PermitTypeName,
+                PermitTypeDescription = dto.PermitTypeDescription,
+                SubmittedDate = dto.SubmittedDate.HasValue
+                    ? new DateTimeOffset(dto.SubmittedDate.Value) : null,
+                LastUpdated = dto.LastUpdated.HasValue
+                    ? new DateTimeOffset(dto.LastUpdated.Value) : null,
+                CitizenId = dto.CitizenId,
+                CitizenName = dto.CitizenName,
+                CitizenEmail = dto.CitizenEmail,
+                AssignedOfficerName = dto.AssignedOfficerName,
+                CitizenNotes = dto.CitizenNotes,
+                FieldValues = new List<OfficerFieldValueResponse>(),
+                DocumentRequirements = new List<OfficerDocumentRequirementResponse>(),
+                Reviews = new List<OfficerReviewResponse>()
+            };
+
+            foreach (var fv in dto.FieldValues)
+            {
+                response.FieldValues.Add(new OfficerFieldValueResponse
+                {
+                    FieldName = fv.FieldName,
+                    Label = fv.Label,
+                    Value = fv.Value,
+                    FieldType = ToOfficerApiFieldType(fv.FieldType)
+                });
+            }
+
+            foreach (var req in dto.DocumentRequirements)
+            {
+                var reqResponse = new OfficerDocumentRequirementResponse
+                {
+                    DocumentType = req.DocumentType,
+                    IsRequired = req.IsRequired,
+                    IsSatisfied = req.IsSatisfied,
+                    UploadedDocuments = new List<OfficerDocumentResponse>()
+                };
+                foreach (var doc in req.UploadedDocuments)
+                {
+                    reqResponse.UploadedDocuments.Add(new OfficerDocumentResponse
+                    {
+                        Id = doc.Id,
+                        FileName = doc.FileName,
+                        ContentType = doc.ContentType,
+                        FileSize = doc.FileSize,
+                        UploadedDate = new DateTimeOffset(doc.UploadedDate)
+                    });
+                }
+                response.DocumentRequirements.Add(reqResponse);
+            }
+
+            foreach (var review in dto.Reviews)
+            {
+                response.Reviews.Add(new OfficerReviewResponse
+                {
+                    Id = review.Id,
+                    OfficerId = review.OfficerId,
+                    Decision = ToOfficerApiReviewDecision(review.Decision),
+                    ReasonCode = review.ReasonCode,
+                    Comments = review.Comments,
+                    ReviewedDate = new DateTimeOffset(review.ReviewedDate)
+                });
+            }
+
+            return response;
+        }
+        #endregion
+
+        #region Officer-specific enum helpers
+        private static OfficerApplicationReviewResponseStatus ToOfficerApiStatus(ApplicationStatus status) => status switch
+        {
+            ApplicationStatus.Draft => OfficerApplicationReviewResponseStatus.Draft,
+            ApplicationStatus.Submitted => OfficerApplicationReviewResponseStatus.Submitted,
+            ApplicationStatus.UnderReview => OfficerApplicationReviewResponseStatus.UnderReview,
+            ApplicationStatus.InfoRequested => OfficerApplicationReviewResponseStatus.InfoRequested,
+            ApplicationStatus.Resubmitted => OfficerApplicationReviewResponseStatus.Resubmitted,
+            ApplicationStatus.Approved => OfficerApplicationReviewResponseStatus.Approved,
+            ApplicationStatus.Rejected => OfficerApplicationReviewResponseStatus.Rejected,
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
+
+        private static OfficerFieldValueResponseFieldType ToOfficerApiFieldType(FieldType domainType) => domainType switch
+        {
+            FieldType.Text => OfficerFieldValueResponseFieldType.Text,
+            FieldType.MultilineText => OfficerFieldValueResponseFieldType.MultilineText,
+            FieldType.Number => OfficerFieldValueResponseFieldType.Number,
+            FieldType.Date => OfficerFieldValueResponseFieldType.Date,
+            FieldType.Boolean => OfficerFieldValueResponseFieldType.Boolean,
+            FieldType.Dropdown => OfficerFieldValueResponseFieldType.Dropdown,
+            FieldType.FileUpload => OfficerFieldValueResponseFieldType.FileUpload,
+            _ => throw new ArgumentOutOfRangeException(nameof(domainType))
+        };
+
+        private static OfficerReviewResponseDecision ToOfficerApiReviewDecision(ReviewDecision domainType) => domainType switch
+        {
+            ReviewDecision.Approve => OfficerReviewResponseDecision.Approve,
+            ReviewDecision.Reject => OfficerReviewResponseDecision.Reject,
+            ReviewDecision.RequestInfo => OfficerReviewResponseDecision.RequestInfo,
+            _ => throw new ArgumentOutOfRangeException(nameof(domainType))
+        };
+        #endregion
+
         private static ApplicationSummaryResponseStatus ToApiStatus(ApplicationStatus status) => status switch
         {
             ApplicationStatus.Draft => ApplicationSummaryResponseStatus.Draft,

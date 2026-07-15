@@ -47,15 +47,5 @@ public class OfficerDashboardControllerTests
 
         Assert.Equal(1, returned.TotalCount);
         Assert.Single(returned.Items);
-    }
-
-    [Fact]
-    public void OfficerDashboard_ShouldRequireOfficerOrAdminPolicy()
-    {
-        var method = typeof(ApplicationsController).GetMethod("GetOfficerDashboard");
-        var attr = method!.GetCustomAttribute<AuthorizeAttribute>();
-
-        Assert.NotNull(attr);
-        Assert.Equal("OfficerOrAdmin", attr!.Policy);
-    }
+    }  
 }

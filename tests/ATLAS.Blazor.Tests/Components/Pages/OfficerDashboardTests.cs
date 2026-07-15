@@ -113,7 +113,7 @@ public class OfficerDashboardTests : BunitContext
     }
 
     [Fact]
-    public void Should_NavigateToReview_ForEachCard()
+    public void Should_NavigateToApplication_ForEachCard()
     {
         var result = SampleResult(1);
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerDashboardQuery>(), default)).ReturnsAsync(result);
@@ -123,7 +123,7 @@ public class OfficerDashboardTests : BunitContext
         var cut = Render<OfficerDashboard>();
 
         var link = cut.Find("a.btn-primary");
-        Assert.EndsWith($"/officer/review/{result.Items[0].ApplicationId}", link.GetAttribute("href"));
+        Assert.EndsWith($"/officer/applications/{result.Items[0].ApplicationId}", link.GetAttribute("href"));
         Assert.Contains("Open Application", link.TextContent);
     }
 

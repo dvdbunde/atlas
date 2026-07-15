@@ -654,6 +654,36 @@ paths:
       security:
         - EntraID: ['Officer', 'Admin']        
 
+  /api/applications/officer/{applicationId}:
+    get:
+      tags: [Applications]
+      summary: Get officer application review
+      description: Read-only officer case review projection for a single application
+      operationId: getOfficerApplicationReview
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Officer application review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficerApplicationReviewResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']        
+
   /api/permittypes:
     get:
       tags: [PermitTypes]
@@ -1460,6 +1490,147 @@ components:
           type: integer
         allRequiredDocumentsUploaded:
           type: boolean          
+
+    OfficerApplicationReviewResponse:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        applicationNumber:
+          type: string
+          example: 'APP-2026-0001'
+        status:
+          type: string
+          description: Application status
+          enum: [Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected]
+          example: UnderReview
+        permitTypeName:
+          type: string
+          example: 'Business Permit'
+        permitTypeDescription:
+          type: string
+          default: ''
+        submittedDate:
+          type: string
+          format: date-time
+          nullable: true
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+        citizenId:
+          type: string
+          format: uuid
+        citizenName:
+          type: string
+          example: 'John Doe'
+        citizenEmail:
+          type: string
+          example: 'john.doe@example.com'
+        assignedOfficerName:
+          type: string
+          nullable: true
+          example: 'Jane Officer'
+        citizenNotes:
+          type: string
+          default: ''
+        fieldValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerFieldValueResponse'
+        documentRequirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerDocumentRequirementResponse'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerReviewResponse'
+      required: [applicationId, applicationNumber, status, permitTypeName, citizenId, citizenName, citizenEmail]
+
+    OfficerFieldValueResponse:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          example: 'businessName'
+        label:
+          type: string
+          example: 'Business Name'
+        value:
+          type: string
+          default: ''
+        fieldType:
+          type: string
+          description: Field type
+          enum: [Text, MultilineText, Number, Date, Boolean, Dropdown, FileUpload]
+          example: Text
+      required: [fieldName, label, fieldType]
+
+    OfficerDocumentRequirementResponse:
+      type: object
+      properties:
+        documentType:
+          type: string
+          description: The DocumentRequirement type this requirement expects
+          example: 'ProofOfIdentity'
+        isRequired:
+          type: boolean
+        isSatisfied:
+          type: boolean
+        uploadedDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerDocumentResponse'
+      required: [documentType, isRequired, isSatisfied]
+
+    OfficerDocumentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+          example: 'passport.pdf'
+        contentType:
+          type: string
+          example: 'application/pdf'
+        fileSize:
+          type: integer
+          format: int64
+          example: 2048576
+        uploadedDate:
+          type: string
+          format: date-time
+      required: [id, fileName, contentType, fileSize, uploadedDate]
+
+    OfficerReviewResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        officerId:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          description: Review decision
+          enum: [Approve, Reject, RequestInfo]
+          example: RequestInfo
+        reasonCode:
+          type: string
+          nullable: true
+          example: 'INCOMPLETE_DOCUMENTATION'
+        comments:
+          type: string
+          default: ''
+        reviewedDate:
+          type: string
+          format: date-time
+      required: [id, officerId, decision, reviewedDate]          
   
   responses:
     Unauthorized:

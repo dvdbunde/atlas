@@ -1,0 +1,186 @@
+@page "/officer/applications/{ApplicationId:guid}"
+@attribute [Authorize(Roles = "Officer, Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.ViewModels
+@using ATLAS.Domain.Enums
+
+<PageTitle>Officer Review</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/officer/dashboard">Officer Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@(_viewModel.Application?.ApplicationNumber ?? "Review")</li>
+        </ol>
+    </nav>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading application...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadReview">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.IsLoaded)
+    {
+        <div class="mb-4">
+            <h1 class="mb-1">@_viewModel.Application!.ApplicationNumber</h1>
+            <p class="text-muted mb-2">@_viewModel.Application.PermitTypeName</p>
+            <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                <StatusBadge Status="@_viewModel.Application.Status" />
+                <span class="text-muted small">Submitted: @_viewModel.SubmittedDateDisplay</span>
+                <span class="text-muted small">Updated: @_viewModel.LastUpdatedDisplay</span>
+                <span class="text-muted small">Officer: @_viewModel.AssignedOfficerDisplay</span>
+                <a href="/officer/dashboard" class="btn btn-outline-secondary btn-sm">&larr; Back to Dashboard</a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                @* Citizen & case info *@
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Case Information</h5>
+                        <dl class="row small mb-0">
+                            <dt class="col-4 text-muted">Citizen</dt>
+                            <dd class="col-8">@_viewModel.Application.CitizenName</dd>
+                            <dt class="col-4 text-muted">Email</dt>
+                            <dd class="col-8">@_viewModel.Application.CitizenEmail</dd>
+                            <dt class="col-4 text-muted">Permit Type</dt>
+                            <dd class="col-8">@_viewModel.Application.PermitTypeName</dd>
+                            @if (!string.IsNullOrEmpty(_viewModel.Application.CitizenNotes))
+                            {
+                                <dt class="col-4 text-muted">Citizen Notes</dt>
+                                <dd class="col-8">@_viewModel.Application.CitizenNotes</dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+
+                @* Submitted dynamic field values (read-only) *@
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Submitted Application Data</h5>
+                        @foreach (var field in _viewModel.Application.FieldValues)
+                        {
+                            <div class="mb-3">
+                                <label class="fw-semibold">@field.Label</label>
+                                <p class="form-control-plaintext">@(string.IsNullOrEmpty(field.Value) ? "—" : field.Value)</p>
+                            </div>
+                        }
+                        @if (_viewModel.Application.FieldValues.Count == 0)
+                        {
+                            <p class="text-muted">No application data submitted.</p>
+                        }
+                    </div>
+                </div>
+
+                @* Existing reviews (read-only) *@
+                @if (_viewModel.HasReviews)
+                {
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Reviews</h5>
+                            @foreach (var review in _viewModel.Application.Reviews)
+                            {
+                                <div class="border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <StatusBadge Status="@ReviewDecisionToStatus(review.Decision)" />
+                                        <small class="text-muted">@review.ReviewedDate.ToString("MMM dd, yyyy")</small>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(review.ReasonCode))
+                                    {
+                                        <p class="mb-1"><strong>Reason:</strong> @review.ReasonCode</p>
+                                    }
+                                    @if (!string.IsNullOrEmpty(review.Comments))
+                                    {
+                                        <p class="mb-0">@review.Comments</p>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info" role="alert">No reviews recorded for this application yet.</div>
+                }
+            </div>
+
+            @* Requirement-centric documents *@
+            <div class="col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Documents</h5>
+                        @foreach (var req in _viewModel.Application.DocumentRequirements)
+                        {
+                            <div class="card mb-3 @(req.IsSatisfied ? "border-success" : req.IsRequired ? "border-warning" : "")">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="card-title mb-0 flex-grow-1">@req.DocumentType</h6>
+                                        @if (req.IsRequired)
+                                        {
+                                            <span class="badge bg-danger ms-2">Required</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary ms-2">Optional</span>
+                                        }
+                                    </div>
+                                    <div class="mb-2">
+                                        @if (req.IsSatisfied)
+                                        {
+                                            <span class="badge bg-success">Uploaded</span>
+                                        }
+                                        else if (req.IsRequired)
+                                        {
+                                            <span class="badge bg-warning text-dark">Missing</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-muted">Not supplied</span>
+                                        }
+                                    </div>
+                                    @if (req.UploadedDocuments.Count > 0)
+                                    {
+                                        @foreach (var doc in req.UploadedDocuments)
+                                        {
+                                            <div class="d-flex align-items-center border rounded p-2 mb-1 bg-light">
+                                                <div class="flex-grow-1">
+                                                    <small class="fw-bold d-block">@doc.FileName</small>
+                                                    <small class="text-muted">@(doc.FileSize / 1024)KB</small>
+                                                </div>
+                                                <a href="/documents/@doc.Id/download" class="btn btn-sm btn-outline-primary ms-2"
+                                                   target="_blank" aria-label="Download @doc.FileName">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted small mb-0"><em>No document uploaded.</em></p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        @if (_viewModel.Application.DocumentRequirements.Count == 0)
+                        {
+                            <p class="text-muted">No document requirements defined.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

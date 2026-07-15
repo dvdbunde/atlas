@@ -63,6 +63,7 @@ namespace ATLAS.API.Auth
                 ("applications", "resubmitdraft")           => "Citizen",  // POST /api/applications/{id}/resubmit
                 ("applications", "getcitizendashboard")     => "Citizen",  // GET /api/applications/citizen/dashboard
                 ("applications", "getofficerdashboard")     => "OfficerOrAdmin", // GET /api/applications/officer/dashboard
+                ("applications", "getofficerapplicationreview") => "OfficerOrAdmin",
 
                 // PermitTypes — GET (list + single) = Authenticated; POST/PUT/DELETE = Admin
                 ("permittypes", "getpermittypes")           => "Authenticated",

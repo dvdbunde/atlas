@@ -247,9 +247,7 @@ namespace ATLAS.API.Controllers
 
             return Ok(result.ToResponse());
         }
-
-        [HttpGet("citizen/dashboard")]
-        [Authorize(Policy = "Citizen")]
+        
         public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> GetCitizenDashboard()
         {
             var query = new GetCitizenDashboardQuery();
@@ -263,10 +261,7 @@ namespace ATLAS.API.Controllers
             
             return Ok(response);
         }
-
-
-        [HttpGet("officer/dashboard")]
-        [Authorize(Policy = "OfficerOrAdmin")]
+                
         public override async Task<ActionResult<Contracts.Generated.OfficerDashboardResult>> GetOfficerDashboard(
             [FromQuery] SortBy? sortBy = null,
             [FromQuery] bool? sortDescending = null,
@@ -288,6 +283,14 @@ namespace ATLAS.API.Controllers
             var result = await _mediator.Send(query, default);
             return Ok(result);
         }
+        
+        public override async Task<ActionResult<OfficerApplicationReviewResponse>> GetOfficerApplicationReview(Guid applicationId)
+        {
+            var result = await _mediator.Send(new GetOfficerApplicationReviewQuery { ApplicationId = applicationId });
+            if (result is null)
+                return NotFound();
+            return Ok(result.ToResponse());
+        }
 
 
         private static List<ApplicationStatus>? ParseStatuses(string? statuses)
@@ -300,6 +303,6 @@ namespace ATLAS.API.Controllers
                     result.Add(s);
             }
             return result.Count > 0 ? result : null;
-        }                
+        }       
     }
 }

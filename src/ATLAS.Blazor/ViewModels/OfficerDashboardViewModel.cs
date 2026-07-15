@@ -59,7 +59,7 @@ public class OfficerApplicationCardViewModel
     public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy") ?? "Not submitted";
     public string LastUpdatedDisplay => LastUpdated?.ToString("MMM dd, yyyy") ?? "N/A";
     public string AssignedOfficerDisplay => AssignedOfficerName ?? "Unassigned";
-    public string NavigationUrl => $"/officer/review/{ApplicationId}";
+    public string NavigationUrl => $"/officer/applications/{ApplicationId}";
     public string ActionLabel => "Open Application";
 
     public static OfficerApplicationCardViewModel FromDto(OfficerDashboardDto dto) => new()

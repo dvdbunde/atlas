@@ -130,5 +130,70 @@ namespace ATLAS.Application.Tests.Queries
             Assert.NotNull(capturedExpiry);
             Assert.Equal(1, capturedExpiry!.Value.TotalHours);
         }
+
+        [Fact]
+        public async Task Handle_ShouldAllowOfficer_ForAnotherCitizensApplication()
+        {
+            // Arrange — document belongs to a citizen, requested by an Officer
+            var documentId = Guid.NewGuid();
+            var citizenUserId = Guid.NewGuid();
+            var officerUserId = Guid.NewGuid();
+            var application = new ATLAS.Domain.Entities.Application(citizenUserId, Guid.NewGuid(), "Test");
+            var idProp = typeof(ATLAS.Domain.Entities.Application).GetProperty("Id");
+            idProp?.SetValue(application, Guid.NewGuid());
+            application.AddDocument(documentId, "SitePlan", "plan.pdf", "application/pdf", 1024, "https://blob.url/secret", citizenUserId);
+
+            _mockRepository.Setup(r => r.GetByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockCurrentUser.Setup(s => s.UserId).Returns(officerUserId);
+            _mockCurrentUser.Setup(s => s.Role).Returns("Officer");
+            _mockFileStorage.Setup(s => s.GenerateDownloadSasUriAsync(
+                    It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("https://blob.url/secret?sig=abc");
+
+            // Act
+            var result = await _handler.Handle(new DownloadDocumentQuery { DocumentId = documentId }, CancellationToken.None);
+
+            // Assert — Officer can review a citizen's document (M1)
+            Assert.NotNull(result);
+            Assert.Equal("plan.pdf", result!.FileName);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldDenyCitizen_ForAnotherCitizensApplication()
+        {
+            // Arrange — document belongs to citizen A, requested by citizen B
+            var documentId = Guid.NewGuid();
+            var ownerUserId = Guid.NewGuid();
+            var otherCitizenUserId = Guid.NewGuid();
+            var application = new ATLAS.Domain.Entities.Application(ownerUserId, Guid.NewGuid(), "Test");
+            var idProp = typeof(ATLAS.Domain.Entities.Application).GetProperty("Id");
+            idProp?.SetValue(application, Guid.NewGuid());
+            application.AddDocument(documentId, "SitePlan", "plan.pdf", "application/pdf", 1024, "https://blob.url/secret", ownerUserId);
+
+            _mockRepository.Setup(r => r.GetByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockCurrentUser.Setup(s => s.UserId).Returns(otherCitizenUserId);
+            _mockCurrentUser.Setup(s => s.Role).Returns("Citizen");
+
+            // Act / Assert — ownership preserved
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+                _handler.Handle(new DownloadDocumentQuery { DocumentId = documentId }, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Handle_ShouldDeny_WhenUnauthenticated()
+        {
+            var documentId = Guid.NewGuid();
+            var application = new ATLAS.Domain.Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test");
+            application.AddDocument(documentId, "SitePlan", "plan.pdf", "application/pdf", 1024, "https://blob.url/secret", Guid.NewGuid());
+
+            _mockRepository.Setup(r => r.GetByDocumentIdAsync(documentId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockCurrentUser.Setup(s => s.UserId).Returns((Guid?)null);
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+                _handler.Handle(new DownloadDocumentQuery { DocumentId = documentId }, CancellationToken.None));
+        }
     }
 }
