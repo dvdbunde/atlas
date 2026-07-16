@@ -77,66 +77,82 @@ namespace ATLAS.API.Controllers
             return result.ToResponse();
         }
 
-        public override async Task<ActionResult<bool>> ApproveApplication(
+               public override async Task<ActionResult<bool>> ApproveApplication(
             Guid id, ApproveApplicationRequest body)
         {
-            var command = new ApproveApplicationCommand
+            try
             {
-                ApplicationId = id,
-                Comments = body.Comments
-            };
+                var result = await _mediator.Send(new ApproveApplicationCommand
+                {
+                    ApplicationId = id,
+                    Comments = body.Comments
+                }, default);
 
-            var result = await _mediator.Send(command, default);    
-    
-            if (!result)
-            {
-                return NotFound(); // ← 404 if application not found
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-            
-            return Ok(true); // ← 200 OK with true            
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
 
         public override async Task<ActionResult<bool>> RejectApplication(
             Guid id, RejectApplicationRequest body)
         {
-            var command = new RejectApplicationCommand
-            {                
-                ApplicationId = id,
-                ReasonCode = body.ReasonCode,
-                Comments = body.Comments
-            };
-
-            var result = await _mediator.Send(command, default);
-
-            if (!result)
+            try
             {
-                return NotFound();
+                var result = await _mediator.Send(new RejectApplicationCommand
+                {
+                    ApplicationId = id,
+                    ReasonCode = body.ReasonCode,
+                    Comments = body.Comments
+                }, default);
+
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-    
-            return Ok(true);            
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
 
         public override async Task<ActionResult<bool>> RequestInfo(
             Guid id, RequestInfoRequest body)
         {
-            var command = new RequestInfoCommand
+            try
             {
-                ApplicationId = id,
-                Message = body.Message
-            };
+                var result = await _mediator.Send(new RequestInfoCommand
+                {
+                    ApplicationId = id,
+                    Message = body.Message
+                }, default);
 
-            var result = await _mediator.Send(command, default);
-    
-            if (!result)
-            {
-                return NotFound();
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-            
-            return Ok(true);
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
-
-        [HttpPost("api/applications/{id}/assign")]
-        [Authorize(Policy = "OfficerOrAdmin")]
+        
         public override async Task<ActionResult<bool>> AssignApplicationToMe(
             Guid id, [FromBody] AssignApplicationToMeRequest body)
         {

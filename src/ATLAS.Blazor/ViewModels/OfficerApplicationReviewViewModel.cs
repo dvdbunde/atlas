@@ -22,6 +22,11 @@ public class OfficerApplicationReviewViewModel
         : IsAssignedToCurrentOfficer ? "Assigned to you"
         : (Application?.AssignedOfficerName ?? "Assigned to another officer");
     public bool HasReviews => Application?.Reviews.Count > 0;
+    public string DecisionComments { get; set; } = string.Empty;
+    public string DecisionReasonCode { get; set; } = string.Empty;
+    // True only when assigned to current officer AND status allows a decision.
+    public bool CanDecide => IsAssignedToCurrentOfficer
+        && Application?.Status == ApplicationStatus.UnderReview;
 
     public static OfficerApplicationReviewViewModel FromDto(OfficerApplicationReviewDto dto, Guid? currentOfficerId) => new()
     {

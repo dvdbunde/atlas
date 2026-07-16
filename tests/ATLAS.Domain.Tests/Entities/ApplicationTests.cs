@@ -195,6 +195,31 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.True(review.IsVisibleToCitizen);
         }
 
+        [Fact]
+        public void Approve_ShouldThrow_WhenNotAssigned()
+        {
+            var a = CreateApplicationUnderReviewUnassigned(); a.ClearDomainEvents();
+            Assert.Throws<DomainException>(() => a.Approve(_officerId, "ok"));
+        }
+
+        [Fact]
+        public void Approve_ShouldThrow_WhenAssignedToOtherOfficer()
+        {
+            var a = CreateApplicationUnderReviewUnassigned(); a.AssignToOfficer(Guid.NewGuid());
+            Assert.Throws<DomainException>(() => a.Approve(_officerId, "ok"));
+        }
+
+        [Fact]
+        public void Approve_WhenAssignedToCurrentOfficer_ShouldSucceed()
+        {
+            var a = CreateApplicationUnderReview(); a.ClearDomainEvents();
+            a.Approve(_officerId, "ok");
+            Assert.Equal(ApplicationStatus.Approved, a.Status);
+            Assert.Single(a.Reviews);
+            Assert.IsType<ApplicationApprovedEvent>(Assert.Single(a.DomainEvents));
+        }
+        
+
         #endregion
 
         #region Reject Tests
@@ -270,6 +295,20 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Equal(ReviewDecision.Reject, review.Decision);
         }
 
+        [Fact]
+        public void Reject_ShouldThrow_WhenNotAssigned()
+        {
+            var a = CreateApplicationUnderReviewUnassigned(); a.ClearDomainEvents();
+            Assert.Throws<DomainException>(() => a.Reject(_officerId, "INCOMPLETE", "ok"));
+        }
+
+        [Fact]
+        public void Reject_ShouldThrow_WhenAssignedToOtherOfficer()
+        {
+            var a = CreateApplicationUnderReviewUnassigned(); a.AssignToOfficer(Guid.NewGuid());
+            Assert.Throws<DomainException>(() => a.Reject(_officerId, "INCOMPLETE", "ok"));
+        }
+
         #endregion
 
         #region RequestInfo Tests
@@ -330,6 +369,20 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Equal(ReviewDecision.RequestInfo, review.Decision);
             Assert.Equal(_officerId, review.OfficerId);
             Assert.True(review.IsVisibleToCitizen);
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldThrow_WhenNotAssigned()
+        {
+            var a = CreateApplicationUnderReviewUnassigned(); a.ClearDomainEvents();
+            Assert.Throws<DomainException>(() => a.RequestInfo(_officerId, "need more"));
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldThrow_WhenAssignedToOtherOfficer()
+        {
+            var a = CreateApplicationUnderReviewUnassigned(); a.AssignToOfficer(Guid.NewGuid());
+            Assert.Throws<DomainException>(() => a.RequestInfo(_officerId, "need more"));
         }
 
         #endregion
@@ -417,6 +470,67 @@ namespace ATLAS.Domain.Tests.Entities
             // Act & Assert
             var exception = Assert.Throws<DomainException>(() => application.Submit());
             Assert.Contains("draft", exception.Message);
+        }
+
+        #endregion
+
+        #region Duplicate Decision / Review History Integrity
+
+        [Fact]
+        public void Approve_ShouldThrow_WhenAlreadyApproved()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Approve(_officerId, "First approval");
+
+            // Act & Assert — status is now Approved, not UnderReview
+            var exception = Assert.Throws<DomainException>(() =>
+                application.Approve(_officerId, "Second approval"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void Reject_ShouldThrow_WhenAlreadyRejected()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.Reject(_officerId, "INCOMPLETE", "Missing docs");
+
+            // Act & Assert — status is now Rejected, not UnderReview
+            var exception = Assert.Throws<DomainException>(() =>
+                application.Reject(_officerId, "INCOMPLETE", "Again"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void RequestInfo_ShouldThrow_WhenAlreadyInfoRequested()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.RequestInfo(_officerId, "First request");
+
+            // Act & Assert — status is now InfoRequested, not UnderReview
+            var exception = Assert.Throws<DomainException>(() =>
+                application.RequestInfo(_officerId, "Second request"));
+            Assert.Contains("under review", exception.Message);
+        }
+
+        [Fact]
+        public void Decision_ShouldPreserveReviewHistory()
+        {
+            // Arrange
+            var application = CreateApplicationUnderReview();
+            application.RequestInfo(_officerId, "Please provide survey");
+
+            // Act — citizen resubmits, then officer approves
+            application.Resubmit();
+            application.Approve(_officerId, "Approved after resubmission");
+
+            // Assert — both the RequestInfo review and the Approve review are retained
+            Assert.Equal(2, application.Reviews.Count);
+            Assert.Contains(application.Reviews, r => r.Decision == ReviewDecision.RequestInfo);
+            Assert.Contains(application.Reviews, r => r.Decision == ReviewDecision.Approve);
+            Assert.Equal(ApplicationStatus.Approved, application.Status);
         }
 
         #endregion
@@ -744,6 +858,15 @@ namespace ATLAS.Domain.Tests.Entities
         #region Helper Methods
 
         private Application CreateApplicationUnderReview()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.StartReview(_officerId);
+            application.AssignToOfficer(_officerId); // O4: decisions require assignment
+            return application;
+        }
+
+        private Application CreateApplicationUnderReviewUnassigned()
         {
             var application = new Application(_citizenId, _permitTypeId, "Test notes");
             application.Submit();

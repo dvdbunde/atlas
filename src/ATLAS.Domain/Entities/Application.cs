@@ -125,17 +125,32 @@ namespace ATLAS.Domain.Entities
             AddDomainEvent(new ApplicationAssignedToOfficerEvent(Id, officerId));
         }
 
+             /// <summary>
+        /// Validates that the acting officer is the currently assigned officer
+        /// before any Officer decision. Enforces O4 assignment-ownership rule
+        /// in the domain (not just UI authorization).
+        /// </summary>
+        private void EnsureAssignedToOfficer(Guid officerId)
+        {
+            if (!AssignedOfficerId.HasValue)
+                throw new DomainException("Application must be assigned to an officer before a decision can be made");
+
+            if (AssignedOfficerId.Value != officerId)
+                throw new DomainException("Officer can only act on applications assigned to them");
+        }
+
         public void Approve(Guid officerId, string comments)
         {
             if (Status != ApplicationStatus.UnderReview)
                 throw new DomainException("Only applications under review can be approved");
 
+            EnsureAssignedToOfficer(officerId);
+
             Status = ApplicationStatus.Approved;
             ReviewedDate = DateTime.UtcNow;
             OfficerNotes += $"[APPROVED {DateTime.UtcNow} by {officerId}]: {comments}";
 
-            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Approve, comments, true);
-
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Approve, comments, true);            
             AddDomainEvent(new ApplicationApprovedEvent(Id, officerId));
         }
 
@@ -147,13 +162,13 @@ namespace ATLAS.Domain.Entities
             if (string.IsNullOrWhiteSpace(reasonCode))
                 throw new DomainException("Rejection requires a reason code");
 
+            EnsureAssignedToOfficer(officerId);
+
             Status = ApplicationStatus.Rejected;
             ReviewedDate = DateTime.UtcNow;
             OfficerNotes += $"[REJECTED {DateTime.UtcNow} by {officerId}]: Reason: {reasonCode}. {comments}";
-            
-            // Create review with reason code
-            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Reject, comments, true, reasonCode);
-            
+
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.Reject, comments, true, reasonCode);            
             AddDomainEvent(new ApplicationRejectedEvent(Id, officerId, reasonCode));
         }
 
@@ -162,11 +177,12 @@ namespace ATLAS.Domain.Entities
             if (Status != ApplicationStatus.UnderReview)
                 throw new DomainException("Can only request info for applications under review");
 
+            EnsureAssignedToOfficer(officerId);
+
             Status = ApplicationStatus.InfoRequested;
             OfficerNotes += $"[INFO REQUESTED {DateTime.UtcNow} by {officerId}]: {message}";
 
-            AddReview(Guid.NewGuid(), officerId, ReviewDecision.RequestInfo, message, true);
-
+            AddReview(Guid.NewGuid(), officerId, ReviewDecision.RequestInfo, message, true);            
             AddDomainEvent(new ApplicationInfoRequestedEvent(Id, officerId, message));
         }
 

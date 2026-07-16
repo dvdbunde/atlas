@@ -6,6 +6,7 @@ using ATLAS.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace ATLAS.Blazor.Components.Pages;
 
@@ -17,11 +18,13 @@ public partial class OfficerApplicationReview : ComponentBase
     [Inject] private IMediator Mediator { get; set; } = default!;
     [Inject] private ILogger<OfficerApplicationReview> Logger { get; set; } = default!;
     [Inject] private ICurrentUserService CurrentUserService { get; set; } = default!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private bool _isAssigning;
 
     private OfficerApplicationReviewViewModel _viewModel = new();
     private bool _dataLoaded;
+    private bool _isDeciding;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -98,4 +101,67 @@ public partial class OfficerApplicationReview : ComponentBase
             await InvokeAsync(StateHasChanged);
         }
     }
+
+    
+
+    private async Task Decide(Func<Task> action)
+    {
+        if (_isDeciding)
+            return;
+
+        _isDeciding = true;
+        _viewModel.HasError = false;
+
+        try
+        {
+            await action();
+            await LoadReview();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to record decision for application {ApplicationId}", _viewModel.Application?.ApplicationId);
+            _viewModel.HasError = true;
+            _viewModel.ErrorMessage = "We were unable to record the decision. The application may not be assigned to you or is in an invalid state.";
+        }
+        finally
+        {
+            _isDeciding = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task Approve()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Approve this application?"))
+        {
+            return;
+        }
+
+        await Decide(() => Mediator.Send(new ApproveApplicationCommand
+        {
+            ApplicationId = _viewModel.Application!.ApplicationId,
+            Comments = _viewModel.DecisionComments
+        }));
+    }
+
+    private async Task Reject()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Reject this application? This cannot be undone."))
+        {
+            return;
+        }
+
+        await Decide(() => Mediator.Send(new RejectApplicationCommand
+        {
+            ApplicationId = _viewModel.Application!.ApplicationId,
+            ReasonCode = _viewModel.DecisionReasonCode,
+            Comments = _viewModel.DecisionComments
+        }));
+    }
+
+    private Task RequestInfo() => Decide(() => Mediator.Send(new RequestInfoCommand
+    {
+        ApplicationId = _viewModel.Application!.ApplicationId,
+        Message = _viewModel.DecisionComments
+    }));
 }

@@ -54,9 +54,7 @@ namespace ATLAS.API.Auth
                 ("applications", "approveapplication")     => "OfficerOrAdmin",
                 ("applications", "rejectapplication")       => "OfficerOrAdmin",
                 ("applications", "requestinfo")             => "OfficerOrAdmin",
-                ("applications", "assignapplicationtome")    => "OfficerOrAdmin",
-
-                // Milestone 5 - Draft workflow
+                ("applications", "assignapplicationtome")    => "OfficerOrAdmin",                
                 ("applications", "createdraft")             => "Citizen",  // POST /api/applications/draft
                 ("applications", "updatedraft")             => "Citizen",  // PUT /api/applications/{id}
                 ("applications", "submitdraft")             => "Citizen",  // POST /api/applications/{id}/submit

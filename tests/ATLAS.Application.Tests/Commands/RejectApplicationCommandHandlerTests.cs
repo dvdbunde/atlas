@@ -1,6 +1,7 @@
 using ATLAS.Application.Interfaces;
 using MediatR;
 using Entities = ATLAS.Domain.Entities;
+using ATLAS.Domain;
 using ATLAS.Domain.Interfaces;
 using Moq;
 using Xunit;
@@ -38,6 +39,7 @@ namespace ATLAS.Application.Tests.Commands
             var application = new Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
             application.Submit();
             application.StartReview(officerId);
+            application.AssignToOfficer(officerId);
 
             _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(application);
@@ -72,6 +74,52 @@ namespace ATLAS.Application.Tests.Commands
 
             var result = await _handler.Handle(command, CancellationToken.None);
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenNotUnderReview()
+        {
+            var applicationId = Guid.NewGuid();
+            var application = new Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            application.Submit();
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            var command = new RejectApplicationCommand { ApplicationId = applicationId, ReasonCode = "INCOMPLETE", Comments = "x" };
+
+            await Assert.ThrowsAsync<DomainException>(() => _handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenNotAssignedToOfficer()
+        {
+            var applicationId = Guid.NewGuid();
+            var application = new Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            application.Submit();
+            application.StartReview(_testOfficerId);
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            var command = new RejectApplicationCommand { ApplicationId = applicationId, ReasonCode = "INCOMPLETE", Comments = "x" };
+
+            await Assert.ThrowsAsync<DomainException>(() => _handler.Handle(command, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenCurrentUserHasNoId()
+        {
+            _mockCurrentUserService.Setup(s => s.UserId).Returns((Guid?)null);
+            var applicationId = Guid.NewGuid();
+            var application = new Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            application.Submit();
+            application.StartReview(_testOfficerId);
+            application.AssignToOfficer(_testOfficerId);
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            var command = new RejectApplicationCommand { ApplicationId = applicationId, ReasonCode = "INCOMPLETE", Comments = "x" };
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _handler.Handle(command, CancellationToken.None));
         }
     }
 }

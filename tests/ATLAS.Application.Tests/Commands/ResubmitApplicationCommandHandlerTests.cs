@@ -43,7 +43,9 @@ namespace ATLAS.Application.Tests.Commands
             var app = new ATLAS.Domain.Entities.Application(_testUserId, _permitTypeId, "Notes");
             app.Submit();
             app.StartReview(_officerId);
+            app.AssignToOfficer(_officerId);
             app.RequestInfo(_officerId, "Please provide more info");
+            
             return app;
         }
 

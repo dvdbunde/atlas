@@ -165,6 +165,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProg
         application1.AddDocument(Guid.NewGuid(), "Building Permit","building_plan.pdf", "application/pdf", 2048, "https://blob.test.com/building_plan.pdf", citizen.Id);
         application1.Submit();
         application1.StartReview(officer.Id);                               
+        application1.AssignToOfficer(officer.Id);
 
         var application2 = new ATLAS.Domain.Entities.Application(citizen.Id, buildingPermit.Id, "Draft for document upload test");              
         

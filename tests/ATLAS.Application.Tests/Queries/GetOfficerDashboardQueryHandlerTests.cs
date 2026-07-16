@@ -46,25 +46,30 @@ public class GetOfficerDashboardQueryHandlerTests
             case ApplicationStatus.UnderReview:
                 app.Submit();
                 app.StartReview(officerId);
+                app.AssignToOfficer(officerId); // O4: decisions require assignment
                 break;
             case ApplicationStatus.InfoRequested:
                 app.Submit();
                 app.StartReview(officerId);
+                app.AssignToOfficer(officerId); // O4: decisions require assignment
                 app.RequestInfo(officerId, "Please provide more information");
                 break;
             case ApplicationStatus.Approved:
                 app.Submit();
                 app.StartReview(officerId);
+                app.AssignToOfficer(officerId); // O4: decisions require assignment
                 app.Approve(officerId, "Application complete");
                 break;
             case ApplicationStatus.Rejected:
                 app.Submit();
                 app.StartReview(officerId);
+                app.AssignToOfficer(officerId); // O4: decisions require assignment
                 app.Reject(officerId, "INCOMPLETE_DOCUMENTATION", "Missing required documents");
                 break;
             case ApplicationStatus.Resubmitted:
                 app.Submit();
                 app.StartReview(officerId);
+                app.AssignToOfficer(officerId); // O4: decisions require assignment
                 app.RequestInfo(officerId, "Please provide more information");
                 app.Resubmit();
                 break;
@@ -232,10 +237,10 @@ public class GetOfficerDashboardQueryHandlerTests
         var citizen = Guid.NewGuid();
         var officer = Guid.NewGuid();
         var pt = Guid.NewGuid();
-        var app = MakeApplication(citizen, pt, ApplicationStatus.UnderReview);
+        var app = MakeApplication(citizen, pt, ApplicationStatus.Submitted);
+        app.StartReview(officer);          // -> UnderReview, no assignment yet
+        app.AssignToOfficer(officer);      // O4: explicit assignment is source of truth
 
-        // Explicit assignment state is the source of truth for current owner.
-        app.AssignToOfficer(officer);
         // A review exists, but the assigned-officer name must NOT be derived from it.
         app.AddReview(Guid.NewGuid(), officer, ReviewDecision.RequestInfo, "Please provide details", true);
 

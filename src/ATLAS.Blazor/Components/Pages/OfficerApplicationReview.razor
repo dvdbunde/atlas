@@ -63,6 +63,42 @@
             </div>
         </div>
 
+        @if (_viewModel.CanDecide)
+        {
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Officer Decision</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label">Comments / Instructions</label>
+                        <textarea class="form-control" @bind="_viewModel.DecisionComments" rows="3"
+                                  placeholder="Provide reason or instructions for the citizen"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Rejection Reason Code</label>
+                        <input class="form-control" @bind="_viewModel.DecisionReasonCode"
+                               placeholder="Required only when rejecting (e.g. INCOMPLETE_DOCUMENTATION)" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" @onclick="Approve" disabled="@_isDeciding">
+                            @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Approve
+                        </button>
+                        <button class="btn btn-danger" @onclick="Reject" disabled="@_isDeciding">
+                            @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Reject
+                        </button>
+                        <button class="btn btn-warning" @onclick="RequestInfo" disabled="@_isDeciding">
+                            @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Request Information
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
         <div class="row">
             <div class="col-lg-8">
                 @* Citizen & case info *@
