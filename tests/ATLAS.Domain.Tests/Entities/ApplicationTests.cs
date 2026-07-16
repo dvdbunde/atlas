@@ -585,6 +585,82 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Contains("submitted or under-review", exception.Message);
         }
 
+        [Fact]
+        public void NewApplication_ShouldStartUnassigned()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            Assert.Null(application.AssignedOfficerId);
+            Assert.Null(application.AssignedDate);
+        }
+
+        [Fact]
+        public void AssignToOfficer_ShouldSetAssignedDate()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.ClearDomainEvents();
+
+            application.AssignToOfficer(_officerId);
+
+            Assert.Equal(_officerId, application.AssignedOfficerId);
+            Assert.NotNull(application.AssignedDate);
+            Assert.True(application.AssignedDate <= DateTime.UtcNow);
+            Assert.True(application.AssignedDate >= DateTime.UtcNow.AddMinutes(-1));
+        }
+
+        [Fact]
+        public void AssignToOfficer_SameOfficer_ShouldBeIdempotent_NoDateReset_NoEvent()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.AssignToOfficer(_officerId);
+            var firstDate = application.AssignedDate;
+            application.ClearDomainEvents();
+
+            application.AssignToOfficer(_officerId); // retry
+
+            Assert.Equal(_officerId, application.AssignedOfficerId);
+            Assert.Equal(firstDate, application.AssignedDate); // not reset
+            Assert.Empty(application.DomainEvents);            // no duplicate event
+        }
+
+        [Fact]
+        public void AssignToOfficer_OtherOfficer_ShouldThrowAndKeepOriginal()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.AssignToOfficer(_officerId);
+            var originalDate = application.AssignedDate;
+            application.ClearDomainEvents();
+            var other = Guid.NewGuid();
+
+            var ex = Assert.Throws<DomainException>(() => application.AssignToOfficer(other));
+            Assert.Contains("already assigned to another officer", ex.Message);
+
+            Assert.Equal(_officerId, application.AssignedOfficerId); // unchanged
+            Assert.Equal(originalDate, application.AssignedDate);    // unchanged
+            Assert.Empty(application.DomainEvents);                  // no event
+        }
+
+        [Fact]
+        public void AssignToOfficer_ShouldThrow_WhenInfoRequested()
+        {
+            var application = CreateApplicationUnderReview();
+            application.RequestInfo(_officerId, "Need more info");
+
+            var ex = Assert.Throws<DomainException>(() => application.AssignToOfficer(_officerId));
+            Assert.Contains("submitted or under-review", ex.Message);
+        }
+
+        [Fact]
+        public void AssignToOfficer_ShouldThrow_WhenEmptyOfficerId()
+        {
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+
+            Assert.Throws<ArgumentException>(() => application.AssignToOfficer(Guid.Empty));
+        }
+
         #endregion
 
         #region AddDocument Status Validation

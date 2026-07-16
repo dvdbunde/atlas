@@ -131,12 +131,11 @@ public class GetOfficerDashboardQueryHandler : IRequestHandler<GetOfficerDashboa
             var citizen = await _userRepository.GetByIdAsync(app.CitizenId, cancellationToken);
             var permitType = await _permitTypeRepository.GetByIdAsync(app.PermitTypeId, cancellationToken);
 
-            // Assigned officer (if any) — derived read-only from the latest review.
+            // Assigned officer (if any) — derived read-only from explicit assignment state.
             string? assignedOfficerName = null;
-            var latestReview = app.Reviews.OrderByDescending(r => r.ReviewedDate).FirstOrDefault();
-            if (latestReview != null)
+            if (app.AssignedOfficerId.HasValue)
             {
-                var officer = await _userRepository.GetByIdAsync(latestReview.OfficerId, cancellationToken);
+                var officer = await _userRepository.GetByIdAsync(app.AssignedOfficerId.Value, cancellationToken);
                 assignedOfficerName = officer?.GetFullName();
             }
 
@@ -158,6 +157,7 @@ public class GetOfficerDashboardQueryHandler : IRequestHandler<GetOfficerDashboa
                 SubmittedDate = app.SubmittedDate,
                 LastUpdated = app.ReviewedDate ?? app.SubmittedDate,
                 AssignedOfficerName = assignedOfficerName,
+                AssignedOfficerId = app.AssignedOfficerId,
                 DocumentCount = app.Documents.Count,
                 AllRequiredDocumentsUploaded = allRequiredUploaded
             });

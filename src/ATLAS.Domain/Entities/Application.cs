@@ -26,6 +26,9 @@ namespace ATLAS.Domain.Entities
         public ApplicationStatus Status { get; private set; }
         public DateTime? SubmittedDate { get; private set; }
         public DateTime? ReviewedDate { get; private set; }
+        public Guid? AssignedOfficerId { get; private set; }
+        public DateTime? AssignedDate { get; private set; }
+        public byte[]? RowVersion { get; private set; }
         public string CitizenNotes { get; private set; }
         public string OfficerNotes { get; private set; }
         public Guid CitizenId { get; private set; }
@@ -102,11 +105,23 @@ namespace ATLAS.Domain.Entities
 
         public void AssignToOfficer(Guid officerId)
         {
+            if (officerId == Guid.Empty)
+                throw new ArgumentException("Officer ID cannot be empty", nameof(officerId));
+
+            // Eligibility: only officer-workflow statuses
             if (Status != ApplicationStatus.Submitted && Status != ApplicationStatus.UnderReview)
                 throw new DomainException("Can only assign officer to submitted or under-review applications");
 
-            // Note: Officer assignment is tracked via Review entities
-            // This method validates the state transition is valid
+            // Idempotency: already assigned to this officer → no-op (no duplicate event)
+            if (AssignedOfficerId == officerId)
+                return;
+
+            // Conflict: assigned to a different officer → reject (no silent overwrite)
+            if (AssignedOfficerId.HasValue && AssignedOfficerId.Value != officerId)
+                throw new DomainException("Application is already assigned to another officer");
+
+            AssignedOfficerId = officerId;
+            AssignedDate = DateTime.UtcNow;
             AddDomainEvent(new ApplicationAssignedToOfficerEvent(Id, officerId));
         }
 

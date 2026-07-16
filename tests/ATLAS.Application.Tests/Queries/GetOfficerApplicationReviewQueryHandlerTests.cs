@@ -21,6 +21,7 @@ public class GetOfficerApplicationReviewQueryHandlerTests
     private readonly Mock<IApplicationRepository> _mockAppRepo;
     private readonly Mock<IUserRepository> _mockUserRepo;
     private readonly Mock<IPermitTypeRepository> _mockPermitTypeRepo;
+    private readonly Mock<ICurrentUserService> _mockCurrentUser;
     private readonly GetOfficerApplicationReviewQueryHandler _handler;
 
     public GetOfficerApplicationReviewQueryHandlerTests()
@@ -28,8 +29,9 @@ public class GetOfficerApplicationReviewQueryHandlerTests
         _mockAppRepo = new Mock<IApplicationRepository>();
         _mockUserRepo = new Mock<IUserRepository>();
         _mockPermitTypeRepo = new Mock<IPermitTypeRepository>();
+        _mockCurrentUser = new Mock<ICurrentUserService>();
         _handler = new GetOfficerApplicationReviewQueryHandler(
-            _mockAppRepo.Object, _mockUserRepo.Object, _mockPermitTypeRepo.Object);
+            _mockAppRepo.Object, _mockUserRepo.Object, _mockPermitTypeRepo.Object, _mockCurrentUser.Object);
     }
 
     // ----- Domain builders (mirror GetOfficerDashboardQueryHandlerTests conventions) -----
@@ -109,14 +111,16 @@ public class GetOfficerApplicationReviewQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldDeriveAssignedOfficerFromLatestReview()
+    public async Task Handle_ShouldDeriveAssignedOfficerFromAssignmentState()
     {
         var citizenId = Guid.NewGuid();
         var permitTypeId = Guid.NewGuid();
         var appId = Guid.NewGuid();
         var officerId = Guid.NewGuid();
         var app = MakeSubmittedApplication(citizenId, permitTypeId, appId, "APP-2026-0002");
-        app.StartReview(officerId);
+        // Explicit assignment state is the source of truth for current owner.
+        app.AssignToOfficer(officerId);
+        // A review exists, but the assigned-officer name must NOT be derived from it.
         app.AddReview(Guid.NewGuid(), officerId, ReviewDecision.RequestInfo, "Need survey", true, "INCOMPLETE");
 
         var citizen = MakeUser(citizenId, "Jane", "Doe", "jane@example.com");
@@ -129,7 +133,8 @@ public class GetOfficerApplicationReviewQueryHandlerTests
         var result = await _handler.Handle(new GetOfficerApplicationReviewQuery { ApplicationId = appId }, CancellationToken.None);
 
         Assert.NotNull(result);
-        Assert.Equal("Joe Officer", result!.AssignedOfficerName);
+        Assert.Equal(officerId, result!.AssignedOfficerId);
+        Assert.Equal("Joe Officer", result.AssignedOfficerName);
     }
 
     [Fact]

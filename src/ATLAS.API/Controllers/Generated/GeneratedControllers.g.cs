@@ -104,15 +104,15 @@ namespace ATLAS.API.Controllers.Generated
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> RequestInfo(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] RequestInfoRequest body);
 
         /// <summary>
-        /// Assign application to officer
+        /// Assign application to me
         /// </summary>
         /// <remarks>
-        /// Assign a pending application to a specific officer
+        /// Assign a pending application to the currently authenticated officer
         /// </remarks>
         /// <param name="id">Application ID</param>
         /// <returns>Application assigned successfully</returns>
-        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/assign", Name = "assignToOfficer")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> AssignToOfficer(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignToOfficerRequest body);
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/applications/{id}/assign", Name = "assignApplicationToMe")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> AssignApplicationToMe(System.Guid id, [Microsoft.AspNetCore.Mvc.FromBody] AssignApplicationToMeRequest body);
 
         /// <summary>
         /// Create draft application

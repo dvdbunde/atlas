@@ -226,17 +226,17 @@ public class GetOfficerDashboardQueryHandlerTests
         Assert.Equal(0, result.Items[0].DocumentCount);
     }
 
-       [Fact]
-    public async Task Handle_ShouldDeriveAssignedOfficerFromLatestReview()
+    [Fact]
+    public async Task Handle_ShouldDeriveAssignedOfficerFromAssignmentState()
     {
         var citizen = Guid.NewGuid();
         var officer = Guid.NewGuid();
         var pt = Guid.NewGuid();
         var app = MakeApplication(citizen, pt, ApplicationStatus.UnderReview);
 
-        // Officer assignment is tracked via Review entities in the domain model.
-        // StartReview raises an event but does not create a Review, so add one
-        // to represent the officer who picked up the review.
+        // Explicit assignment state is the source of truth for current owner.
+        app.AssignToOfficer(officer);
+        // A review exists, but the assigned-officer name must NOT be derived from it.
         app.AddReview(Guid.NewGuid(), officer, ReviewDecision.RequestInfo, "Please provide details", true);
 
         _mockAppRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
@@ -247,6 +247,7 @@ public class GetOfficerDashboardQueryHandlerTests
 
         var result = await _handler.Handle(new GetOfficerDashboardQuery(), CancellationToken.None);
 
+        Assert.Equal(officer, result.Items[0].AssignedOfficerId);
         Assert.Equal("Jane Doe", result.Items[0].AssignedOfficerName);
     }
 

@@ -8,4 +8,7 @@ public partial class ApplicationSummaryCard : ComponentBase
     [Parameter]
     [EditorRequired]
     public OfficerApplicationCardViewModel Application { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<Guid> OnAssignToMe { get; set; }
 }

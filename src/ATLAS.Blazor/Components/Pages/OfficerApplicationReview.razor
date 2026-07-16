@@ -41,6 +41,24 @@
                 <span class="text-muted small">Submitted: @_viewModel.SubmittedDateDisplay</span>
                 <span class="text-muted small">Updated: @_viewModel.LastUpdatedDisplay</span>
                 <span class="text-muted small">Officer: @_viewModel.AssignedOfficerDisplay</span>
+                @if (!_viewModel.Application!.AssignedOfficerId.HasValue)
+                {
+                    <button class="btn btn-primary btn-sm" @onclick="AssignToMe" disabled="@_isAssigning">
+                        @if (_isAssigning)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                            <text>Assigning...</text>
+                        }
+                        else
+                        {
+                            <span class="me-1">+</span><text> Assign to me</text>
+                        }
+                    </button>
+                }
+                else if (_viewModel.IsAssignedToCurrentOfficer)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">Assigned to you</span>
+                }
                 <a href="/officer/dashboard" class="btn btn-outline-secondary btn-sm">&larr; Back to Dashboard</a>
             </div>
         </div>

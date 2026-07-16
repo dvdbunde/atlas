@@ -1,4 +1,5 @@
 using ATLAS.Application.DTOs;
+using ATLAS.Application.Interfaces;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Pages;
@@ -14,10 +15,13 @@ namespace ATLAS.Blazor.Tests.Components.Pages;
 public class OfficerDashboardTests : BunitContext
 {
     private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<ICurrentUserService> _currentUserMock = new();
 
     public OfficerDashboardTests()
     {
+        _currentUserMock.Setup(u => u.UserId).Returns(Guid.NewGuid());
         Services.AddSingleton(_mediatorMock.Object);
+        Services.AddSingleton(_currentUserMock.Object);
     }
 
     private static OfficerDashboardResult SampleResult(int count = 3)
@@ -122,7 +126,7 @@ public class OfficerDashboardTests : BunitContext
 
         var cut = Render<OfficerDashboard>();
 
-        var link = cut.Find("a.btn-primary");
+        var link = cut.Find("a.btn-outline-primary");
         Assert.EndsWith($"/officer/applications/{result.Items[0].ApplicationId}", link.GetAttribute("href"));
         Assert.Contains("Open Application", link.TextContent);
     }

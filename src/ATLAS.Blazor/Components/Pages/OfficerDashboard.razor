@@ -74,7 +74,7 @@
             @foreach (var app in _viewModel.Applications)
             {
                 <div class="col">
-                    <ApplicationSummaryCard Application="app" />
+                    <ApplicationSummaryCard Application="app" OnAssignToMe="AssignToMe" />
                 </div>
             }
         </div>

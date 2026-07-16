@@ -3,25 +3,22 @@ using Xunit;
 
 namespace ATLAS.API.Tests.Contracts
 {
-    public class AssignToOfficerRequestTests
+    public class AssignApplicationToMeRequestTests
     {
         [Fact]
         public void Properties_ShouldBeSetCorrectly_WhenUsingObjectInitializer()
         {
             // Arrange
             var applicationId = Guid.NewGuid();
-            var officerId = Guid.NewGuid();
 
             // Act
-            var request = new AssignToOfficerRequest
+            var request = new AssignApplicationToMeRequest
             {
-                ApplicationId = applicationId,
-                OfficerId = officerId
+                ApplicationId = applicationId
             };
 
             // Assert
             Assert.Equal(applicationId, request.ApplicationId);
-            Assert.Equal(officerId, request.OfficerId);
-        }    
+        }
     }
 }

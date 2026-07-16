@@ -136,6 +136,7 @@ namespace ATLAS.Application.DTOs
         public DateTime? SubmittedDate { get; set; }
         public DateTime? LastUpdated { get; set; }
         public string? AssignedOfficerName { get; set; }
+        public Guid? AssignedOfficerId { get; set; }
         public int DocumentCount { get; set; }
         public bool AllRequiredDocumentsUploaded { get; set; }
     }
@@ -154,6 +155,7 @@ namespace ATLAS.Application.DTOs
         public string CitizenName { get; set; } = string.Empty;
         public string CitizenEmail { get; set; } = string.Empty;
         public string? AssignedOfficerName { get; set; }
+        public Guid? AssignedOfficerId { get; set; } 
         public string CitizenNotes { get; set; } = string.Empty;
         public List<OfficerFieldValueDto> FieldValues { get; set; } = new();
         public List<OfficerDocumentRequirementDto> DocumentRequirements { get; set; } = new();

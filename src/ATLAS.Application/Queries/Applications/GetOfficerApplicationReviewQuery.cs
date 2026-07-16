@@ -26,16 +26,19 @@ public class GetOfficerApplicationReviewQueryHandler
 {
     private readonly IApplicationRepository _applicationRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IPermitTypeRepository _permitTypeRepository;
+    private readonly IPermitTypeRepository _permitTypeRepository;    
+    private readonly ICurrentUserService _currentUserService; 
 
     public GetOfficerApplicationReviewQueryHandler(
         IApplicationRepository applicationRepository,
         IUserRepository userRepository,
-        IPermitTypeRepository permitTypeRepository)
+        IPermitTypeRepository permitTypeRepository,
+        ICurrentUserService currentUserService)               
     {
         _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));  // ← ADD
     }
 
     public async Task<OfficerApplicationReviewDto?> Handle(
@@ -51,12 +54,11 @@ public class GetOfficerApplicationReviewQueryHandler
         var citizen = await _userRepository.GetByIdAsync(application.CitizenId, cancellationToken);
         var permitType = await _permitTypeRepository.GetByIdAsync(application.PermitTypeId, cancellationToken);
 
-        // Assigned officer (read-only, derived from latest review).
+        // Assigned officer (read-only, derived from explicit assignment state).
         string? assignedOfficerName = null;
-        var latestReview = application.Reviews.OrderByDescending(r => r.ReviewedDate).FirstOrDefault();
-        if (latestReview != null)
+        if (application.AssignedOfficerId.HasValue)
         {
-            var officer = await _userRepository.GetByIdAsync(latestReview.OfficerId, cancellationToken);
+            var officer = await _userRepository.GetByIdAsync(application.AssignedOfficerId.Value, cancellationToken);
             assignedOfficerName = officer?.GetFullName();
         }
 
@@ -120,6 +122,8 @@ public class GetOfficerApplicationReviewQueryHandler
             })
             .ToList();
 
+        var currentOfficerId = _currentUserService.UserId;            
+
         return new OfficerApplicationReviewDto
         {
             ApplicationId = application.Id,
@@ -133,6 +137,7 @@ public class GetOfficerApplicationReviewQueryHandler
             CitizenName = citizen?.GetFullName() ?? "Unknown",
             CitizenEmail = citizen?.Email ?? string.Empty,
             AssignedOfficerName = assignedOfficerName,
+            AssignedOfficerId = application.AssignedOfficerId,
             CitizenNotes = application.CitizenNotes,
             FieldValues = fieldValues,
             DocumentRequirements = requirements,

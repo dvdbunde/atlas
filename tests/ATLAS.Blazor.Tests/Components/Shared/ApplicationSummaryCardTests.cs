@@ -40,7 +40,7 @@ public class ApplicationSummaryCardTests : BunitContext
         var cut = Render<ApplicationSummaryCard>(parameters => parameters
             .Add(p => p.Application, vm));
 
-        var link = cut.Find("a.btn-primary");
+        var link = cut.Find("a.btn-outline-primary");
         Assert.EndsWith($"/officer/applications/{vm.ApplicationId}", link.GetAttribute("href"));
         Assert.Contains("Open Application", link.TextContent);
     }
@@ -98,5 +98,51 @@ public class ApplicationSummaryCardTests : BunitContext
             .Add(p => p.Application, vm));
 
         Assert.Contains("Unassigned", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowAssignedToYou_WhenCurrentOfficer()
+    {
+        var baseVm = Sample();
+        var vm = new OfficerApplicationCardViewModel
+        {
+            ApplicationId = baseVm.ApplicationId,
+            ApplicationNumber = baseVm.ApplicationNumber,
+            PermitTypeName = baseVm.PermitTypeName,
+            Status = baseVm.Status,
+            CitizenName = baseVm.CitizenName,
+            SubmittedDate = baseVm.SubmittedDate,
+            LastUpdated = baseVm.LastUpdated,
+            AssignedOfficerName = baseVm.AssignedOfficerName,
+            AssignedOfficerId = Guid.NewGuid(),
+            IsAssignedToCurrentOfficer = true,
+            DocumentCount = baseVm.DocumentCount,
+            AllRequiredDocumentsUploaded = baseVm.AllRequiredDocumentsUploaded
+        };
+        var cut = Render<ApplicationSummaryCard>(parameters => parameters.Add(p => p.Application, vm));
+        Assert.Contains("Assigned to you", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowAssignButton_WhenAssigned()
+    {
+        var baseVm = Sample();
+        var vm = new OfficerApplicationCardViewModel
+        {
+            ApplicationId = baseVm.ApplicationId,
+            ApplicationNumber = baseVm.ApplicationNumber,
+            PermitTypeName = baseVm.PermitTypeName,
+            Status = baseVm.Status,
+            CitizenName = baseVm.CitizenName,
+            SubmittedDate = baseVm.SubmittedDate,
+            LastUpdated = baseVm.LastUpdated,
+            AssignedOfficerName = baseVm.AssignedOfficerName,
+            AssignedOfficerId = Guid.NewGuid(),
+            IsAssignedToCurrentOfficer = false,
+            DocumentCount = baseVm.DocumentCount,
+            AllRequiredDocumentsUploaded = baseVm.AllRequiredDocumentsUploaded
+        };
+        var cut = Render<ApplicationSummaryCard>(parameters => parameters.Add(p => p.Application, vm));
+        Assert.DoesNotContain("Assign to me", cut.Markup);
     }
 }

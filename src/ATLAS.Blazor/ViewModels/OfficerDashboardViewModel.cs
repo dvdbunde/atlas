@@ -43,6 +43,7 @@ public class PermitTypeFilterOption
 }
 
 /// <summary>Card-level view model for a single application on the officer dashboard.</summary>
+/// <summary>Card-level view model for a single application on the officer dashboard.</summary>
 public class OfficerApplicationCardViewModel
 {
     public Guid ApplicationId { get; init; }
@@ -53,16 +54,22 @@ public class OfficerApplicationCardViewModel
     public DateTime? SubmittedDate { get; init; }
     public DateTime? LastUpdated { get; init; }
     public string? AssignedOfficerName { get; init; }
+    public Guid? AssignedOfficerId { get; init; }
+    public bool IsAssignedToCurrentOfficer { get; init; }
     public int DocumentCount { get; init; }
     public bool AllRequiredDocumentsUploaded { get; init; }
 
     public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy") ?? "Not submitted";
     public string LastUpdatedDisplay => LastUpdated?.ToString("MMM dd, yyyy") ?? "N/A";
     public string AssignedOfficerDisplay => AssignedOfficerName ?? "Unassigned";
+    public string AssignmentDisplay => !AssignedOfficerId.HasValue
+        ? "Unassigned"
+        : IsAssignedToCurrentOfficer ? "Assigned to you"
+        : (AssignedOfficerName ?? "Assigned to another officer");
     public string NavigationUrl => $"/officer/applications/{ApplicationId}";
     public string ActionLabel => "Open Application";
 
-    public static OfficerApplicationCardViewModel FromDto(OfficerDashboardDto dto) => new()
+    public static OfficerApplicationCardViewModel FromDto(OfficerDashboardDto dto, Guid? currentOfficerId) => new()
     {
         ApplicationId = dto.ApplicationId,
         ApplicationNumber = dto.ApplicationNumber,
@@ -72,6 +79,9 @@ public class OfficerApplicationCardViewModel
         SubmittedDate = dto.SubmittedDate,
         LastUpdated = dto.LastUpdated,
         AssignedOfficerName = dto.AssignedOfficerName,
+        AssignedOfficerId = dto.AssignedOfficerId,
+        IsAssignedToCurrentOfficer = dto.AssignedOfficerId.HasValue
+            && dto.AssignedOfficerId == currentOfficerId,
         DocumentCount = dto.DocumentCount,
         AllRequiredDocumentsUploaded = dto.AllRequiredDocumentsUploaded
     };

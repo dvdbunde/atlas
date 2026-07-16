@@ -352,14 +352,11 @@ namespace ATLAS.API.Contracts.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class AssignToOfficerRequest
+    public partial class AssignApplicationToMeRequest
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("applicationId")]
         public System.Guid ApplicationId { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("officerId")]
-        public System.Guid OfficerId { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

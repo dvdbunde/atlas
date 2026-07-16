@@ -95,12 +95,31 @@ namespace ATLAS.IntegrationTests.API
         }
 
         [Fact]
-        public async Task AssignToOfficer_Should_Return200OK()
+        public async Task AssignApplicationToMe_Should_Return200OK()
         {
             var applicationId = TestData.Application1Id;
-            var request = new { officerId = TestData.OfficerUserId };
-            var response = await _client.PostAsAsync($"/api/applications/{applicationId}/assign", request, TestUserBuilder.AsAdmin());
+            var request = new { applicationId = applicationId };
+            var response = await _client.PostAsAsync($"/api/applications/{applicationId}/assign", request, TestUserBuilder.AsOfficer());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AssignApplicationToMe_AsCitizen_Should_Return403()
+        {
+            var applicationId = TestData.Application1Id;
+            var request = new { applicationId = applicationId };
+            var response = await _client.PostAsAsync($"/api/applications/{applicationId}/assign", request, TestUserBuilder.AsCitizen());
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AssignApplicationToMe_AlreadyAssignedToOther_Should_Return409()
+        {
+            var applicationId = TestData.Application1Id;
+            var request = new { applicationId = applicationId };
+            await _client.PostAsAsync($"/api/applications/{applicationId}/assign", request, TestUserBuilder.AsOfficer());
+            var secondResponse = await _client.PostAsAsync($"/api/applications/{applicationId}/assign", request, TestUserBuilder.AsAdmin());
+            Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
         }
 
         [Fact]

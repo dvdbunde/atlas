@@ -281,9 +281,9 @@ paths:
   /api/applications/{id}/assign:
     post:
       tags: [Applications]
-      summary: Assign application to officer
-      description: Assign a pending application to a specific officer
-      operationId: assignToOfficer
+      summary: Assign application to me
+      description: Assign a pending application to the currently authenticated officer
+      operationId: assignApplicationToMe
       parameters:
         - name: id
           in: path
@@ -297,7 +297,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignToOfficerRequest'
+              $ref: '#/components/schemas/AssignApplicationToMeRequest'
       responses:
         '200':
           description: Application assigned successfully
@@ -305,6 +305,14 @@ paths:
             application/json:
               schema:
                 type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Application already assigned to another officer
         '400':
           $ref: '#/components/responses/ValidationError'
         '404':
@@ -1254,16 +1262,13 @@ components:
           type: string        
       required: [applicationId, message]
     
-    AssignToOfficerRequest:
+    AssignApplicationToMeRequest:
       type: object
       properties:
         applicationId:
           type: string
           format: uuid
-        officerId:
-          type: string
-          format: uuid
-      required: [applicationId, officerId]
+      required: [applicationId]
     
     UploadDocumentRequest:
       type: object

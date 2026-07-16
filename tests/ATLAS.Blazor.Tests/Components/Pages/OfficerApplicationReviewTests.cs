@@ -1,4 +1,5 @@
 using ATLAS.Application.DTOs;
+using ATLAS.Application.Interfaces;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Blazor.Components.Pages;
 using ATLAS.Blazor.ViewModels;
@@ -13,11 +14,14 @@ namespace ATLAS.Blazor.Tests.Components.Pages;
 public class OfficerApplicationReviewTests : BunitContext
 {
     private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<ICurrentUserService> _currentUserMock = new();
     private readonly Guid _applicationId = Guid.NewGuid();
 
     public OfficerApplicationReviewTests()
     {
+        _currentUserMock.Setup(u => u.UserId).Returns(Guid.NewGuid());
         Services.AddSingleton(_mediatorMock.Object);
+        Services.AddSingleton(_currentUserMock.Object);
     }
 
     private static OfficerApplicationReviewDto SampleReview(bool withDocs = true, bool withReviews = true)
@@ -257,5 +261,50 @@ public class OfficerApplicationReviewTests : BunitContext
         var backLink = cut.Find("a[href='/officer/dashboard']");
         Assert.NotNull(backLink);
         Assert.Contains("Officer Dashboard", backLink.TextContent);
+    }
+
+    private static OfficerApplicationReviewDto SampleReviewWithAssignment(
+        Guid? assignedOfficerId, bool isCurrentOfficer)
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = assignedOfficerId;
+        // Simulate IsAssignedToCurrentOfficer via the view model mapping:
+        // the test's CurrentUserService returns a fixed Guid; align it here.
+        return dto;
+    }
+
+    [Fact]
+    public void Should_ShowAssignToMe_WhenUnassigned()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = null;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default)).ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters => parameters.Add(p => p.ApplicationId, _applicationId));
+        Assert.Contains("Assign to me", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowAssignedToYou_WhenCurrentOfficer()
+    {
+        // The test's CurrentUserService.UserId is a fixed Guid; reuse it as the assigned officer.
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default)).ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters => parameters.Add(p => p.ApplicationId, _applicationId));
+        Assert.Contains("Assigned to you", cut.Markup);
+        Assert.DoesNotContain("Assign to me", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowAssignToMe_WhenAssignedToOtherOfficer()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = Guid.NewGuid(); // different from CurrentUserService.UserId
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default)).ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters => parameters.Add(p => p.ApplicationId, _applicationId));
+        Assert.DoesNotContain("Assign to me", cut.Markup);
     }
 }

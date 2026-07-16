@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using ATLAS.Application.Commands.Applications;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Domain.Enums;
+using ATLAS.Domain;
 using Microsoft.AspNetCore.Authorization;
 
 namespace ATLAS.API.Controllers
@@ -134,23 +135,26 @@ namespace ATLAS.API.Controllers
             return Ok(true);
         }
 
-        public override async Task<ActionResult<bool>> AssignToOfficer(
-            Guid id, AssignToOfficerRequest body)
+        [HttpPost("api/applications/{id}/assign")]
+        [Authorize(Policy = "OfficerOrAdmin")]
+        public override async Task<ActionResult<bool>> AssignApplicationToMe(
+            Guid id, [FromBody] AssignApplicationToMeRequest body)
         {
-            var command = new AssignToOfficerCommand
+            try
             {
-                ApplicationId = id,
-                OfficerId = body.OfficerId
-            };
-
-            var result = await _mediator.Send(command, default);
-    
-            if (!result)
-            {
-                return NotFound();
+                var result = await _mediator.Send(new AssignApplicationToMeCommand { ApplicationId = id }, default);
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-            
-            return Ok(true);
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("already assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
 
         public override async Task<ActionResult<ApplicationSummaryResponse>> UpdateDraft(Guid id, [FromBody] UpdateDraftRequest body)
