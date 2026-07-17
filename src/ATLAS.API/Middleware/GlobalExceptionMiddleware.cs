@@ -80,6 +80,17 @@ namespace ATLAS.API.Middleware
                         .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
                 };
             }
+            // Map unauthorized access to 401
+            else if (exception is UnauthorizedAccessException)
+            {
+                statusCode = HttpStatusCode.Unauthorized;
+                response = new ProblemDetails
+                {
+                    Title = "Unauthorized",
+                    Status = (int)statusCode,
+                    Detail = exception.Message
+                };
+            }
             // Map not found to 404
             else if (exception is KeyNotFoundException)
             {

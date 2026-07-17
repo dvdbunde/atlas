@@ -116,5 +116,19 @@ namespace ATLAS.Application.Tests.Commands
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _handler.Handle(null!, CancellationToken.None));
         }
+
+        [Fact]
+        public async Task Handle_ShouldPreserveAssignment()
+        {
+            var application = CreateInfoRequestedApplication();
+            var assignedOfficerId = application.AssignedOfficerId;
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            await _handler.Handle(new ResubmitApplicationCommand { ApplicationId = Guid.NewGuid() }, CancellationToken.None);
+
+            Assert.Equal(assignedOfficerId, application.AssignedOfficerId);
+            Assert.Equal(ApplicationStatus.UnderReview, application.Status);
+        }
     }
 }

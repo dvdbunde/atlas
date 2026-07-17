@@ -115,6 +115,30 @@
                     </div>
                 </div>
 
+                @* O5: Information request banner — shown prominently when status is InfoRequested *@
+                @if (_viewModel.Status == ApplicationStatus.InfoRequested)
+                {
+                    <div class="alert alert-info" role="alert">
+                        <h5 class="alert-heading">Additional Information Required</h5>
+                        @if (_viewModel.Reviews?.FirstOrDefault(r => r.Decision == ReviewDecision.RequestInfo) is { } infoReview)
+                        {
+                            <p class="mb-1"><strong>Requested on:</strong> @infoReview.ReviewedDateDisplay</p>
+                            @if (!string.IsNullOrEmpty(infoReview.ReasonCode))
+                            {
+                                <p class="mb-1"><strong>Reason:</strong> @infoReview.ReasonCode</p>
+                            }
+                            @if (!string.IsNullOrEmpty(infoReview.Comments))
+                            {
+                                <p class="mb-0"><strong>Request:</strong> @infoReview.Comments</p>
+                            }
+                        }
+                        <hr />
+                        <a href="/applications/edit/@_viewModel.ApplicationId" class="btn btn-primary">
+                            Update and Resubmit
+                        </a>
+                    </div>
+                }
+
                 @* Review Section *@
                 @if (_viewModel.HasReviews)
                 {

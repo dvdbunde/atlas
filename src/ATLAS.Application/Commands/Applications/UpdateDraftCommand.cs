@@ -49,8 +49,8 @@ namespace ATLAS.Application.Commands.Applications
                 throw new UnauthorizedAccessException("User can only update their own applications");
 
             // Verify status
-            if (application.Status != ApplicationStatus.Draft)
-                throw new InvalidOperationException("Only draft applications can be updated");
+            if (application.Status != ApplicationStatus.Draft && application.Status != ApplicationStatus.InfoRequested)
+                throw new InvalidOperationException("Only draft or info-requested applications can be updated");
 
             // Update citizen notes
             application.UpdateNotes(request.CitizenNotes);

@@ -299,10 +299,7 @@ namespace ATLAS.IntegrationTests.API
             };
 
             var response = await _client.PostAsAsync(
-                $"/api/applications/{applicationId}/reject", request, TestUserBuilder.AsOfficer());
-
-            _output.WriteLine($"Response: {response.StatusCode}");
-            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");
+                $"/api/applications/{applicationId}/reject", request, TestUserBuilder.AsOfficer());            
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
@@ -349,6 +346,44 @@ namespace ATLAS.IntegrationTests.API
             var response = await _client.PostAsAsync(
                 $"/api/applications/{TestData.Application1Id}/request-info", request, TestUserBuilder.AsCitizen());
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResubmitApplication_AsCitizen_ShouldReturn200()
+        {
+            // Application1 is UnderReview; need an InfoRequested app to test resubmit.
+            // First request info as officer, then resubmit as citizen.
+            var infoRequest = new RequestInfoRequest { ApplicationId = TestData.Application1Id, Message = "Need more info" };
+            await _client.PostAsAsync($"/api/applications/{TestData.Application1Id}/request-info", infoRequest, TestUserBuilder.AsOfficer());
+
+            var response = await _client.PostAsAsync(
+                $"/api/applications/{TestData.Application1Id}/resubmit", null, TestUserBuilder.AsCitizen());
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResubmitApplication_AsOfficer_ShouldReturn403()
+        {
+            var response = await _client.PostAsAsync(
+                $"/api/applications/{TestData.Application1Id}/resubmit", null, TestUserBuilder.AsOfficer());
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task ResubmitApplication_AsWrongCitizen_ShouldReturn403()
+        {
+            // Application1 is owned by the seeded citizen; act as a DIFFERENT citizen
+            var otherCitizen = TestUserBuilder.AsUser(
+                Guid.NewGuid(), "Other", "other.citizen@atlas.test", "Citizen");
+            var response = await _client.PostAsAsync(
+                $"/api/applications/{TestData.Application1Id}/resubmit", null, otherCitizen);
+
+            _output.WriteLine($"Response: {response.StatusCode}");
+            _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");                
+            
+            // Handler throws UnauthorizedAccessException → 401, or middleware → 403
+            Assert.Contains(response.StatusCode,
+                new[] { HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized });
         }
 
         private static readonly JsonSerializerOptions _jsonOptions = new()

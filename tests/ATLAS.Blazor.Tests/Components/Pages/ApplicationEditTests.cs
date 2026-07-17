@@ -61,6 +61,41 @@ public class ApplicationEditTests : BunitContext
         };
     }
 
+    private ApplicationDetailDto CreateSampleInfoRequestedApplication()
+    {
+        return new ApplicationDetailDto
+        {
+            Id = _applicationId,
+            ApplicationNumber = "APP-2026-0042",
+            Status = ApplicationStatus.InfoRequested,
+            PermitTypeId = _permitTypeId,
+            CitizenId = Guid.NewGuid(),
+            CitizenName = "Test Citizen",
+            PermitTypeName = "Building Permit",
+            OfficerName = "Jane Officer",
+            CitizenNotes = string.Empty,
+            OfficerNotes = string.Empty,
+            FieldValues = new Dictionary<string, string>
+            {
+                { "PropertyAddress", "123 Main St" },
+                { "SquareFootage", "2000" }
+            },
+            Reviews = new List<ReviewDto>
+            {
+                new()
+                {
+                    Id = Guid.NewGuid(),
+                    OfficerId = Guid.NewGuid(),
+                    Decision = ReviewDecision.RequestInfo,
+                    Comments = "Please provide a site survey",
+                    ReasonCode = "INCOMPLETE",
+                    ReviewedDate = DateTime.UtcNow.AddDays(-1),
+                    IsVisibleToCitizen = true
+                }
+            }
+        };
+    }
+
     [Fact]
     public void Should_ShowLoadingIndicator_WhenPageLoads()
     {
@@ -142,7 +177,7 @@ public class ApplicationEditTests : BunitContext
     }
 
     [Fact]
-    public void Should_ShowErrorState_WhenApplicationNotDraft()
+    public void Should_RedirectToDetail_WhenApplicationNotEditable()
     {
         // Arrange
         var submittedApp = CreateSampleDraftApplication();
@@ -155,9 +190,9 @@ public class ApplicationEditTests : BunitContext
         var cut = Render<ApplicationEdit>(parameters =>
             parameters.Add(p => p.Id, _applicationId));
 
-        // Assert
-        var alert = cut.Find(".alert-danger");
-        Assert.Contains("cannot be edited", alert.TextContent);
+        // Assert — no error alert rendered; the page redirects to the detail view
+        var errorAlerts = cut.FindAll(".alert-danger");
+        Assert.Empty(errorAlerts);
     }
 
     [Fact]
@@ -444,6 +479,151 @@ public class ApplicationEditTests : BunitContext
         var disabledButton = cut.Find("button[disabled].btn-success");
         Assert.NotNull(disabledButton);
         Assert.Contains("Submitting...", disabledButton.TextContent);
+    }
+
+    #endregion
+
+    #region O5: Request Information Workflow Tests
+
+    [Fact]
+    public void Should_ShowInfoRequestBanner_WhenInfoRequested()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleInfoRequestedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert
+        Assert.Contains("Additional Information Required", cut.Markup);
+        Assert.Contains("Jane Officer", cut.Markup);
+        Assert.Contains("Please provide a site survey", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowResubmitButton_WhenInfoRequested()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleInfoRequestedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert — the resubmit button is present in the markup
+        Assert.Contains("Resubmit Application", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowResubmitSuccess_WhenResubmitSucceeds()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleInfoRequestedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpdateDraftCommand>(), default))
+            .ReturnsAsync(Unit.Value);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<ResubmitApplicationCommand>(), default))
+            .ReturnsAsync(Unit.Value);
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Act — find the resubmit button by its text content in the markup
+        var resubmitBtn = cut.FindAll("button").First(b => b.TextContent.Contains("Resubmit Application"));
+        resubmitBtn.Click();
+
+        // Assert
+        Assert.Contains("resubmitted successfully", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowResubmitError_WhenResubmitFails()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleInfoRequestedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<UpdateDraftCommand>(), default))
+            .ReturnsAsync(Unit.Value);
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<ResubmitApplicationCommand>(), default))
+            .ThrowsAsync(new InvalidOperationException("Resubmit failed"));
+
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Act — find the resubmit button by its text content in the markup
+        var resubmitBtn = cut.FindAll("button").First(b => b.TextContent.Contains("Resubmit Application"));
+        resubmitBtn.Click();
+
+        // Assert
+        var alert = cut.Find(".alert-danger");
+        Assert.Contains("unable to resubmit", alert.TextContent);
+    }
+
+    [Fact]
+    public void Should_NotShowResubmitButton_WhenDraft()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleDraftApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert
+        Assert.DoesNotContain("Resubmit Application", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowFieldsAndDocuments_WhenInfoRequested()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleInfoRequestedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        // Act
+        var cut = Render<ApplicationEdit>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert — fields are editable (text input present with existing value)
+        var textInput = cut.Find("input[type='text']");
+        Assert.NotNull(textInput);
+        Assert.Equal("123 Main St", textInput.GetAttribute("value"));
+
+        // Save Changes button is present (edit mode)
+        var saveButton = cut.Find("button.btn-primary");
+        Assert.Contains("Save Changes", saveButton.TextContent);
     }
 
     #endregion

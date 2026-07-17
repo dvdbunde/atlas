@@ -432,6 +432,39 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.Equal(_citizenId, resubmittedEvent.CitizenId);
         }
 
+        [Fact]
+        public void Resubmit_ShouldPreserveAssignment()
+        {
+            var application = CreateApplicationUnderReview();
+            var assignedOfficerId = application.AssignedOfficerId;
+            application.RequestInfo(_officerId, "Need more info");
+
+            application.Resubmit();
+
+            Assert.Equal(assignedOfficerId, application.AssignedOfficerId);
+            Assert.Equal(ApplicationStatus.UnderReview, application.Status);
+        }
+
+        [Fact]
+        public void Resubmit_ShouldPreserveReviewHistory()
+        {
+            var application = CreateApplicationUnderReview();
+            application.RequestInfo(_officerId, "Need survey");
+
+            application.Resubmit();
+
+            Assert.NotEmpty(application.Reviews);
+            Assert.Contains(application.Reviews, r => r.Decision == ReviewDecision.RequestInfo);
+        }
+
+        [Fact]
+        public void Resubmit_ShouldThrow_WhenNotInfoRequested()
+        {
+            var application = CreateApplicationUnderReview();
+            // Status is UnderReview, not InfoRequested
+            Assert.Throws<DomainException>(() => application.Resubmit());
+        }
+
         #endregion
 
         #region Invalid State Transitions
