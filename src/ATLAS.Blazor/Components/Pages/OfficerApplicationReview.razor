@@ -236,5 +236,20 @@
                 </div>
             </div>
         </div>
+
+        @* Activity Feed *@
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Activity</h5>
+                @if (_viewModel.Activities.Count == 0)
+                {
+                    <p class="text-muted small">Loading activity...</p>
+                }
+                else
+                {
+                    <ApplicationActivityFeed Activities="@_viewModel.Activities" />
+                }
+            </div>
+        </div>
     }
 </div>

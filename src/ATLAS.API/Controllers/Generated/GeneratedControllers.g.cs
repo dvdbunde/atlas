@@ -178,6 +178,16 @@ namespace ATLAS.API.Controllers.Generated
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/officer/{applicationId}", Name = "getOfficerApplicationReview")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<OfficerApplicationReviewResponse>> GetOfficerApplicationReview(System.Guid applicationId);
 
+        /// <summary>
+        /// Get application activity feed
+        /// </summary>
+        /// <remarks>
+        /// Returns a chronological list of business events for an application
+        /// </remarks>
+        /// <returns>Activity feed retrieved successfully</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/applications/{applicationId}/activity", Name = "getApplicationActivity")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<ApplicationActivity>>> GetApplicationActivity(System.Guid applicationId);
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]

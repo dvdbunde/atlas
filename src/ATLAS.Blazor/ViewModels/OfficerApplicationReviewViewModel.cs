@@ -27,6 +27,7 @@ public class OfficerApplicationReviewViewModel
     // True only when assigned to current officer AND status allows a decision.
     public bool CanDecide => IsAssignedToCurrentOfficer
         && Application?.Status == ApplicationStatus.UnderReview;
+    public List<ApplicationActivityDto> Activities { get; set; } = new();        
 
     public static OfficerApplicationReviewViewModel FromDto(OfficerApplicationReviewDto dto, Guid? currentOfficerId) => new()
     {

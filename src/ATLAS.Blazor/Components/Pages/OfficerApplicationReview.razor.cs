@@ -52,6 +52,18 @@ public partial class OfficerApplicationReview : ComponentBase
                 return;
             }
             _viewModel = OfficerApplicationReviewViewModel.FromDto(result, CurrentUserService.UserId);
+
+            // Load activity feed
+            try
+            {
+                var activityQuery = new GetApplicationActivityQuery { ApplicationId = ApplicationId };
+                var activities = await Mediator.Send(activityQuery);
+                _viewModel.Activities = activities.ToList();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to load activity for application {ApplicationId}", ApplicationId);
+            }
         }
         catch (Exception ex)
         {

@@ -380,10 +380,36 @@ namespace ATLAS.IntegrationTests.API
 
             _output.WriteLine($"Response: {response.StatusCode}");
             _output.WriteLine($"Response Content: {await response.Content.ReadAsStringAsync()}");                
-            
+
             // Handler throws UnauthorizedAccessException → 401, or middleware → 403
             Assert.Contains(response.StatusCode,
                 new[] { HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized });
+        }
+
+        [Fact]
+        public async Task GetApplicationActivity_Should_Return200OK()
+        {
+            var response = await _client.GetAsAsync(
+                $"/api/applications/{TestData.Application1Id}/activity", TestUserBuilder.AsOfficer());
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetApplicationActivity_Should_Return401_ForAnonymous()
+        {
+            var response = await _client.GetAnonymousAsync(
+                $"/api/applications/{TestData.Application1Id}/activity");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetApplicationActivity_WithUnknownApp_ShouldReturn200_Empty()
+        {
+            var response = await _client.GetAsAsync(
+                $"/api/applications/{Guid.NewGuid()}/activity", TestUserBuilder.AsAdmin());
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.Equal("[]", content); // empty array
         }
 
         private static readonly JsonSerializerOptions _jsonOptions = new()

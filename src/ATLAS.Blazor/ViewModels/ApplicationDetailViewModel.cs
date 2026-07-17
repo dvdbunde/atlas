@@ -32,6 +32,7 @@ public class ApplicationDetailViewModel
     public bool HasReviews => Reviews.Count > 0;
     public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy") ?? "N/A";
     public string ReviewedDateDisplay => ReviewedDate?.ToString("MMM dd, yyyy") ?? "N/A";
+        public List<ApplicationActivityDto> Activities { get; set; } = new();
 
     public void Load(ApplicationDetailDto application, PermitTypeDto permitType)
     {
@@ -81,6 +82,9 @@ public class ApplicationDetailViewModel
 
         // Build timeline entries
         TimelineEntries = BuildTimeline(application.Status);
+
+        // Activities are loaded from the API via a separate query
+        // (not populated here — the page fetches them async after Load)
 
         // Filter reviews visible to citizen
         Reviews = application.Reviews

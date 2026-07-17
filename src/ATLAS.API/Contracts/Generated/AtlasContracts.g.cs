@@ -897,6 +897,39 @@ namespace ATLAS.API.Contracts.Generated
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ApplicationActivity
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("timestamp")]
+        public DateTimeOffset Timestamp { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("activityType")]
+        public string ActivityType { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        public string Title { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public string? Description { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("performedBy")]
+        public string? PerformedBy { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("performedByRole")]
+        public string? PerformedByRole { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum SortBy
     {
 

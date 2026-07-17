@@ -522,6 +522,21 @@ namespace ATLAS.API.Contracts.Generated
             ReviewResponseDecision.Reject => ReviewDecision.Reject,
             ReviewResponseDecision.RequestInfo => ReviewDecision.RequestInfo,            
             _ => throw new ArgumentOutOfRangeException(nameof(apiType))
-        };
+        };      
+
+        public static ApplicationActivity ToResponse(this ApplicationActivityDto dto)
+        {
+            if (dto == null) return null!;
+
+            return new ApplicationActivity
+            {
+                Timestamp = new DateTimeOffset(dto.Timestamp, TimeSpan.Zero),
+                ActivityType = dto.ActivityType,
+                Title = dto.Title,
+                Description = dto.Description,
+                PerformedBy = dto.PerformedBy,
+                PerformedByRole = dto.PerformedByRole
+            };
+        }      
     }    
 }

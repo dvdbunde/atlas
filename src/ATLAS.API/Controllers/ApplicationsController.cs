@@ -323,6 +323,13 @@ namespace ATLAS.API.Controllers
                     result.Add(s);
             }
             return result.Count > 0 ? result : null;
-        }       
+        }
+
+        public override async Task<ActionResult<ICollection<ApplicationActivity>>> GetApplicationActivity(Guid applicationId)
+        {
+            var query = new GetApplicationActivityQuery { ApplicationId = applicationId };
+            var result = await _mediator.Send(query, default);
+            return Ok(result.Select(a => a.ToResponse()).ToList());
+        }
     }
 }

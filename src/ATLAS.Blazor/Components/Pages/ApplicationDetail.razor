@@ -48,12 +48,19 @@
         </div>
 
         <div class="row">
-            @* Timeline Section *@
+            @* Activity Feed Section *@
             <div class="col-md-4 mb-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title">Application Timeline</h5>
-                        <ApplicationTimeline Entries="@_viewModel.TimelineEntries" />
+                        <h5 class="card-title">Activity</h5>
+                        @if (_viewModel.Activities.Count == 0)
+                        {
+                            <p class="text-muted small">Loading activity...</p>
+                        }
+                        else
+                        {
+                            <ApplicationActivityFeed Activities="@_viewModel.Activities" />
+                        }
                     </div>
                 </div>
             </div>

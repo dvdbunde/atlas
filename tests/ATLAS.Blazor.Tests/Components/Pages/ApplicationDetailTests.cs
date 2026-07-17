@@ -138,7 +138,7 @@ public class ApplicationDetailTests : BunitContext
     }
 
     [Fact]
-    public void Should_ShowTimeline_WhenLoaded()
+    public void Should_ShowActivityFeed_WhenLoaded()
     {
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
@@ -146,12 +146,26 @@ public class ApplicationDetailTests : BunitContext
         _mediatorMock
             .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
             .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationActivityQuery>(), default))
+            .ReturnsAsync(new List<ApplicationActivityDto>
+            {
+                new()
+                {
+                    Timestamp = DateTime.UtcNow.AddDays(-1),
+                    ActivityType = "Approved",
+                    Title = "Application Approved",
+                    Description = "Application was approved",
+                    PerformedBy = "Jane Officer",
+                    PerformedByRole = "Officer"
+                }
+            });
 
         var cut = Render<ApplicationDetail>(parameters =>
             parameters.Add(p => p.Id, _applicationId));
 
-        var timeline = cut.Find(".application-timeline");
-        Assert.NotNull(timeline);
+        var activityFeed = cut.Find(".application-activity-feed");
+        Assert.NotNull(activityFeed);
     }
 
     [Fact]
@@ -212,5 +226,71 @@ public class ApplicationDetailTests : BunitContext
 
         var alert = cut.Find(".alert-danger");
         Assert.Contains("Something went wrong", alert.TextContent);
+    }
+
+    [Fact]
+    public void Should_ShowActivityEntries_WhenLoaded()
+    {
+        // Arrange
+        var activities = new List<ApplicationActivityDto>
+        {
+            new()
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-1),
+                ActivityType = "Approved",
+                Title = "Application Approved",
+                Description = "Application was approved",
+                PerformedBy = "Jane Officer",
+                PerformedByRole = "Officer"
+            },
+            new()
+            {
+                Timestamp = DateTime.UtcNow.AddDays(-2),
+                ActivityType = "Submitted",
+                Title = "Application Submitted",
+                Description = "Application was submitted for review"
+            }
+        };
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationActivityQuery>(), default))
+            .ReturnsAsync(activities);
+
+        // Act
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert
+        Assert.Contains("Application Approved", cut.Markup);
+        Assert.Contains("Application Submitted", cut.Markup);
+        Assert.Contains("Jane Officer", cut.Markup);
+        Assert.Contains("Officer", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowNoActivityState_WhenEmpty()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationActivityQuery>(), default))
+            .ReturnsAsync(new List<ApplicationActivityDto>());
+
+        // Act
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert
+        Assert.Contains("Loading activity...", cut.Markup);
     }
 }

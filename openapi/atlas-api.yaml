@@ -686,6 +686,31 @@ paths:
       security:
         - EntraID: ['Officer', 'Admin']        
 
+  /api/applications/{applicationId}/activity:
+    get:
+      tags: [Applications]
+      summary: Get application activity feed
+      description: Returns a chronological list of business events for an application
+      operationId: getApplicationActivity
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Activity feed retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationActivity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'        
+
   /api/permittypes:
     get:
       tags: [PermitTypes]
@@ -1631,6 +1656,26 @@ components:
           format: date-time
       required: [id, officerId, decision, reviewedDate]          
   
+    ApplicationActivity:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        activityType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        performedBy:
+          type: string
+          nullable: true
+        performedByRole:
+          type: string
+          nullable: true
+          
   responses:
     Unauthorized:
       description: Unauthorized - Authentication required

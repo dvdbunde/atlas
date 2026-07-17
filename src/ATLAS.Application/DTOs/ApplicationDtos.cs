@@ -196,4 +196,18 @@ namespace ATLAS.Application.DTOs
         public string Comments { get; set; } = string.Empty;
         public DateTime ReviewedDate { get; set; }
     }
+
+    /// <summary>
+    /// A single chronological activity entry for an application.
+    /// Projected from existing domain data — never a source of truth.
+    /// </summary>
+    public class ApplicationActivityDto
+    {
+        public DateTime Timestamp { get; init; }
+        public string ActivityType { get; init; } = string.Empty;
+        public string Title { get; init; } = string.Empty;
+        public string? Description { get; init; }
+        public string? PerformedBy { get; init; }
+        public string? PerformedByRole { get; init; }
+    }
 }
