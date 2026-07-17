@@ -79,6 +79,8 @@ namespace ATLAS.API.Auth
                 ("users", "getusers")  => "Admin",
                 ("users", "getuserbyid") => "Admin",
 
+                ("applications", "getapplicationactivity") => "OfficerOrAdmin",
+
                 // Documents — authenticated users
                 ("documents", _) => "Authenticated",
 

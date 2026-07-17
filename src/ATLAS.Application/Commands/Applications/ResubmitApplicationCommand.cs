@@ -3,7 +3,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using ATLAS.Application.Interfaces;
 
@@ -18,15 +20,18 @@ namespace ATLAS.Application.Commands.Applications
     {
         private readonly IApplicationRepository _repository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMediator _mediator;
         private readonly ILogger<ResubmitApplicationCommandHandler> _logger;
 
         public ResubmitApplicationCommandHandler(
             IApplicationRepository repository,
             ICurrentUserService currentUserService,
+            IMediator mediator,
             ILogger<ResubmitApplicationCommandHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -46,6 +51,7 @@ namespace ATLAS.Application.Commands.Applications
             // Use existing domain behavior
             application.Resubmit();
             await _repository.UpdateAsync(application, cancellationToken);
+            await _mediator.Publish(new ApplicationResubmittedEvent(application.Id, application.CitizenId), cancellationToken);
             
             _logger.LogInformation("Application {ApplicationId} resubmitted", request.ApplicationId);
 

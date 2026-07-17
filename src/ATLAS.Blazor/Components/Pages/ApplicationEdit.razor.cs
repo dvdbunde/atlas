@@ -65,7 +65,7 @@ public partial class ApplicationEdit : ComponentBase
             // Verify the application is in an editable state
             if (application.Status != ApplicationStatus.Draft && application.Status != ApplicationStatus.InfoRequested)
             {
-                Navigation.NavigateTo($"/applications/{_viewModel.ApplicationId}");
+                Navigation.NavigateTo($"/applications/{Id}");
                 return;
             }
 

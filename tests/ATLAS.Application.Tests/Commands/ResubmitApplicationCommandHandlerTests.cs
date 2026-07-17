@@ -6,7 +6,9 @@ using ATLAS.Application.Interfaces;
 using ATLAS.Domain;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -17,6 +19,7 @@ namespace ATLAS.Application.Tests.Commands
     {
         private readonly Mock<IApplicationRepository> _mockRepository;
         private readonly Mock<ICurrentUserService> _mockCurrentUserService;
+        private readonly Mock<IMediator> _mockMediator;
         private readonly Mock<ILogger<ResubmitApplicationCommandHandler>> _mockLogger;
         private readonly ResubmitApplicationCommandHandler _handler;
         private readonly Guid _testUserId;
@@ -27,6 +30,7 @@ namespace ATLAS.Application.Tests.Commands
         {
             _mockRepository = new Mock<IApplicationRepository>();
             _mockCurrentUserService = new Mock<ICurrentUserService>();
+            _mockMediator = new Mock<IMediator>();
             _mockLogger = new Mock<ILogger<ResubmitApplicationCommandHandler>>();
             _testUserId = Guid.NewGuid();
             _permitTypeId = Guid.NewGuid();
@@ -35,6 +39,7 @@ namespace ATLAS.Application.Tests.Commands
             _handler = new ResubmitApplicationCommandHandler(
                 _mockRepository.Object,
                 _mockCurrentUserService.Object,
+                _mockMediator.Object,
                 _mockLogger.Object);
         }
 
@@ -64,6 +69,7 @@ namespace ATLAS.Application.Tests.Commands
             // Assert
             Assert.Equal(ApplicationStatus.UnderReview, application.Status);
             _mockRepository.Verify(r => r.UpdateAsync(application, It.IsAny<CancellationToken>()), Times.Once);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<ApplicationResubmittedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -115,6 +121,46 @@ namespace ATLAS.Application.Tests.Commands
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _handler.Handle(null!, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Handle_ShouldNotPublishEvent_WhenApplicationNotFound()
+        {
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ATLAS.Domain.Entities.Application?)null);
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _handler.Handle(new ResubmitApplicationCommand { ApplicationId = Guid.NewGuid() }, CancellationToken.None));
+
+            _mockMediator.Verify(m => m.Publish(It.IsAny<ApplicationResubmittedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldNotPublishEvent_WhenNotOwnApplication()
+        {
+            var otherUserId = Guid.NewGuid();
+            var application = new ATLAS.Domain.Entities.Application(otherUserId, _permitTypeId, "Notes");
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => _handler.Handle(new ResubmitApplicationCommand { ApplicationId = Guid.NewGuid() }, CancellationToken.None));
+
+            _mockMediator.Verify(m => m.Publish(It.IsAny<ApplicationResubmittedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task Handle_ShouldNotPublishEvent_WhenIncorrectStatus()
+        {
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, _permitTypeId, "Notes");
+            application.Submit(); // Submitted, not InfoRequested
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            await Assert.ThrowsAsync<DomainException>(
+                () => _handler.Handle(new ResubmitApplicationCommand { ApplicationId = Guid.NewGuid() }, CancellationToken.None));
+
+            _mockMediator.Verify(m => m.Publish(It.IsAny<ApplicationResubmittedEvent>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]

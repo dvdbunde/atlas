@@ -412,6 +412,14 @@ namespace ATLAS.IntegrationTests.API
             Assert.Equal("[]", content); // empty array
         }
 
+        [Fact]
+        public async Task GetApplicationActivity_AsCitizen_ShouldReturn403()
+        {
+            var response = await _client.GetAsAsync(
+                $"/api/applications/{TestData.Application1Id}/activity", TestUserBuilder.AsCitizen());
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             Converters = { new JsonStringEnumConverter() }
