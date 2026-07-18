@@ -25,6 +25,7 @@ namespace ATLAS.Application.Tests.Commands
         private readonly Guid _testUserId;
         private readonly Guid _permitTypeId;
         private readonly Guid _officerId;
+        private readonly Mock<IPermitTypeRepository> _mockPermitTypeRepository;        
 
         public ResubmitApplicationCommandHandlerTests()
         {
@@ -32,6 +33,7 @@ namespace ATLAS.Application.Tests.Commands
             _mockCurrentUserService = new Mock<ICurrentUserService>();
             _mockMediator = new Mock<IMediator>();
             _mockLogger = new Mock<ILogger<ResubmitApplicationCommandHandler>>();
+            _mockPermitTypeRepository = new Mock<IPermitTypeRepository>();
             _testUserId = Guid.NewGuid();
             _permitTypeId = Guid.NewGuid();
             _officerId = Guid.NewGuid();
@@ -40,7 +42,12 @@ namespace ATLAS.Application.Tests.Commands
                 _mockRepository.Object,
                 _mockCurrentUserService.Object,
                 _mockMediator.Object,
-                _mockLogger.Object);
+                _mockLogger.Object,
+                _mockPermitTypeRepository.Object);
+
+            // Default permit type mock for valid scenarios
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(_permitTypeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PermitType("Building Permit", "desc", 150m));
         }
 
         private ATLAS.Domain.Entities.Application CreateInfoRequestedApplication()

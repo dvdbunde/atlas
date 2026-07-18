@@ -47,8 +47,8 @@ namespace ATLAS.Application.Commands.Documents
                 throw new UnauthorizedAccessException("You can only delete documents from your own applications.");
 
             // Verify status
-            if (application.Status != Domain.Enums.ApplicationStatus.Draft)
-                throw new InvalidOperationException("Documents can only be deleted from draft applications.");
+            if (application.Status != Domain.Enums.ApplicationStatus.Draft && application.Status != Domain.Enums.ApplicationStatus.InfoRequested)
+                throw new InvalidOperationException("Documents can only be deleted from applications in an editable state.");
 
             // Get the blob URL before removing the document
             var document = application.Documents

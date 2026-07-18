@@ -112,6 +112,14 @@ namespace ATLAS.Domain.Entities
             if (Status != ApplicationStatus.Submitted && Status != ApplicationStatus.UnderReview)
                 throw new DomainException("Can only assign officer to submitted or under-review applications");
 
+            // If the application is still Submitted, transition to UnderReview automatically
+            // (assignment implies the officer is taking ownership to review the case).
+            if (Status == ApplicationStatus.Submitted)
+            {
+                Status = ApplicationStatus.UnderReview;
+                AddDomainEvent(new ApplicationUnderReviewEvent(Id, officerId));
+            }
+
             // Idempotency: already assigned to this officer → no-op (no duplicate event)
             if (AssignedOfficerId == officerId)
                 return;

@@ -692,19 +692,18 @@ namespace ATLAS.Domain.Tests.Entities
         [Fact]
         public void AssignToOfficer_ShouldRaiseEvent_WhenSubmitted()
         {
-            // Arrange
             var application = new Application(_citizenId, _permitTypeId, "Test notes");
             application.Submit();
             application.ClearDomainEvents();
 
-            // Act
             application.AssignToOfficer(_officerId);
 
-            // Assert
-            var domainEvent = Assert.Single(application.DomainEvents);
-            var assignEvent = Assert.IsType<ApplicationAssignedToOfficerEvent>(domainEvent);
-            Assert.Equal(application.Id, assignEvent.ApplicationId);
-            Assert.Equal(_officerId, assignEvent.OfficerId);
+            // Both UnderReview and Assigned events are raised
+            Assert.Equal(2, application.DomainEvents.Count);
+            Assert.Contains(application.DomainEvents, e => e is ApplicationUnderReviewEvent);
+            Assert.Contains(application.DomainEvents, e => e is ApplicationAssignedToOfficerEvent);
+            Assert.Equal(ApplicationStatus.UnderReview, application.Status);
+            Assert.Equal(_officerId, application.AssignedOfficerId);
         }
 
         [Fact]

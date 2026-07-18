@@ -62,6 +62,26 @@
             </div>
         }
 
+        @* O5: Information request banner *@
+        @if (_viewModel.IsInfoRequested)
+        {
+            <div class="alert alert-info mt-4" role="alert">
+                <h5 class="alert-heading">Additional Information Required</h5>
+                @if (!string.IsNullOrEmpty(_viewModel.InfoRequestOfficerName))
+                {
+                    <p class="mb-1"><strong>Requested by:</strong> @_viewModel.InfoRequestOfficerName</p>
+                }
+                @if (!string.IsNullOrEmpty(_viewModel.InfoRequestDateDisplay))
+                {
+                    <p class="mb-1"><strong>Requested on:</strong> @_viewModel.InfoRequestDateDisplay</p>
+                }
+                @if (!string.IsNullOrEmpty(_viewModel.InfoRequestMessage))
+                {
+                    <p class="mb-0"><strong>Request:</strong> @_viewModel.InfoRequestMessage</p>
+                }
+            </div>
+        }
+
         @* Document section — only show when the permit type has FileUpload fields *@
         @if (_viewModel.Fields.Any(f => f.Type == FieldType.FileUpload))
         {
@@ -96,51 +116,35 @@
                 </button>
             </div>
         </DynamicFormGenerator>
+      
 
-        @* Submit button — only when form is valid *@
-        <div class="mt-3 d-flex gap-2">
-            <button type="button"
-                    class="btn btn-success btn-lg"
-                    disabled="@(_viewModel.IsSubmitting || _viewModel.Fields.Any(f => f.HasErrors))"
-                    aria-label="Submit application"
-                    @onclick="SubmitApplication">
-                @if (_viewModel.IsSubmitting)
-                {
-                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                    <span>Submitting...</span>
-                }
-                else
-                {
-                    <span>Submit Application</span>
-                }
-            </button>
-        </div>
-        
-        @* O5: Information request banner *@
-        @if (_viewModel.IsInfoRequested)
+        @* Submit button — only when form is valid and application is a draft *@
+        @if (!_viewModel.IsInfoRequested)
         {
-            <div class="alert alert-info mt-4" role="alert">
-                <h5 class="alert-heading">Additional Information Required</h5>
-                @if (!string.IsNullOrEmpty(_viewModel.InfoRequestOfficerName))
-                {
-                    <p class="mb-1"><strong>Requested by:</strong> @_viewModel.InfoRequestOfficerName</p>
-                }
-                @if (!string.IsNullOrEmpty(_viewModel.InfoRequestDateDisplay))
-                {
-                    <p class="mb-1"><strong>Requested on:</strong> @_viewModel.InfoRequestDateDisplay</p>
-                }
-                @if (!string.IsNullOrEmpty(_viewModel.InfoRequestMessage))
-                {
-                    <p class="mb-0"><strong>Request:</strong> @_viewModel.InfoRequestMessage</p>
-                }
+            <div class="mt-3 d-flex gap-2">
+                <button type="button"
+                        class="btn btn-success btn-lg"
+                        disabled="@(_viewModel.IsSubmitting || _viewModel.Fields.Any(f => f.HasErrors))"
+                        aria-label="Submit application"
+                        @onclick="SubmitApplication">
+                    @if (_viewModel.IsSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                        <span>Submitting...</span>
+                    }
+                    else
+                    {
+                        <span>Submit Application</span>
+                    }
+                </button>
             </div>
-        }
+        }               
     
         @* O5: Resubmit button — only for InfoRequested applications *@
         @if (_viewModel.IsInfoRequested)
         {
             <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-primary"
+                <button class="btn btn-primary btn-lg"
                         @onclick="ResubmitApplication"
                         disabled="@(_viewModel.IsResubmitting || _viewModel.Fields.Any(f => f.HasErrors))">
                     @if (_viewModel.IsResubmitting)

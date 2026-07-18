@@ -339,7 +339,7 @@ public partial class ApplicationEdit : ComponentBase
         }
     }
 
-    private async Task ResubmitApplication()
+       private async Task ResubmitApplication()
     {
         _viewModel.ResubmitHasError = false;
         _viewModel.ResubmitErrorMessage = null;
@@ -353,6 +353,14 @@ public partial class ApplicationEdit : ComponentBase
             // Then resubmit
             await Mediator.Send(new ResubmitApplicationCommand { ApplicationId = _viewModel.ApplicationId });
             _viewModel.ResubmitSuccess = true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Validation failures (missing required documents, fields, etc.)
+            _viewModel.ResubmitHasError = true;
+            _viewModel.ResubmitErrorMessage = ex.Message;
+
+            Logger.LogWarning(ex, "Resubmission validation failed for application {ApplicationId}", _viewModel.ApplicationId);
         }
         catch (Exception ex)
         {
