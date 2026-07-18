@@ -579,7 +579,7 @@ public class ApplicationEditTests : BunitContext
 
         // Assert
         var alert = cut.Find(".alert-danger");
-        Assert.Contains("unable to resubmit", alert.TextContent);
+        Assert.Contains("Resubmit failed", alert.TextContent);
     }
 
     [Fact]
