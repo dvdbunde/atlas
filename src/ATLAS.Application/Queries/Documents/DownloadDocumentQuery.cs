@@ -61,11 +61,11 @@ namespace ATLAS.Application.Queries.Documents
 
             // Authorization:
             // - Citizen: own applications only
-            // - Officer: assigned or unassigned applications
+            // - Officer: any application in the officer workflow (assigned or unassigned)
             // - Admin: all applications
             bool isAuthorized = application.CitizenId == userId
                 || userRole == "Admin"
-                || (userRole == "Officer" && application.Reviews.Any(r => r.OfficerId == userId));
+                || userRole == "Officer";
 
             if (!isAuthorized)
                 throw new UnauthorizedAccessException("You do not have permission to download this document.");

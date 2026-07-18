@@ -18,6 +18,9 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.Property(a => a.OfficerNotes).HasMaxLength(2000);
             builder.Property(a => a.SubmittedDate).IsRequired(false);
             builder.Property(a => a.ReviewedDate).IsRequired(false);
+            builder.Property(a => a.AssignedOfficerId).IsRequired(false);
+            builder.Property(a => a.AssignedDate).IsRequired(false);
+            builder.Property(a => a.RowVersion).IsRowVersion();
             builder.HasOne<Entities.PermitType>().WithMany().HasForeignKey("PermitTypeId").IsRequired();
             builder.HasOne<Entities.User>().WithMany().HasForeignKey(a => a.CitizenId).IsRequired();
             

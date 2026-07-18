@@ -1,41 +1,39 @@
 using ATLAS.API.Contracts.Generated;
+using System.Collections.Generic;
 using Xunit;
 
 namespace ATLAS.API.Tests.Contracts.Generated
 {
-    public class AssignToOfficerRequestTests
+    public class AssignApplicationToMeRequestTests
     {
         [Fact]
         public void PropertyInitialization_ShouldSetValuesCorrectly()
         {
             // Arrange & Act
-            var request = new AssignToOfficerRequest
+            var request = new AssignApplicationToMeRequest
             {
-                ApplicationId = Guid.NewGuid(),
-                OfficerId = Guid.NewGuid()
+                ApplicationId = Guid.NewGuid()
             };
 
             // Assert
             Assert.NotEqual(Guid.Empty, request.ApplicationId);
-            Assert.NotEqual(Guid.Empty, request.OfficerId);
         }
 
         [Fact]
         public void DefaultValues_ShouldBeSetCorrectly()
         {
             // Arrange & Act
-            var request = new AssignToOfficerRequest();
+            var request = new AssignApplicationToMeRequest();
 
             // Assert
             Assert.Equal(default(Guid), request.ApplicationId);
-            Assert.Equal(default(Guid), request.OfficerId);
         }
 
         [Fact]
         public void AdditionalProperties_ShouldBeSettable()
         {
             // Arrange
-            var request = new AssignToOfficerRequest();
+            var request = new AssignApplicationToMeRequest();
             var additionalProps = new Dictionary<string, object>
             {
                 { "customField", "customValue" }

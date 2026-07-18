@@ -52,6 +52,6 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new ApplicationAssignedToOfficerEventHandler(null!));
-        }
+        }      
     }
 }

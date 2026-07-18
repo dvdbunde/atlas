@@ -281,9 +281,9 @@ paths:
   /api/applications/{id}/assign:
     post:
       tags: [Applications]
-      summary: Assign application to officer
-      description: Assign a pending application to a specific officer
-      operationId: assignToOfficer
+      summary: Assign application to me
+      description: Assign a pending application to the currently authenticated officer
+      operationId: assignApplicationToMe
       parameters:
         - name: id
           in: path
@@ -297,7 +297,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignToOfficerRequest'
+              $ref: '#/components/schemas/AssignApplicationToMeRequest'
       responses:
         '200':
           description: Application assigned successfully
@@ -305,14 +305,16 @@ paths:
             application/json:
               schema:
                 type: boolean
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Application already assigned to another officer
+        '400':
+          $ref: '#/components/responses/ValidationError'       
       security:
         - EntraID: ['Officer', 'Admin']
 
@@ -601,6 +603,113 @@ paths:
           $ref: '#/components/responses/Forbidden'
       security:
         - EntraID: ['Citizen', 'Officer', 'Admin']
+
+  /api/applications/officer/dashboard:
+    get:
+      tags: [Applications]
+      summary: Get officer dashboard
+      description: Retrieve a paged, filtered, sorted summary of applications in the officer workflow
+      operationId: getOfficerDashboard
+      parameters:
+        - name: statuses
+          in: query
+          schema:
+            type: string
+          description: Comma-separated statuses (Submitted, UnderReview, InfoRequested)
+        - name: permitTypeId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [LastUpdated, SubmittedDate]
+          default: LastUpdated
+        - name: sortDescending
+          in: query
+          schema:
+            type: boolean
+          default: true
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+          default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+          default: 20
+      responses:
+        '200':
+          description: Officer dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficerDashboardResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']        
+
+  /api/applications/officer/{applicationId}:
+    get:
+      tags: [Applications]
+      summary: Get officer application review
+      description: Read-only officer case review projection for a single application
+      operationId: getOfficerApplicationReview
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Application ID
+      responses:
+        '200':
+          description: Officer application review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfficerApplicationReviewResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Officer', 'Admin']        
+
+  /api/applications/{applicationId}/activity:
+    get:
+      tags: [Applications]
+      summary: Get application activity feed
+      description: Returns a chronological list of business events for an application
+      operationId: getApplicationActivity
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Activity feed retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApplicationActivity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'        
 
   /api/permittypes:
     get:
@@ -1172,16 +1281,13 @@ components:
           type: string        
       required: [applicationId, message]
     
-    AssignToOfficerRequest:
+    AssignApplicationToMeRequest:
       type: object
       properties:
         applicationId:
           type: string
           format: uuid
-        officerId:
-          type: string
-          format: uuid
-      required: [applicationId, officerId]
+      required: [applicationId]
     
     UploadDocumentRequest:
       type: object
@@ -1360,7 +1466,216 @@ components:
               items:
                 $ref: '#/components/schemas/FieldDefinitionResponse'
           required: [id, name, description, fee, isActive, fields]      
+
+    OfficerDashboardResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerDashboardItem'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    OfficerDashboardItem:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        applicationNumber:
+          type: string
+        permitTypeName:
+          type: string
+        status:
+          type: string
+          description: Application status
+          enum: [Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected]
+        citizenName:
+          type: string
+        submittedDate:
+          type: string
+          format: date-time
+          nullable: true
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+        assignedOfficerName:
+          type: string
+          nullable: true
+        documentCount:
+          type: integer
+        allRequiredDocumentsUploaded:
+          type: boolean          
+
+    OfficerApplicationReviewResponse:
+      type: object
+      properties:
+        applicationId:
+          type: string
+          format: uuid
+        applicationNumber:
+          type: string
+          example: 'APP-2026-0001'
+        status:
+          type: string
+          description: Application status
+          enum: [Draft, Submitted, UnderReview, InfoRequested, Resubmitted, Approved, Rejected]
+          example: UnderReview
+        permitTypeName:
+          type: string
+          example: 'Business Permit'
+        permitTypeDescription:
+          type: string
+          default: ''
+        submittedDate:
+          type: string
+          format: date-time
+          nullable: true
+        lastUpdated:
+          type: string
+          format: date-time
+          nullable: true
+        citizenId:
+          type: string
+          format: uuid
+        citizenName:
+          type: string
+          example: 'John Doe'
+        citizenEmail:
+          type: string
+          example: 'john.doe@example.com'
+        assignedOfficerName:
+          type: string
+          nullable: true
+          example: 'Jane Officer'
+        citizenNotes:
+          type: string
+          default: ''
+        fieldValues:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerFieldValueResponse'
+        documentRequirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerDocumentRequirementResponse'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerReviewResponse'
+      required: [applicationId, applicationNumber, status, permitTypeName, citizenId, citizenName, citizenEmail]
+
+    OfficerFieldValueResponse:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          example: 'businessName'
+        label:
+          type: string
+          example: 'Business Name'
+        value:
+          type: string
+          default: ''
+        fieldType:
+          type: string
+          description: Field type
+          enum: [Text, MultilineText, Number, Date, Boolean, Dropdown, FileUpload]
+          example: Text
+      required: [fieldName, label, fieldType]
+
+    OfficerDocumentRequirementResponse:
+      type: object
+      properties:
+        documentType:
+          type: string
+          description: The DocumentRequirement type this requirement expects
+          example: 'ProofOfIdentity'
+        isRequired:
+          type: boolean
+        isSatisfied:
+          type: boolean
+        uploadedDocuments:
+          type: array
+          items:
+            $ref: '#/components/schemas/OfficerDocumentResponse'
+      required: [documentType, isRequired, isSatisfied]
+
+    OfficerDocumentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+          example: 'passport.pdf'
+        contentType:
+          type: string
+          example: 'application/pdf'
+        fileSize:
+          type: integer
+          format: int64
+          example: 2048576
+        uploadedDate:
+          type: string
+          format: date-time
+      required: [id, fileName, contentType, fileSize, uploadedDate]
+
+    OfficerReviewResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        officerId:
+          type: string
+          format: uuid
+        decision:
+          type: string
+          description: Review decision
+          enum: [Approve, Reject, RequestInfo]
+          example: RequestInfo
+        reasonCode:
+          type: string
+          nullable: true
+          example: 'INCOMPLETE_DOCUMENTATION'
+        comments:
+          type: string
+          default: ''
+        reviewedDate:
+          type: string
+          format: date-time
+      required: [id, officerId, decision, reviewedDate]          
   
+    ApplicationActivity:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        activityType:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        performedBy:
+          type: string
+          nullable: true
+        performedByRole:
+          type: string
+          nullable: true
+          
   responses:
     Unauthorized:
       description: Unauthorized - Authentication required

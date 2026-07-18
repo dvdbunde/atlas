@@ -43,15 +43,12 @@ namespace ATLAS.Application.Commands.Validators
         }
     }
 
-    public class AssignToOfficerCommandValidator : AbstractValidator<AssignToOfficerCommand>
+    public class AssignApplicationToMeCommandValidator : AbstractValidator<AssignApplicationToMeCommand>
     {
-        public AssignToOfficerCommandValidator()
+        public AssignApplicationToMeCommandValidator()
         {
             RuleFor(x => x.ApplicationId)
-                .NotEmpty().WithMessage("ApplicationId is required");
-
-            RuleFor(x => x.OfficerId)
-                .NotEmpty().WithMessage("OfficerId is required");
+                .NotEmpty().WithMessage("ApplicationId is required");            
         }
     }
 

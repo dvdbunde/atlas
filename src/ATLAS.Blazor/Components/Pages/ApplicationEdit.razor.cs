@@ -62,10 +62,10 @@ public partial class ApplicationEdit : ComponentBase
                 return;
             }
 
-            if (application.Status != Domain.Enums.ApplicationStatus.Draft)
+            // Verify the application is in an editable state
+            if (application.Status != ApplicationStatus.Draft && application.Status != ApplicationStatus.InfoRequested)
             {
-                _viewModel.HasError = true;
-                _viewModel.ErrorMessage = $"This application is in \"{application.Status}\" status and cannot be edited. Only draft applications can be modified.";
+                Navigation.NavigateTo($"/applications/{Id}");
                 return;
             }
 
@@ -336,6 +336,41 @@ public partial class ApplicationEdit : ComponentBase
         finally
         {
             _viewModel.IsSubmitting = false;
+        }
+    }
+
+       private async Task ResubmitApplication()
+    {
+        _viewModel.ResubmitHasError = false;
+        _viewModel.ResubmitErrorMessage = null;
+        _viewModel.IsResubmitting = true;
+
+        try
+        {
+            // First save any pending edits
+            await SaveDraft();
+
+            // Then resubmit
+            await Mediator.Send(new ResubmitApplicationCommand { ApplicationId = _viewModel.ApplicationId });
+            _viewModel.ResubmitSuccess = true;
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Validation failures (missing required documents, fields, etc.)
+            _viewModel.ResubmitHasError = true;
+            _viewModel.ResubmitErrorMessage = ex.Message;
+
+            Logger.LogWarning(ex, "Resubmission validation failed for application {ApplicationId}", _viewModel.ApplicationId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to resubmit application {ApplicationId}", _viewModel.ApplicationId);
+            _viewModel.ResubmitHasError = true;
+            _viewModel.ResubmitErrorMessage = "We were unable to resubmit the application. Please try again.";
+        }
+        finally
+        {
+            _viewModel.IsResubmitting = false;
         }
     }
 }

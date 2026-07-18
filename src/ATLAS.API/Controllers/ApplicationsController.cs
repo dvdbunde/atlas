@@ -16,6 +16,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ATLAS.Application.Commands.Applications;
 using ATLAS.Application.Queries.Applications;
+using ATLAS.Domain.Enums;
+using ATLAS.Domain;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ATLAS.API.Controllers
 {
@@ -31,7 +34,7 @@ namespace ATLAS.API.Controllers
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));         
         }
 
-        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> ApplicationsGet(
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> GetApplications(
             Guid? citizenId = null,
             Guid? officerId = null,
             string? status = null,
@@ -60,7 +63,7 @@ namespace ATLAS.API.Controllers
             return response;
         }
 
-        public override async Task<ActionResult<ApplicationDetailResponse>> ApplicationsGet(
+        public override async Task<ActionResult<ApplicationDetailResponse>> GetApplicationById(
             Guid id)
         {
             var query = new GetApplicationByIdQuery { ApplicationId = id };
@@ -74,84 +77,103 @@ namespace ATLAS.API.Controllers
             return result.ToResponse();
         }
 
-        public override async Task<ActionResult<bool>> Approve(
+               public override async Task<ActionResult<bool>> ApproveApplication(
             Guid id, ApproveApplicationRequest body)
         {
-            var command = new ApproveApplicationCommand
+            try
             {
-                ApplicationId = id,
-                Comments = body.Comments
-            };
+                var result = await _mediator.Send(new ApproveApplicationCommand
+                {
+                    ApplicationId = id,
+                    Comments = body.Comments
+                }, default);
 
-            var result = await _mediator.Send(command, default);    
-    
-            if (!result)
-            {
-                return NotFound(); // ← 404 if application not found
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-            
-            return Ok(true); // ← 200 OK with true            
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
 
-        public override async Task<ActionResult<bool>> Reject(
+        public override async Task<ActionResult<bool>> RejectApplication(
             Guid id, RejectApplicationRequest body)
         {
-            var command = new RejectApplicationCommand
-            {                
-                ApplicationId = id,
-                ReasonCode = body.ReasonCode,
-                Comments = body.Comments
-            };
-
-            var result = await _mediator.Send(command, default);
-
-            if (!result)
+            try
             {
-                return NotFound();
+                var result = await _mediator.Send(new RejectApplicationCommand
+                {
+                    ApplicationId = id,
+                    ReasonCode = body.ReasonCode,
+                    Comments = body.Comments
+                }, default);
+
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-    
-            return Ok(true);            
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
 
         public override async Task<ActionResult<bool>> RequestInfo(
             Guid id, RequestInfoRequest body)
         {
-            var command = new RequestInfoCommand
+            try
             {
-                ApplicationId = id,
-                Message = body.Message
-            };
+                var result = await _mediator.Send(new RequestInfoCommand
+                {
+                    ApplicationId = id,
+                    Message = body.Message
+                }, default);
 
-            var result = await _mediator.Send(command, default);
-    
-            if (!result)
-            {
-                return NotFound();
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-            
-            return Ok(true);
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
-
-        public override async Task<ActionResult<bool>> Assign(
-            Guid id, AssignToOfficerRequest body)
+        
+        public override async Task<ActionResult<bool>> AssignApplicationToMe(
+            Guid id, [FromBody] AssignApplicationToMeRequest body)
         {
-            var command = new AssignToOfficerCommand
+            try
             {
-                ApplicationId = id,
-                OfficerId = body.OfficerId
-            };
-
-            var result = await _mediator.Send(command, default);
-    
-            if (!result)
-            {
-                return NotFound();
+                var result = await _mediator.Send(new AssignApplicationToMeCommand { ApplicationId = id }, default);
+                if (!result)
+                    return NotFound();
+                return Ok(true);
             }
-            
-            return Ok(true);
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized();
+            }
+            catch (DomainException ex) when (ex.Message.Contains("already assigned"))
+            {
+                return Conflict(new { error = ex.Message });
+            }
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> ApplicationsPut(Guid id, [FromBody] UpdateDraftRequest body)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> UpdateDraft(Guid id, [FromBody] UpdateDraftRequest body)
         {
             var command = new UpdateDraftCommand
             {
@@ -176,7 +198,7 @@ namespace ATLAS.API.Controllers
             return Ok(application.ToResponse());
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> Draft([FromBody] CreateDraftRequest body)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> CreateDraft([FromBody] CreateDraftRequest body)
         {
             var command = new Application.Commands.Applications.CreateDraftCommand
             {
@@ -199,12 +221,12 @@ namespace ATLAS.API.Controllers
             }
 
             return CreatedAtAction(
-                nameof(ApplicationsGet),
+                nameof(GetApplications),
                 new { id = applicationId },
                 result.ToResponse());
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> Submit(Guid id)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> SubmitDraft(Guid id)
         {
             var command = new SubmitDraftCommand
             {
@@ -225,7 +247,7 @@ namespace ATLAS.API.Controllers
             return Ok(result.ToResponse());
         }
 
-        public override async Task<ActionResult<ApplicationSummaryResponse>> Resubmit(Guid id)
+        public override async Task<ActionResult<ApplicationSummaryResponse>> ResubmitDraft(Guid id)
         {
             var command = new ResubmitApplicationCommand
             {
@@ -245,8 +267,8 @@ namespace ATLAS.API.Controllers
 
             return Ok(result.ToResponse());
         }
-
-        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> Dashboard()
+        
+        public override async Task<ActionResult<ICollection<ApplicationSummaryResponse>>> GetCitizenDashboard()
         {
             var query = new GetCitizenDashboardQuery();
             var results = await _mediator.Send(query, default);
@@ -258,6 +280,56 @@ namespace ATLAS.API.Controllers
             }
             
             return Ok(response);
+        }
+                
+        public override async Task<ActionResult<Contracts.Generated.OfficerDashboardResult>> GetOfficerDashboard(
+            [FromQuery] SortBy? sortBy = null,
+            [FromQuery] bool? sortDescending = null,
+            [FromQuery] int? pageNumber = null, 
+            [FromQuery] int? pageSize = null, 
+            [FromQuery] string? statuses = null, 
+            [FromQuery] Guid? permitTypeId = null)
+        {
+             var query = new GetOfficerDashboardQuery
+            {
+                Statuses = ParseStatuses(statuses),
+                PermitTypeId = permitTypeId,                
+                SortBy = sortBy == SortBy.SubmittedDate ? OfficerDashboardSortBy.SubmittedDate : OfficerDashboardSortBy.LastUpdated,
+                SortDescending = sortDescending ?? false,
+                PageNumber = pageNumber ?? 1,
+                PageSize = pageSize ?? 10
+            };
+
+            var result = await _mediator.Send(query, default);
+            return Ok(result);
+        }
+        
+        public override async Task<ActionResult<OfficerApplicationReviewResponse>> GetOfficerApplicationReview(Guid applicationId)
+        {
+            var result = await _mediator.Send(new GetOfficerApplicationReviewQuery { ApplicationId = applicationId });
+            if (result is null)
+                return NotFound();
+            return Ok(result.ToResponse());
+        }
+
+
+        private static List<ApplicationStatus>? ParseStatuses(string? statuses)
+        {
+            if (string.IsNullOrWhiteSpace(statuses)) return null;
+            var result = new List<ApplicationStatus>();
+            foreach (var part in statuses.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (Enum.TryParse<ApplicationStatus>(part.Trim(), out var s))
+                    result.Add(s);
+            }
+            return result.Count > 0 ? result : null;
+        }
+
+        public override async Task<ActionResult<ICollection<ApplicationActivity>>> GetApplicationActivity(Guid applicationId)
+        {
+            var query = new GetApplicationActivityQuery { ApplicationId = applicationId };
+            var result = await _mediator.Send(query, default);
+            return Ok(result.Select(a => a.ToResponse()).ToList());
         }
     }
 }

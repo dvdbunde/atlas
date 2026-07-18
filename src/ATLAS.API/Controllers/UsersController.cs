@@ -26,8 +26,8 @@ namespace ATLAS.API.Controllers
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
-
-        public override async Task<ActionResult<ICollection<UserResponse>>> UsersGet(string? role = null)
+               
+        public override async Task<ActionResult<ICollection<UserResponse>>> GetUsers(string? role = null)
         {
             var query = new GetUsersQuery { Role = role };
             var results = await _mediator.Send(query, default);
@@ -39,7 +39,7 @@ namespace ATLAS.API.Controllers
             return Ok(response);
         }
 
-        public override async Task<ActionResult<UserResponse>> UsersGet(Guid id)
+        public override async Task<ActionResult<UserResponse>> GetUserById(Guid id)
         {
             var query = new GetUserByIdQuery { UserId = id };
             var result = await _mediator.Send(query, default);

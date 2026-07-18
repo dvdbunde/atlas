@@ -27,7 +27,7 @@ namespace ATLAS.API.Controllers
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
         }
 
-        public override async Task<ActionResult<ICollection<AuditLogResponse>>> Auditlogs(
+        public override async Task<ActionResult<ICollection<AuditLogResponse>>> GetAuditLogs(
             Guid? userId = null,
             string? action = null,
             DateTimeOffset? dateFrom = null,
@@ -51,7 +51,7 @@ namespace ATLAS.API.Controllers
             return Ok(response);
         }
 
-        public override async Task<ActionResult<string>> Export(
+        public override async Task<ActionResult<string>> ExportAuditLogs(
             Guid? userId = null,
             string? action = null,
             DateTimeOffset? dateFrom = null,

@@ -27,6 +27,18 @@ public class ApplicationEditViewModel
     public bool SubmitHasError { get; set; }
     public string? SubmitErrorMessage { get; set; }
 
+    // O5: Information request display
+    public string? InfoRequestMessage { get; set; }
+    public string? InfoRequestDateDisplay { get; set; }
+    public string? InfoRequestOfficerName { get; set; }
+    public bool IsInfoRequested => Status == ApplicationStatus.InfoRequested;
+
+    // O5: Resubmit state
+    public bool IsResubmitting { get; set; }
+    public bool ResubmitHasError { get; set; }
+    public string? ResubmitErrorMessage { get; set; }
+    public bool ResubmitSuccess { get; set; }
+
     /// <summary>
     /// Loads the page from application and permit type data.
     /// Merges field definitions with existing values.
@@ -41,6 +53,13 @@ public class ApplicationEditViewModel
         PermitDescription = permitType.Description;
         ApplicationNumber = application.ApplicationNumber;
         Status = application.Status;
+
+        // O5: Extract latest information request from review history
+        var infoRequest = application.Reviews?
+            .FirstOrDefault(r => r.Decision == ReviewDecision.RequestInfo);
+        InfoRequestMessage = infoRequest?.Comments;
+        InfoRequestDateDisplay = infoRequest?.ReviewedDate.ToString("MMM dd, yyyy");
+        InfoRequestOfficerName = application.OfficerName;
     
         var fields = permitType.Fields.Select(fd =>
         {

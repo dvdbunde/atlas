@@ -61,6 +61,8 @@ public partial class ApplicationDetail : ComponentBase
             }
 
             _viewModel.Load(application, permitType);
+
+            await LoadActivities();
         }
         catch (UnauthorizedAccessException)
         {
@@ -88,5 +90,19 @@ public partial class ApplicationDetail : ComponentBase
         ReviewDecision.Reject => ApplicationStatus.Rejected,
         ReviewDecision.RequestInfo => ApplicationStatus.InfoRequested,
         _ => ApplicationStatus.UnderReview
-    };
+    };        
+
+    private async Task LoadActivities()
+    {
+        try
+        {
+            var query = new GetApplicationActivityQuery { ApplicationId = _viewModel.ApplicationId };
+            var activities = await Mediator.Send(query);
+            _viewModel.Activities = activities.ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load activity for application {ApplicationId}", _viewModel.ApplicationId);
+        }
+    }
 }
