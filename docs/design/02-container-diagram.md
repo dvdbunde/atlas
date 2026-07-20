@@ -55,7 +55,10 @@ C4Container
 
 - **Citizens**: Application form, document upload, status dashboard
 - **Officers**: Review dashboard, application details, approval/rejection workflow
-- **Administrators**: Permit type management, audit log viewer (user management delegated to Entra ID)
+- **Administrators**: Administration Portal (Milestone 8 Phase A1 foundation)
+  - **Administration Dashboard** (implemented): lightweight summary counts (permit types, applications, officers, active email templates) via the `GetAdminDashboardQuery` CQRS query
+  - **Planned areas** (placeholder pages, no business logic yet): Permit Types, Dynamic Forms, Email Templates, Reference Data, Officers, System Settings
+  - Authorization: restricted to the `Admin` Entra ID role; Officers, Citizens, and anonymous users are denied (user management delegated to Entra ID)
 
 ### 2. ASP.NET Core API (Application Layer)
 
@@ -100,6 +103,36 @@ C4Container
 - **Azure.Storage.Blobs** → Azure Blob Storage (documents)
 - **Azure.Identity** → Microsoft Entra ID (authentication)
 - **SendGrid/Azure.Communication** → Email Service (notifications)
+
+## Supported Experiences (Blazor Portals)
+
+ATLAS exposes three role-scoped Blazor experiences, all hosted within the single Blazor Web App container and sharing the common app shell, navigation, styling, and Entra ID authentication. Each experience is gated by an authorization policy derived from the user's Entra ID role (`UserRole`: Citizen = 1, Officer = 2, Admin = 3).
+
+| Experience | Route Prefix | Intended Audience | Authorization Boundary | Status (Milestone 8 Phase A1) |
+| ----------- | ------------ | ----------------- | ---------------------- | ----------------------------- |
+| **Citizen Portal** | `/` (root) | Members of the public applying for permits | `Citizen` role (policy `Citizen`) | Established in earlier milestones |
+| **Officer Portal** | `/officer/*` | Permit officers reviewing applications | `Officer` role (policy `Officer`, or `OfficerOrAdmin`) | Established in earlier milestones |
+| **Administration Portal** | `/admin/*` | System administrators | `Admin` role (policy `Admin`) | Foundation implemented this phase |
+
+### Administration Portal (Milestone 8 Phase A1)
+
+The Administration Portal is a new, third experience introduced in Milestone 8 Phase A1. It reuses the existing app shell, navigation, and styling, and is available only to users assigned the `Admin` Entra ID role.
+
+**Responsibilities & scope:**
+
+- **Administration Dashboard** (`/admin`): lightweight, read-only summary counts (permit types, applications, officers, active email templates) sourced from the `GetAdminDashboardQuery` CQRS query. No write operations.
+- **Placeholder areas** (no business logic in this phase): Permit Types (`/admin/permit-types`), Dynamic Forms (`/admin/forms`), Email Templates (`/admin/email-templates`), Reference Data (`/admin/reference-data`), Officers (`/admin/officers`), System Settings (`/admin/settings`). Each renders a `PageHeader` and an `EmptyState` indicating the capability is planned for a later phase.
+
+**Authorization model:**
+
+- Pages declare `[Authorize(Roles = "Admin")]`.
+- `NavMenu` shows the **Administration** entry only inside an `<AuthorizeView Roles="Admin">` block.
+- Officers, Citizens, and anonymous users are denied access; user/role management itself remains delegated to Entra ID.
+
+**Relationships:**
+
+- Consumes the same Application-layer CQRS pipeline (MediatR) as the other portals.
+- Reads via the existing repository interfaces (`IPermitTypeRepository`, `IApplicationRepository`, `IUserRepository`); writes for the placeholder areas are deferred to later phases.
 
 ## Data Flow Summary
 

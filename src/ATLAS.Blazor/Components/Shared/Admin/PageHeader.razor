@@ -1,0 +1,20 @@
+@namespace ATLAS.Blazor.Components.Shared.Admin
+
+@* 
+    PageHeader - Reusable Administration page header with a title and optional
+    description. Mirrors the breadcrumb + h1 pattern used by the Citizen and
+    Officer dashboards while keeping Administration pages visually consistent.
+*@
+
+<div class="admin-page-header mb-4">
+    <h1 class="admin-page-title">@Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <p class="admin-page-description text-muted">@Description</p>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+}

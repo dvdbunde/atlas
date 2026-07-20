@@ -1,0 +1,22 @@
+@namespace ATLAS.Blazor.Components.Shared.Admin
+
+@* 
+    EmptyState - Reusable placeholder component for Administration areas that are
+    not yet implemented. Communicates that a feature is planned for a later phase.
+*@
+
+<div class="alert alert-info admin-empty-state" role="alert">
+    <h4 class="alert-heading">@Title</h4>
+    <p>@Message</p>
+    @if (!string.IsNullOrWhiteSpace(PlannedPhase))
+    {
+        <hr />
+        <p class="mb-0 small">@PlannedPhase</p>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Message { get; set; } = string.Empty;
+    [Parameter] public string? PlannedPhase { get; set; }
+}

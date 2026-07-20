@@ -1,0 +1,80 @@
+@page "/admin"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.ViewModels
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Administration Dashboard</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">Administration</li>
+        </ol>
+    </nav>
+
+    <PageHeader Title="Administration Dashboard"
+                Description="High-level overview of the ATLAS permit processing system." />
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading dashboard...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadDashboard">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.IsEmpty)
+    {
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No summary data available</h4>
+            <p>We were unable to load a system summary at this time.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Permit Types</h5>
+                        <p class="card-text display-6">@_viewModel.Summary!.PermitTypeCount</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Applications</h5>
+                        <p class="card-text display-6">@_viewModel.Summary!.ApplicationCount</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Officers</h5>
+                        <p class="card-text display-6">@_viewModel.Summary!.OfficerCount</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Active Email Templates</h5>
+                        <p class="card-text display-6">@_viewModel.Summary!.ActiveEmailTemplateCount</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
