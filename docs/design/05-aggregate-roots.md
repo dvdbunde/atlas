@@ -120,11 +120,16 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 ```text
 PermitType (Root)
 ├── PermitField [0..*]
+│   ├── Id (Guid, assigned on creation)
+│   ├── Order (int, 1-based contiguous sequence)
 │   ├── Name
 │   ├── Type (FieldType)
 │   ├── IsRequired
-│   └── DefaultValue
+│   ├── DefaultValue
+│   └── Options
 └── DocumentRequirement [0..*]
+    ├── Id (Guid, assigned on creation)
+    ├── Order (int, 1-based contiguous sequence)
     ├── DocumentType
     ├── IsRequired
     ├── AllowedExtensions
@@ -133,18 +138,39 @@ PermitType (Root)
 
 **Invariants Enforced by PermitType Root:**
 
-1. **Field names must be unique** - Cannot have duplicate field names (enforced in `AddField()`)
+1. **Field names must be unique** - Cannot have duplicate field names (enforced in `AddField()` / `UpdateField()`)
 2. **Document types must be unique** - Cannot have duplicate document requirements (enforced in `AddDocumentRequirement()`)
 3. **Cannot deactivate if active applications exist** - Business rule (checked in command handler)
 4. **Fee must be non-negative** - `Fee >= 0` (enforced in constructor)
 5. **Active permit types are visible to citizens** - `IsActive` controls visibility
+6. **Order is contiguous and 1-based** - After any add/remove/move, `Order` values are renumbered `1..N` (enforced by `RenumberFields()` / `RenumberDocumentRequirements()`)
+7. **Child identity is stable** - `PermitField.Id` / `DocumentRequirement.Id` are assigned once and never change, enabling targeted edits
+
+**Editing Operations (Milestone 8 Phase A2.5):**
+
+- `AddField(...)` / `AddDocumentRequirement(...)` — append with next `Order`
+- `UpdateField(fieldId, name, type, isRequired, defaultValue, options)` / `UpdateDocumentRequirement(requirementId, isRequired, allowedExtensions, maxFileSize)` — mutate by stable `Id`; duplicate-name guard excludes self
+- `RemoveField(fieldId)` / `RemoveDocumentRequirement(requirementId)` — remove by `Id`, then renumber remaining
+- `MoveField(fieldId, newOrder)` / `MoveDocumentRequirement(requirementId, newOrder)` — reposition within `[1, count]`; renumbers
+
+**Domain Events Raised:**
+
+| Operation | Event |
+|-----------|-------|
+| Add field | `PermitTypeFieldAddedEvent` |
+| Update field | `PermitTypeFieldUpdatedEvent` |
+| Remove field | `PermitTypeFieldRemovedEvent` |
+| Reorder fields | `PermitTypeFieldsReorderedEvent` |
+| Update document requirement | `PermitTypeDocumentRequirementUpdatedEvent` |
+| Remove document requirement | `PermitTypeDocumentRequirementRemovedEvent` |
+| Reorder document requirements | `PermitTypeDocumentRequirementsReorderedEvent` |
 
 **Access Patterns:**
 
 - `PermitType` IS the aggregate root - no separate aggregate class
 - `PermitField` and `DocumentRequirement` are value objects accessed through `PermitType`
-- Modifications go through root methods: `permitType.AddField(...)`, `permitType.AddDocumentRequirement(...)`
-- No direct manipulation of internal collections from outside
+- Modifications go through root methods: `permitType.AddField(...)`, `permitType.UpdateField(...)`, `permitType.RemoveField(...)`, `permitType.MoveField(...)`, `permitType.AddDocumentRequirement(...)`, etc.
+- Collections are exposed ordered by `Order`; no direct manipulation of internal lists from outside
 
 ---
 

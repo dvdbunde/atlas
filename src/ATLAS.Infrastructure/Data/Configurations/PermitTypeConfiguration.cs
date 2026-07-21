@@ -19,6 +19,9 @@ namespace ATLAS.Infrastructure.Data.Configurations
             // Map value objects as owned entities
             builder.OwnsMany(p => p.Fields, field =>
             {
+                field.HasKey("Id");
+                field.Property(f => f.Id).HasDefaultValueSql("NEWID()");
+                field.Property(f => f.Order).IsRequired().HasDefaultValue(1);
                 field.Property(f => f.Name).IsRequired().HasMaxLength(100);
                 field.Property(f => f.Type).IsRequired();
                 field.Property(f => f.IsRequired).HasDefaultValue(false);
@@ -31,14 +34,19 @@ namespace ATLAS.Infrastructure.Data.Configurations
                         v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new())
                     .HasColumnType("nvarchar(max)");
                 
-                      
+                field.HasIndex("Order");
             });
             
             builder.OwnsMany(p => p.DocumentRequirements, doc =>
             {
+                doc.HasKey("Id");
+                doc.Property(d => d.Id).HasDefaultValueSql("NEWID()");
+                doc.Property(d => d.Order).IsRequired().HasDefaultValue(1);
                 doc.Property(d => d.DocumentType).IsRequired().HasMaxLength(100);
                 doc.Property(d => d.IsRequired).HasDefaultValue(false);
                 doc.Property(d => d.MaxFileSizeBytes).HasDefaultValue(26214400); // 25MB
+
+                doc.HasIndex("Order");
             });          
         }
     }

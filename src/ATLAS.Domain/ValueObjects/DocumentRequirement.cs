@@ -4,12 +4,21 @@ namespace ATLAS.Domain.ValueObjects
 {
     public class DocumentRequirement
     {
+        public Guid Id { get; private set; }
         public string DocumentType { get; private set; }
         public bool IsRequired { get; private set; }
         public string[] AllowedExtensions { get; private set; }
         public long MaxFileSizeBytes { get; private set; }
+        public int Order { get; internal set; }
 
         public DocumentRequirement(string documentType, bool isRequired, string[] allowedExtensions, long maxFileSizeBytes)
+            : this(Guid.NewGuid(), documentType, isRequired, allowedExtensions, maxFileSizeBytes)
+        {
+        }
+
+        // Aggregate-internal constructor: assigns a stable Id and lets the
+        // aggregate assign Order after insertion.
+        internal DocumentRequirement(Guid id, string documentType, bool isRequired, string[] allowedExtensions, long maxFileSizeBytes)
         {
             if (string.IsNullOrWhiteSpace(documentType))
                 throw new ArgumentException("Document type cannot be empty", nameof(documentType));
@@ -20,7 +29,16 @@ namespace ATLAS.Domain.ValueObjects
             if (maxFileSizeBytes <= 0)
                 throw new ArgumentException("Max file size must be positive", nameof(maxFileSizeBytes));
 
+            Id = id;
             DocumentType = documentType;
+            IsRequired = isRequired;
+            AllowedExtensions = allowedExtensions;
+            MaxFileSizeBytes = maxFileSizeBytes;
+        }
+
+        // Aggregate-internal mutation.
+        internal void Update(bool isRequired, string[] allowedExtensions, long maxFileSizeBytes)
+        {
             IsRequired = isRequired;
             AllowedExtensions = allowedExtensions;
             MaxFileSizeBytes = maxFileSizeBytes;
