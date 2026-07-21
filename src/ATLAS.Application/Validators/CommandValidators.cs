@@ -65,6 +65,20 @@ namespace ATLAS.Application.Commands.Validators
         }
     }
 
+    public class UpdatePermitTypeGeneralInformationCommandValidator : AbstractValidator<UpdatePermitTypeGeneralInformationCommand>
+    {
+        public UpdatePermitTypeGeneralInformationCommandValidator()
+        {
+            RuleFor(x => x.PermitTypeId)
+                .NotEmpty().WithMessage("PermitTypeId is required");
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Name is required")
+                .MinimumLength(3).WithMessage("Name must be at least 3 characters")
+                .MaximumLength(100).WithMessage("Name must be at most 100 characters");
+        }
+    }
+
     public class DeactivatePermitTypeCommandValidator : AbstractValidator<DeactivatePermitTypeCommand>
     {
         public DeactivatePermitTypeCommandValidator()
@@ -188,6 +202,20 @@ namespace ATLAS.Application.Commands.Validators
             RuleFor(x => x.PermitTypeId).NotEmpty().WithMessage("PermitTypeId is required");
             RuleFor(x => x.RequirementId).NotEmpty().WithMessage("RequirementId is required");
             RuleFor(x => x.NewOrder).GreaterThan(0).WithMessage("NewOrder must be greater than 0");
+        }
+    }
+
+    public class CreatePermitTypeCommandValidator : AbstractValidator<CreatePermitTypeCommand>
+    {
+        public CreatePermitTypeCommandValidator()
+        {
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Name is required")
+                .MinimumLength(3).WithMessage("Name must be at least 3 characters")
+                .MaximumLength(100).WithMessage("Name must be at most 100 characters");
+
+            RuleFor(x => x.Fee)
+                .GreaterThanOrEqualTo(0).WithMessage("Fee cannot be negative");
         }
     }
 }

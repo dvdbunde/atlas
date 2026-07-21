@@ -172,6 +172,11 @@ PermitType (Root)
 - Modifications go through root methods: `permitType.AddField(...)`, `permitType.UpdateField(...)`, `permitType.RemoveField(...)`, `permitType.MoveField(...)`, `permitType.AddDocumentRequirement(...)`, etc.
 - Collections are exposed ordered by `Order`; no direct manipulation of internal lists from outside
 
+**General Information Editing (Milestone 8 Phase A3.1):**
+
+- `PermitType.UpdateGeneralInformation(name, description)` updates the immutable-at-construction `Name`/`Description` via a dedicated aggregate method (reuses the 3–100 char name invariant). Raises `PermitTypeGeneralInformationUpdatedEvent`.
+- Exposed to the UI through `UpdatePermitTypeGeneralInformationCommand` (CQRS), keeping the command model aligned with the aggregate's evolving behavior. The legacy `UpdatePermitTypeCommand` remains Fee/IsActive-only.
+
 ---
 
 ### 3. User Aggregate Root

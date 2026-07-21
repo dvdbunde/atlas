@@ -1,0 +1,137 @@
+@page "/admin/permit-types/{Id:guid}/designer"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Permit Type Designer</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item"><a href="/admin/permit-types">Permit Types</a></li>
+            <li class="breadcrumb-item"><a href="@($"/admin/permit-types/{Id}")">Details</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Designer</li>
+        </ol>
+    </nav>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading designer...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadPermitType">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.NotFound)
+    {
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Permit type not found</h4>
+            <p>The requested permit type does not exist.</p>
+            <button class="btn btn-outline-secondary" @onclick="BackToList">Back to list</button>
+        </div>
+    }
+    else if (_viewModel.PermitType is not null)
+    {
+        <PageHeader Title="@($"{_viewModel.PermitType.Name} — Designer")"
+                    Description="Configure the structure of this permit type." />
+
+        @if (_viewModel.HasUnsavedChanges)
+        {
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <span>You have unsaved changes.</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_viewModel.SaveMessage))
+        {
+            <div class="alert alert-success" role="alert">@_viewModel.SaveMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@_viewModel.ErrorMessage</div>
+        }
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link @(_activeSection == "general" ? "active" : "")"
+                        @onclick="@(() => SelectSection("general"))">
+                    General
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(_activeSection == "fields" ? "active" : "")"
+                        @onclick="@(() => SelectSection("fields"))">
+                    Fields
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(_activeSection == "documents" ? "active" : "")"
+                        @onclick="@(() => SelectSection("documents"))">
+                    Document Requirements
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link @(_activeSection == "preview" ? "active" : "")"
+                        @onclick="@(() => SelectSection("preview"))">
+                    Preview
+                </button>
+            </li>
+        </ul>
+
+        @if (_activeSection == "general")
+        {
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="ptd-name">Name</label>
+                        <input id="ptd-name" class="form-control" type="text"
+                               value="@_viewModel.Name" @oninput="OnNameInput" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="ptd-description">Description</label>
+                        <textarea id="ptd-description" class="form-control"
+                                  value="@_viewModel.Description" @oninput="OnDescriptionInput"></textarea>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (_activeSection == "fields")
+        {
+            <EmptyState Title="Fields"
+                        Message="Field configuration will be available in a later phase."
+                        PlannedPhase="Planned for a subsequent milestone." />
+        }
+        else if (_activeSection == "documents")
+        {
+            <EmptyState Title="Document Requirements"
+                        Message="Document requirement configuration will be available in a later phase."
+                        PlannedPhase="Planned for a subsequent milestone." />
+        }
+        else if (_activeSection == "preview")
+        {
+            <EmptyState Title="Live Preview"
+                        Message="A live preview of the permit application form will be available in a later phase."
+                        PlannedPhase="Planned for a subsequent milestone." />
+        }
+
+        <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-primary" @onclick="Save" disabled="@(_viewModel.IsSaving || !_viewModel.HasUnsavedChanges)">
+                @if (_viewModel.IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Save
+            </button>
+            <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@(_viewModel.IsSaving || !_viewModel.HasUnsavedChanges)">
+                Cancel
+            </button>
+            <button class="btn btn-link" @onclick="BackToList">Back to list</button>
+        </div>
+    }
+</div>

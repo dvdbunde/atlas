@@ -41,6 +41,19 @@ namespace ATLAS.Domain.Entities
         {
         }
 
+        public void UpdateGeneralInformation(string name, string description)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name cannot be empty", nameof(name));
+
+            if (name.Length < 3 || name.Length > 100)
+                throw new ArgumentException("Name must be between 3 and 100 characters", nameof(name));
+
+            Name = name;
+            Description = description ?? string.Empty;
+            AddDomainEvent(new PermitTypeGeneralInformationUpdatedEvent(Id, Name, Description));
+        }
+
         public void AddField(string name, FieldType type, bool isRequired, string defaultValue = null, IReadOnlyCollection<string> options = null)
         {
             if (_fields.Any(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))

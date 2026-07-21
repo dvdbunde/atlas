@@ -17,6 +17,10 @@
     <PageHeader Title="Permit Types"
                 Description="Browse and manage permit types available in ATLAS." />
 
+    <div class="mb-3">
+        <a class="btn btn-primary" href="/admin/permit-types/new">Create New Permit Type</a>
+    </div>
+
     @if (_viewModel.IsLoading)
     {
         <div class="d-flex justify-content-center align-items-center py-5" role="status">

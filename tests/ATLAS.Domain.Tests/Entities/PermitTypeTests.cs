@@ -26,6 +26,46 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.True(permitType.IsActive);
         }
 
+        #region UpdateGeneralInformation Tests
+
+        [Fact]
+        public void UpdateGeneralInformation_ShouldUpdateNameAndDescription()
+        {
+            // Arrange
+            var permitType = new PermitType("Building Permit", "Description", 100.00m);
+            permitType.ClearDomainEvents();
+
+            // Act
+            permitType.UpdateGeneralInformation("Renovation Permit", "Updated description");
+
+            // Assert
+            Assert.Equal("Renovation Permit", permitType.Name);
+            Assert.Equal("Updated description", permitType.Description);
+            var evt = Assert.Single(permitType.DomainEvents);
+            var updated = Assert.IsType<PermitTypeGeneralInformationUpdatedEvent>(evt);
+            Assert.Equal(permitType.Id, updated.PermitTypeId);
+            Assert.Equal("Renovation Permit", updated.Name);
+            Assert.Equal("Updated description", updated.Description);
+        }
+
+        [Fact]
+        public void UpdateGeneralInformation_ShouldThrow_WhenNameTooShort()
+        {
+            var permitType = new PermitType("Building Permit", "Description", 100.00m);
+
+            Assert.Throws<ArgumentException>(() => permitType.UpdateGeneralInformation("AB", "Description"));
+        }
+
+        [Fact]
+        public void UpdateGeneralInformation_ShouldThrow_WhenNameEmpty()
+        {
+            var permitType = new PermitType("Building Permit", "Description", 100.00m);
+
+            Assert.Throws<ArgumentException>(() => permitType.UpdateGeneralInformation("   ", "Description"));
+        }
+
+        #endregion
+
         #region AddField Tests
 
         [Fact]
