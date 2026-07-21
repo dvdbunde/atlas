@@ -49,6 +49,8 @@ public class AdminAuthorizationTests : BunitContext
     [InlineData(typeof(ReferenceData))]
     [InlineData(typeof(Officers))]
     [InlineData(typeof(SystemSettings))]
+    [InlineData(typeof(Users))]
+    [InlineData(typeof(UserDetail))]
     public void AdminPlaceholderPages_ShouldDeclareAdminRoleAuthorization(System.Type pageType)
     {
         var attribute = pageType

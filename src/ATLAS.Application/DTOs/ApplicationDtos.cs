@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.DTOs
@@ -213,5 +214,40 @@ namespace ATLAS.Application.DTOs
         public string? Description { get; init; }
         public string? PerformedBy { get; init; }
         public string? PerformedByRole { get; init; }
+    }
+
+    /// <summary>
+    /// Lightweight projection of a User for list/table rendering.
+    /// The User aggregate is a synchronized, read-only projection of an Entra ID
+    /// principal (see ADR-013); role and status are owned by Entra and must not be
+    /// mutated locally.
+    /// </summary>
+    public class UserSummaryDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+    }
+
+    /// <summary>
+    /// Detailed projection of a User for the read-only detail view.
+    /// Includes the most recent audit entries associated with the principal
+    /// (projected from the audit log; read-only).
+    /// </summary>
+    public class UserDetailDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public DateTime? CreatedDate { get; set; }
+        public IReadOnlyList<AuditLogDto> RecentAuditEntries { get; set; } = Array.Empty<AuditLogDto>();
     }
 }
