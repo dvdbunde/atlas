@@ -24,131 +24,166 @@ namespace ATLAS.Application.Tests.Queries
             _handler = new GetAuditLogsQueryHandler(_mockRepository.Object);
         }
 
+        private static List<AuditLog> BuildLogs(int count)
+        {
+            var logs = new List<AuditLog>();
+            for (var i = 0; i < count; i++)
+            {
+                logs.Add(new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), $"Details {i}", "127.0.0.1"));
+            }
+            return logs;
+        }
+
         [Fact]
         public async Task Handle_NoFilters_ShouldReturnAllAuditLogs()
         {
-            // Arrange
-            var auditLogs = new List<AuditLog>
-            {
-                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
-                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1")
-            };
-
-            _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(auditLogs);
+            var auditLogs = BuildLogs(2);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.IsAny<AuditLogFilter>(), It.IsAny<AuditLogSortOption>(), It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 2, PageNumber = 1, PageSize = 20 });
 
             var query = new GetAuditLogsQuery();
 
-            // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            // Assert
-            Assert.Equal(2, result.Count());
+            Assert.Equal(2, result.TotalCount);
+            Assert.Equal(2, result.Items.Count);
+            Assert.Equal(1, result.PageNumber);
+            Assert.Equal(20, result.PageSize);
         }
 
         [Fact]
-        public async Task Handle_WithUserIdFilter_ShouldReturnFilteredLogs()
+        public async Task Handle_WithUserIdFilter_ShouldPassFilterToRepository()
         {
-            // Arrange
             var userId = Guid.NewGuid();
             var auditLogs = new List<AuditLog>
             {
-                new AuditLog(userId, "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
-                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1")
+                new AuditLog(userId, "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1")
             };
-
-            _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(auditLogs);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.Is<AuditLogFilter>(f => f.UserId == userId), It.IsAny<AuditLogSortOption>(), It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 1, PageNumber = 1, PageSize = 20 });
 
             var query = new GetAuditLogsQuery { UserId = userId };
 
-            // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            // Assert
-            Assert.Single(result);
-            Assert.All(result, log => Assert.Equal(userId, log.UserId));
+            Assert.Single(result.Items);
+            Assert.Equal(userId, result.Items[0].UserId);
         }
 
         [Fact]
-        public async Task Handle_WithActionTypeFilter_ShouldReturnFilteredLogs()
+        public async Task Handle_WithActionFilter_ShouldPassFilterToRepository()
         {
-            // Arrange
             var actionType = "Create";
             var auditLogs = new List<AuditLog>
             {
-                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
-                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1")
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1")
             };
-
-            _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(auditLogs);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.Is<AuditLogFilter>(f => f.Action == actionType), It.IsAny<AuditLogSortOption>(), It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 1, PageNumber = 1, PageSize = 20 });
 
             var query = new GetAuditLogsQuery { Action = actionType };
 
-            // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            // Assert
-            Assert.Single(result);
-            Assert.All(result, log => Assert.Equal(actionType, log.Action));
+            Assert.Single(result.Items);
+            Assert.Equal(actionType, result.Items[0].Action);
         }
 
         [Fact]
-        public async Task Handle_WithDateRangeFilter_ShouldReturnFilteredLogs()
+        public async Task Handle_WithDateRangeFilter_ShouldPassFilterToRepository()
         {
-            // Arrange
-            // Use a wide date range to ensure logs created with DateTime.UtcNow are captured
             var dateFrom = DateTime.UtcNow.AddMinutes(-1);
             var dateTo = DateTime.UtcNow.AddMinutes(1);
-            var auditLogs = new List<AuditLog>
-            {
-                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
-                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1")
-            };
-            // Timestamps are set to DateTime.UtcNow in constructor, which should be within our range
-
-            _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(auditLogs);
+            var auditLogs = BuildLogs(2);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(
+                    It.Is<AuditLogFilter>(f => f.DateFrom == dateFrom && f.DateTo == dateTo),
+                    It.IsAny<AuditLogSortOption>(), It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 2, PageNumber = 1, PageSize = 20 });
 
             var query = new GetAuditLogsQuery { DateFrom = dateFrom, DateTo = dateTo };
 
-            // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            // Assert
-            Assert.Equal(2, result.Count());
+            Assert.Equal(2, result.Items.Count);
         }
 
         [Fact]
-        public async Task Handle_WithRecordIdFilter_ShouldReturnFilteredLogs()
+        public async Task Handle_WithEntityIdFilter_ShouldPassFilterToRepository()
         {
-            // Arrange
             var recordId = Guid.NewGuid();
             var auditLogs = new List<AuditLog>
             {
-                new AuditLog(Guid.NewGuid(), "Create", "Application", recordId, "Details 1", "127.0.0.1"),
-                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1")
+                new AuditLog(Guid.NewGuid(), "Create", "Application", recordId, "Details 1", "127.0.0.1")
             };
-
-            _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(auditLogs);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.Is<AuditLogFilter>(f => f.EntityId == recordId), It.IsAny<AuditLogSortOption>(), It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 1, PageNumber = 1, PageSize = 20 });
 
             var query = new GetAuditLogsQuery { EntityId = recordId };
 
-            // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
-            // Assert
-            Assert.Single(result);
-            Assert.All(result, log => Assert.Equal(recordId, log.EntityId));
+            Assert.Single(result.Items);
+            Assert.Equal(recordId, result.Items[0].EntityId);
+        }
+
+        [Fact]
+        public async Task Handle_WithSearchTerm_ShouldPassFilterToRepository()
+        {
+            var auditLogs = BuildLogs(1);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.Is<AuditLogFilter>(f => f.SearchTerm == "Details"), It.IsAny<AuditLogSortOption>(), It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 1, PageNumber = 1, PageSize = 20 });
+
+            var query = new GetAuditLogsQuery { SearchTerm = "Details" };
+
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            Assert.Single(result.Items);
+        }
+
+        [Fact]
+        public async Task Handle_WithPaging_ShouldPassPageToRepository()
+        {
+            var auditLogs = BuildLogs(5);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.IsAny<AuditLogFilter>(), It.IsAny<AuditLogSortOption>(), It.Is<AuditLogPage>(p => p.PageNumber == 2 && p.PageSize == 5), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 25, PageNumber = 2, PageSize = 5 });
+
+            var query = new GetAuditLogsQuery { PageNumber = 2, PageSize = 5 };
+
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            Assert.Equal(25, result.TotalCount);
+            Assert.Equal(2, result.PageNumber);
+            Assert.Equal(5, result.PageSize);
+            Assert.Equal(5, result.TotalPages);
+        }
+
+        [Fact]
+        public async Task Handle_WithSortAscending_ShouldPassSortToRepository()
+        {
+            var auditLogs = BuildLogs(1);
+            _mockRepository
+                .Setup(r => r.GetPagedAsync(It.IsAny<AuditLogFilter>(), AuditLogSortOption.TimestampAsc, It.IsAny<AuditLogPage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new PagedAuditLogResult { Items = auditLogs, TotalCount = 1, PageNumber = 1, PageSize = 20 });
+
+            var query = new GetAuditLogsQuery { SortBy = AuditLogSortOptionDto.TimestampAsc };
+
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            Assert.Single(result.Items);
         }
 
         [Fact]
         public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
         {
-            // Arrange & Act & Assert
             Assert.Throws<ArgumentNullException>(() => new GetAuditLogsQueryHandler(null));
         }
     }
 }
+

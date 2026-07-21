@@ -1,0 +1,69 @@
+@page "/admin/audit-logs/{Id:guid}"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Audit Entry</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item"><a href="/admin/audit-logs">Audit Log</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Entry</li>
+        </ol>
+    </nav>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading audit entry...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadLog">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.NotFound)
+    {
+        <EmptyState Title="Audit entry not found"
+                    Message="The requested audit entry does not exist or may have been purged." />
+    }
+    else if (_viewModel.AuditLog is not null)
+    {
+        <PageHeader Title="Audit Entry"
+                    Description="Read-only record of a single ATLAS business operation." />
+
+        <dl class="row">
+            <dt class="col-sm-3">Timestamp</dt>
+            <dd class="col-sm-9">@_viewModel.AuditLog.Timestamp.ToLocalTime().ToString("g")</dd>
+
+            <dt class="col-sm-3">User</dt>
+            <dd class="col-sm-9">@(_viewModel.AuditLog.UserId?.ToString() ?? "System")</dd>
+
+            <dt class="col-sm-3">Action</dt>
+            <dd class="col-sm-9">@_viewModel.AuditLog.Action</dd>
+
+            <dt class="col-sm-3">Entity Type</dt>
+            <dd class="col-sm-9">@_viewModel.AuditLog.EntityType</dd>
+
+            <dt class="col-sm-3">Entity ID</dt>
+            <dd class="col-sm-9">@_viewModel.AuditLog.EntityId</dd>
+
+            <dt class="col-sm-3">IP Address</dt>
+            <dd class="col-sm-9">@_viewModel.AuditLog.IpAddress</dd>
+
+            <dt class="col-sm-3">Details</dt>
+            <dd class="col-sm-9"><pre class="mb-0">@_viewModel.AuditLog.Details</pre></dd>
+        </dl>
+
+        <button class="btn btn-outline-secondary" @onclick="BackToList">Back to Audit Log</button>
+    }
+</div>

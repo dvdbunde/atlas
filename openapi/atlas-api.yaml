@@ -978,15 +978,37 @@ paths:
             type: string
             format: uuid
           description: Filter by entity ID
+        - name: searchTerm
+          in: query
+          schema:
+            type: string
+          description: Free-text search across action, entity type, and details (case-insensitive contains)
+        - name: sort
+          in: query
+          schema:
+            $ref: '#/components/schemas/AuditLogSortOption'
+          description: Sort order for the timestamp
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 1
+          description: 1-based page number
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 20
+          description: Number of entries per page
       responses:
         '200':
-          description: List of audit logs
+          description: Paged list of audit logs
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AuditLogResponse'
+                $ref: '#/components/schemas/PagedAuditLogResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1038,8 +1060,41 @@ paths:
       security:
         - EntraID: ['Admin']
 
+  /api/auditlogs/{id}:
+    get:
+      tags: [AuditLogs]
+      summary: Get audit log by ID
+      description: Retrieve a single audit log entry by its identifier (read-only).
+      operationId: getAuditLogById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Audit log identifier
+      responses:
+        '200':
+          description: The requested audit log entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Audit log entry not found
+      security:
+        - EntraID: ['Admin']
+
 components:
   schemas:
+    AuditLogSortOption:
+      type: string
+      enum: [TimestampDesc, TimestampAsc]
     ApplicationSummaryResponse:
       type: object
       properties:
@@ -1216,6 +1271,31 @@ components:
           type: string
           example: '192.168.1.1'
       required: [id, action, entityType, entityId, timestamp]
+    
+    PagedAuditLogResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogResponse'
+        totalCount:
+          type: integer
+          format: int32
+          example: 128
+        pageNumber:
+          type: integer
+          format: int32
+          example: 1
+        pageSize:
+          type: integer
+          format: int32
+          example: 20
+        totalPages:
+          type: integer
+          format: int32
+          example: 7
+      required: [items, totalCount, pageNumber, pageSize, totalPages]
     
     ProblemDetails:
       type: object
@@ -1707,3 +1787,5 @@ components:
         Microsoft Entra ID OAuth 2.0 authentication with OpenID Connect.
         Obtain a token from Microsoft Entra ID (https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize)
         using the Authorization Code flow, then include it in the Authorization header: "Bearer {token}"
+
+

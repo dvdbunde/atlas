@@ -169,9 +169,100 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             Assert.True(result);
         }
 
-        public void Dispose()
+
+        [Fact]
+        public async Task GetPagedAsync_WithNoFilter_ShouldReturnAllLogsAndTotalCount()
+        {
+            var logs = new[]
+            {
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "Delete", "Permit", Guid.NewGuid(), "Details 3", "127.0.0.1")
+            };
+            _context.AuditLogs.AddRange(logs);
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(new AuditLogFilter(), AuditLogSortOption.TimestampDesc, new AuditLogPage { PageNumber = 1, PageSize = 20 });
+
+            Assert.Equal(3, result.TotalCount);
+            Assert.Equal(3, result.Items.Count);
+            Assert.Equal(1, result.PageNumber);
+            Assert.Equal(20, result.PageSize);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithPageSize_ShouldReturnSinglePage()
+        {
+            var logs = Enumerable.Range(0, 5).Select(i =>
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), $"Details {i}", "127.0.0.1")).ToArray();
+            _context.AuditLogs.AddRange(logs);
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(new AuditLogFilter(), AuditLogSortOption.TimestampDesc, new AuditLogPage { PageNumber = 2, PageSize = 2 });
+
+            Assert.Equal(5, result.TotalCount);
+            Assert.Equal(2, result.Items.Count);
+            Assert.Equal(2, result.PageNumber);
+            Assert.Equal(3, result.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithActionFilter_ShouldReturnMatchingLogs()
+        {
+            _context.AuditLogs.AddRange(
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "Update", "Application", Guid.NewGuid(), "Details 2", "127.0.0.1"));
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter { Action = "Create" }, AuditLogSortOption.TimestampDesc, new AuditLogPage());
+
+            Assert.Equal(1, result.TotalCount);
+            Assert.Equal("Create", result.Items[0].Action);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithSearchTerm_ShouldMatchActionEntityTypeOrDetails()
+        {
+            _context.AuditLogs.AddRange(
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "alpha details", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "Update", "Permit", Guid.NewGuid(), "other details", "127.0.0.1"));
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter { SearchTerm = "PERMIT" }, AuditLogSortOption.TimestampDesc, new AuditLogPage());
+
+            Assert.Equal(1, result.TotalCount);
+            Assert.Equal("Permit", result.Items[0].EntityType);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithSortAscending_ShouldOrderOldestFirst()
+        {
+            var older = new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "older", "127.0.0.1");
+            var newer = new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "newer", "127.0.0.1");
+            _context.AuditLogs.AddRange(older, newer);
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter(), AuditLogSortOption.TimestampAsc, new AuditLogPage());
+
+            Assert.Equal(older.Id, result.Items[0].Id);
+            Assert.Equal(newer.Id, result.Items[1].Id);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithEmptyResult_ShouldReturnZeroTotal()
+        {
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter { Action = "Nonexistent" }, AuditLogSortOption.TimestampDesc, new AuditLogPage());
+
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.Items);
+        }        public void Dispose()
         {
             _context?.Dispose();
         }
     }
 }
+
