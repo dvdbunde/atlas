@@ -16,6 +16,68 @@ namespace ATLAS.Application.Tests.Commands
         private readonly CancellationToken _ct = CancellationToken.None;
 
         [Fact]
+        public async Task AddPermitField_WhenFound_ShouldAddAndReturnTrue()
+        {
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
+
+            var handler = new AddPermitFieldCommandHandler(_mockRepository.Object);
+            var result = await handler.Handle(
+                new AddPermitFieldCommand { PermitTypeId = permitType.Id, Name = "NewField", Type = FieldType.Text, IsRequired = true },
+                _ct);
+
+            Assert.True(result);
+            Assert.Single(permitType.Fields);
+            Assert.Equal("NewField", permitType.Fields[0].Name);
+            _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddPermitField_WhenNotFound_ShouldReturnFalse()
+        {
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync((PermitType)null);
+            var handler = new AddPermitFieldCommandHandler(_mockRepository.Object);
+
+            var result = await handler.Handle(
+                new AddPermitFieldCommand { PermitTypeId = Guid.NewGuid(), Name = "X", Type = FieldType.Text, IsRequired = true },
+                _ct);
+
+            Assert.False(result);
+            _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<PermitType>(), _ct), Times.Never);
+        }
+
+        [Fact]
+        public async Task AddDocumentRequirement_WhenFound_ShouldAddAndReturnTrue()
+        {
+            var permitType = new PermitType("Building Permit", "Desc", 100m);
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
+
+            var handler = new AddDocumentRequirementCommandHandler(_mockRepository.Object);
+            var result = await handler.Handle(
+                new AddDocumentRequirementCommand { PermitTypeId = permitType.Id, DocumentType = "ID", IsRequired = true, AllowedExtensions = new[] { ".pdf" }, MaxFileSizeBytes = 1000 },
+                _ct);
+
+            Assert.True(result);
+            Assert.Single(permitType.DocumentRequirements);
+            Assert.Equal("ID", permitType.DocumentRequirements[0].DocumentType);
+            _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddDocumentRequirement_WhenNotFound_ShouldReturnFalse()
+        {
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync((PermitType)null);
+            var handler = new AddDocumentRequirementCommandHandler(_mockRepository.Object);
+
+            var result = await handler.Handle(
+                new AddDocumentRequirementCommand { PermitTypeId = Guid.NewGuid(), DocumentType = "ID", IsRequired = true, AllowedExtensions = new[] { ".pdf" }, MaxFileSizeBytes = 1000 },
+                _ct);
+
+            Assert.False(result);
+            _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<PermitType>(), _ct), Times.Never);
+        }
+
+        [Fact]
         public async Task UpdatePermitField_WhenFound_ShouldUpdateAndReturnTrue()
         {
             var permitType = new PermitType("Building Permit", "Desc", 100m);

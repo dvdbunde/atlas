@@ -3,6 +3,8 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using ATLAS.Blazor.Components.Shared.Admin
+@using ATLAS.Domain.Enums
+@using ATLAS.Blazor.FormModel
 
 <PageTitle>Permit Type Designer</PageTitle>
 
@@ -106,21 +108,201 @@
         }
         else if (_activeSection == "fields")
         {
-            <EmptyState Title="Fields"
-                        Message="Field configuration will be available in a later phase."
-                        PlannedPhase="Planned for a subsequent milestone." />
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Permit Fields</h5>
+                        @if (!_isFieldEditorOpen)
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="OpenAddField" disabled="@_viewModel.HasUnsavedChanges">
+                                <i class="bi bi-plus-lg"></i> Add Field
+                            </button>
+                        }
+                    </div>
+
+                    @if (_viewModel.Fields.Count == 0)
+                    {
+                        <p class="text-muted">No fields configured yet. Add a field to collect information on applications.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @for (var i = 0; i < _viewModel.Fields.Count; i++)
+                            {
+                                var field = _viewModel.Fields[i];
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-semibold">@field.Name</span>
+                                        <span class="badge bg-secondary ms-2">@field.Type</span>
+                                        @if (field.IsRequired)
+                                        {
+                                            <span class="badge bg-danger ms-1">Required</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(field.DefaultValue))
+                                        {
+                                            <small class="text-muted ms-2">Default: @field.DefaultValue</small>
+                                        }
+                                    </div>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-secondary" @onclick="@(() => MoveField(field, -1))" disabled="@(i == 0)" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" @onclick="@(() => MoveField(field, 1))" disabled="@(i == _viewModel.Fields.Count - 1)" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" @onclick="@(() => OpenEditField(field))" disabled="@_viewModel.HasUnsavedChanges" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" @onclick="@(() => RemoveField(field))" disabled="@_viewModel.HasUnsavedChanges" title="Remove">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (_isFieldEditorOpen)
+                    {
+                        <div class="border rounded p-3 mt-3">
+                            <h6>@(_editingFieldId.HasValue ? "Edit Field" : "Add Field")</h6>
+                            <div class="mb-3">
+                                <label class="form-label" for="ptd-field-name">Field name</label>
+                                <input id="ptd-field-name" class="form-control" @bind="_fieldDraft.Name" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="ptd-field-type">Type</label>
+                                <select id="ptd-field-type" class="form-select" @bind="_fieldDraft.Type">
+                                    @foreach (var type in Enum.GetValues<FieldType>())
+                                    {
+                                        <option value="@type">@type</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input id="ptd-field-required" class="form-check-input" type="checkbox" @bind="_fieldDraft.IsRequired" />
+                                <label class="form-check-label" for="ptd-field-required">Required</label>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="ptd-field-default">Default value</label>
+                                <input id="ptd-field-default" class="form-control" @bind="_fieldDraft.DefaultValue" />
+                            </div>
+                            @if (_fieldDraft.Type == FieldType.Dropdown)
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label" for="ptd-field-options">Options (one per line)</label>
+                                    <textarea id="ptd-field-options" class="form-control" @bind="_fieldDraft.OptionsText"></textarea>
+                                </div>
+                            }
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm" @onclick="SaveField">Save</button>
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => CloseFieldEditor(true))">Cancel</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         }
         else if (_activeSection == "documents")
         {
-            <EmptyState Title="Document Requirements"
-                        Message="Document requirement configuration will be available in a later phase."
-                        PlannedPhase="Planned for a subsequent milestone." />
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Document Requirements</h5>
+                        @if (!_isRequirementEditorOpen)
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="OpenAddRequirement" disabled="@_viewModel.HasUnsavedChanges">
+                                <i class="bi bi-plus-lg"></i> Add Requirement
+                            </button>
+                        }
+                    </div>
+
+                    @if (_viewModel.DocumentRequirements.Count == 0)
+                    {
+                        <p class="text-muted">No document requirements configured yet. Add a requirement to specify what applicants must upload.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @for (var i = 0; i < _viewModel.DocumentRequirements.Count; i++)
+                            {
+                                var requirement = _viewModel.DocumentRequirements[i];
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-semibold">@requirement.Name</span>
+                                        @if (requirement.IsRequired)
+                                        {
+                                            <span class="badge bg-danger ms-2">Required</span>
+                                        }
+                                        <small class="text-muted ms-2">@requirement.AllowedExtensions</small>
+                                        @if (requirement.MaxFileSizeBytes.HasValue)
+                                        {
+                                            <small class="text-muted ms-2">Max: @(requirement.MaxFileSizeBytes.Value / 1024) KB</small>
+                                        }
+                                    </div>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-secondary" @onclick="@(() => MoveRequirement(requirement, -1))" disabled="@(i == 0)" title="Move up">
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" @onclick="@(() => MoveRequirement(requirement, 1))" disabled="@(i == _viewModel.DocumentRequirements.Count - 1)" title="Move down">
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                        <button class="btn btn-outline-primary" @onclick="@(() => OpenEditRequirement(requirement))" disabled="@_viewModel.HasUnsavedChanges" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" @onclick="@(() => RemoveRequirement(requirement))" disabled="@_viewModel.HasUnsavedChanges" title="Remove">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (_isRequirementEditorOpen)
+                    {
+                        <div class="border rounded p-3 mt-3">
+                            <h6>@(_editingRequirementId.HasValue ? "Edit Requirement" : "Add Requirement")</h6>
+                            <div class="mb-3">
+                                <label class="form-label" for="ptd-req-type">Document type</label>
+                                <input id="ptd-req-type" class="form-control" @bind="_requirementDraft.DocumentType" />
+                            </div>
+                            <div class="form-check mb-3">
+                                <input id="ptd-req-required" class="form-check-input" type="checkbox" @bind="_requirementDraft.IsRequired" />
+                                <label class="form-check-label" for="ptd-req-required">Required</label>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="ptd-req-ext">Allowed extensions (comma separated)</label>
+                                <input id="ptd-req-ext" class="form-control" @bind="_requirementDraft.AllowedExtensionsText" placeholder=".pdf, .jpg" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="ptd-req-size">Max file size (bytes)</label>
+                                <input id="ptd-req-size" class="form-control" type="number" @bind="_requirementDraft.MaxFileSizeBytes" />
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success btn-sm" @onclick="SaveRequirement">Save</button>
+                                <button class="btn btn-outline-secondary btn-sm" @onclick="@(() => CloseRequirementEditor(true))">Cancel</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         }
         else if (_activeSection == "preview")
         {
-            <EmptyState Title="Live Preview"
-                        Message="A live preview of the permit application form will be available in a later phase."
-                        PlannedPhase="Planned for a subsequent milestone." />
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Live Preview</h5>
+                    @if (_viewModel.Fields.Count == 0 && _viewModel.DocumentRequirements.Count == 0)
+                    {
+                        <p class="text-muted">Add fields and document requirements to see a preview of the application form applicants will complete.</p>
+                    }
+                    else
+                    {
+                        <DynamicFormGenerator Fields="@_previewFields" Mode="FormFieldMode.ReadOnly" />
+                    }
+                </div>
+            </div>
         }
 
         <div class="d-flex gap-2 mt-3">

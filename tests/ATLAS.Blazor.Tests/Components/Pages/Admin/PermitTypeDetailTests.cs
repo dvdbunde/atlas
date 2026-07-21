@@ -75,6 +75,19 @@ public class PermitTypeDetailTests : BunitContext
     }
 
     [Fact]
+    public void Should_ProvideDesignerEntryPoint_WhenLoaded()
+    {
+        var id = Guid.NewGuid();
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(SampleDto(id));
+
+        var cut = Render<PermitTypeDetail>(parameters => parameters.Add(p => p.Id, id.ToString()));
+
+        var designerLink = cut.Find($"a[href='/admin/permit-types/{id}/designer']");
+        Assert.Contains("Open Designer", designerLink.TextContent);
+    }
+
+    [Fact]
     public void Should_ShowNotFound_WhenIdIsInvalid()
     {
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))

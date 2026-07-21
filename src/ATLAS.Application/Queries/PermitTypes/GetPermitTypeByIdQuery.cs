@@ -39,6 +39,7 @@ namespace ATLAS.Application.Queries.PermitTypes
                 IsActive = permitType.IsActive,
                 Fields = permitType.Fields.Select(f => new FieldDefinitionDto
                     {
+                        Id = f.Id,
                         Name = f.Name,
                         Type = f.Type,
                         IsRequired = f.IsRequired,
@@ -48,6 +49,7 @@ namespace ATLAS.Application.Queries.PermitTypes
                     .ToList(),
                 DocumentRequirements = permitType.DocumentRequirements.Select(r => new FieldDefinitionDto
                     {
+                        Id = r.Id,
                         Name = r.DocumentType,
                         Type = FieldType.FileUpload,
                         IsRequired = r.IsRequired,

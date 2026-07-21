@@ -17,4 +17,7 @@ public class PermitTypeDesignerViewModel
     public string? SaveMessage { get; set; }
 
     public bool HasUnsavedChanges { get; set; }
+
+    public List<FieldDefinitionDto> Fields { get; set; } = new();
+    public List<FieldDefinitionDto> DocumentRequirements { get; set; } = new();
 }

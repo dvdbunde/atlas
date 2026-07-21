@@ -155,6 +155,21 @@ namespace ATLAS.Application.Commands.Validators
         }
     }
 
+    public class AddPermitFieldCommandValidator : AbstractValidator<AddPermitFieldCommand>
+    {
+        public AddPermitFieldCommandValidator()
+        {
+            RuleFor(x => x.PermitTypeId).NotEmpty().WithMessage("PermitTypeId is required");
+            RuleFor(x => x.Name).NotEmpty().WithMessage("Field name is required")
+                .MinimumLength(2).WithMessage("Field name must be at least 2 characters")
+                .MaximumLength(100).WithMessage("Field name cannot exceed 100 characters");
+            RuleFor(x => x.Type).IsInEnum().WithMessage("A valid field type is required");
+            RuleFor(x => x.Options)
+                .Must(options => options == null || options.Count == 0 || options.All(o => !string.IsNullOrWhiteSpace(o)))
+                .WithMessage("Dropdown options must not be empty");
+        }
+    }
+
     public class RemovePermitFieldCommandValidator : AbstractValidator<RemovePermitFieldCommand>
     {
         public RemovePermitFieldCommandValidator()
@@ -180,6 +195,19 @@ namespace ATLAS.Application.Commands.Validators
         {
             RuleFor(x => x.PermitTypeId).NotEmpty().WithMessage("PermitTypeId is required");
             RuleFor(x => x.RequirementId).NotEmpty().WithMessage("RequirementId is required");
+            RuleFor(x => x.AllowedExtensions).NotNull().WithMessage("AllowedExtensions is required")
+                .Must(e => e.Length > 0).WithMessage("At least one allowed extension is required");
+            RuleFor(x => x.MaxFileSizeBytes).GreaterThan(0).WithMessage("MaxFileSizeBytes must be positive");
+        }
+    }
+
+    public class AddDocumentRequirementCommandValidator : AbstractValidator<AddDocumentRequirementCommand>
+    {
+        public AddDocumentRequirementCommandValidator()
+        {
+            RuleFor(x => x.PermitTypeId).NotEmpty().WithMessage("PermitTypeId is required");
+            RuleFor(x => x.DocumentType).NotEmpty().WithMessage("Document type is required")
+                .MaximumLength(100).WithMessage("Document type cannot exceed 100 characters");
             RuleFor(x => x.AllowedExtensions).NotNull().WithMessage("AllowedExtensions is required")
                 .Must(e => e.Length > 0).WithMessage("At least one allowed extension is required");
             RuleFor(x => x.MaxFileSizeBytes).GreaterThan(0).WithMessage("MaxFileSizeBytes must be positive");

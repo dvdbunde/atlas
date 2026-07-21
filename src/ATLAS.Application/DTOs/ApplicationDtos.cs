@@ -80,6 +80,7 @@ namespace ATLAS.Application.DTOs
 
     public class FieldDefinitionDto
     {
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public FieldType Type { get; set; } 
         public bool IsRequired { get; set; }
