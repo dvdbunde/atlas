@@ -7,17 +7,6 @@ namespace ATLAS.Blazor.Tests.Components.Pages.Admin;
 public class AdminPlaceholderPageTests : BunitContext
 {
     [Fact]
-    public void PermitTypes_ShouldRenderHeaderAndEmptyState()
-    {
-        var cut = Render<PermitTypes>();
-
-        Assert.NotNull(cut.FindComponent<PageHeader>());
-        Assert.NotNull(cut.FindComponent<EmptyState>());
-        Assert.Contains("Permit Types", cut.Markup);
-        Assert.Contains("coming soon", cut.Markup);
-    }
-
-    [Fact]
     public void DynamicForms_ShouldRenderHeaderAndEmptyState()
     {
         var cut = Render<DynamicForms>();

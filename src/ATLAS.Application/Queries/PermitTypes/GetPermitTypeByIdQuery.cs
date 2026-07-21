@@ -36,7 +36,7 @@ namespace ATLAS.Application.Queries.PermitTypes
                 Name = permitType.Name,
                 Description = permitType.Description,
                 Fee = permitType.Fee,
-                IsActive = permitType.IsActive,                                                                
+                IsActive = permitType.IsActive,
                 Fields = permitType.Fields.Select(f => new FieldDefinitionDto
                     {
                         Name = f.Name,
@@ -45,14 +45,15 @@ namespace ATLAS.Application.Queries.PermitTypes
                         DefaultValue = f.DefaultValue,
                         Options = f.Options.ToList()
                     })
-                    .Concat(permitType.DocumentRequirements.Select(r => new FieldDefinitionDto
+                    .ToList(),
+                DocumentRequirements = permitType.DocumentRequirements.Select(r => new FieldDefinitionDto
                     {
-                        Name = r.DocumentType,                        
+                        Name = r.DocumentType,
                         Type = FieldType.FileUpload,
-                        IsRequired = r.IsRequired,                        
+                        IsRequired = r.IsRequired,
                         AllowedExtensions = string.Join(",", r.AllowedExtensions),
                         MaxFileSizeBytes = r.MaxFileSizeBytes
-                    }))
+                    })
                     .ToList()
             };
         }

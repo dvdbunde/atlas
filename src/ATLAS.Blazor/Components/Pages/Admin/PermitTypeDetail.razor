@@ -1,0 +1,160 @@
+@page "/admin/permit-types/{Id:guid}"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Permit Type Details</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item"><a href="/admin/permit-types">Permit Types</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Details</li>
+        </ol>
+    </nav>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading permit type...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadPermitType">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.NotFound)
+    {
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Permit type not found</h4>
+            <p>The requested permit type does not exist.</p>
+            <button class="btn btn-outline-secondary" @onclick="BackToList">Back to list</button>
+        </div>
+    }
+    else if (_viewModel.PermitType is not null)
+    {
+        var pt = _viewModel.PermitType;
+        <PageHeader Title="@pt.Name"
+                    Description="@pt.Description" />
+
+        <div class="mb-3">
+            <button class="btn btn-primary" @onclick="GoToSettings">Manage Settings</button>
+            <button class="btn btn-outline-secondary" @onclick="BackToList">Back to list</button>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header">General Information</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8">
+                                @if (pt.IsActive)
+                                {
+                                    <span class="badge text-bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Inactive</span>
+                                }
+                            </dd>
+                            <dt class="col-sm-4">Fee</dt>
+                            <dd class="col-sm-8">@pt.Fee.ToString("C")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header">Metadata</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Permit Type ID</dt>
+                            <dd class="col-sm-8"><code>@pt.Id</code></dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">Configured Fields (@pt.Fields.Count)</div>
+                    <div class="card-body">
+                        @if (pt.Fields.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No fields configured.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Type</th>
+                                            <th scope="col">Required</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var field in pt.Fields)
+                                        {
+                                            <tr>
+                                                <td>@field.Name</td>
+                                                <td>@field.Type</td>
+                                                <td>@(field.IsRequired ? "Yes" : "No")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">Document Requirements (@pt.DocumentRequirements.Count)</div>
+                    <div class="card-body">
+                        @if (pt.DocumentRequirements.Count == 0)
+                        {
+                            <p class="text-muted mb-0">No document requirements configured.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Document Type</th>
+                                            <th scope="col">Required</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var doc in pt.DocumentRequirements)
+                                        {
+                                            <tr>
+                                                <td>@doc.Name</td>
+                                                <td>@(doc.IsRequired ? "Yes" : "No")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

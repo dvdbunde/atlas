@@ -63,6 +63,8 @@ namespace ATLAS.Application.DTOs
         public string Description { get; set; } = string.Empty;
         public decimal Fee { get; set; }
         public bool IsActive { get; set; }
+        public int FieldCount { get; set; }
+        public int DocumentRequirementCount { get; set; }
     }
 
     public class PermitTypeDto
@@ -73,6 +75,7 @@ namespace ATLAS.Application.DTOs
         public decimal Fee { get; set; }
         public bool IsActive { get; set; }
         public List<FieldDefinitionDto> Fields { get; set; } = new();
+        public List<FieldDefinitionDto> DocumentRequirements { get; set; } = new();
     }
 
     public class FieldDefinitionDto

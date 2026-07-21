@@ -1,0 +1,97 @@
+@page "/admin/permit-types/{Id:guid}/settings"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Permit Type Settings</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item"><a href="/admin/permit-types">Permit Types</a></li>
+            <li class="breadcrumb-item"><a href="@($"/admin/permit-types/{Id}")">Details</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Settings</li>
+        </ol>
+    </nav>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading settings...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadPermitType">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.NotFound)
+    {
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Permit type not found</h4>
+            <p>The requested permit type does not exist.</p>
+            <button class="btn btn-outline-secondary" @onclick="BackToDetail">Back to detail</button>
+        </div>
+    }
+    else if (_viewModel.PermitType is not null)
+    {
+        <PageHeader Title="@($"{_viewModel.PermitType.Name} — Settings")"
+                    Description="Update operational settings for this permit type." />
+
+        @if (!string.IsNullOrEmpty(_viewModel.SaveMessage))
+        {
+            <div class="alert alert-success" role="alert">@_viewModel.SaveMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(_viewModel.ErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@_viewModel.ErrorMessage</div>
+        }
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label" for="pt-fee">Fee</label>
+                    <input id="pt-fee" class="form-control" type="number" step="0.01" min="0"
+                           @bind="_viewModel.Fee" />
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input id="pt-active" class="form-check-input" type="checkbox" role="switch"
+                           @bind="_viewModel.IsActive" />
+                    <label class="form-check-label" for="pt-active">
+                        Active
+                        @if (_viewModel.IsActive)
+                        {
+                            <span class="badge text-bg-success ms-1">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary ms-1">Inactive</span>
+                        }
+                    </label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" @onclick="SaveSettings" disabled="@_viewModel.IsSaving">
+                        @if (_viewModel.IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                        Save Settings
+                    </button>
+                    @if (_viewModel.IsActive)
+                    {
+                        <button class="btn btn-outline-warning" @onclick="Deactivate" disabled="@_viewModel.IsSaving">
+                            Deactivate
+                        </button>
+                    }
+                    <button class="btn btn-outline-secondary" @onclick="BackToDetail">Cancel</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>

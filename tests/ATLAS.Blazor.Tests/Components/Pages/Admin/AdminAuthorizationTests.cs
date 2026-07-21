@@ -82,5 +82,20 @@ public class AdminAuthorizationTests : BunitContext
         Assert.NotNull(cut.Find("h1"));
         Assert.Contains("Administration Dashboard", cut.Markup);
     }
+
+    [Theory]
+    [InlineData(typeof(PermitTypes))]
+    [InlineData(typeof(PermitTypeDetail))]
+    [InlineData(typeof(PermitTypeSettings))]
+    public void PermitTypeAdminPages_ShouldDeclareAdminRoleAuthorization(System.Type pageType)
+    {
+        var attribute = pageType
+            .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+            .Cast<AuthorizeAttribute>()
+            .SingleOrDefault();
+
+        Assert.NotNull(attribute);
+        Assert.Equal("Admin", attribute.Roles);
+    }
 }
 

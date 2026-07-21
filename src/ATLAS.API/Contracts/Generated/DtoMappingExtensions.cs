@@ -316,6 +316,15 @@ namespace ATLAS.API.Contracts.Generated
                 }
             }
 
+            if (dto.DocumentRequirements != null)
+            {
+                response.Fields ??= new List<FieldDefinitionResponse>();
+                foreach (var doc in dto.DocumentRequirements)
+                {
+                    response.Fields.Add(doc.ToResponse());
+                }
+            }
+
             return response;
         }
         #endregion

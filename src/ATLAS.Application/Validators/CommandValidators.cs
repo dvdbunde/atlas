@@ -1,5 +1,6 @@
 using ATLAS.Application.Commands.Applications;
 using ATLAS.Application.Commands.Documents;
+using ATLAS.Application.Commands.PermitTypes;
 using FluentValidation;
 using System;
 
@@ -49,6 +50,30 @@ namespace ATLAS.Application.Commands.Validators
         {
             RuleFor(x => x.ApplicationId)
                 .NotEmpty().WithMessage("ApplicationId is required");            
+        }
+    }
+
+    public class UpdatePermitTypeCommandValidator : AbstractValidator<UpdatePermitTypeCommand>
+    {
+        public UpdatePermitTypeCommandValidator()
+        {
+            RuleFor(x => x.PermitTypeId)
+                .NotEmpty().WithMessage("PermitTypeId is required");
+
+            RuleFor(x => x.Fee)
+                .GreaterThanOrEqualTo(0).WithMessage("Fee cannot be negative");
+        }
+    }
+
+    public class DeactivatePermitTypeCommandValidator : AbstractValidator<DeactivatePermitTypeCommand>
+    {
+        public DeactivatePermitTypeCommandValidator()
+        {
+            RuleFor(x => x.PermitTypeId)
+                .NotEmpty().WithMessage("PermitTypeId is required");
+
+            RuleFor(x => x.DeactivatedByAdminId)
+                .NotEmpty().WithMessage("DeactivatedByAdminId is required");
         }
     }
 

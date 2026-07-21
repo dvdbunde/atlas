@@ -14,9 +14,96 @@
         </ol>
     </nav>
 
-    <PageHeader Title="Permit Types" />
+    <PageHeader Title="Permit Types"
+                Description="Browse and manage permit types available in ATLAS." />
 
-    <EmptyState Title="Permit Types coming soon"
-                Message="This area will be available in a later Milestone 8 phase."
-                PlannedPhase="Planned for implementation in a subsequent Milestone 8 phase." />
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading permit types...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadPermitTypes">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.IsEmpty)
+    {
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">No permit types found</h4>
+            <p>No permit types match the current filters.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row mb-3 g-2 align-items-end">
+            <div class="col-12 col-md-5">
+                <label class="form-label" for="pt-search">Search by name</label>
+                <input id="pt-search" class="form-control" type="search" placeholder="Search permit types..."
+                       value="@_viewModel.SearchTerm" @oninput="OnSearchInput" />
+            </div>
+            <div class="col-6 col-md-3 form-check mt-4">
+                <input id="pt-active" class="form-check-input" type="checkbox" checked="@_viewModel.ActiveOnly" @onchange="OnActiveOnlyChanged" />
+                <label class="form-check-label" for="pt-active">Active only</label>
+            </div>
+            <div class="col-6 col-md-3 form-check mt-4">
+                <input id="pt-inactive" class="form-check-input" type="checkbox" checked="@_viewModel.InactiveOnly" @onchange="OnInactiveOnlyChanged" />
+                <label class="form-check-label" for="pt-inactive">Inactive only</label>
+            </div>
+            <div class="col-12 col-md-1">
+                <label class="form-label" for="pt-sort">Sort</label>
+                <select id="pt-sort" class="form-select" value="@_viewModel.SortBy" @onchange="OnSortChanged">
+                    <option value="NameAsc">Name A–Z</option>
+                    <option value="NameDesc">Name Z–A</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Description</th>
+                        <th scope="col">Fee</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Fields</th>
+                        <th scope="col">Documents</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var pt in _viewModel.Items)
+                    {
+                        <tr>
+                            <td>@pt.Name</td>
+                            <td>@pt.Description</td>
+                            <td>@pt.Fee.ToString("C")</td>
+                            <td>
+                                @if (pt.IsActive)
+                                {
+                                    <span class="badge text-bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>@pt.FieldCount</td>
+                            <td>@pt.DocumentRequirementCount</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="@($"/admin/permit-types/{pt.Id}")">View</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
