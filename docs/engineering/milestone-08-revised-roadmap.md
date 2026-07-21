@@ -14,7 +14,7 @@ The original Milestone 8 plan was written before A1–A3 were implemented. Those
 | A2 | Permit Type Administration | ✅ Done | List/detail/settings, deactivate |
 | A2.5 | PermitType Aggregate Evolution | ✅ Done | Field/docreq editing operations |
 | A3 | Complete Permit Type Designer | ✅ Done | Fields, Doc Reqs, Live Preview |
-| **A4** | **Officer & User Administration** | 🟦 Revised | **Read-only** user directory (list + detail) per ADR-013; no role/activation writes |
+| **A4** | **User Directory (Entra-synchronized)** | 🟦 Revised | **Read-only** user directory (list + detail) per ADR-013; no role/activation writes |
 | **A5** | **Audit Log Viewer** | 🟦 Simplified | Read-only viewer over existing `GetAuditLogsQuery` |
 | **A6** | **Reference Data & System Settings** | 🟦 Merged | Single config-admin phase (was 2) |
 | **A7** | **Email Template Administration** | 🟦 Revised | Admin UI over existing `IEmailTemplateRenderer` |
@@ -40,7 +40,7 @@ Rationale: A4 is the foundational "user administration" item from PRD M8 and unb
 
 ## 3. Scope for Every Remaining Phase
 
-### A4 — Officer & User Administration (READ-ONLY)
+### A4 — User Directory (Entra-synchronized, READ-ONLY)
 
   > **Architectural constraint (ADR-013):** Microsoft Entra ID is the **sole source of truth** for user identity, profile, and role. The `User` aggregate is a synchronized, read-only projection. `User.SynchronizeFromClaims` overwrites `Role` on every login, and ADR-013 explicitly removed `ChangeRole`, `Deactivate`, `IsActive`, `UpdateUserRoleCommand`, and `CreateUserCommand`. **Therefore A4 is implemented as a read-only directory — no role editing, no activation/deactivation, no local writes to the `User` aggregate.**
 
@@ -92,7 +92,7 @@ A4 and A5 are **independent** of each other; A6/A7 are independent of A4/A5. Onl
 
 ## 6. Recommended Implementation Order
 
-1. **A4 — Officer & User Administration** (foundational M8 item; highest product value; reuses most existing infra).
+1. **A4 — User Directory (Entra-synchronized)** (foundational M8 item; highest product value; reuses most existing infra).
 2. **A5 — Audit Log Viewer** (fastest win — backend already built; only UI + paging/filters).
 3. **A6 — Reference Data & System Settings** (single config-admin phase; reuse Designer editor pattern).
 4. **A7 — Email Template Administration** (reuse renderer + editor UX; lowest dependency).
@@ -113,6 +113,19 @@ Each phase is deliverable in a **single implementation cycle** (one feature bran
 | 6 | Email Templates assumed to need a from-scratch service. | **Revised to admin-UI-over-existing-renderer (A7)**. | `IEmailTemplateRenderer` already exists; A7 is configuration UI, not service design. |
 | 7 | Phases ordered by original discovery sequence. | **Reordered A4 → A5 → A6 → A7** by dependency + value. | A4 delivers the core M8 "user administration" goal; A5 is a cheap backend-complete win; A6/A7 are independent config phases. |
 | 8 | Each phase expected to introduce its own editor UX. | **Standardized on Designer patterns** (tabbed sections, `Mediator.Send` commands, unsaved-guard, `DynamicFormGenerator` reuse). | Eliminates duplicated UX effort and keeps admin modules consistent. |
+
+---
+
+## 8. Architecture Guardrails (ADR-013)
+
+To prevent future milestones from accidentally reintroducing local identity management, the following guardrails are enforced (see `tests/ATLAS.Architecture.Tests/Adr013UserProjectionGuardTests.cs`):
+
+- **No `User` mutation commands.** No command class may mutate `User` identity data (`ChangeRole`, `ActivateUser`, `DeactivateUser`, `UpdateUser`, `EditUser`, `CreateUserCommand`, `UpdateUserRoleCommand`).
+- **Only `IdentityResolver` synchronizes `User`.** `IUserRepository` write operations (if retained) may be invoked **only** from `IdentityResolver.SynchronizeUserAsync`. No handler or UI may write `User`.
+- **`User` aggregate exposes no identity-management behavior.** The entity must not regain `IsActive`, `ChangeRole()`, `Deactivate()`, `UpdateEmail()`, or `UpdateProfile()`.
+- **No `IsActive` on `User`.** Activation/lifecycle is owned by Entra ID; the `User` projection carries no local active flag.
+
+These tests fail the build if a future change violates any guardrail, keeping the solution internally consistent with ADR-013.
 
 ---
 

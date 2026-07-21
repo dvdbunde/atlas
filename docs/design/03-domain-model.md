@@ -10,7 +10,7 @@ Based on the [ATLAS PRD](../PRDs/atlas-mvp-prd.md), the primary domain concepts 
 
 1. **Application** - A permit application submitted by a citizen
 2. **PermitType** - Configurable permit categories defined by administrators
-3. **User** - System users (Citizens, Officers, Administrators)
+3. **User** - Synchronized Entra ID projection (Citizens, Officers, Administrators)
 4. **Document** - Files uploaded in support of applications
 5. **Review** - Officer's review of an application
 6. **AuditLog** - Immutable record of all system actions

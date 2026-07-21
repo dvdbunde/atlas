@@ -29,7 +29,7 @@ tags:
   - name: PermitTypes
     description: Permit type configuration
   - name: Users
-    description: User account management
+    description: User directory (read-only Entra ID projection)
   - name: AuditLogs
     description: Audit trail and compliance
 
@@ -1185,10 +1185,7 @@ components:
         role:
           type: string
           example: 'Citizen'
-        isActive:
-          type: boolean
-          default: true
-      required: [id, email, firstName, lastName, role, isActive]
+      required: [id, email, firstName, lastName, role]
     
     AuditLogResponse:
       type: object

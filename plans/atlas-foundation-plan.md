@@ -160,7 +160,7 @@ flowchart TD
 - `AuditLog` entity for immutable audit trail (7-year retention)
 - Value objects: `ApplicationStatus`, `DocumentType`, `PermitField`, `DocumentRequirement`
 - Aggregates: `Application` (root — contains Document, Review, ApplicationFieldValue), `PermitType` (root), `User` (root)
-- Domain events: `ApplicationSubmittedEvent`, `ApplicationApprovedEvent`, `ApplicationRejectedEvent`, `ApplicationInfoRequestedEvent`, `DocumentUploadedEvent`, `UserRoleChangedEvent`
+- Domain events: `ApplicationSubmittedEvent`, `ApplicationApprovedEvent`, `ApplicationRejectedEvent`, `ApplicationInfoRequestedEvent`, `DocumentUploadedEvent`
 - Unit tests for all domain logic (≥95% coverage per Quality Policy)
 
 **Acceptance Criteria**:
@@ -412,7 +412,7 @@ flowchart TD
 
 ## Milestone 8: Administration
 
-**Objective**: Implement administrative features — permit type management, user administration, audit log viewer, and system configuration.
+**Objective**: Implement administrative features — permit type management, User Directory (Entra-synchronized, read-only), audit log viewer, and system configuration.
 
 **Deliverables**:
 

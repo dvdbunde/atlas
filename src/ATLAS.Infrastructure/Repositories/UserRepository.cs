@@ -51,11 +51,12 @@ namespace ATLAS.Infrastructure.Repositories
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(User entity, CancellationToken cancellationToken = default)
-        {
-            _context.Users.Remove(entity);
-            return Task.CompletedTask;
-        }
+        // DeleteAsync is intentionally not implemented. User projections are synchronized from
+        // Entra ID and must never be deleted by ATLAS (ADR-013). The interface member throws
+        // NotSupportedException; this implementation is unreachable.
+        Task IRepository<User>.DeleteAsync(User entity, CancellationToken cancellationToken) =>
+            throw new NotSupportedException(
+                "User projections are synchronized from Entra ID and must never be deleted by ATLAS (ADR-013).");
 
         public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
         {

@@ -148,7 +148,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 
 ### UC8: Administrator Manages User Roles (F-21)
 
-- Admin accesses "User Management" panel (data from Entra ID synchronization)
+- Admin accesses "User Directory" panel (read-only, data from Entra ID synchronization)
 - Views list of all synchronized users (Citizens, Officers, Admins)
 - Cannot create user accounts through ATLAS (managed in Entra ID)
 - Cannot change user roles through ATLAS (managed in Entra ID via app roles)
