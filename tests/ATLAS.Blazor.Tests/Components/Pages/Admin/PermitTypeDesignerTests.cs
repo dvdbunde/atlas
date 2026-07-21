@@ -4,6 +4,7 @@ using ATLAS.Application.DTOs;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Pages.Admin;
 using ATLAS.Blazor.Components.Shared;
+using ATLAS.Blazor.FormModel;
 using ATLAS.Domain.Enums;
 using ATLAS.Blazor.Components.Shared.Admin;
 using MediatR;
@@ -443,5 +444,72 @@ public class PermitTypeDesignerTests : BunitContext
         cut.FindAll("button").First(b => b.TextContent.Contains("Cancel")).Click();
 
         Assert.EndsWith($"/admin/permit-types/{id}", nav.Uri);
+    }
+
+    [Theory]
+    [InlineData(FieldType.Text)]
+    [InlineData(FieldType.MultilineText)]
+    [InlineData(FieldType.Number)]
+    [InlineData(FieldType.Date)]
+    [InlineData(FieldType.Boolean)]
+    [InlineData(FieldType.Dropdown)]
+    [InlineData(FieldType.FileUpload)]
+    public void Should_SendAddPermitFieldCommand_ForEveryFieldType(FieldType type)
+    {
+        var id = Guid.NewGuid();
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default)).ReturnsAsync(SampleDto(id));
+        _mediatorMock.Setup(m => m.Send(It.IsAny<AddPermitFieldCommand>(), default)).ReturnsAsync(true);
+
+        var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
+        cut.FindAll("button").First(b => b.TextContent.Contains("Fields")).Click();
+
+        cut.FindAll("button").First(b => b.TextContent.Contains("Add Field")).Click();
+        cut.Find("#ptd-field-name").Change($"Field {type}");
+        cut.Find("#ptd-field-type").Change(type.ToString());
+        cut.FindAll("button").First(b => b.TextContent.Contains("Save")).Click();
+
+        _mediatorMock.Verify(m => m.Send(It.Is<AddPermitFieldCommand>(c =>
+            c.PermitTypeId == id && c.Name == $"Field {type}" && c.Type == type), default), Times.Once);
+    }
+
+    [Fact]
+    public void Should_RenderPreviewInReadOnlyMode()
+    {
+        var id = Guid.NewGuid();
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(SampleDtoWithFields(id));
+
+        var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
+        cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
+
+        var generator = cut.FindComponent<DynamicFormGenerator>();
+        Assert.Equal(FormFieldMode.ReadOnly, generator.Instance.Mode);
+    }
+
+    [Fact]
+    public void Should_ReflectCurrentDesignerStateInPreview()
+    {
+        var id = Guid.NewGuid();
+        var dto = SampleDto(id);
+        dto.Fields = new List<FieldDefinitionDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "Applicant Name", Type = FieldType.Text, IsRequired = true },
+            new() { Id = Guid.NewGuid(), Name = "Site Plan", Type = FieldType.FileUpload, IsRequired = true, AllowedExtensions = ".pdf", MaxFileSizeBytes = 512000 }
+        };
+        dto.DocumentRequirements = new List<FieldDefinitionDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "ID Copy", Type = FieldType.FileUpload, IsRequired = true, AllowedExtensions = ".pdf", MaxFileSizeBytes = 102400 }
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default)).ReturnsAsync(dto);
+
+        var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
+        cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
+
+        var generator = cut.FindComponent<DynamicFormGenerator>();
+        // Preview merges fields then document requirements (3 total).
+        Assert.Equal(3, generator.Instance.Fields.Count);
+        Assert.Contains("Applicant Name", cut.Markup);
+        Assert.Contains("Site Plan", cut.Markup);
+        Assert.Contains("ID Copy", cut.Markup);
     }
 }
