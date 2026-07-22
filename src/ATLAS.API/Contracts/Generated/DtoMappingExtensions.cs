@@ -289,7 +289,7 @@ namespace ATLAS.API.Contracts.Generated
                 EntityType = dto.EntityType,
                 EntityId = dto.EntityId,
                 Details = dto.Details,
-                Timestamp = new DateTimeOffset(dto.Timestamp),
+                Timestamp = new DateTimeOffset(dto.Timestamp, TimeSpan.Zero),
                 IpAddress = dto.IpAddress
             };
         }

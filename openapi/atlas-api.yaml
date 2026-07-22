@@ -954,6 +954,7 @@ paths:
           schema:
             type: string
             format: uuid
+            nullable: true
           description: Filter by user ID
         - name: action
           in: query
@@ -1028,6 +1029,7 @@ paths:
           schema:
             type: string
             format: uuid
+            nullable: true
           description: Filter by user ID
         - name: action
           in: query
