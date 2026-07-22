@@ -546,6 +546,19 @@ namespace ATLAS.API.Contracts.Generated
                 PerformedBy = dto.PerformedBy,
                 PerformedByRole = dto.PerformedByRole
             };
-        }      
+        }
+
+        #region EmailTemplate: Response ↔ Application model
+        public static EmailTemplateResponse ToResponse(this ATLAS.Application.EmailTemplates.EmailTemplate template)
+        {
+            if (template == null) return null!;
+
+            return new EmailTemplateResponse
+            {
+                Name = template.Name,
+                Content = template.Content
+            };
+        }
+        #endregion
     }    
 }

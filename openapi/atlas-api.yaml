@@ -1092,6 +1092,128 @@ paths:
       security:
         - EntraID: ['Admin']
 
+  /api/emailtemplates:
+    get:
+      tags: [EmailTemplates]
+      summary: List email templates
+      description: Retrieve all application-owned email templates (name and content).
+      operationId: getEmailTemplates
+      responses:
+        '200':
+          description: The list of email templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmailTemplateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/emailtemplates/{name}:
+    get:
+      tags: [EmailTemplates]
+      summary: Get email template by name
+      description: Retrieve a single email template by its name.
+      operationId: getEmailTemplateByName
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name
+      responses:
+        '200':
+          description: The requested email template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Email template not found
+      security:
+        - EntraID: ['Admin']
+
+    put:
+      tags: [EmailTemplates]
+      summary: Update email template
+      description: Persist edited email template content. Unknown placeholders are rejected.
+      operationId: updateEmailTemplate
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailTemplateRequest'
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Email template not found
+      security:
+        - EntraID: ['Admin']
+
+  /api/emailtemplates/{name}/preview:
+    post:
+      tags: [EmailTemplates]
+      summary: Preview rendered email template
+      description: Render arbitrary template content with a fixed sample model.
+      operationId: previewEmailTemplate
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name (used for routing only; content is supplied in the body)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewEmailTemplateRequest'
+      responses:
+        '200':
+          description: The rendered template
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
 components:
   schemas:
     AuditLogSortOption:
@@ -1755,6 +1877,34 @@ components:
           type: string
           nullable: true
           
+    EmailTemplateResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Template name
+          example: SubmissionConfirmation
+        content:
+          type: string
+          description: Template body with placeholder tokens
+      required: [name, content]
+
+    UpdateEmailTemplateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: New template body content
+      required: [content]
+
+    PreviewEmailTemplateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Template body to render with a fixed sample model
+      required: [content]
+
   responses:
     Unauthorized:
       description: Unauthorized - Authentication required
@@ -1780,7 +1930,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ValidationProblemDetails'
-  
+
+
   securitySchemes:
     EntraID:
       type: openIdConnect

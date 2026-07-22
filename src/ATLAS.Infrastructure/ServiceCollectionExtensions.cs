@@ -2,6 +2,7 @@ namespace ATLAS.Infrastructure
 {
     using ATLAS.Application;
     using ATLAS.Application.Behaviors;
+    using ATLAS.Application.EmailTemplates;
     using ATLAS.Application.Interfaces;
     using ATLAS.Domain.Entities;
     using ATLAS.Domain.Events;
@@ -20,6 +21,7 @@ namespace ATLAS.Infrastructure
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Options;
+    using ATLAS.Infrastructure.EmailTemplates;
 
     /// <summary>
     /// Extension methods for IServiceCollection to register Infrastructure layer services
@@ -76,6 +78,9 @@ namespace ATLAS.Infrastructure
 
             // Email template renderer
             services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+
+            // Email template store (file-backed; swappable source behind abstraction)
+            services.AddScoped<IEmailTemplateStore, FileEmailTemplateStore>();
 
             // Email event handlers (MediatR auto-discovers, but explicit for clarity)
             services.AddScoped<INotificationHandler<ApplicationSubmittedEvent>, ApplicationSubmittedEmailHandler>();

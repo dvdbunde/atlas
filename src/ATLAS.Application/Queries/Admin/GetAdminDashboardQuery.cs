@@ -1,4 +1,5 @@
 using ATLAS.Application.DTOs;
+using ATLAS.Application.EmailTemplates;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Interfaces;
 using MediatR;
@@ -34,8 +35,8 @@ public class AdminDashboardDto
     public int OfficerCount { get; init; }
 
     /// <summary>
-    /// Number of active email templates. Placeholder until Email Template management
-    /// is implemented in a later Milestone 8 phase. Returns 0 for now.
+    /// Number of active email templates managed through the Email Template
+    /// Administration feature (the four application-owned templates).
     /// </summary>
     public int ActiveEmailTemplateCount { get; init; }
 }
@@ -45,15 +46,18 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
     private readonly IPermitTypeRepository _permitTypeRepository;
     private readonly IApplicationRepository _applicationRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IEmailTemplateStore _emailTemplateStore;
 
     public GetAdminDashboardQueryHandler(
         IPermitTypeRepository permitTypeRepository,
         IApplicationRepository applicationRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IEmailTemplateStore emailTemplateStore)
     {
         _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
         _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+        _emailTemplateStore = emailTemplateStore ?? throw new ArgumentNullException(nameof(emailTemplateStore));
     }
 
     public async Task<AdminDashboardDto> Handle(GetAdminDashboardQuery request, CancellationToken cancellationToken)
@@ -64,14 +68,14 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
         var permitTypes = await _permitTypeRepository.GetAllAsync(cancellationToken);
         var applications = await _applicationRepository.GetAllAsync(cancellationToken);
         var officers = await _userRepository.GetByRoleAsync(ATLAS.Domain.Entities.UserRole.Officer, cancellationToken);
+        var templateNames = await _emailTemplateStore.GetTemplateNamesAsync(cancellationToken);
 
         return new AdminDashboardDto
         {
             PermitTypeCount = permitTypes.Count(),
             ApplicationCount = applications.Count(),
             OfficerCount = officers.Count(),
-            // Placeholder: Email Template management is implemented in a later phase.
-            ActiveEmailTemplateCount = 0
+            ActiveEmailTemplateCount = templateNames.Count
         };
     }
 }

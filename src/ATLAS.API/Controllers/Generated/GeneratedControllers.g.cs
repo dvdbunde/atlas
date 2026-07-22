@@ -373,6 +373,54 @@ namespace ATLAS.API.Controllers.Generated
 
     }
 
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class EmailTemplatesControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// List email templates
+        /// </summary>
+        /// <remarks>
+        /// Retrieve all application-owned email templates (name and content).
+        /// </remarks>
+        /// <returns>The list of email templates</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates", Name = "getEmailTemplates")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<EmailTemplateResponse>>> GetEmailTemplates();
+
+        /// <summary>
+        /// Get email template by name
+        /// </summary>
+        /// <remarks>
+        /// Retrieve a single email template by its name.
+        /// </remarks>
+        /// <param name="name">Template name</param>
+        /// <returns>The requested email template</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}", Name = "getEmailTemplateByName")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<EmailTemplateResponse>> GetEmailTemplateByName(string name);
+
+        /// <summary>
+        /// Update email template
+        /// </summary>
+        /// <remarks>
+        /// Persist edited email template content. Unknown placeholders are rejected.
+        /// </remarks>
+        /// <param name="name">Template name</param>
+        /// <returns>Template updated</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}", Name = "updateEmailTemplate")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> UpdateEmailTemplate(string name, [Microsoft.AspNetCore.Mvc.FromBody] UpdateEmailTemplateRequest body);
+
+        /// <summary>
+        /// Preview rendered email template
+        /// </summary>
+        /// <remarks>
+        /// Render arbitrary template content with a fixed sample model.
+        /// </remarks>
+        /// <param name="name">Template name (used for routing only; content is supplied in the body)</param>
+        /// <returns>The rendered template</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}/preview", Name = "previewEmailTemplate")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> PreviewEmailTemplate(string name, [Microsoft.AspNetCore.Mvc.FromBody] PreviewEmailTemplateRequest body);
+
+    }
+
     
 
 

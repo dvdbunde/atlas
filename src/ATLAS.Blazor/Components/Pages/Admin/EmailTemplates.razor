@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using ATLAS.Blazor.Components.Shared.Admin
+@using ATLAS.Application.EmailTemplates
 
 <PageTitle>Email Templates</PageTitle>
 
@@ -16,7 +17,95 @@
 
     <PageHeader Title="Email Templates" />
 
-    <EmptyState Title="Email Templates coming soon"
-                Message="This area will be available in a later Milestone 8 phase."
-                PlannedPhase="Planned for implementation in a subsequent Milestone 8 phase." />
+    @if (_isLoading)
+    {
+        <div class="alert alert-info" role="status">Loading email templates…</div>
+    }
+    else if (_hasError)
+    {
+        <div class="alert alert-danger" role="alert">@_errorMessage</div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Templates</h4>
+                <ul class="list-group">
+                    @foreach (var template in _templates)
+                    {
+                        <li class="list-group-item @(_selectedName == template.Name ? "active" : "")">
+                            <button type="button" class="btn btn-link p-0 text-start"
+                                    @onclick="@(() => SelectTemplate(template.Name))">
+                                @template.Name
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="col-md-8">
+                @if (_selectedName is null)
+                {
+                    <EmptyState Title="Select a template"
+                                Message="Choose a template from the list to view, edit, and preview it." />
+                }
+                else if (_notFound)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        The template <strong>@_selectedName</strong> could not be found.
+                    </div>
+                }
+                else
+                {
+                    <h4>@_selectedName</h4>
+
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            Supported placeholders:
+                            @foreach (var placeholder in SupportedPlaceholders)
+                            {
+                                <span class="badge bg-secondary me-1">@("{{" + placeholder + "}}")</span>
+                            }
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="template-content">Template content</label>
+                        <textarea id="template-content" class="form-control" rows="12"
+                                  @bind="_editorContent"></textarea>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_saveMessage))
+                    {
+                        <div class="alert alert-success" role="alert">@_saveMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_saveError))
+                    {
+                        <div class="alert alert-danger" role="alert">@_saveError</div>
+                    }
+
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary" @onclick="SaveTemplate" disabled="@_isSaving">
+                            @(_isSaving ? "Saving…" : "Save")
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="PreviewTemplate" disabled="@_isPreviewing">
+                            @(_isPreviewing ? "Rendering…" : "Preview")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_previewOutput))
+                    {
+                        <div class="mt-4">
+                            <h5>Preview</h5>
+                            <pre class="border rounded p-3 bg-light">@_previewOutput</pre>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_previewError))
+                    {
+                        <div class="alert alert-danger mt-3" role="alert">@_previewError</div>
+                    }
+                }
+            </div>
+        </div>
+    }
 </div>

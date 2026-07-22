@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.EmailTemplates;
 using ATLAS.Application.Queries.Admin;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
@@ -16,6 +17,7 @@ namespace ATLAS.Application.Tests.Queries.Admin
         private readonly Mock<IPermitTypeRepository> _mockPermitTypeRepository;
         private readonly Mock<IApplicationRepository> _mockApplicationRepository;
         private readonly Mock<IUserRepository> _mockUserRepository;
+        private readonly Mock<IEmailTemplateStore> _mockEmailTemplateStore;
         private readonly GetAdminDashboardQueryHandler _handler;
 
         public GetAdminDashboardQueryHandlerTests()
@@ -23,10 +25,21 @@ namespace ATLAS.Application.Tests.Queries.Admin
             _mockPermitTypeRepository = new Mock<IPermitTypeRepository>();
             _mockApplicationRepository = new Mock<IApplicationRepository>();
             _mockUserRepository = new Mock<IUserRepository>();
+            _mockEmailTemplateStore = new Mock<IEmailTemplateStore>();
+            _mockEmailTemplateStore
+                .Setup(s => s.GetTemplateNamesAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<string>
+                {
+                    "SubmissionConfirmation",
+                    "ApprovalNotification",
+                    "RejectionNotification",
+                    "InfoRequestNotification"
+                });
             _handler = new GetAdminDashboardQueryHandler(
                 _mockPermitTypeRepository.Object,
                 _mockApplicationRepository.Object,
-                _mockUserRepository.Object);
+                _mockUserRepository.Object,
+                _mockEmailTemplateStore.Object);
         }
 
         [Fact]
@@ -61,7 +74,7 @@ namespace ATLAS.Application.Tests.Queries.Admin
             Assert.Equal(2, result.PermitTypeCount);
             Assert.Equal(3, result.ApplicationCount);
             Assert.Equal(2, result.OfficerCount);
-            Assert.Equal(0, result.ActiveEmailTemplateCount);
+            Assert.Equal(4, result.ActiveEmailTemplateCount);
         }
 
         [Fact]
@@ -79,7 +92,7 @@ namespace ATLAS.Application.Tests.Queries.Admin
             Assert.Equal(0, result.PermitTypeCount);
             Assert.Equal(0, result.ApplicationCount);
             Assert.Equal(0, result.OfficerCount);
-            Assert.Equal(0, result.ActiveEmailTemplateCount);
+            Assert.Equal(4, result.ActiveEmailTemplateCount);
         }
 
         [Fact]

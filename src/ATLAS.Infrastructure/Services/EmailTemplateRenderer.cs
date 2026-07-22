@@ -1,40 +1,45 @@
 //----------------------
 // Email Template Renderer Implementation
-// Renders plain text templates with simple variable substitution
+// Renders plain text templates with simple variable substitution.
+// The template source is abstracted behind IEmailTemplateStore; the renderer no
+// longer reads files directly, so the source (file, DB, Azure storage) is swappable.
 //----------------------
 
 #nullable enable
 
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.EmailTemplates;
 using ATLAS.Application.Interfaces;
-using Microsoft.Extensions.Configuration;
 
 namespace ATLAS.Infrastructure.Services
 {
     public class EmailTemplateRenderer : IEmailTemplateRenderer
     {
-        private readonly string _templatePath;
+        private readonly IEmailTemplateStore _store;
 
-        public EmailTemplateRenderer(IConfiguration configuration)
+        public EmailTemplateRenderer(IEmailTemplateStore store)
         {
-            _templatePath = configuration.GetValue<string>("Email:Templates:Path") 
-                ?? Path.Combine(AppContext.BaseDirectory, "Templates", "Emails");
+            _store = store ?? throw new ArgumentNullException(nameof(store));
         }
 
         public async Task<string> RenderAsync(string templateName, object model, CancellationToken cancellationToken = default)
         {
-            var templateFile = Path.Combine(_templatePath, $"{templateName}.txt");
-            
-            if (!File.Exists(templateFile))
-            {
-                throw new FileNotFoundException($"Email template not found: {templateFile}");
-            }
+            var template = await _store.GetByNameAsync(templateName, cancellationToken);
+            if (template is null)
+                throw new InvalidOperationException($"Email template not found: {templateName}");
 
-            var template = await File.ReadAllTextAsync(templateFile, cancellationToken);
-            return ReplaceVariables(template, model);
+            return ReplaceVariables(template.Content, model);
+        }
+
+        /// <summary>
+        /// Renders an explicit template body (used by the admin preview feature) without
+        /// touching the persistent store. Reuses the same substitution logic.
+        /// </summary>
+        public Task<string> RenderContentAsync(string content, object model, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(ReplaceVariables(content, model));
         }
 
         private static string ReplaceVariables(string template, object model)
