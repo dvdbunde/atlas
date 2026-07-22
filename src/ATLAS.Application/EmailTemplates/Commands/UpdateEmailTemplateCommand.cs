@@ -34,10 +34,17 @@ namespace ATLAS.Application.EmailTemplates.Commands
     public class UpdateEmailTemplateCommandHandler : IRequestHandler<UpdateEmailTemplateCommand, bool>
     {
         private readonly IEmailTemplateStore _store;
+        private readonly IMediator _mediator;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UpdateEmailTemplateCommandHandler(IEmailTemplateStore store)
+        public UpdateEmailTemplateCommandHandler(
+            IEmailTemplateStore store,
+            IMediator mediator,
+            ICurrentUserService currentUserService)
         {
             _store = store ?? throw new ArgumentNullException(nameof(store));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task<bool> Handle(UpdateEmailTemplateCommand request, CancellationToken cancellationToken)
@@ -61,6 +68,14 @@ namespace ATLAS.Application.EmailTemplates.Commands
             }
 
             await _store.SaveAsync(new EmailTemplate { Name = request.Name, Content = request.Content }, cancellationToken);
+
+            // Audit: raise a domain event so the existing event-driven audit infrastructure
+            // records the change. The handler owns audit creation; this handler stays
+            // orchestration-only and never touches audit storage directly.
+            await _mediator.Publish(
+                new EmailTemplateUpdatedEvent(request.Name, _currentUserService.UserId ?? Guid.Empty),
+                cancellationToken);
+
             return true;
         }
     }

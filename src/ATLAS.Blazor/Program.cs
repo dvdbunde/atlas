@@ -1,6 +1,7 @@
 using ATLAS.Application.Queries.Documents;
 using ATLAS.Blazor.Components;
 using ATLAS.Infrastructure;
+using ATLAS.Infrastructure.Data.SeedData;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web;
@@ -52,6 +53,16 @@ builder.Services.AddRazorPages()
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// Seed permit type data on startup (skip in Testing environment - test factory seeds its own data)
+if (!app.Environment.EnvironmentName.Equals("Testing", StringComparison.OrdinalIgnoreCase))
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var seedDataLoader = scope.ServiceProvider.GetRequiredService<SeedDataLoader>();
+        await seedDataLoader.LoadSeedDataAsync();
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
