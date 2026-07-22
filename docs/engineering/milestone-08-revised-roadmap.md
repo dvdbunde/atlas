@@ -16,8 +16,8 @@ The original Milestone 8 plan was written before A1–A3 were implemented. Those
 | A3 | Complete Permit Type Designer | ✅ Done | Fields, Doc Reqs, Live Preview |
 | **A4** | **User Directory (Entra-synchronized)** | 🟦 Revised | **Read-only** user directory (list + detail) per ADR-013; no role/activation writes |
 | **A5** | **Audit Log Viewer** | 🟦 Simplified | Read-only viewer over existing `GetAuditLogsQuery` |
-| **A6** | **Reference Data & System Settings** | 🟦 Merged | Single config-admin phase (was 2) |
-| **A7** | **Email Template Administration** | 🟦 Revised | Admin UI over existing `IEmailTemplateRenderer` |
+| **A6** | **Reference Data & System Settings** | 🟥 Reduced / Conformant | No new subsystem — see `docs/design/a6-rescope-proposal.md` |
+| **A7** | **Email Template Administration** | 🟦 Revised | Admin UI over existing `IEmailTemplateRenderer` (final config-admin phase) |
 
 **Eliminated from original plan:**
 
@@ -34,7 +34,7 @@ A1 → A2 → A2.5 → A3   (completed)
        A4 → A5 → A6 → A7   (remaining, revised)
 ```
 
-Rationale: A4 is the foundational "user administration" item from PRD M8 and unblocks role management; A5 is now a thin UI layer (backend exists); A6/A7 follow as independent config-admin phases reusing the same editor pattern.
+Rationale: A4 is the foundational "user administration" item from PRD M8 and unblocks role management; A5 is now a thin UI layer (backend exists); A6 is reduced to a conformance note (no new subsystem), and A7 is the remaining config-admin phase reusing the same editor pattern.
 
 ---
 
@@ -53,10 +53,12 @@ Rationale: A4 is the foundational "user administration" item from PRD M8 and unb
 - **In:** Read-only, filterable (user/action/date/entity) viewer over the **already-existing** `GetAuditLogsQuery` + `IAuditLogRepository` + `AuditLog` aggregate. Reuses `PageHeader`, list/table pattern, and dashboard nav entry.
 - **Out:** Audit export, retention policy UI, log editing/deletion (immutable per ADR).
 
-### A6 — Reference Data & System Settings
+### A6 — Reference Data & System Settings (Reduced / Conformant)
 
-- **In:** Combine the two original placeholder pages (`ReferenceData`, `SystemSettings`) into **one** config-admin phase: edit lookup/reference values and operational settings through the same tabbed editor pattern established by the Designer.
-- **Out:** New reference-data domains beyond what already exists; feature flags; integrations.
+- **Re-scoped per `docs/design/a6-rescope-proposal.md`.** Inspection confirmed no reference-data or system-settings subsystem exists and no concrete business requirement justifies one. A6 is recorded as a **conformance note**, not an implementation phase.
+- **In (conformance only):** Confirmation that deployment configuration (`StorageOptions`, Entra, connection strings, logging) stays out of the Administration Portal; `FieldType` and workflow enums remain platform/domain concerns; `PermitTypes.json` remains deployment-time bootstrap.
+- **Out:** Generic configuration framework; key/value settings store; infrastructure/secret exposure; Azure/Entra administration; feature flags; any new `SystemSetting`/`ReferenceData` aggregate.
+- **Net effect:** The "config-admin phase" slot is absorbed by A7 (which has a real backing interface). No code, no migration.
 
 ### A7 — Email Template Administration
 
@@ -84,7 +86,7 @@ A4 and A5 are **independent** of each other; A6/A7 are independent of A4/A5. Onl
 | ------ | ------- | ----------- | ------------ |
 | `User.SynchronizeFromClaims` overwrites `Role` on every login (claims are source of truth) | A4 | Resolved | **ADR-013 confirmed**: `User` is a read-only Entra projection; role/activation writes are removed. A4 is implemented read-only (list + detail) with no role/activation commands. Risk closed. |
 | `GetAuditLogsQuery` returns **all rows** (no paging) — viewer will not scale | A5 | Medium | Add paging/sorting to the existing query as part of A5; backend is otherwise complete. |
-| Reference-data / system-settings **entities may not exist** yet | A6 | Medium | Keep A6 to configuration that already has a backing store; defer any net-new reference domain to a later milestone. |
+| Reference-data / system-settings **entities may not exist** yet | A6 | Resolved | Inspection confirmed no backing store exists and no requirement justifies one; A6 reduced to conformance note (see `docs/design/a6-rescope-proposal.md`). |
 | Email template **persistence store** may not exist (only the renderer interface) | A7 | Medium | Confirm template storage in A7 discovery; if absent, scope A7 to renderer config only. |
 | Over-merging A6 could blur two distinct config areas | A6 | Low | Keep `ReferenceData` and `SystemSettings` as separate *tabs* within one phase, not one merged entity model. |
 
@@ -94,7 +96,7 @@ A4 and A5 are **independent** of each other; A6/A7 are independent of A4/A5. Onl
 
 1. **A4 — User Directory (Entra-synchronized)** (foundational M8 item; highest product value; reuses most existing infra).
 2. **A5 — Audit Log Viewer** (fastest win — backend already built; only UI + paging/filters).
-3. **A6 — Reference Data & System Settings** (single config-admin phase; reuse Designer editor pattern).
+3. **A6 — Reference Data & System Settings** (Reduced / Conformant — no implementation; see `docs/design/a6-rescope-proposal.md`).
 4. **A7 — Email Template Administration** (reuse renderer + editor UX; lowest dependency).
 
 Each phase is deliverable in a **single implementation cycle** (one feature branch, ≤400-line PR, full test coverage per Quality Policy).
