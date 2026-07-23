@@ -5,6 +5,7 @@ using ATLAS.Application.Commands.PermitTypes;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
+using MediatR;
 using Moq;
 using Xunit;
 
@@ -13,6 +14,7 @@ namespace ATLAS.Application.Tests.Commands
     public class PermitTypeEditingCommandHandlerTests
     {
         private readonly Mock<IPermitTypeRepository> _mockRepository = new();
+        private readonly Mock<IMediator> _mockMediator = new(); 
         private readonly CancellationToken _ct = CancellationToken.None;
 
         [Fact]
@@ -21,7 +23,7 @@ namespace ATLAS.Application.Tests.Commands
             var permitType = new PermitType("Building Permit", "Desc", 100m);
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
 
-            var handler = new AddPermitFieldCommandHandler(_mockRepository.Object);
+            var handler = new AddPermitFieldCommandHandler(_mockRepository.Object, _mockMediator.Object);
             var result = await handler.Handle(
                 new AddPermitFieldCommand { PermitTypeId = permitType.Id, Name = "NewField", Type = FieldType.Text, IsRequired = true },
                 _ct);
@@ -36,7 +38,7 @@ namespace ATLAS.Application.Tests.Commands
         public async Task AddPermitField_WhenNotFound_ShouldReturnFalse()
         {
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync((PermitType)null);
-            var handler = new AddPermitFieldCommandHandler(_mockRepository.Object);
+            var handler = new AddPermitFieldCommandHandler(_mockRepository.Object, _mockMediator.Object);
 
             var result = await handler.Handle(
                 new AddPermitFieldCommand { PermitTypeId = Guid.NewGuid(), Name = "X", Type = FieldType.Text, IsRequired = true },

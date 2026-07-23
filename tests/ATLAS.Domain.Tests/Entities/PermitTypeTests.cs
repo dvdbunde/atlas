@@ -181,7 +181,7 @@ namespace ATLAS.Domain.Tests.Entities
             permitType.Deactivate(_adminId);
 
             // Act
-            permitType.Activate();
+            permitType.Activate(_adminId);
 
             // Assert
             Assert.True(permitType.IsActive);
@@ -194,7 +194,7 @@ namespace ATLAS.Domain.Tests.Entities
             var permitType = new PermitType("Building Permit", "Description", 100.00m);
 
             // Act
-            permitType.Activate();
+            permitType.Activate(_adminId);
 
             // Assert
             Assert.True(permitType.IsActive);

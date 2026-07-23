@@ -17,10 +17,13 @@ namespace ATLAS.Application.Commands.PermitTypes
     public class ActivatePermitTypeCommandHandler : IRequestHandler<ActivatePermitTypeCommand, bool>
     {
         private readonly IPermitTypeRepository _repository;
+        private readonly IMediator _mediator;
 
-        public ActivatePermitTypeCommandHandler(IPermitTypeRepository repository)
+
+        public ActivatePermitTypeCommandHandler(IPermitTypeRepository repository, IMediator mediator)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
         public async Task<bool> Handle(ActivatePermitTypeCommand request, CancellationToken cancellationToken)
@@ -29,8 +32,9 @@ namespace ATLAS.Application.Commands.PermitTypes
             if (permitType == null)
                 return false;
 
-            permitType.Activate();
+            permitType.Activate(request.ActivatedByAdminId);
             await _repository.UpdateAsync(permitType, cancellationToken);
+            await _mediator.Publish(new PermitTypeActivatedEvent(permitType.Id, request.ActivatedByAdminId), cancellationToken);
             return true;
         }
     }

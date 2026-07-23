@@ -15,11 +15,13 @@ namespace ATLAS.Application.Tests.Commands
     {
         private readonly Mock<IPermitTypeRepository> _mockRepository;
         private readonly ActivatePermitTypeCommandHandler _handler;
+        private readonly Mock<IMediator> _mockMediator;
 
         public ActivatePermitTypeCommandHandlerTests()
         {
             _mockRepository = new Mock<IPermitTypeRepository>();
-            _handler = new ActivatePermitTypeCommandHandler(_mockRepository.Object);
+            _mockMediator = new Mock<IMediator>();
+            _handler = new ActivatePermitTypeCommandHandler(_mockRepository.Object, _mockMediator.Object);
         }
 
         [Fact]
@@ -103,7 +105,7 @@ namespace ATLAS.Application.Tests.Commands
         public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ActivatePermitTypeCommandHandler(null!));
+            Assert.Throws<ArgumentNullException>(() => new ActivatePermitTypeCommandHandler(null!, _mockMediator.Object));
         }
     }
 }

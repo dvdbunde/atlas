@@ -176,12 +176,13 @@ namespace ATLAS.Domain.Entities
                 ordered[i].Order = i + 1;
         }
 
-        public void Activate()
+        public void Activate(Guid activatedByAdminId)
         {
             if (IsActive)
                 return;
 
             IsActive = true;
+            AddDomainEvent(new PermitTypeActivatedEvent(Id, activatedByAdminId));
         }
 
         public void Deactivate(Guid deactivatedByAdminId)

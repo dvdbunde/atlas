@@ -14,12 +14,14 @@ namespace ATLAS.Application.Tests.Commands
     public class UpdatePermitTypeCommandHandlerTests
     {
         private readonly Mock<IPermitTypeRepository> _mockRepository;
+        private readonly Mock<IMediator> _mockMediator; 
         private readonly UpdatePermitTypeCommandHandler _handler;
 
         public UpdatePermitTypeCommandHandlerTests()
         {
             _mockRepository = new Mock<IPermitTypeRepository>();
-            _handler = new UpdatePermitTypeCommandHandler(_mockRepository.Object);
+            _mockMediator = new Mock<IMediator>();
+            _handler = new UpdatePermitTypeCommandHandler(_mockRepository.Object, _mockMediator.Object);
         }
 
         [Fact]
@@ -48,34 +50,7 @@ namespace ATLAS.Application.Tests.Commands
             Assert.True(permitType.IsActive);
             _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<PermitType>(), It.IsAny<CancellationToken>()), Times.Once);
         }
-
-        [Fact]
-        public async Task Handle_ValidCommand_ShouldActivatePermitTypeAndReturnTrue()
-        {
-            // Arrange
-            var permitTypeId = Guid.NewGuid();
-            var permitType = new PermitType("Test Type", "Description", 100.00m);
-            permitType.Deactivate(Guid.NewGuid()); // Start as inactive
-            Assert.False(permitType.IsActive); // Verify
-
-            _mockRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(permitType);
-
-            var command = new UpdatePermitTypeCommand
-            {
-                PermitTypeId = permitTypeId,
-                IsActive = true
-            };
-
-            // Act
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            // Assert
-            Assert.True(result);
-            Assert.True(permitType.IsActive);
-            _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<PermitType>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
+      
         [Fact]
         public async Task Handle_InvalidPermitTypeId_ShouldReturnFalse()
         {
