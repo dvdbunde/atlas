@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
@@ -14,10 +15,11 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
     {
         private readonly Mock<IAuditLogRepository> _auditLogRepository = new();
         private readonly PermitTypeFeeUpdatedEventHandler _handler;
+        private readonly Mock<ICurrentUserService> _currentUserService = new();
 
         public PermitTypeFeeUpdatedEventHandlerTests()
         {
-            _handler = new PermitTypeFeeUpdatedEventHandler(_auditLogRepository.Object);
+            _handler = new PermitTypeFeeUpdatedEventHandler(_auditLogRepository.Object, _currentUserService.Object);
         }
 
         [Fact]
@@ -35,7 +37,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         [Fact]
         public void Constructor_NullRepository_ShouldThrow()
         {
-            Assert.Throws<ArgumentNullException>(() => new PermitTypeFeeUpdatedEventHandler(null!));
+            Assert.Throws<ArgumentNullException>(() => new PermitTypeFeeUpdatedEventHandler(null!, _currentUserService.Object));
         }
     }
 }

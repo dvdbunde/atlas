@@ -45,7 +45,7 @@ namespace ATLAS.Application.Commands.PermitTypes
                 request.Options);
     
             await _repository.UpdateAsync(permitType, cancellationToken);
-            await _mediator.Publish(new PermitTypeFieldAddedEvent(permitType.Id, request.Name, request.Type), cancellationToken);
+            await _mediator.Publish(new PermitTypeFieldAddedEvent(permitType.Id, permitType.Fields.Last().Id, request.Name, request.Type), cancellationToken);
             return true;
         }
     }

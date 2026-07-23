@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using MediatR;
 
@@ -23,10 +24,12 @@ namespace ATLAS.Application.Commands.PermitTypes
     public class UpdatePermitFieldCommandHandler : IRequestHandler<UpdatePermitFieldCommand, bool>
     {
         private readonly IPermitTypeRepository _repository;
+        private readonly IMediator _mediator;
 
-        public UpdatePermitFieldCommandHandler(IPermitTypeRepository repository)
+        public UpdatePermitFieldCommandHandler(IPermitTypeRepository repository, IMediator mediator)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
         public async Task<bool> Handle(UpdatePermitFieldCommand request, CancellationToken cancellationToken)
@@ -44,6 +47,7 @@ namespace ATLAS.Application.Commands.PermitTypes
                 request.Options);
 
             await _repository.UpdateAsync(permitType, cancellationToken);
+            await _mediator.Publish(new PermitTypeFieldUpdatedEvent(permitType.Id, request.FieldId, request.Name, request.Type, request.IsRequired), cancellationToken);
             return true;
         }
     }

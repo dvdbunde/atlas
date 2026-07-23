@@ -62,7 +62,7 @@ namespace ATLAS.Domain.Entities
             var field = new PermitField(name, type, isRequired, defaultValue ?? string.Empty, options ?? new List<string>());
             field.Order = _fields.Count + 1;
             _fields.Add(field);
-            AddDomainEvent(new PermitTypeFieldAddedEvent(Id, name, type));
+            AddDomainEvent(new PermitTypeFieldAddedEvent(Id, field.Id, name, type));
         }
 
         public void UpdateField(Guid fieldId, string name, FieldType type, bool isRequired, string defaultValue = null, IReadOnlyCollection<string> options = null)
@@ -123,6 +123,7 @@ namespace ATLAS.Domain.Entities
             var requirement = new DocumentRequirement(documentType, isRequired, allowedExtensions, maxFileSize);
             requirement.Order = _documentRequirements.Count + 1;
             _documentRequirements.Add(requirement);
+            AddDomainEvent(new PermitTypeDocumentRequirementAddedEvent(Id, requirement.Id, documentType));
         }
 
         public void UpdateDocumentRequirement(Guid requirementId, bool isRequired, string[] allowedExtensions, long maxFileSize)

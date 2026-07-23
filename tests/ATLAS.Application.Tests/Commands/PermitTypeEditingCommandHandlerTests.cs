@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Commands.PermitTypes;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 using MediatR;
@@ -32,6 +33,7 @@ namespace ATLAS.Application.Tests.Commands
             Assert.Single(permitType.Fields);
             Assert.Equal("NewField", permitType.Fields[0].Name);
             _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<PermitTypeFieldAddedEvent>(), _ct), Times.Once);
         }
 
         [Fact]
@@ -54,7 +56,7 @@ namespace ATLAS.Application.Tests.Commands
             var permitType = new PermitType("Building Permit", "Desc", 100m);
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
 
-            var handler = new AddDocumentRequirementCommandHandler(_mockRepository.Object);
+            var handler = new AddDocumentRequirementCommandHandler(_mockRepository.Object, _mockMediator.Object);
             var result = await handler.Handle(
                 new AddDocumentRequirementCommand { PermitTypeId = permitType.Id, DocumentType = "ID", IsRequired = true, AllowedExtensions = new[] { ".pdf" }, MaxFileSizeBytes = 1000 },
                 _ct);
@@ -62,6 +64,7 @@ namespace ATLAS.Application.Tests.Commands
             Assert.True(result);
             Assert.Single(permitType.DocumentRequirements);
             Assert.Equal("ID", permitType.DocumentRequirements[0].DocumentType);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<PermitTypeDocumentRequirementAddedEvent>(), _ct), Times.Once);
             _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
         }
 
@@ -69,7 +72,7 @@ namespace ATLAS.Application.Tests.Commands
         public async Task AddDocumentRequirement_WhenNotFound_ShouldReturnFalse()
         {
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync((PermitType)null);
-            var handler = new AddDocumentRequirementCommandHandler(_mockRepository.Object);
+            var handler = new AddDocumentRequirementCommandHandler(_mockRepository.Object, _mockMediator.Object);
 
             var result = await handler.Handle(
                 new AddDocumentRequirementCommand { PermitTypeId = Guid.NewGuid(), DocumentType = "ID", IsRequired = true, AllowedExtensions = new[] { ".pdf" }, MaxFileSizeBytes = 1000 },
@@ -87,7 +90,7 @@ namespace ATLAS.Application.Tests.Commands
             var fieldId = permitType.Fields[0].Id;
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
 
-            var handler = new UpdatePermitFieldCommandHandler(_mockRepository.Object);
+            var handler = new UpdatePermitFieldCommandHandler(_mockRepository.Object, _mockMediator.Object);
             var result = await handler.Handle(
                 new UpdatePermitFieldCommand { PermitTypeId = permitType.Id, FieldId = fieldId, Name = "Renamed", Type = FieldType.Number, IsRequired = false },
                 _ct);
@@ -95,13 +98,14 @@ namespace ATLAS.Application.Tests.Commands
             Assert.True(result);
             Assert.Equal("Renamed", permitType.Fields[0].Name);
             _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<PermitTypeFieldUpdatedEvent>(), _ct), Times.Once);
         }
 
         [Fact]
         public async Task UpdatePermitField_WhenNotFound_ShouldReturnFalse()
         {
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync((PermitType)null);
-            var handler = new UpdatePermitFieldCommandHandler(_mockRepository.Object);
+            var handler = new UpdatePermitFieldCommandHandler(_mockRepository.Object, _mockMediator.Object);
 
             var result = await handler.Handle(
                 new UpdatePermitFieldCommand { PermitTypeId = Guid.NewGuid(), FieldId = Guid.NewGuid(), Name = "X", Type = FieldType.Text, IsRequired = true },
@@ -119,11 +123,12 @@ namespace ATLAS.Application.Tests.Commands
             var fieldId = permitType.Fields[0].Id;
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
 
-            var handler = new RemovePermitFieldCommandHandler(_mockRepository.Object);
+            var handler = new RemovePermitFieldCommandHandler(_mockRepository.Object, _mockMediator.Object);
             var result = await handler.Handle(new RemovePermitFieldCommand { PermitTypeId = permitType.Id, FieldId = fieldId }, _ct);
 
             Assert.True(result);
             Assert.Empty(permitType.Fields);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<PermitTypeFieldRemovedEvent>(), _ct), Times.Once);
             _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
         }
 
@@ -152,7 +157,7 @@ namespace ATLAS.Application.Tests.Commands
             var reqId = permitType.DocumentRequirements[0].Id;
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
 
-            var handler = new UpdateDocumentRequirementCommandHandler(_mockRepository.Object);
+            var handler = new UpdateDocumentRequirementCommandHandler(_mockRepository.Object, _mockMediator.Object);
             var result = await handler.Handle(
                 new UpdateDocumentRequirementCommand { PermitTypeId = permitType.Id, RequirementId = reqId, IsRequired = false, AllowedExtensions = new[] { ".pdf", ".jpg" }, MaxFileSizeBytes = 5000 },
                 _ct);
@@ -170,12 +175,13 @@ namespace ATLAS.Application.Tests.Commands
             var reqId = permitType.DocumentRequirements[0].Id;
             _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), _ct)).ReturnsAsync(permitType);
 
-            var handler = new RemoveDocumentRequirementCommandHandler(_mockRepository.Object);
+            var handler = new RemoveDocumentRequirementCommandHandler(_mockRepository.Object, _mockMediator.Object);
             var result = await handler.Handle(new RemoveDocumentRequirementCommand { PermitTypeId = permitType.Id, RequirementId = reqId }, _ct);
 
             Assert.True(result);
             Assert.Empty(permitType.DocumentRequirements);
             _mockRepository.Verify(r => r.UpdateAsync(permitType, _ct), Times.Once);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<PermitTypeDocumentRequirementRemovedEvent>(), _ct), Times.Once);
         }
 
         [Fact]

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using MediatR;
 
@@ -19,10 +20,12 @@ namespace ATLAS.Application.Commands.PermitTypes
     public class UpdateDocumentRequirementCommandHandler : IRequestHandler<UpdateDocumentRequirementCommand, bool>
     {
         private readonly IPermitTypeRepository _repository;
+        private readonly IMediator _mediator;
 
-        public UpdateDocumentRequirementCommandHandler(IPermitTypeRepository repository)
+        public UpdateDocumentRequirementCommandHandler(IPermitTypeRepository repository, IMediator mediator)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
         public async Task<bool> Handle(UpdateDocumentRequirementCommand request, CancellationToken cancellationToken)
@@ -38,6 +41,9 @@ namespace ATLAS.Application.Commands.PermitTypes
                 request.MaxFileSizeBytes);
 
             await _repository.UpdateAsync(permitType, cancellationToken);
+            var requirement = permitType.DocumentRequirements.FirstOrDefault(d => d.Id == request.RequirementId);
+            var documentType = requirement?.DocumentType ?? request.RequirementId.ToString();
+            await _mediator.Publish(new PermitTypeDocumentRequirementUpdatedEvent(permitType.Id, request.RequirementId, documentType, request.IsRequired), cancellationToken);
             return true;
         }
     }

@@ -43,8 +43,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
             _underReviewHandler = new ApplicationUnderReviewEventHandler(_auditLogRepository);
             _documentUploadedHandler = new DocumentUploadedEventHandler(_auditLogRepository);
             _activatedHandler = new PermitTypeActivatedEventHandler(_auditLogRepository);
-            _deactivatedHandler = new PermitTypeDeactivatedEventHandler(_auditLogRepository);
-            _fieldAddedHandler = new PermitTypeFieldAddedEventHandler(_auditLogRepository);
+            _deactivatedHandler = new PermitTypeDeactivatedEventHandler(_auditLogRepository);            
             _assignedHandler = new ApplicationAssignedToOfficerEventHandler(_auditLogRepository);
         }
 
