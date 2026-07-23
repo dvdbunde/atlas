@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Events;
+using ATLAS.Domain;
 using ATLAS.Domain.Interfaces;
 using MediatR;
 
@@ -21,6 +22,9 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(PermitTypeFieldAddedEvent notification, CancellationToken cancellationToken)
         {
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
+                throw new DomainException("Cannot audit permit field addition: no authenticated user is available.");
+
             var auditLog = new ATLAS.Domain.Entities.AuditLog(
                 _currentUserService.UserId,
                 "Added",

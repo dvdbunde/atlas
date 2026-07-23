@@ -60,5 +60,17 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => new PermitTypeDocumentRequirementAddedEventHandler(null!, _currentUserService.Object));
         }
+
+        [Fact]
+        public async Task Handle_WhenUserNotAuthenticated_ShouldThrowDomainException()
+        {
+            // Arrange
+            _currentUserService.Setup(x => x.IsAuthenticated).Returns(false);
+            _currentUserService.Setup(x => x.UserId).Returns((Guid?)null);
+            var evt = new PermitTypeDocumentRequirementAddedEvent(Guid.NewGuid(), Guid.NewGuid(), "Passport");
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ATLAS.Domain.DomainException>(() => _handler.Handle(evt, CancellationToken.None));
+        }
     }
 }

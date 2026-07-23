@@ -41,5 +41,17 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         {
             Assert.Throws<ArgumentNullException>(() => new PermitTypeFeeUpdatedEventHandler(null!, _currentUserService.Object));
         }
+
+        [Fact]
+        public async Task Handle_WhenUserNotAuthenticated_ShouldThrowDomainException()
+        {
+            // Arrange
+            _currentUserService.Setup(x => x.IsAuthenticated).Returns(false);
+            _currentUserService.Setup(x => x.UserId).Returns((Guid?)null);
+            var evt = new PermitTypeFeeUpdatedEvent(Guid.NewGuid(), 10m, 20m);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ATLAS.Domain.DomainException>(() => _handler.Handle(evt, CancellationToken.None));
+        }
     }
 }
