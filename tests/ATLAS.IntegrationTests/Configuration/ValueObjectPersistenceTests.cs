@@ -66,8 +66,8 @@ namespace ATLAS.IntegrationTests.Configuration
         public void ValueObjects_ShouldBeImmutable()
         {
             // Arrange & Act
-            var field1 = new PermitField("Name", FieldType.Text, true, null);
-            var field2 = new PermitField("Name", FieldType.Text, true, null);
+            var field1 = new PermitField("Name", FieldType.Text, true, string.Empty, new List<string>());
+            var field2 = new PermitField("Name", FieldType.Text, true, string.Empty, new List<string>());
 
             // Assert - Value objects should be equal if same values
             Assert.Equal(field1, field2);

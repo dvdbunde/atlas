@@ -20,7 +20,7 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.OwnsMany(p => p.Fields, field =>
             {
                 field.HasKey("Id");
-                field.Property(f => f.Id).HasDefaultValueSql("NEWID()");
+                field.Property(f => f.Id).ValueGeneratedNever();
                 field.Property(f => f.Order).IsRequired().HasDefaultValue(1);
                 field.Property(f => f.Name).IsRequired().HasMaxLength(100);
                 field.Property(f => f.Type).IsRequired();
@@ -40,7 +40,7 @@ namespace ATLAS.Infrastructure.Data.Configurations
             builder.OwnsMany(p => p.DocumentRequirements, doc =>
             {
                 doc.HasKey("Id");
-                doc.Property(d => d.Id).HasDefaultValueSql("NEWID()");
+                doc.Property(d => d.Id).ValueGeneratedNever();
                 doc.Property(d => d.Order).IsRequired().HasDefaultValue(1);
                 doc.Property(d => d.DocumentType).IsRequired().HasMaxLength(100);
                 doc.Property(d => d.IsRequired).HasDefaultValue(false);

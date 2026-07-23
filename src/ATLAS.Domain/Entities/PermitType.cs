@@ -59,7 +59,7 @@ namespace ATLAS.Domain.Entities
             if (_fields.Any(f => f.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new DomainException($"Field '{name}' already exists");
         
-            var field = new PermitField(name, type, isRequired, defaultValue, options);
+            var field = new PermitField(name, type, isRequired, defaultValue ?? string.Empty, options ?? new List<string>());
             field.Order = _fields.Count + 1;
             _fields.Add(field);
             AddDomainEvent(new PermitTypeFieldAddedEvent(Id, name, type));
@@ -73,7 +73,7 @@ namespace ATLAS.Domain.Entities
                 && _fields.Any(f => f.Id != fieldId && f.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new DomainException($"Field '{name}' already exists");
 
-            field.Update(name, type, isRequired, defaultValue, options);
+            field.Update(name, type, isRequired, defaultValue ?? string.Empty, options ?? new List<string>());
             AddDomainEvent(new PermitTypeFieldUpdatedEvent(Id, fieldId, name, type, isRequired));
         }
 

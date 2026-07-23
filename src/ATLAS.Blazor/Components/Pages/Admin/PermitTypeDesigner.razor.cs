@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using ATLAS.Domain;
 
 namespace ATLAS.Blazor.Components.Pages.Admin;
 
@@ -241,9 +242,14 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
         if (!Guid.TryParse(Id, out var permitTypeId))
             return;
 
-        var options = _fieldDraft.Type == FieldType.Dropdown
-            ? _fieldDraft.OptionsText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
-            : null;
+        _viewModel.ErrorMessage = null;   // clear any prior validation/error message
+        _viewModel.SaveMessage = null;
+
+       var options = _fieldDraft.Type == FieldType.Dropdown
+            ? _fieldDraft.OptionsText
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList()
+            : new List<string>();
 
         try
         {
@@ -257,7 +263,7 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
                     Name = _fieldDraft.Name,
                     Type = _fieldDraft.Type,
                     IsRequired = _fieldDraft.IsRequired,
-                    DefaultValue = string.IsNullOrWhiteSpace(_fieldDraft.DefaultValue) ? null : _fieldDraft.DefaultValue,
+                    DefaultValue = string.IsNullOrWhiteSpace(_fieldDraft.DefaultValue) ? string.Empty : _fieldDraft.DefaultValue,
                     Options = options
                 });
             }
@@ -269,7 +275,7 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
                     Name = _fieldDraft.Name,
                     Type = _fieldDraft.Type,
                     IsRequired = _fieldDraft.IsRequired,
-                    DefaultValue = string.IsNullOrWhiteSpace(_fieldDraft.DefaultValue) ? null : _fieldDraft.DefaultValue,
+                    DefaultValue = string.IsNullOrWhiteSpace(_fieldDraft.DefaultValue) ? string.Empty : _fieldDraft.DefaultValue,
                     Options = options
                 });
             }
@@ -287,6 +293,13 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
             await JSRuntime.InvokeVoidAsync("atlasUnsavedChanges.setDirty", false);
             _viewModel.SaveMessage = "Field saved.";
             await LoadPermitType();
+        }
+        catch (ArgumentException ex)
+        {
+            // Domain validation failed (e.g. DefaultValue not among Options).
+            // Surface the specific reason to the user instead of a generic message.
+            Logger.LogWarning(ex, "Validation failed saving field for permit type {PermitTypeId}", permitTypeId);
+            _viewModel.ErrorMessage = ex.Message;
         }
         catch (Exception ex)
         {
@@ -405,11 +418,14 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
     {
         if (!Guid.TryParse(Id, out var permitTypeId))
             return;
-
+    
+        _viewModel.ErrorMessage = null;   // clear any prior validation/error message
+        _viewModel.SaveMessage = null;
+    
         var extensions = _requirementDraft.AllowedExtensionsText
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToArray();
-
+    
         try
         {
             bool result;
@@ -435,13 +451,13 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
                     MaxFileSizeBytes = _requirementDraft.MaxFileSizeBytes
                 });
             }
-
+    
             if (!result)
             {
                 _viewModel.ErrorMessage = "The document requirement could not be saved. The permit type may have been removed.";
                 return;
             }
-
+    
             _isRequirementEditorOpen = false;
             _editingRequirementId = null;
             _requirementDraft.Reset();
@@ -449,6 +465,18 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
             await JSRuntime.InvokeVoidAsync("atlasUnsavedChanges.setDirty", false);
             _viewModel.SaveMessage = "Document requirement saved.";
             await LoadPermitType();
+        }
+        catch (DomainException ex)
+        {
+            // Domain validation failed (e.g. allowed extensions required).
+            Logger.LogWarning(ex, "Validation failed saving document requirement for permit type {PermitTypeId}", permitTypeId);
+            _viewModel.ErrorMessage = ex.Message;
+        }
+        catch (ArgumentException ex)
+        {            
+            // Surface the specific reason to the user instead of a generic message.
+            Logger.LogWarning(ex, "Validation failed saving field for permit type {PermitTypeId}", permitTypeId);
+            _viewModel.ErrorMessage = ex.Message;
         }
         catch (Exception ex)
         {

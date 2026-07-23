@@ -103,6 +103,16 @@
                         <textarea id="ptd-description" class="form-control"
                                   value="@_viewModel.Description" @oninput="OnDescriptionInput"></textarea>
                     </div>
+        
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-primary" @onclick="Save" disabled="@(_viewModel.IsSaving || !_viewModel.HasUnsavedChanges)">
+                            @if (_viewModel.IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                            Save
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@(_viewModel.IsSaving || !_viewModel.HasUnsavedChanges)">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </div>
         }
@@ -305,15 +315,10 @@
             </div>
         }
 
-        <div class="d-flex gap-2 mt-3">
-            <button class="btn btn-primary" @onclick="Save" disabled="@(_viewModel.IsSaving || !_viewModel.HasUnsavedChanges)">
-                @if (_viewModel.IsSaving) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                Save
+        <div class="d-flex gap-2 mt-3">          
+            <button class="btn btn-link" @onclick="BackToList">
+                Back to list
             </button>
-            <button class="btn btn-outline-secondary" @onclick="Cancel" disabled="@(_viewModel.IsSaving || !_viewModel.HasUnsavedChanges)">
-                Cancel
-            </button>
-            <button class="btn btn-link" @onclick="BackToList">Back to list</button>
         </div>
     }
 </div>

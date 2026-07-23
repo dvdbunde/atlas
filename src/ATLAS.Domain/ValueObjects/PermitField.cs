@@ -25,8 +25,8 @@ namespace ATLAS.Domain.ValueObjects
             string name,
             FieldType type,
             bool isRequired,
-            string defaultValue = null,
-            IReadOnlyCollection<string> options = null)
+            string defaultValue,
+            IReadOnlyCollection<string> options)
             : this(Guid.NewGuid(), name, type, isRequired, defaultValue, options)
         {
         }
@@ -38,8 +38,8 @@ namespace ATLAS.Domain.ValueObjects
             string name,
             FieldType type,
             bool isRequired,
-            string defaultValue = null,
-            IReadOnlyCollection<string> options = null)
+            string defaultValue,
+            IReadOnlyCollection<string> options)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Field name cannot be empty", nameof(name));

@@ -15,8 +15,8 @@ namespace ATLAS.Application.Commands.PermitTypes
         public string Name { get; set; } = string.Empty;
         public FieldType Type { get; set; }
         public bool IsRequired { get; set; }
-        public string? DefaultValue { get; set; }
-        public List<string>? Options { get; set; }
+        public string DefaultValue { get; set; } = string.Empty;
+        public List<string> Options { get; set; } = new List<string>();
     }
 
     public class AddPermitFieldCommandHandler : IRequestHandler<AddPermitFieldCommand, bool>
