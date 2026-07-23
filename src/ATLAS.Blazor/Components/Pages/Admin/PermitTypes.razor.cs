@@ -25,9 +25,12 @@ public partial class PermitTypes : ComponentBase
         }
     }
 
-    private async Task LoadPermitTypes()
+    private async Task LoadPermitTypes(bool showSpinner = true)
     {
-        _viewModel.IsLoading = true;
+        if (showSpinner)
+        {
+            _viewModel.IsLoading = true;
+        }
         _viewModel.HasError = false;
         _viewModel.ErrorMessage = null;
 
@@ -35,7 +38,9 @@ public partial class PermitTypes : ComponentBase
         {
             var query = new GetPermitTypesQuery
             {
-                IncludeInactive = _viewModel.ActiveOnly || _viewModel.InactiveOnly,
+                // Include inactive unless the user explicitly narrowed to active-only.
+                // Both checkboxes unchecked => show everything (active + inactive).
+                IncludeInactive = !_viewModel.ActiveOnly,
                 SearchTerm = _viewModel.SearchTerm,
                 ActiveOnly = _viewModel.ActiveOnly,
                 InactiveOnly = _viewModel.InactiveOnly,
@@ -53,20 +58,23 @@ public partial class PermitTypes : ComponentBase
         }
         finally
         {
-            _viewModel.IsLoading = false;
+            if (showSpinner)
+            {
+                _viewModel.IsLoading = false;
+            }
         }
     }
 
     private async Task ApplyFilters()
     {
-        await LoadPermitTypes();
+        await LoadPermitTypes(showSpinner: false);
         StateHasChanged();
     }
 
     private async Task OnSearchInput(ChangeEventArgs e)
     {
         _viewModel.SearchTerm = e.Value?.ToString() ?? string.Empty;
-        await LoadPermitTypes();
+        await LoadPermitTypes(showSpinner: false);
         StateHasChanged();
     }
 
@@ -74,7 +82,7 @@ public partial class PermitTypes : ComponentBase
     {
         _viewModel.ActiveOnly = e.Value is true;
         if (_viewModel.ActiveOnly) _viewModel.InactiveOnly = false;
-        await LoadPermitTypes();
+        await LoadPermitTypes(showSpinner: false);
         StateHasChanged();
     }
 
@@ -82,7 +90,7 @@ public partial class PermitTypes : ComponentBase
     {
         _viewModel.InactiveOnly = e.Value is true;
         if (_viewModel.InactiveOnly) _viewModel.ActiveOnly = false;
-        await LoadPermitTypes();
+        await LoadPermitTypes(showSpinner: false);
         StateHasChanged();
     }
 
@@ -91,7 +99,7 @@ public partial class PermitTypes : ComponentBase
         _viewModel.SortBy = Enum.TryParse<PermitTypeSortOption>(e.Value?.ToString(), out var sort)
             ? sort
             : PermitTypeSortOption.NameAsc;
-        await LoadPermitTypes();
+        await LoadPermitTypes(showSpinner: false);
         StateHasChanged();
     }
 }

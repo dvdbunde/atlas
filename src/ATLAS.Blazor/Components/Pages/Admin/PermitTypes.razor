@@ -34,14 +34,7 @@
             <h4 class="alert-heading">Something went wrong</h4>
             <p>@_viewModel.ErrorMessage</p>
             <hr />
-            <button class="btn btn-outline-danger" @onclick="LoadPermitTypes">Try Again</button>
-        </div>
-    }
-    else if (_viewModel.IsEmpty)
-    {
-        <div class="alert alert-info" role="alert">
-            <h4 class="alert-heading">No permit types found</h4>
-            <p>No permit types match the current filters.</p>
+            <button class="btn btn-outline-danger" @onclick="@(() => LoadPermitTypes())">Try Again</button>
         </div>
     }
     else
@@ -69,46 +62,56 @@
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Fee</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Fields</th>
-                        <th scope="col">Documents</th>
-                        <th scope="col"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var pt in _viewModel.Items)
-                    {
+        @if (_viewModel.IsEmpty)
+        {
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading">No permit types found</h4>
+                <p>No permit types match the current filters.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
                         <tr>
-                            <td>@pt.Name</td>
-                            <td>@pt.Description</td>
-                            <td>@pt.Fee.ToString("C")</td>
-                            <td>
-                                @if (pt.IsActive)
-                                {
-                                    <span class="badge text-bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge text-bg-secondary">Inactive</span>
-                                }
-                            </td>
-                            <td>@pt.FieldCount</td>
-                            <td>@pt.DocumentRequirementCount</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary" href="@($"/admin/permit-types/{pt.Id}")">View</a>
-                                <a class="btn btn-sm btn-outline-secondary" href="@($"/admin/permit-types/{pt.Id}/designer")">Designer</a>
-                            </td>
+                            <th scope="col">Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Fee</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Fields</th>
+                            <th scope="col">Documents</th>
+                            <th scope="col"></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var pt in _viewModel.Items)
+                        {
+                            <tr>
+                                <td>@pt.Name</td>
+                                <td>@pt.Description</td>
+                                <td>@pt.Fee.ToString("C")</td>
+                                <td>
+                                    @if (pt.IsActive)
+                                    {
+                                        <span class="badge text-bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge text-bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>@pt.FieldCount</td>
+                                <td>@pt.DocumentRequirementCount</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary" href="@($"/admin/permit-types/{pt.Id}")">View</a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="@($"/admin/permit-types/{pt.Id}/designer")">Designer</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>

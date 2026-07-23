@@ -22,6 +22,8 @@ public class AdminDashboardTests : BunitContext
         PermitTypeCount = 4,
         ApplicationCount = 12,
         OfficerCount = 3,
+        AdminCount = 2,
+        CitizenCount = 25,
         ActiveEmailTemplateCount = 0
     };
 
@@ -44,10 +46,12 @@ public class AdminDashboardTests : BunitContext
 
         var cut = Render<AdminDashboard>();
 
-        Assert.Equal(4, cut.FindAll(".card").Count);
+        Assert.Equal(6, cut.FindAll(".card").Count);
         Assert.Contains("4", cut.Markup);
         Assert.Contains("12", cut.Markup);
         Assert.Contains("3", cut.Markup);
+        Assert.Contains("2", cut.Markup);
+        Assert.Contains("25", cut.Markup);
     }
 
     [Fact]

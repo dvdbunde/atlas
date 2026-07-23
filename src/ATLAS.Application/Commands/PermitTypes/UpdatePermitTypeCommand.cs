@@ -33,9 +33,8 @@ namespace ATLAS.Application.Commands.PermitTypes
             if (permitType == null)
                 return false;
             
-            // Note: Name and Description are read-only (set in constructor)
-            // For MVP, we skip updating these fields
-            // TODO: Add UpdateDetails method to PermitType entity if needed
+            if (request.Fee.HasValue)
+                permitType.UpdateFee(request.Fee.Value);
             
             if (request.IsActive.HasValue && request.IsActive.Value)
                 permitType.Activate();

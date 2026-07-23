@@ -111,6 +111,47 @@ public partial class PermitTypeSettings : ComponentBase
         }
     }
 
+    private async Task Activate()
+    {
+        if (!Guid.TryParse(Id, out var permitTypeId))
+            return;
+
+        _viewModel.IsSaving = true;
+        _viewModel.SaveMessage = null;
+        _viewModel.ErrorMessage = null;
+
+        try
+        {
+            var adminId = await GetCurrentAdminId();
+            var command = new ActivatePermitTypeCommand
+            {
+                PermitTypeId = permitTypeId,
+                ActivatedByAdminId = adminId
+            };
+
+            var result = await Mediator.Send(command);
+            if (!result)
+            {
+                _viewModel.ErrorMessage = "The permit type could not be activated. It may have been removed.";
+            }
+            else
+            {
+                _viewModel.SaveMessage = "Permit type activated.";
+                await LoadPermitType();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to activate permit type {PermitTypeId}", permitTypeId);
+            _viewModel.ErrorMessage = "We were unable to activate the permit type. Please try again later.";
+        }
+        finally
+        {
+            _viewModel.IsSaving = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task Deactivate()
     {
         if (!Guid.TryParse(Id, out var permitTypeId))

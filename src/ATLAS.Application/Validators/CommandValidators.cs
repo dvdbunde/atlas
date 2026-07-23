@@ -91,6 +91,18 @@ namespace ATLAS.Application.Commands.Validators
         }
     }
 
+    public class ActivatePermitTypeCommandValidator : AbstractValidator<ActivatePermitTypeCommand>
+    {
+        public ActivatePermitTypeCommandValidator()
+        {
+            RuleFor(x => x.PermitTypeId)
+                .NotEmpty().WithMessage("PermitTypeId is required");
+
+            RuleFor(x => x.ActivatedByAdminId)
+                .NotEmpty().WithMessage("ActivatedByAdminId is required");
+        }
+    }
+
     public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCommand>
     {
         // Allowed MIME types per PRD F-03

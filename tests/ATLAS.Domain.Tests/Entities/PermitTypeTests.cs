@@ -26,6 +26,27 @@ namespace ATLAS.Domain.Tests.Entities
             Assert.True(permitType.IsActive);
         }
 
+        [Fact]
+        public void UpdateFee_WithValidFee_ShouldUpdateFeeAndRaiseEvent()
+        {
+            var permitType = new PermitType("Test Type", "Description", 100.00m);
+
+            permitType.UpdateFee(250.50m);
+
+            Assert.Equal(250.50m, permitType.Fee);
+            var evt = Assert.Single(permitType.DomainEvents.OfType<PermitTypeFeeUpdatedEvent>());
+            Assert.Equal(100.00m, evt.OldFee);
+            Assert.Equal(250.50m, evt.NewFee);
+        }
+
+        [Fact]
+        public void UpdateFee_WithNegativeFee_ShouldThrow()
+        {
+            var permitType = new PermitType("Test Type", "Description", 100.00m);
+
+            Assert.Throws<ArgumentException>(() => permitType.UpdateFee(-1m));
+        }
+
         #region UpdateGeneralInformation Tests
 
         [Fact]

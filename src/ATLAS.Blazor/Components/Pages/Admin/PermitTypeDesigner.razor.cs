@@ -25,6 +25,7 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
     private readonly PermitTypeDesignerViewModel _viewModel = new();
     private string _activeSection = "general";
     private IDisposable? _locationChangingHandler;
+    private bool _hasRenderedInteractively;
 
     private IReadOnlyList<DynamicFormFieldViewModel> _previewFields =>
         _viewModel.Fields.Concat(_viewModel.DocumentRequirements)
@@ -35,6 +36,14 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
     {
         _locationChangingHandler = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
         await LoadPermitType();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _hasRenderedInteractively = true;
+        }
     }
 
     private async Task LoadPermitType()
@@ -516,7 +525,13 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _locationChangingHandler?.Dispose();
-        await JSRuntime.InvokeVoidAsync("atlasUnsavedChanges.setDirty", false);
+
+        // JS interop is only available after the component has rendered interactively.
+        // During prerendering/static disposal, skip the call to avoid InvalidOperationException.
+        if (_hasRenderedInteractively)
+        {
+            await JSRuntime.InvokeVoidAsync("atlasUnsavedChanges.setDirty", false);
+        }
     }
 }
 

@@ -195,5 +195,18 @@ namespace ATLAS.Domain.Entities
             IsActive = false;
             AddDomainEvent(new PermitTypeDeactivatedEvent(Id, deactivatedByAdminId));
         }
+
+        public void UpdateFee(decimal fee)
+        {
+            if (fee < 0)
+                throw new ArgumentException("Fee cannot be negative", nameof(fee));
+
+            if (Fee == fee)
+                return;
+
+            var oldFee = Fee;
+            Fee = fee;
+            AddDomainEvent(new PermitTypeFeeUpdatedEvent(Id, oldFee, fee));
+        }
     }
 }

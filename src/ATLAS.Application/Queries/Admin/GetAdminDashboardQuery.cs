@@ -34,6 +34,12 @@ public class AdminDashboardDto
     /// <summary>Total number of officers (users with the Officer role).</summary>
     public int OfficerCount { get; init; }
 
+    /// <summary>Total number of admins (users with the Admin role).</summary>
+    public int AdminCount { get; init; }
+
+    /// <summary>Total number of citizens (users with the Citizen role).</summary>
+    public int CitizenCount { get; init; }
+
     /// <summary>
     /// Number of active email templates managed through the Email Template
     /// Administration feature (the four application-owned templates).
@@ -68,6 +74,8 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
         var permitTypes = await _permitTypeRepository.GetAllAsync(cancellationToken);
         var applications = await _applicationRepository.GetAllAsync(cancellationToken);
         var officers = await _userRepository.GetByRoleAsync(ATLAS.Domain.Entities.UserRole.Officer, cancellationToken);
+        var admins = await _userRepository.GetByRoleAsync(ATLAS.Domain.Entities.UserRole.Admin, cancellationToken);
+        var citizens = await _userRepository.GetByRoleAsync(ATLAS.Domain.Entities.UserRole.Citizen, cancellationToken);
         var templateNames = await _emailTemplateStore.GetTemplateNamesAsync(cancellationToken);
 
         return new AdminDashboardDto
@@ -75,6 +83,8 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
             PermitTypeCount = permitTypes.Count(),
             ApplicationCount = applications.Count(),
             OfficerCount = officers.Count(),
+            AdminCount = admins.Count(),
+            CitizenCount = citizens.Count(),
             ActiveEmailTemplateCount = templateNames.Count
         };
     }

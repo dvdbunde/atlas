@@ -10,6 +10,7 @@ namespace ATLAS.Application.Tests.Validators
     {
         private readonly UpdatePermitTypeCommandValidator _updateValidator = new();
         private readonly DeactivatePermitTypeCommandValidator _deactivateValidator = new();
+        private readonly ActivatePermitTypeCommandValidator _activateValidator = new();
 
         [Fact]
         public void Update_WithEmptyPermitTypeId_ShouldHaveValidationError()
@@ -56,6 +57,30 @@ namespace ATLAS.Application.Tests.Validators
         {
             var command = new DeactivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), DeactivatedByAdminId = Guid.NewGuid() };
             var result = _deactivateValidator.TestValidate(command);
+            result.ShouldNotHaveAnyValidationErrors();
+        }
+
+        [Fact]
+        public void Activate_WithEmptyPermitTypeId_ShouldHaveValidationError()
+        {
+            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.Empty, ActivatedByAdminId = Guid.NewGuid() };
+            var result = _activateValidator.TestValidate(command);
+            result.ShouldHaveValidationErrorFor(x => x.PermitTypeId);
+        }
+
+        [Fact]
+        public void Activate_WithEmptyAdminId_ShouldHaveValidationError()
+        {
+            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), ActivatedByAdminId = Guid.Empty };
+            var result = _activateValidator.TestValidate(command);
+            result.ShouldHaveValidationErrorFor(x => x.ActivatedByAdminId);
+        }
+
+        [Fact]
+        public void Activate_WithValidCommand_ShouldNotHaveValidationError()
+        {
+            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), ActivatedByAdminId = Guid.NewGuid() };
+            var result = _activateValidator.TestValidate(command);
             result.ShouldNotHaveAnyValidationErrors();
         }
     }

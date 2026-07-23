@@ -55,6 +55,7 @@ public class PermitTypeSettingsTests : BunitContext
         Assert.NotNull(cut.Find(".spinner-border"));
     }
 
+  
     [Fact]
     public void Should_RenderFeeAndActiveControls_WhenLoaded()
     {
@@ -67,7 +68,7 @@ public class PermitTypeSettingsTests : BunitContext
         var cut = Render<PermitTypeSettings>(parameters => parameters.Add(p => p.Id, id.ToString()));
 
         Assert.NotNull(cut.Find("#pt-fee"));
-        Assert.NotNull(cut.Find("#pt-active"));
+        Assert.Contains("Active", cut.Markup);   // status badge, not the old toggle
         Assert.Contains("Deactivate", cut.Markup);
     }
 
@@ -82,6 +83,7 @@ public class PermitTypeSettingsTests : BunitContext
 
         var cut = Render<PermitTypeSettings>(parameters => parameters.Add(p => p.Id, id.ToString()));
 
+        Assert.Contains("Activate", cut.Markup);
         Assert.DoesNotContain("Deactivate", cut.Markup);
     }
 
@@ -135,5 +137,26 @@ public class PermitTypeSettingsTests : BunitContext
         var cut = Render<PermitTypeSettings>(parameters => parameters.Add(p => p.Id, id.ToString()));
 
         Assert.NotNull(cut.Find(".alert-warning"));
+    }
+
+    [Fact]
+    public async Task Should_SendActivateCommand_WithAdminId()
+    {
+        var id = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(SampleDto(id, active: false));
+        _mediatorMock.Setup(m => m.Send(It.IsAny<ActivatePermitTypeCommand>(), default))
+            .ReturnsAsync(true);
+        Services.AddSingleton(_mediatorMock.Object);
+        SetupAuth(adminId);
+
+        var cut = Render<PermitTypeSettings>(parameters => parameters.Add(p => p.Id, id.ToString()));
+
+        cut.Find("button.btn-outline-success").Click();
+
+        _mediatorMock.Verify(m => m.Send(
+            It.Is<ActivatePermitTypeCommand>(c => c.PermitTypeId == id && c.ActivatedByAdminId == adminId),
+            default), Times.Once);
     }
 }
