@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(PermitTypeDeactivatedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit permit type deactivation: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "permit type deactivation");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "PermitTypeDeactivated",
                 "PermitType",
                 notification.PermitTypeId,
-                $"Permit type {notification.PermitTypeId} deactivated by admin {_currentUserService.UserId}",
+                $"Permit type {notification.PermitTypeId} deactivated by admin {userId}",
                 "127.0.0.1"
             );
 

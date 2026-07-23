@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(DocumentDownloadedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit document download: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "document download");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "DocumentDownloaded",
                 "Document",
                 notification.DocumentId,
-                $"Document downloaded from application {notification.ApplicationId} by user {_currentUserService.UserId}",
+                $"Document downloaded from application {notification.ApplicationId} by user {userId}",
                 "127.0.0.1"
             );
 

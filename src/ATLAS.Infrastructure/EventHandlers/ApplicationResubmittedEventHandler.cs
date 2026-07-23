@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(ApplicationResubmittedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit application resubmission: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "application resubmission");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "ApplicationResubmitted",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} resubmitted by citizen {_currentUserService.UserId}",
+                $"Application {notification.ApplicationId} resubmitted by citizen {userId}",
                 "127.0.0.1"
             );
 

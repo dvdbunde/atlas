@@ -34,11 +34,9 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(EmailTemplateUpdatedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit email template update: no authenticated user is available.");
-
-            var auditLog = new AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "email template update");
+                        var auditLog = new AuditLog(
+                userId,
                 "Updated",
                 "EmailTemplate",
                 notification.EntityId,

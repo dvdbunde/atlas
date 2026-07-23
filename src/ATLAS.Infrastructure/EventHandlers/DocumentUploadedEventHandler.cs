@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(DocumentUploadedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit document upload: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "document upload");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "DocumentUploaded",
                 "Document",
                 notification.DocumentId,
-                $"Document {notification.FileName} uploaded to application {notification.ApplicationId} by user {_currentUserService.UserId}",
+                $"Document {notification.FileName} uploaded to application {notification.ApplicationId} by user {userId}",
                 "127.0.0.1"
             );
 

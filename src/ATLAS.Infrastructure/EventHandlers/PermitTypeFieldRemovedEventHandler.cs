@@ -22,11 +22,9 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(PermitTypeFieldRemovedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit permit field removal: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "permit field removal");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "Removed",
                 "PermitField",
                 notification.FieldId,

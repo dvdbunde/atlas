@@ -22,11 +22,9 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(PermitTypeDocumentRequirementAddedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit document requirement addition: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "document requirement addition");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "Added",
                 "DocumentRequirement",
                 notification.DocumentRequirementId,

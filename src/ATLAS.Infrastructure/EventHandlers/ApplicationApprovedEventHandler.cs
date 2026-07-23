@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(ApplicationApprovedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit application approval: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "application approval");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "ApplicationApproved",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} approved by officer {_currentUserService.UserId}",
+                $"Application {notification.ApplicationId} approved by officer {userId}",
                 "127.0.0.1" // TODO: Get actual IP address from HttpContext
             );
 

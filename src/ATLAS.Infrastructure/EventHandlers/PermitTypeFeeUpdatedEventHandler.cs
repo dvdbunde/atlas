@@ -22,11 +22,9 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(PermitTypeFeeUpdatedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit permit type fee update: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "permit type fee update");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "PermitTypeFeeUpdated",
                 "PermitType",
                 notification.PermitTypeId,

@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(ApplicationRejectedEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit application rejection: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "application rejection");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "ApplicationRejected",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} rejected by officer {_currentUserService.UserId}. Reason: {notification.ReasonCode}",
+                $"Application {notification.ApplicationId} rejected by officer {userId}. Reason: {notification.ReasonCode}",
                 "127.0.0.1"
             );
 

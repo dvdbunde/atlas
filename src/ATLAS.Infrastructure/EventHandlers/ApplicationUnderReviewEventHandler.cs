@@ -22,15 +22,13 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(ApplicationUnderReviewEvent notification, CancellationToken cancellationToken)
         {
-            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
-                throw new DomainException("Cannot audit application under-review transition: no authenticated user is available.");
-
-            var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                _currentUserService.UserId,
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "application under-review transition");
+                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+                userId,
                 "ApplicationUnderReview",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} moved to under review by officer {_currentUserService.UserId}",
+                $"Application {notification.ApplicationId} moved to under review by officer {userId}",
                 "127.0.0.1"
             );
 
