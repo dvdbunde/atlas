@@ -84,8 +84,7 @@ namespace ATLAS.API.Controllers
         {
             var command = new DeactivatePermitTypeCommand
             {
-                PermitTypeId = id,
-                DeactivatedByAdminId = GetCurrentAdminId()
+                PermitTypeId = id
             };
             var result = await _mediator.Send(command, default);
             if (!result)
@@ -110,10 +109,5 @@ namespace ATLAS.API.Controllers
             return Ok(response);
         }
 
-        private Guid GetCurrentAdminId()
-        {
-            var value = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            return Guid.TryParse(value, out var id) ? id : Guid.Empty;
-        }
     }
 }

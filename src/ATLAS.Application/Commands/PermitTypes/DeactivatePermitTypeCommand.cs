@@ -11,7 +11,6 @@ namespace ATLAS.Application.Commands.PermitTypes
     public class DeactivatePermitTypeCommand : ICommand<bool>
     {
         public Guid PermitTypeId { get; set; }
-        public Guid DeactivatedByAdminId { get; set; }
     }
 
        public class DeactivatePermitTypeCommandHandler : IRequestHandler<DeactivatePermitTypeCommand, bool>
@@ -31,9 +30,9 @@ namespace ATLAS.Application.Commands.PermitTypes
             if (permitType == null)
                 return false;
     
-            permitType.Deactivate(request.DeactivatedByAdminId);
+            permitType.Deactivate();
             await _repository.UpdateAsync(permitType, cancellationToken);
-            await _mediator.Publish(new PermitTypeDeactivatedEvent(permitType.Id, request.DeactivatedByAdminId), cancellationToken);
+            await _mediator.Publish(new PermitTypeDeactivatedEvent(permitType.Id), cancellationToken);
             return true;
         }
     }

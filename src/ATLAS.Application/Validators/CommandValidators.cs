@@ -85,9 +85,6 @@ namespace ATLAS.Application.Commands.Validators
         {
             RuleFor(x => x.PermitTypeId)
                 .NotEmpty().WithMessage("PermitTypeId is required");
-
-            RuleFor(x => x.DeactivatedByAdminId)
-                .NotEmpty().WithMessage("DeactivatedByAdminId is required");
         }
     }
 
@@ -97,9 +94,6 @@ namespace ATLAS.Application.Commands.Validators
         {
             RuleFor(x => x.PermitTypeId)
                 .NotEmpty().WithMessage("PermitTypeId is required");
-
-            RuleFor(x => x.ActivatedByAdminId)
-                .NotEmpty().WithMessage("ActivatedByAdminId is required");
         }
     }
 

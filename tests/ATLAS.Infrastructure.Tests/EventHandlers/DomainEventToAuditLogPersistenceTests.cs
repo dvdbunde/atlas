@@ -1,12 +1,14 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Entities;
 using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.EventHandlers;
 using ATLAS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace ATLAS.Infrastructure.Tests.EventHandlers
@@ -15,6 +17,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
     {
         private readonly ApplicationDbContext _context;
         private readonly AuditLogRepository _auditLogRepository;
+        private readonly Mock<ICurrentUserService> _currentUserService;
         private readonly ApplicationApprovedEventHandler _approvedHandler;
         private readonly ApplicationSubmittedEventHandler _submittedHandler;
         private readonly ApplicationRejectedEventHandler _rejectedHandler;
@@ -24,7 +27,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         private readonly DocumentUploadedEventHandler _documentUploadedHandler;
         private readonly PermitTypeActivatedEventHandler _activatedHandler;
         private readonly PermitTypeDeactivatedEventHandler _deactivatedHandler;
-        private readonly PermitTypeFieldAddedEventHandler _fieldAddedHandler;        
+        private readonly PermitTypeFieldAddedEventHandler _fieldAddedHandler;
         private readonly ApplicationAssignedToOfficerEventHandler _assignedHandler;
 
         public DomainEventToAuditLogPersistenceTests()
@@ -34,109 +37,95 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
                 .Options;
             _context = new ApplicationDbContext(options);
             _auditLogRepository = new AuditLogRepository(_context);
-            
-            _approvedHandler = new ApplicationApprovedEventHandler(_auditLogRepository);
-            _submittedHandler = new ApplicationSubmittedEventHandler(_auditLogRepository);
-            _rejectedHandler = new ApplicationRejectedEventHandler(_auditLogRepository);
-            _infoRequestedHandler = new ApplicationInfoRequestedEventHandler(_auditLogRepository);
-            _resubmittedHandler = new ApplicationResubmittedEventHandler(_auditLogRepository);
-            _underReviewHandler = new ApplicationUnderReviewEventHandler(_auditLogRepository);
-            _documentUploadedHandler = new DocumentUploadedEventHandler(_auditLogRepository);
-            _activatedHandler = new PermitTypeActivatedEventHandler(_auditLogRepository);
-            _deactivatedHandler = new PermitTypeDeactivatedEventHandler(_auditLogRepository);            
-            _assignedHandler = new ApplicationAssignedToOfficerEventHandler(_auditLogRepository);
+            _currentUserService = new Mock<ICurrentUserService>();
+            _currentUserService.Setup(x => x.IsAuthenticated).Returns(true);
+            _currentUserService.Setup(x => x.UserId).Returns(Guid.NewGuid());
+
+            _approvedHandler = new ApplicationApprovedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _submittedHandler = new ApplicationSubmittedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _rejectedHandler = new ApplicationRejectedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _infoRequestedHandler = new ApplicationInfoRequestedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _resubmittedHandler = new ApplicationResubmittedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _underReviewHandler = new ApplicationUnderReviewEventHandler(_auditLogRepository, _currentUserService.Object);
+            _documentUploadedHandler = new DocumentUploadedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _activatedHandler = new PermitTypeActivatedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _deactivatedHandler = new PermitTypeDeactivatedEventHandler(_auditLogRepository, _currentUserService.Object);
+            _assignedHandler = new ApplicationAssignedToOfficerEventHandler(_auditLogRepository, _currentUserService.Object);
         }
 
         [Fact]
         public async Task ApplicationApprovedEvent_ShouldPersistToAuditLog()
         {
-            // Arrange
-            var evt = new ApplicationApprovedEvent(Guid.NewGuid(), Guid.NewGuid());
+            var evt = new ApplicationApprovedEvent(Guid.NewGuid());
 
-            // Act
             await _approvedHandler.Handle(evt, CancellationToken.None);
             await _context.SaveChangesAsync();
 
-            // Assert
             var auditLogs = await _auditLogRepository.GetByEntityAsync("Application", evt.ApplicationId);
             var log = Assert.Single(auditLogs);
             Assert.Equal("ApplicationApproved", log.Action);
             Assert.Equal("Application", log.EntityType);
             Assert.Equal(evt.ApplicationId, log.EntityId);
-            Assert.Contains(evt.OfficerId.ToString(), log.Details);
+            Assert.Equal(_currentUserService.Object.UserId, log.UserId);
         }
 
         [Fact]
         public async Task ApplicationSubmittedEvent_ShouldPersistToAuditLog()
         {
-            // Arrange
-            var evt = new ApplicationSubmittedEvent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+            var evt = new ApplicationSubmittedEvent(Guid.NewGuid(), Guid.NewGuid());
 
-            // Act
             await _submittedHandler.Handle(evt, CancellationToken.None);
             await _context.SaveChangesAsync();
 
-            // Assert
             var auditLogs = await _auditLogRepository.GetByEntityAsync("Application", evt.ApplicationId);
             var log = Assert.Single(auditLogs);
             Assert.Equal("ApplicationSubmitted", log.Action);
-            Assert.Contains(evt.CitizenId.ToString(), log.Details);
+            Assert.Equal(_currentUserService.Object.UserId, log.UserId);
         }
 
         [Fact]
         public async Task ApplicationRejectedEvent_ShouldPersistToAuditLog()
         {
-            // Arrange
-            var evt = new ApplicationRejectedEvent(Guid.NewGuid(), Guid.NewGuid(), "INVALID_DOCUMENT");
+            var evt = new ApplicationRejectedEvent(Guid.NewGuid(), "INVALID_DOCUMENT");
 
-            // Act
             await _rejectedHandler.Handle(evt, CancellationToken.None);
             await _context.SaveChangesAsync();
 
-            // Assert
             var auditLogs = await _auditLogRepository.GetByEntityAsync("Application", evt.ApplicationId);
             var log = Assert.Single(auditLogs);
             Assert.Equal("ApplicationRejected", log.Action);
             Assert.Contains(evt.ReasonCode, log.Details);
+            Assert.Equal(_currentUserService.Object.UserId, log.UserId);
         }
 
         [Fact]
         public async Task DocumentUploadedEvent_ShouldPersistToAuditLog()
         {
-            // Arrange
-            var evt = new DocumentUploadedEvent(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "test.pdf");
+            var evt = new DocumentUploadedEvent(Guid.NewGuid(), Guid.NewGuid(), "test.pdf");
 
-            // Act
             await _documentUploadedHandler.Handle(evt, CancellationToken.None);
             await _context.SaveChangesAsync();
 
-            // Assert
             var auditLogs = await _auditLogRepository.GetByEntityAsync("Document", evt.DocumentId);
             var log = Assert.Single(auditLogs);
             Assert.Equal("DocumentUploaded", log.Action);
             Assert.Contains("test.pdf", log.Details);
+            Assert.Equal(_currentUserService.Object.UserId, log.UserId);
         }
-
-        // UserRoleChanged test removed in Phase A - role changes are Entra-driven
-        // Local role mutation is impossible; role sync does not raise domain events
 
         [Fact]
         public async Task MultipleEvents_ShouldCreateMultipleAuditLogs()
         {
-            // Arrange
             var applicationId = Guid.NewGuid();
-            var officerId = Guid.NewGuid();
 
-            // Act - Submit and Approve
-            await _submittedHandler.Handle(new ApplicationSubmittedEvent(applicationId, Guid.NewGuid(), Guid.NewGuid()), CancellationToken.None);
-            await _underReviewHandler.Handle(new ApplicationUnderReviewEvent(applicationId, officerId), CancellationToken.None);
-            await _approvedHandler.Handle(new ApplicationApprovedEvent(applicationId, officerId), CancellationToken.None);
+            await _submittedHandler.Handle(new ApplicationSubmittedEvent(applicationId, Guid.NewGuid()), CancellationToken.None);
+            await _underReviewHandler.Handle(new ApplicationUnderReviewEvent(applicationId), CancellationToken.None);
+            await _approvedHandler.Handle(new ApplicationApprovedEvent(applicationId), CancellationToken.None);
             await _context.SaveChangesAsync();
 
-            // Assert
             var auditLogs = await _auditLogRepository.GetByEntityAsync("Application", applicationId);
             Assert.Equal(3, auditLogs.Count());
-            
+
             var actions = auditLogs.Select(al => al.Action).ToList();
             Assert.Contains("ApplicationSubmitted", actions);
             Assert.Contains("ApplicationUnderReview", actions);

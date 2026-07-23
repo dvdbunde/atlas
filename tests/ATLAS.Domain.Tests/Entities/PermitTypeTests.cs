@@ -11,8 +11,6 @@ namespace ATLAS.Domain.Tests.Entities
 {
     public class PermitTypeTests
     {
-        private readonly Guid _adminId = Guid.NewGuid();
-
         [Fact]
         public void Create_ShouldInitializeWithActiveStatus()
         {
@@ -178,10 +176,10 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Arrange
             var permitType = new PermitType("Building Permit", "Description", 100.00m);
-            permitType.Deactivate(_adminId);
+            permitType.Deactivate();
 
             // Act
-            permitType.Activate(_adminId);
+            permitType.Activate();
 
             // Assert
             Assert.True(permitType.IsActive);
@@ -194,7 +192,7 @@ namespace ATLAS.Domain.Tests.Entities
             var permitType = new PermitType("Building Permit", "Description", 100.00m);
 
             // Act
-            permitType.Activate(_adminId);
+            permitType.Activate();
 
             // Assert
             Assert.True(permitType.IsActive);
@@ -207,7 +205,7 @@ namespace ATLAS.Domain.Tests.Entities
             var permitType = new PermitType("Building Permit", "Description", 100.00m);
 
             // Act
-            permitType.Deactivate(_adminId);
+            permitType.Deactivate();
 
             // Assert
             Assert.False(permitType.IsActive);
@@ -218,10 +216,10 @@ namespace ATLAS.Domain.Tests.Entities
         {
             // Arrange
             var permitType = new PermitType("Building Permit", "Description", 100.00m);
-            permitType.Deactivate(_adminId);
+            permitType.Deactivate();
 
             // Act
-            permitType.Deactivate(_adminId);
+            permitType.Deactivate();
 
             // Assert
             Assert.False(permitType.IsActive);
@@ -235,13 +233,12 @@ namespace ATLAS.Domain.Tests.Entities
             permitType.ClearDomainEvents();
 
             // Act
-            permitType.Deactivate(_adminId);
+            permitType.Deactivate();
 
             // Assert
             var domainEvent = Assert.Single(permitType.DomainEvents);
             var deactivatedEvent = Assert.IsType<PermitTypeDeactivatedEvent>(domainEvent);
             Assert.Equal(permitType.Id, deactivatedEvent.PermitTypeId);
-            Assert.Equal(_adminId, deactivatedEvent.DeactivatedByAdminId);
         }
 
         #endregion

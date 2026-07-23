@@ -29,9 +29,8 @@ namespace ATLAS.Application.Tests.Commands
         {
             // Arrange
             var permitTypeId = Guid.NewGuid();
-            var adminId = Guid.NewGuid();
             var permitType = new PermitType("Test Type", "Description", 100.00m);
-            permitType.Deactivate(adminId); // start inactive
+            permitType.Deactivate(); // start inactive
             Assert.False(permitType.IsActive);
 
             _mockRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
@@ -39,8 +38,7 @@ namespace ATLAS.Application.Tests.Commands
 
             var command = new ActivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                ActivatedByAdminId = adminId
+                PermitTypeId = permitTypeId
             };
 
             // Act
@@ -66,8 +64,7 @@ namespace ATLAS.Application.Tests.Commands
 
             var command = new ActivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                ActivatedByAdminId = adminId
+                PermitTypeId = permitTypeId
             };
 
             // Act
@@ -89,8 +86,7 @@ namespace ATLAS.Application.Tests.Commands
 
             var command = new ActivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                ActivatedByAdminId = Guid.NewGuid()
+                PermitTypeId = permitTypeId
             };
 
             // Act

@@ -97,7 +97,7 @@ namespace ATLAS.Infrastructure.Tests.Repositories
             await context.SaveChangesAsync();
 
             var repository = new PermitTypeRepository(context);
-            permitType.Deactivate(Guid.NewGuid()); // This changes IsActive to false
+            permitType.Deactivate(); // This changes IsActive to false
 
             // Act
             await repository.UpdateAsync(permitType);

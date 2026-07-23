@@ -91,7 +91,7 @@ namespace ATLAS.Domain.Entities
 
             Status = ApplicationStatus.Submitted;
             SubmittedDate = DateTime.UtcNow;
-            AddDomainEvent(new ApplicationSubmittedEvent(Id, CitizenId, PermitTypeId));
+            AddDomainEvent(new ApplicationSubmittedEvent(Id, PermitTypeId));
         }
 
         public void StartReview(Guid officerId)
@@ -100,7 +100,7 @@ namespace ATLAS.Domain.Entities
                 throw new DomainException("Can only start review for submitted applications");
 
             Status = ApplicationStatus.UnderReview;            
-            AddDomainEvent(new ApplicationUnderReviewEvent(Id, officerId));
+            AddDomainEvent(new ApplicationUnderReviewEvent(Id));
         }
 
         public void AssignToOfficer(Guid officerId)
@@ -117,7 +117,7 @@ namespace ATLAS.Domain.Entities
             if (Status == ApplicationStatus.Submitted)
             {
                 Status = ApplicationStatus.UnderReview;
-                AddDomainEvent(new ApplicationUnderReviewEvent(Id, officerId));
+                AddDomainEvent(new ApplicationUnderReviewEvent(Id));
             }
 
             // Idempotency: already assigned to this officer → no-op (no duplicate event)
@@ -130,7 +130,7 @@ namespace ATLAS.Domain.Entities
 
             AssignedOfficerId = officerId;
             AssignedDate = DateTime.UtcNow;
-            AddDomainEvent(new ApplicationAssignedToOfficerEvent(Id, officerId));
+            AddDomainEvent(new ApplicationAssignedToOfficerEvent(Id));
         }
 
              /// <summary>
@@ -159,7 +159,7 @@ namespace ATLAS.Domain.Entities
             OfficerNotes += $"[APPROVED {DateTime.UtcNow} by {officerId}]: {comments}";
 
             AddReview(Guid.NewGuid(), officerId, ReviewDecision.Approve, comments, true);            
-            AddDomainEvent(new ApplicationApprovedEvent(Id, officerId));
+            AddDomainEvent(new ApplicationApprovedEvent(Id));
         }
 
         public void Reject(Guid officerId, string reasonCode, string comments)
@@ -177,7 +177,7 @@ namespace ATLAS.Domain.Entities
             OfficerNotes += $"[REJECTED {DateTime.UtcNow} by {officerId}]: Reason: {reasonCode}. {comments}";
 
             AddReview(Guid.NewGuid(), officerId, ReviewDecision.Reject, comments, true, reasonCode);            
-            AddDomainEvent(new ApplicationRejectedEvent(Id, officerId, reasonCode));
+            AddDomainEvent(new ApplicationRejectedEvent(Id, reasonCode));
         }
 
         public void RequestInfo(Guid officerId, string message)
@@ -191,7 +191,7 @@ namespace ATLAS.Domain.Entities
             OfficerNotes += $"[INFO REQUESTED {DateTime.UtcNow} by {officerId}]: {message}";
 
             AddReview(Guid.NewGuid(), officerId, ReviewDecision.RequestInfo, message, true);            
-            AddDomainEvent(new ApplicationInfoRequestedEvent(Id, officerId, message));
+            AddDomainEvent(new ApplicationInfoRequestedEvent(Id, message));
         }
 
         public void Resubmit()
@@ -200,7 +200,7 @@ namespace ATLAS.Domain.Entities
                 throw new DomainException("Can only resubmit applications that have requested info");
 
             Status = ApplicationStatus.UnderReview;
-            AddDomainEvent(new ApplicationResubmittedEvent(Id, CitizenId));
+            AddDomainEvent(new ApplicationResubmittedEvent(Id));
         }
 
         public Document AddDocument(Guid documentId, string documentType, string fileName, string contentType, long fileSize, string blobUrl, Guid uploadedById)

@@ -9,18 +9,16 @@ namespace ATLAS.Application.Tests.EmailTemplates
         [Fact]
         public void Constructor_SetsProperties()
         {
-            var userId = Guid.NewGuid();
-            var evt = new EmailTemplateUpdatedEvent("ApprovalNotification", userId);
+            var evt = new EmailTemplateUpdatedEvent("ApprovalNotification");
 
             Assert.Equal("ApprovalNotification", evt.TemplateName);
-            Assert.Equal(userId, evt.PerformedByUserId);
         }
 
         [Fact]
         public void EntityId_IsDeterministicForSameName()
         {
-            var a = new EmailTemplateUpdatedEvent("ApprovalNotification", Guid.NewGuid());
-            var b = new EmailTemplateUpdatedEvent("ApprovalNotification", Guid.NewGuid());
+            var a = new EmailTemplateUpdatedEvent("ApprovalNotification");
+            var b = new EmailTemplateUpdatedEvent("ApprovalNotification");
 
             Assert.Equal(a.EntityId, b.EntityId);
         }
@@ -28,8 +26,8 @@ namespace ATLAS.Application.Tests.EmailTemplates
         [Fact]
         public void EntityId_DiffersAcrossNames()
         {
-            var a = new EmailTemplateUpdatedEvent("ApprovalNotification", Guid.NewGuid());
-            var b = new EmailTemplateUpdatedEvent("RejectionNotification", Guid.NewGuid());
+            var a = new EmailTemplateUpdatedEvent("ApprovalNotification");
+            var b = new EmailTemplateUpdatedEvent("RejectionNotification");
 
             Assert.NotEqual(a.EntityId, b.EntityId);
         }
@@ -37,7 +35,7 @@ namespace ATLAS.Application.Tests.EmailTemplates
         [Fact]
         public void EntityId_IsNotGuidEmpty()
         {
-            var evt = new EmailTemplateUpdatedEvent("ApprovalNotification", Guid.NewGuid());
+            var evt = new EmailTemplateUpdatedEvent("ApprovalNotification");
             Assert.NotEqual(Guid.Empty, evt.EntityId);
         }
     }

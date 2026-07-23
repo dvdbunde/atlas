@@ -16,10 +16,11 @@ namespace ATLAS.Domain.Email
 {
     /// <summary>
     /// Raised when an administrator successfully saves an email template. Carries the
-    /// template name and the acting administrator's id so the audit handler can record
-    /// who changed what, without exposing template content.
+    /// template name so the audit handler can record what changed, without exposing
+    /// template content. The acting user is resolved from ICurrentUserService by the
+    /// audit handler (single source of truth for identity).
     /// </summary>
-    public sealed record EmailTemplateUpdatedEvent(string TemplateName, Guid PerformedByUserId) : INotification
+    public sealed record EmailTemplateUpdatedEvent(string TemplateName) : INotification
     {
         /// <summary>
         /// A stable, deterministic Guid derived from the template name. AuditLog.EntityId

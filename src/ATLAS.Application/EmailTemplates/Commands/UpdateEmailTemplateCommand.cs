@@ -73,7 +73,7 @@ namespace ATLAS.Application.EmailTemplates.Commands
             // records the change. The handler owns audit creation; this handler stays
             // orchestration-only and never touches audit storage directly.
             await _mediator.Publish(
-                new EmailTemplateUpdatedEvent(request.Name, _currentUserService.UserId ?? Guid.Empty),
+                new EmailTemplateUpdatedEvent(request.Name),
                 cancellationToken);
 
             return true;

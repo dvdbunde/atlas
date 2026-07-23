@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using ATLAS.Application.Interfaces;
+using ATLAS.Domain;
 using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using MediatR;
@@ -10,20 +12,25 @@ namespace ATLAS.Infrastructure.EventHandlers
     public class PermitTypeActivatedEventHandler : INotificationHandler<PermitTypeActivatedEvent>
     {
         private readonly IAuditLogRepository _auditLogRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public PermitTypeActivatedEventHandler(IAuditLogRepository auditLogRepository)
+        public PermitTypeActivatedEventHandler(IAuditLogRepository auditLogRepository, ICurrentUserService currentUserService)
         {
             _auditLogRepository = auditLogRepository ?? throw new ArgumentNullException(nameof(auditLogRepository));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         public async Task Handle(PermitTypeActivatedEvent notification, CancellationToken cancellationToken)
         {
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
+                throw new DomainException("Cannot audit permit type activation: no authenticated user is available.");
+
             var auditLog = new ATLAS.Domain.Entities.AuditLog(
-                notification.ActivatedByAdminId,
+                _currentUserService.UserId,
                 "PermitTypeActivated",
                 "PermitType",
                 notification.PermitTypeId,
-                $"Permit type {notification.PermitTypeId} activated by admin {notification.ActivatedByAdminId}",
+                $"Permit type {notification.PermitTypeId} activated by admin {_currentUserService.UserId}",
                 "127.0.0.1"
             );
 

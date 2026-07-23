@@ -19,6 +19,8 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
 
         public PermitTypeFeeUpdatedEventHandlerTests()
         {
+            _currentUserService.Setup(x => x.IsAuthenticated).Returns(true);
+            _currentUserService.Setup(x => x.UserId).Returns(Guid.NewGuid());
             _handler = new PermitTypeFeeUpdatedEventHandler(_auditLogRepository.Object, _currentUserService.Object);
         }
 

@@ -57,7 +57,7 @@ public class AssignApplicationToMeCommandHandler : IRequestHandler<AssignApplica
         // Single audit path: the event handler writes the AuditLog.
         // (Mirrors Approve/Reject/RequestInfo — manual publish, no second source.)
         if (!wasAlreadyAssignedToMe)
-            await _mediator.Publish(new ApplicationAssignedToOfficerEvent(application.Id, officerId), cancellationToken);
+            await _mediator.Publish(new ApplicationAssignedToOfficerEvent(application.Id), cancellationToken);
 
         return true;
     }

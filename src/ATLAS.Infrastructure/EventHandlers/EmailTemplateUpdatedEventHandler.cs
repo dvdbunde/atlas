@@ -11,6 +11,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Interfaces;
+using ATLAS.Domain;
 using ATLAS.Domain.Email;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
@@ -33,13 +34,11 @@ namespace ATLAS.Infrastructure.EventHandlers
 
         public async Task Handle(EmailTemplateUpdatedEvent notification, CancellationToken cancellationToken)
         {
-            // Prefer the actor captured on the event; fall back to the ambient user.
-            var userId = notification.PerformedByUserId != Guid.Empty
-                ? notification.PerformedByUserId
-                : _currentUserService.UserId;
+            if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
+                throw new DomainException("Cannot audit email template update: no authenticated user is available.");
 
             var auditLog = new AuditLog(
-                userId,
+                _currentUserService.UserId,
                 "Updated",
                 "EmailTemplate",
                 notification.EntityId,

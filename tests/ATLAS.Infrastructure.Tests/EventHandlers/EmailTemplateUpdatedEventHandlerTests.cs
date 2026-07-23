@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Interfaces;
+using ATLAS.Domain;
 using ATLAS.Domain.Email;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
@@ -29,7 +30,9 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         public async Task Handle_ShouldWriteAuditLogWithExpectedFields()
         {
             var userId = Guid.NewGuid();
-            var evt = new EmailTemplateUpdatedEvent("ApprovalNotification", userId);
+            _currentUserMock.Setup(c => c.IsAuthenticated).Returns(true);
+            _currentUserMock.Setup(c => c.UserId).Returns(userId);
+            var evt = new EmailTemplateUpdatedEvent("ApprovalNotification");
 
             await _handler.Handle(evt, CancellationToken.None);
 
@@ -45,17 +48,13 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         }
 
         [Fact]
-        public async Task Handle_WhenEventUserIdEmpty_FallsBackToCurrentUser()
+        public async Task Handle_WhenUserNotAuthenticated_ShouldThrowDomainException()
         {
-            var fallback = Guid.NewGuid();
-            _currentUserMock.Setup(c => c.UserId).Returns(fallback);
-            var evt = new EmailTemplateUpdatedEvent("RejectionNotification", Guid.Empty);
+            _currentUserMock.Setup(c => c.IsAuthenticated).Returns(false);
+            _currentUserMock.Setup(c => c.UserId).Returns((Guid?)null);
+            var evt = new EmailTemplateUpdatedEvent("RejectionNotification");
 
-            await _handler.Handle(evt, CancellationToken.None);
-
-            _auditLogsMock.Verify(r => r.AddAsync(
-                It.Is<AuditLog>(l => l.UserId == fallback && l.EntityId == evt.EntityId),
-                It.IsAny<CancellationToken>()), Times.Once);
+            await Assert.ThrowsAsync<DomainException>(() => _handler.Handle(evt, CancellationToken.None));
         }
 
         [Fact]

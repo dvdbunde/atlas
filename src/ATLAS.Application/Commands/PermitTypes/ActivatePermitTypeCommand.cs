@@ -11,7 +11,6 @@ namespace ATLAS.Application.Commands.PermitTypes
     public class ActivatePermitTypeCommand : ICommand<bool>
     {
         public Guid PermitTypeId { get; set; }
-        public Guid ActivatedByAdminId { get; set; }
     }
 
     public class ActivatePermitTypeCommandHandler : IRequestHandler<ActivatePermitTypeCommand, bool>
@@ -32,9 +31,9 @@ namespace ATLAS.Application.Commands.PermitTypes
             if (permitType == null)
                 return false;
 
-            permitType.Activate(request.ActivatedByAdminId);
+            permitType.Activate();
             await _repository.UpdateAsync(permitType, cancellationToken);
-            await _mediator.Publish(new PermitTypeActivatedEvent(permitType.Id, request.ActivatedByAdminId), cancellationToken);
+            await _mediator.Publish(new PermitTypeActivatedEvent(permitType.Id), cancellationToken);
             return true;
         }
     }

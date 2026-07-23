@@ -97,7 +97,6 @@ namespace ATLAS.Application.Tests.Commands
                 m => m.Publish(
                     It.Is<ApplicationSubmittedEvent>(e =>
                         e.ApplicationId == _testApplication.Id &&
-                        e.CitizenId == _testUserId &&
                         e.PermitTypeId == _permitTypeId),
                     It.IsAny<CancellationToken>()),
                 Times.Once);

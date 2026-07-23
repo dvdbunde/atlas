@@ -124,7 +124,7 @@ namespace ATLAS.Application.Commands.Documents
 
             // Step 9: Publish domain event exactly once (not in aggregate — handler manages publication)
             await _mediator.Publish(
-                new DocumentUploadedEvent(document.Id, request.ApplicationId, uploadedById, request.FileName),
+                new DocumentUploadedEvent(document.Id, request.ApplicationId, request.FileName),
                 cancellationToken);
 
             return true;

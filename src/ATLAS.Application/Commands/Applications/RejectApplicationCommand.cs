@@ -47,7 +47,7 @@ namespace ATLAS.Application.Commands.Applications
 
             application.Reject(officerId, request.ReasonCode, request.Comments);            
             await _repository.UpdateAsync(application, cancellationToken);
-            await _mediator.Publish(new Domain.Events.ApplicationRejectedEvent(application.Id, officerId, request.ReasonCode), cancellationToken);
+            await _mediator.Publish(new Domain.Events.ApplicationRejectedEvent(application.Id, request.ReasonCode), cancellationToken);
             
             return true;
         }

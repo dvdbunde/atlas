@@ -39,23 +39,15 @@ namespace ATLAS.Application.Tests.Validators
         [Fact]
         public void Deactivate_WithEmptyPermitTypeId_ShouldHaveValidationError()
         {
-            var command = new DeactivatePermitTypeCommand { PermitTypeId = Guid.Empty, DeactivatedByAdminId = Guid.NewGuid() };
+            var command = new DeactivatePermitTypeCommand { PermitTypeId = Guid.Empty };
             var result = _deactivateValidator.TestValidate(command);
             result.ShouldHaveValidationErrorFor(x => x.PermitTypeId);
         }
 
         [Fact]
-        public void Deactivate_WithEmptyAdminId_ShouldHaveValidationError()
-        {
-            var command = new DeactivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), DeactivatedByAdminId = Guid.Empty };
-            var result = _deactivateValidator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.DeactivatedByAdminId);
-        }
-
-        [Fact]
         public void Deactivate_WithValidCommand_ShouldNotHaveValidationError()
         {
-            var command = new DeactivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), DeactivatedByAdminId = Guid.NewGuid() };
+            var command = new DeactivatePermitTypeCommand { PermitTypeId = Guid.NewGuid() };
             var result = _deactivateValidator.TestValidate(command);
             result.ShouldNotHaveAnyValidationErrors();
         }
@@ -63,23 +55,15 @@ namespace ATLAS.Application.Tests.Validators
         [Fact]
         public void Activate_WithEmptyPermitTypeId_ShouldHaveValidationError()
         {
-            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.Empty, ActivatedByAdminId = Guid.NewGuid() };
+            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.Empty };
             var result = _activateValidator.TestValidate(command);
             result.ShouldHaveValidationErrorFor(x => x.PermitTypeId);
         }
 
         [Fact]
-        public void Activate_WithEmptyAdminId_ShouldHaveValidationError()
-        {
-            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), ActivatedByAdminId = Guid.Empty };
-            var result = _activateValidator.TestValidate(command);
-            result.ShouldHaveValidationErrorFor(x => x.ActivatedByAdminId);
-        }
-
-        [Fact]
         public void Activate_WithValidCommand_ShouldNotHaveValidationError()
         {
-            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.NewGuid(), ActivatedByAdminId = Guid.NewGuid() };
+            var command = new ActivatePermitTypeCommand { PermitTypeId = Guid.NewGuid() };
             var result = _activateValidator.TestValidate(command);
             result.ShouldNotHaveAnyValidationErrors();
         }

@@ -122,11 +122,9 @@ public partial class PermitTypeSettings : ComponentBase
 
         try
         {
-            var adminId = await GetCurrentAdminId();
             var command = new ActivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                ActivatedByAdminId = adminId
+                PermitTypeId = permitTypeId
             };
 
             var result = await Mediator.Send(command);
@@ -163,11 +161,9 @@ public partial class PermitTypeSettings : ComponentBase
 
         try
         {
-            var adminId = await GetCurrentAdminId();
             var command = new DeactivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                DeactivatedByAdminId = adminId
+                PermitTypeId = permitTypeId
             };
 
             var result = await Mediator.Send(command);
@@ -191,19 +187,6 @@ public partial class PermitTypeSettings : ComponentBase
             _viewModel.IsSaving = false;
             StateHasChanged();
         }
-    }
-
-    private async Task<Guid> GetCurrentAdminId()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var userIdClaim = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
-            ?? authState.User.FindFirst("oid")
-            ?? authState.User.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
-
-        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var adminId))
-            return adminId;
-
-        return Guid.Empty;
     }
 
     private void BackToDetail()

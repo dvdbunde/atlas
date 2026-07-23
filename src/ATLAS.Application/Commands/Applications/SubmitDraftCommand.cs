@@ -120,7 +120,7 @@ namespace ATLAS.Application.Commands.Applications
 
             // Publish domain event to trigger audit logging and email notification
             await _mediator.Publish(
-                new ApplicationSubmittedEvent(application.Id, application.CitizenId, application.PermitTypeId),
+                new ApplicationSubmittedEvent(application.Id, application.PermitTypeId),
                 cancellationToken);
 
             _logger.LogInformation("Draft application {ApplicationId} submitted", request.ApplicationId);

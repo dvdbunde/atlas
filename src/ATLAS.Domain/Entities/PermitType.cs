@@ -177,16 +177,16 @@ namespace ATLAS.Domain.Entities
                 ordered[i].Order = i + 1;
         }
 
-        public void Activate(Guid activatedByAdminId)
+        public void Activate()
         {
             if (IsActive)
                 return;
 
             IsActive = true;
-            AddDomainEvent(new PermitTypeActivatedEvent(Id, activatedByAdminId));
+            AddDomainEvent(new PermitTypeActivatedEvent(Id));
         }
 
-        public void Deactivate(Guid deactivatedByAdminId)
+        public void Deactivate()
         {
             if (!IsActive)
                 return;
@@ -195,7 +195,7 @@ namespace ATLAS.Domain.Entities
             // is checked in command handler (infrastructure concern)
             
             IsActive = false;
-            AddDomainEvent(new PermitTypeDeactivatedEvent(Id, deactivatedByAdminId));
+            AddDomainEvent(new PermitTypeDeactivatedEvent(Id));
         }
 
         public void UpdateFee(decimal fee)

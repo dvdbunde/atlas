@@ -122,7 +122,7 @@ public class PermitTypeSettingsTests : BunitContext
 
         cut.Find("button.btn-outline-warning").Click();
 
-        _mediatorMock.Verify(m => m.Send(It.Is<DeactivatePermitTypeCommand>(c => c.PermitTypeId == id && c.DeactivatedByAdminId == adminId), default), Times.Once);
+        _mediatorMock.Verify(m => m.Send(It.Is<DeactivatePermitTypeCommand>(c => c.PermitTypeId == id), default), Times.Once);
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public class PermitTypeSettingsTests : BunitContext
         cut.Find("button.btn-outline-success").Click();
 
         _mediatorMock.Verify(m => m.Send(
-            It.Is<ActivatePermitTypeCommand>(c => c.PermitTypeId == id && c.ActivatedByAdminId == adminId),
+            It.Is<ActivatePermitTypeCommand>(c => c.PermitTypeId == id),
             default), Times.Once);
     }
 }

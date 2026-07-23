@@ -26,6 +26,8 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
                 .Options;
             _context = new ApplicationDbContext(options);
             _auditLogRepository = new AuditLogRepository(_context);
+            _currentUserService.Setup(x => x.IsAuthenticated).Returns(true);
+            _currentUserService.Setup(x => x.UserId).Returns(Guid.NewGuid());
             _handler = new PermitTypeDocumentRequirementRemovedEventHandler(_auditLogRepository, _currentUserService.Object);
         }
 

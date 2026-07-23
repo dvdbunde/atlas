@@ -29,13 +29,13 @@ namespace ATLAS.Domain.Tests.Entities
         }
 
         [Fact]
-        public void Create_ShouldAllowNullUserId_ForSystemActions()
+        public void Create_ShouldThrowException_WhenUserIdIsEmpty()
         {
-            // Arrange & Act
-            var auditLog = new AuditLog(Guid.Empty, "SystemAction", "System", Guid.NewGuid(), "System details", _ipAddress);
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentException>(() =>
+                new AuditLog(Guid.Empty, "SystemAction", "System", Guid.NewGuid(), "System details", _ipAddress));
 
-            // Assert
-            Assert.Equal(Guid.Empty, auditLog.UserId);
+            Assert.Equal("userId", exception.ParamName);
         }
 
         [Fact]

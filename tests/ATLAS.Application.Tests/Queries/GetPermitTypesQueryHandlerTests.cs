@@ -34,7 +34,7 @@ namespace ATLAS.Application.Tests.Queries
                 new PermitType("Type2", "Description2", 200.00m)
             };
             // First is active by default, deactivate second
-            permitTypes[1].Deactivate(Guid.NewGuid());
+            permitTypes[1].Deactivate();
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
@@ -58,7 +58,7 @@ namespace ATLAS.Application.Tests.Queries
                 new PermitType("Type2", "Description2", 200.00m)
             };
             // First is active by default, deactivate second
-            permitTypes[1].Deactivate(Guid.NewGuid());
+            permitTypes[1].Deactivate();
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
@@ -83,7 +83,7 @@ namespace ATLAS.Application.Tests.Queries
                 new PermitType("Type2", "Description2", 200.00m)
             };
             // First is active by default, deactivate second
-            permitTypes[1].Deactivate(Guid.NewGuid());
+            permitTypes[1].Deactivate();
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
@@ -138,7 +138,7 @@ namespace ATLAS.Application.Tests.Queries
                 new PermitType("Active Type", "Desc", 100.00m),
                 new PermitType("Inactive Type", "Desc", 200.00m)
             };
-            permitTypes[1].Deactivate(Guid.NewGuid());
+            permitTypes[1].Deactivate();
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
@@ -162,7 +162,7 @@ namespace ATLAS.Application.Tests.Queries
                 new PermitType("Active Type", "Desc", 100.00m),
                 new PermitType("Inactive Type", "Desc", 200.00m)
             };
-            permitTypes[1].Deactivate(Guid.NewGuid());
+            permitTypes[1].Deactivate();
 
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
