@@ -338,9 +338,13 @@ namespace ATLAS.API.Controllers.Generated
         /// <param name="dateFrom">Filter by date (from)</param>
         /// <param name="dateTo">Filter by date (to)</param>
         /// <param name="entityId">Filter by entity ID</param>
-        /// <returns>List of audit logs</returns>
+        /// <param name="searchTerm">Free-text search across action, entity type, and details (case-insensitive contains)</param>
+        /// <param name="sort">Sort order for the timestamp</param>
+        /// <param name="pageNumber">1-based page number</param>
+        /// <param name="pageSize">Number of entries per page</param>
+        /// <returns>Paged list of audit logs</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs", Name = "getAuditLogs")]
-        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<AuditLogResponse>>> GetAuditLogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? entityId = null);
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<PagedAuditLogResponse>> GetAuditLogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? entityId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? searchTerm = null, [Microsoft.AspNetCore.Mvc.FromQuery] AuditLogSortOption? sort = null, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageNumber = 1, [Microsoft.AspNetCore.Mvc.FromQuery] int? pageSize = 20);
 
         /// <summary>
         /// Export audit logs to CSV
@@ -355,6 +359,65 @@ namespace ATLAS.API.Controllers.Generated
         /// <returns>CSV file</returns>
         [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs/export", Name = "exportAuditLogs")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> ExportAuditLogs([Microsoft.AspNetCore.Mvc.FromQuery] System.Guid? userId = null, [Microsoft.AspNetCore.Mvc.FromQuery] string? action = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateFrom = null, [Microsoft.AspNetCore.Mvc.FromQuery] System.DateTimeOffset? dateTo = null);
+
+        /// <summary>
+        /// Get audit log by ID
+        /// </summary>
+        /// <remarks>
+        /// Retrieve a single audit log entry by its identifier (read-only).
+        /// </remarks>
+        /// <param name="id">Audit log identifier</param>
+        /// <returns>The requested audit log entry</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/auditlogs/{id}", Name = "getAuditLogById")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<AuditLogResponse>> GetAuditLogById(System.Guid id);
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NSwag", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public abstract class EmailTemplatesControllerBase : Microsoft.AspNetCore.Mvc.ControllerBase
+    {
+        /// <summary>
+        /// List email templates
+        /// </summary>
+        /// <remarks>
+        /// Retrieve all application-owned email templates (name and content).
+        /// </remarks>
+        /// <returns>The list of email templates</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates", Name = "getEmailTemplates")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<System.Collections.Generic.ICollection<EmailTemplateResponse>>> GetEmailTemplates();
+
+        /// <summary>
+        /// Get email template by name
+        /// </summary>
+        /// <remarks>
+        /// Retrieve a single email template by its name.
+        /// </remarks>
+        /// <param name="name">Template name</param>
+        /// <returns>The requested email template</returns>
+        [Microsoft.AspNetCore.Mvc.HttpGet, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}", Name = "getEmailTemplateByName")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<EmailTemplateResponse>> GetEmailTemplateByName(string name);
+
+        /// <summary>
+        /// Update email template
+        /// </summary>
+        /// <remarks>
+        /// Persist edited email template content. Unknown placeholders are rejected.
+        /// </remarks>
+        /// <param name="name">Template name</param>
+        /// <returns>Template updated</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPut, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}", Name = "updateEmailTemplate")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> UpdateEmailTemplate(string name, [Microsoft.AspNetCore.Mvc.FromBody] UpdateEmailTemplateRequest body);
+
+        /// <summary>
+        /// Preview rendered email template
+        /// </summary>
+        /// <remarks>
+        /// Render arbitrary template content with a fixed sample model.
+        /// </remarks>
+        /// <param name="name">Template name (used for routing only; content is supplied in the body)</param>
+        /// <returns>The rendered template</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}/preview", Name = "previewEmailTemplate")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> PreviewEmailTemplate(string name, [Microsoft.AspNetCore.Mvc.FromBody] PreviewEmailTemplateRequest body);
 
     }
 

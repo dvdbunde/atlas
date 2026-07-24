@@ -19,18 +19,24 @@ namespace ATLAS.Infrastructure.Repositories
         public async Task<PermitType?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.PermitTypes
+                .Include(p => p.Fields)
+                .Include(p => p.DocumentRequirements)
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         }
 
         public async Task<IEnumerable<PermitType>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.PermitTypes
+                .Include(p => p.Fields)
+                .Include(p => p.DocumentRequirements)
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<PermitType>> GetAllActiveAsync(CancellationToken cancellationToken = default)
         {
             return await _context.PermitTypes
+                .Include(p => p.Fields)
+                .Include(p => p.DocumentRequirements)
                 .Where(p => p.IsActive)
                 .ToListAsync(cancellationToken);
         }
@@ -42,7 +48,9 @@ namespace ATLAS.Infrastructure.Repositories
 
         public Task UpdateAsync(PermitType entity, CancellationToken cancellationToken = default)
         {
-            _context.PermitTypes.Update(entity);
+            // Entity is already tracked by the DbContext after GetByIdAsync.
+            // EF Core auto-detects changes on SaveChangesAsync — no attach needed.
+            //_context.PermitTypes.Update(entity);
             return Task.CompletedTask;
         }
 

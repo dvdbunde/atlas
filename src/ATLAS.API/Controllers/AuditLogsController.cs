@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace ATLAS.API.Controllers
 {
-    [ApiController]    
+    [ApiController]
     [Produces("application/json")]
     public sealed class AuditLogsController : AuditLogsControllerBase
     {
@@ -24,31 +24,57 @@ namespace ATLAS.API.Controllers
         [ActivatorUtilitiesConstructor]
         public AuditLogsController(IMediator mediator)
         {
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));            
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
-        public override async Task<ActionResult<ICollection<AuditLogResponse>>> GetAuditLogs(
+        public override async Task<ActionResult<PagedAuditLogResponse>> GetAuditLogs(
             Guid? userId = null,
             string? action = null,
             DateTimeOffset? dateFrom = null,
             DateTimeOffset? dateTo = null,
-            Guid? entityId = null)
+            Guid? entityId = null,
+            string? searchTerm = null,
+            AuditLogSortOption? sort = null,
+            int? pageNumber = null,
+            int? pageSize = null)
         {
+            var sortOption = Enum.TryParse<AuditLogSortOptionDto>(sort?.ToString(), ignoreCase: true, out var parsed)
+                ? parsed
+                : AuditLogSortOptionDto.TimestampDesc;
+
             var query = new GetAuditLogsQuery
             {
                 UserId = userId,
                 Action = action,
                 DateFrom = dateFrom?.DateTime,
                 DateTo = dateTo?.DateTime,
-                EntityId = entityId
+                EntityId = entityId,
+                SearchTerm = searchTerm,
+                SortBy = sortOption,
+                PageNumber = pageNumber ?? 1,
+                PageSize = pageSize ?? 20
             };
-            var results = await _mediator.Send(query, default);
-            var response = new List<AuditLogResponse>();
-            foreach (var dto in results)
+
+            var result = await _mediator.Send(query, default);
+
+            var response = new PagedAuditLogResponse
             {
-                response.Add(dto.ToResponse());
-            }
+                Items = result.Items.Select(dto => dto.ToResponse()).ToList(),
+                TotalCount = result.TotalCount,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize,
+                TotalPages = result.TotalPages
+            };
+
             return Ok(response);
+        }
+
+        public override async Task<ActionResult<AuditLogResponse>> GetAuditLogById(Guid id)
+        {
+            var result = await _mediator.Send(new GetAuditLogDetailQuery { Id = id }, default);
+            if (result is null)
+                return NotFound();
+            return Ok(result.ToResponse());
         }
 
         public override async Task<ActionResult<string>> ExportAuditLogs(

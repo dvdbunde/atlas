@@ -61,24 +61,29 @@ public class ApplicationEditViewModel
         InfoRequestDateDisplay = infoRequest?.ReviewedDate.ToString("MMM dd, yyyy");
         InfoRequestOfficerName = application.OfficerName;
     
-        var fields = permitType.Fields.Select(fd =>
-        {
-            var hasExistingValue = application.FieldValues.TryGetValue(fd.Name, out var existingValue);
-    
-            return new DynamicFormFieldViewModel
+        // M8 regression fix: document requirements live in a separate DTO list
+        // (PermitTypeDto.DocumentRequirements) and must be merged with the regular
+        // fields so FileUpload requirements render on the citizen create/edit form.
+        var fields = permitType.Fields
+            .Concat(permitType.DocumentRequirements)
+            .Select(fd =>
             {
-                FieldName = fd.Name,
-                Label = fd.Name,
-                Type = fd.Type,
-                IsRequired = fd.IsRequired,
-                DefaultValue = fd.DefaultValue,
-                CurrentValue = hasExistingValue ? existingValue : (fd.DefaultValue ?? string.Empty),
-                Options = fd.Options ?? new(),
-                SortOrder = 0,
-                AllowedExtensions = fd.AllowedExtensions,
-                MaxFileSizeBytes = fd.MaxFileSizeBytes
-            };
-        }).ToList();
+                var hasExistingValue = application.FieldValues.TryGetValue(fd.Name, out var existingValue);
+
+                return new DynamicFormFieldViewModel
+                {
+                    FieldName = fd.Name,
+                    Label = fd.Name,
+                    Type = fd.Type,
+                    IsRequired = fd.IsRequired,
+                    DefaultValue = fd.DefaultValue,
+                    CurrentValue = hasExistingValue ? existingValue : (fd.DefaultValue ?? string.Empty),
+                    Options = fd.Options ?? new(),
+                    SortOrder = 0,
+                    AllowedExtensions = fd.AllowedExtensions,
+                    MaxFileSizeBytes = fd.MaxFileSizeBytes
+                };
+            }).ToList();
     
         // D4: Attach uploaded documents to FileUpload fields (field name matches document type)
         foreach (var field in fields.Where(f => f.Type == FieldType.FileUpload))

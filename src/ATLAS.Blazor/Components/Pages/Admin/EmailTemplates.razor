@@ -1,0 +1,126 @@
+@page "/admin/email-templates"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+@using ATLAS.Application.EmailTemplates
+
+<PageTitle>Email Templates</PageTitle>
+
+<style>
+    .email-template-list .list-group-item-action {
+        cursor: pointer;
+    }
+    .email-template-list .selected-template {
+        background-color: #e7f1ff;
+        color: #0a58ca;
+        font-weight: 600;
+        border-color: #b6d4fe;
+    }
+    .email-template-list .selected-template:focus {
+        box-shadow: none;
+    }
+</style>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Email Templates</li>
+        </ol>
+    </nav>
+
+    <PageHeader Title="Email Templates" />
+
+    @if (_isLoading)
+    {
+        <div class="alert alert-info" role="status">Loading email templates…</div>
+    }
+    else if (_hasError)
+    {
+        <div class="alert alert-danger" role="alert">@_errorMessage</div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Templates</h4>
+                <div class="list-group email-template-list">
+                    @foreach (var template in _templates)
+                    {
+                        var isSelected = _selectedName == template.Name;
+                        <button type="button"
+                                class="list-group-item list-group-item-action @(isSelected ? "selected-template" : "")"
+                                @onclick="@(() => SelectTemplate(template.Name))">
+                            @template.Name
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                @if (_selectedName is null)
+                {
+                    <EmptyState Title="Select a template"
+                                Message="Choose a template from the list to view, edit, and preview it." />
+                }
+                else if (_notFound)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        The template <strong>@_selectedName</strong> could not be found.
+                    </div>
+                }
+                else
+                {
+                    <h4>@_selectedName</h4>
+
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            Supported placeholders:
+                            @foreach (var placeholder in SupportedPlaceholders)
+                            {
+                                <span class="badge bg-secondary me-1">@("{{" + placeholder + "}}")</span>
+                            }
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="template-content">Template content</label>
+                        <textarea id="template-content" class="form-control" rows="12"
+                                  @bind="_editorContent"></textarea>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_saveMessage))
+                    {
+                        <div class="alert alert-success" role="alert">@_saveMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_saveError))
+                    {
+                        <div class="alert alert-danger" role="alert">@_saveError</div>
+                    }
+
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary" @onclick="SaveTemplate" disabled="@_isSaving">
+                            @(_isSaving ? "Saving…" : "Save")
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="PreviewTemplate" disabled="@_isPreviewing">
+                            @(_isPreviewing ? "Rendering…" : "Preview")
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_previewOutput))
+                    {
+                        <div class="mt-4">
+                            <h5>Preview</h5>
+                            <pre class="border rounded p-3 bg-light">@_previewOutput</pre>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_previewError))
+                    {
+                        <div class="alert alert-danger mt-3" role="alert">@_previewError</div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>

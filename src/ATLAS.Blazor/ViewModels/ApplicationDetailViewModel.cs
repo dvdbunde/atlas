@@ -20,9 +20,13 @@ public class ApplicationDetailViewModel
     public string CitizenNotes { get; set; } = string.Empty;
     public string OfficerNotes { get; set; } = string.Empty;
     public string? OfficerName { get; set; }
+    public string? AssignedOfficerName { get; set; }
+    public string CitizenName { get; set; } = string.Empty;
+    public string CitizenEmail { get; set; } = string.Empty;
+    public DateTime? LastUpdated => ReviewedDate ?? SubmittedDate;
 
     public List<FieldDisplayViewModel> Fields { get; set; } = new();
-    public List<TimelineEntryViewModel> TimelineEntries { get; set; } = new();
+    public List<DocumentDto> Documents { get; set; } = new();
     public List<ReviewDisplayViewModel> Reviews { get; set; } = new();
 
     public bool IsLoading { get; set; } = true;
@@ -46,6 +50,9 @@ public class ApplicationDetailViewModel
         CitizenNotes = application.CitizenNotes;
         OfficerNotes = application.OfficerNotes;
         OfficerName = application.OfficerName;
+        AssignedOfficerName = application.AssignedOfficerName;
+        CitizenName = application.CitizenName ?? "Unknown";
+        Documents = application.Documents.ToList();
 
         // Map field definitions with existing values
         var fieldList = new List<FieldDisplayViewModel>();
@@ -80,9 +87,6 @@ public class ApplicationDetailViewModel
         }
         Fields = fieldList;
 
-        // Build timeline entries
-        TimelineEntries = BuildTimeline(application.Status);
-
         // Activities are loaded from the API via a separate query
         // (not populated here — the page fetches them async after Load)
 
@@ -98,6 +102,11 @@ public class ApplicationDetailViewModel
             })
             .OrderByDescending(r => r.ReviewedDate)
             .ToList();
+    }
+
+    public void LoadCitizenEmail(string email)
+    {
+        CitizenEmail = email ?? string.Empty;
     }
 
     private static List<TimelineEntryViewModel> BuildTimeline(ApplicationStatus currentStatus)

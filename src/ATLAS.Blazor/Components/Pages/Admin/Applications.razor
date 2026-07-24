@@ -1,0 +1,150 @@
+@page "/admin/applications"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+@using ATLAS.Application.Queries.Admin
+@using ATLAS.Domain.Enums
+
+<PageTitle>Applications</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Applications</li>
+        </ol>
+    </nav>
+
+    <PageHeader Title="Application Explorer"
+                Description="Read-only view of all applications in ATLAS. Administrators can browse, search, and inspect applications but cannot perform workflow actions." />
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading applications...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="() => LoadApplications()">Try Again</button>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="app-search">Search</label>
+                <input id="app-search" type="search" class="form-control" placeholder="Search by application number or citizen name..."
+                       value="@_viewModel.SearchTerm" @oninput="OnSearchInput" aria-label="Search applications" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="app-status">Status</label>
+                <select id="app-status" class="form-select" value="@_viewModel.StatusFilter" @onchange="OnStatusFilterChanged" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="UnderReview">Under Review</option>
+                    <option value="InfoRequested">Info Requested</option>
+                    <option value="Resubmitted">Resubmitted</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="app-permit-type">Permit Type</label>
+                <select id="app-permit-type" class="form-select" value="@_viewModel.PermitTypeIdFilter?.ToString()" @onchange="OnPermitTypeFilterChanged" aria-label="Filter by permit type">
+                    <option value="">All permit types</option>
+                    @foreach (var pt in _viewModel.PermitTypes)
+                    {
+                        <option value="@pt.Id">@pt.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="app-date-from">Date From</label>
+                <input id="app-date-from" type="date" class="form-control"
+                       value="@_viewModel.DateFrom?.ToString("yyyy-MM-dd")" @onchange="OnDateFromChanged" aria-label="Submitted date from" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="app-date-to">Date To</label>
+                <input id="app-date-to" type="date" class="form-control"
+                       value="@_viewModel.DateTo?.ToString("yyyy-MM-dd")" @onchange="OnDateToChanged" aria-label="Submitted date to" />
+            </div>
+            <div class="col-6 col-md-1">
+                <label class="form-label" for="app-sort">Sort</label>
+                <select id="app-sort" class="form-select" value="@((int)_viewModel.SortBy)" @onchange="OnSortChanged" aria-label="Sort applications">
+                    <option value="@((int)AdminApplicationSortBy.SubmittedDate)">Submitted</option>
+                    <option value="@((int)AdminApplicationSortBy.LastUpdated)">Updated</option>
+                    <option value="@((int)AdminApplicationSortBy.ApplicationNumber)">Number</option>
+                </select>
+            </div>
+        </div>
+
+        @if (_viewModel.IsEmpty)
+        {
+            <EmptyState Title="No applications found"
+                        Message="No applications match the current filters. Try clearing the search or filters." />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Application #</th>
+                            <th scope="col">Permit Type</th>
+                            <th scope="col">Citizen</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Assigned Officer</th>
+                            <th scope="col">Submitted</th>
+                            <th scope="col">Last Updated</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var app in _viewModel.Items)
+                        {
+                            <tr>
+                                <td>@app.ApplicationNumber</td>
+                                <td>@app.PermitTypeName</td>
+                                <td>@app.CitizenName</td>
+                                <td>
+                                    <StatusBadge Status="app.Status" />
+                                </td>
+                                <td>@(app.AssignedOfficerName ?? "—")</td>
+                                <td>@(app.SubmittedDate?.ToLocalTime().ToString("g") ?? "—")</td>
+                                <td>@(app.LastUpdated?.ToLocalTime().ToString("g") ?? "—")</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary" href="@($"/admin/applications/{app.ApplicationId}")">View</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (_viewModel.TotalPages > 1)
+            {
+                <nav aria-label="Application list pagination">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(_viewModel.PageNumber <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(_viewModel.PageNumber - 1)" disabled="@(_viewModel.PageNumber <= 1)">Previous</button>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Page @_viewModel.PageNumber of @_viewModel.TotalPages</span>
+                        </li>
+                        <li class="page-item @(_viewModel.PageNumber >= _viewModel.TotalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(_viewModel.PageNumber + 1)" disabled="@(_viewModel.PageNumber >= _viewModel.TotalPages)">Next</button>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        }
+    }
+</div>

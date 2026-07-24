@@ -73,6 +73,14 @@ namespace ATLAS.Application.Queries.Applications
                 officerName = officer?.GetFullName();
             }
 
+            // Get assigned officer name (independent of review history)
+            string? assignedOfficerName = null;
+            if (application.AssignedOfficerId.HasValue)
+            {
+                var officer = await _userRepository.GetByIdAsync(application.AssignedOfficerId.Value, cancellationToken);
+                assignedOfficerName = officer?.GetFullName();
+            }
+
             return new ApplicationDetailDto
             {
                 Id = application.Id,
@@ -82,8 +90,12 @@ namespace ATLAS.Application.Queries.Applications
                 CitizenId = application.CitizenId,
                 PermitTypeId = application.PermitTypeId,
                 CitizenName = citizen?.GetFullName() ?? "Unknown",
+                CitizenEmail = citizen?.Email ?? string.Empty,
                 PermitTypeName = permitType?.Name ?? "Unknown",
+                PermitTypeDescription = permitType?.Description ?? string.Empty,
                 OfficerName = officerName ?? "Not assigned",
+                AssignedOfficerName = assignedOfficerName,
+                AssignedOfficerId = application.AssignedOfficerId,
                 ReviewedDate = application.ReviewedDate,
                 CitizenNotes = application.CitizenNotes,
                 OfficerNotes = application.OfficerNotes,

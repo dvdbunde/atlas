@@ -353,6 +353,14 @@ public partial class ApplicationEdit : ComponentBase
             // Then resubmit
             await Mediator.Send(new ResubmitApplicationCommand { ApplicationId = _viewModel.ApplicationId });
             _viewModel.ResubmitSuccess = true;
+            
+            Logger.LogInformation(
+                "Application {ApplicationId} resubmitted successfully",
+                _viewModel.ApplicationId);
+
+            // Mirror the initial submit: redirect to the confirmation page now that
+            // the application is back under review, rather than staying on the edit page.
+            Navigation.NavigateTo($"/applications/confirmation/{_viewModel.ApplicationId}");
         }
         catch (InvalidOperationException ex)
         {

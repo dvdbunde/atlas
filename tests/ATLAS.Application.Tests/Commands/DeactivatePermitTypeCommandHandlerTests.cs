@@ -14,12 +14,15 @@ namespace ATLAS.Application.Tests.Commands
     public class DeactivatePermitTypeCommandHandlerTests
     {
         private readonly Mock<IPermitTypeRepository> _mockRepository;
+        private readonly Mock<IMediator> _mockMediator;
         private readonly DeactivatePermitTypeCommandHandler _handler;
+
 
         public DeactivatePermitTypeCommandHandlerTests()
         {
             _mockRepository = new Mock<IPermitTypeRepository>();
-            _handler = new DeactivatePermitTypeCommandHandler(_mockRepository.Object);
+            _mockMediator = new Mock<IMediator>();
+            _handler = new DeactivatePermitTypeCommandHandler(_mockRepository.Object, _mockMediator.Object);
         }
 
         [Fact]
@@ -27,7 +30,6 @@ namespace ATLAS.Application.Tests.Commands
         {
             // Arrange
             var permitTypeId = Guid.NewGuid();
-            var adminId = Guid.NewGuid();
             var permitType = new PermitType("Test Type", "Description", 100.00m);
 
             _mockRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
@@ -35,8 +37,7 @@ namespace ATLAS.Application.Tests.Commands
 
             var command = new DeactivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                DeactivatedByAdminId = adminId
+                PermitTypeId = permitTypeId
             };
 
             // Act
@@ -53,9 +54,8 @@ namespace ATLAS.Application.Tests.Commands
         {
             // Arrange
             var permitTypeId = Guid.NewGuid();
-            var adminId = Guid.NewGuid();
             var permitType = new PermitType("Test Type", "Description", 100.00m);
-            permitType.Deactivate(adminId); // Start as inactive
+            permitType.Deactivate(); // Start as inactive
             Assert.False(permitType.IsActive);
 
             _mockRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
@@ -63,8 +63,7 @@ namespace ATLAS.Application.Tests.Commands
 
             var command = new DeactivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                DeactivatedByAdminId = adminId
+                PermitTypeId = permitTypeId
             };
 
             // Act
@@ -86,8 +85,7 @@ namespace ATLAS.Application.Tests.Commands
 
             var command = new DeactivatePermitTypeCommand
             {
-                PermitTypeId = permitTypeId,
-                DeactivatedByAdminId = Guid.NewGuid()
+                PermitTypeId = permitTypeId
             };
 
             // Act
@@ -102,7 +100,7 @@ namespace ATLAS.Application.Tests.Commands
         public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new DeactivatePermitTypeCommandHandler(null!));
+            Assert.Throws<ArgumentNullException>(() => new DeactivatePermitTypeCommandHandler(null!, _mockMediator.Object));
         }
     }
 }

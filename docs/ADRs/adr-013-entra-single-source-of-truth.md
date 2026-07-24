@@ -67,3 +67,12 @@ Local User record (read-only synchronized projection)
 3. ✅ Automatic Entra-to-ATLAS propagation
 4. ⚠ Synchronization latency (one request cycle)
 5. ⚠ No offline user management through ATLAS
+
+## Appendix: Future Architecture Backlog
+
+**B-013-1 — Rename `IUserRepository.UpdateAsync` to a synchronization-oriented API (e.g. `SynchronizeAsync`).**
+
+- **Rationale:** `IUserRepository` inherits the generic `IRepository<T>.UpdateAsync`, which reads as a general-purpose CRUD update and could invite a future handler to locally mutate `User` identity data — reintroducing the dual-write anti-pattern ADR-013 prohibits. A synchronization-specific name makes the projection intent structural rather than merely documented.
+- **Current state:** `UpdateAsync(User)` is invoked **only** from `IdentityResolver.SynchronizeUserAsync` (the Entra→ATLAS sync path). It is not called by any command handler or UI. `DeleteAsync` was removed from `UserRepository` entirely (ATLAS never deletes user projections).
+- **Why deferred:** Renaming requires changing the generic `IRepository<T>` contract or overriding the method name on `IUserRepository` + `UserRepository` + the `IdentityResolver` call site. The generic `UpdateAsync` is also used by other repositories (`PermitType`, `Application`, `Document`) where it is legitimate. Impact was assessed as excessive for the alignment cleanup, so it is tracked here as a backlog item rather than implemented now.
+- **Guardrail:** Until renamed, the ADR-013 architecture tests (`Adr013UserProjectionGuardTests`) assert that `IUserRepository.UpdateAsync` is referenced **only** from `IdentityResolver`, preventing misuse.

@@ -23,6 +23,9 @@ namespace ATLAS.Domain.Entities
             if (entityId == Guid.Empty)
                 throw new ArgumentException("Entity ID cannot be empty", nameof(entityId));
 
+            if (!userId.HasValue || userId.Value == Guid.Empty)
+                throw new ArgumentException("User ID must be a valid, authenticated user", nameof(userId));
+
             Id = Guid.NewGuid();
             UserId = userId;
             Action = action;

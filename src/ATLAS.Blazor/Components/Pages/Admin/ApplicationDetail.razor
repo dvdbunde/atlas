@@ -1,0 +1,57 @@
+@page "/admin/applications/{ApplicationId:guid}"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.ApplicationDetail
+@using ATLAS.Domain.Enums
+
+<PageTitle>@("Application " + (_viewModel.ApplicationNumber ?? "Detail"))</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item"><a href="/admin/applications">Applications</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@_viewModel.ApplicationNumber</li>
+        </ol>
+    </nav>
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading application details...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadApplication">Try Again</button>
+        </div>
+    }
+    else if (_viewModel.IsLoaded)
+    {
+        <ApplicationDetailsLayout
+            ApplicationNumber="@_viewModel.ApplicationNumber"
+            PermitTypeName="@_viewModel.PermitTypeName"
+            PermitTypeDescription="@_viewModel.PermitTypeDescription"
+            Status="@_viewModel.Status"
+            SubmittedDate="@_viewModel.SubmittedDate"
+            LastUpdated="@_viewModel.LastUpdated"
+            CitizenName="@_viewModel.CitizenName"
+            CitizenEmail="@_viewModel.CitizenEmail"
+            AssignedOfficerName="@_viewModel.AssignedOfficerName"
+            CitizenNotes="@_viewModel.CitizenNotes"
+            Fields="@_viewModel.Fields"
+            Documents="@_viewModel.Documents"
+            Activities="@_viewModel.Activities"
+            Reviews="@_viewModel.Reviews"
+            OfficerNotes="@_viewModel.OfficerNotes"
+            ShowOfficerNotes="true"
+            BackUrl="/admin/applications"
+            BackText="Back to Applications" />
+    }
+</div>

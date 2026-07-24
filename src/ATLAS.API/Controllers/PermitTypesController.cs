@@ -82,7 +82,10 @@ namespace ATLAS.API.Controllers
 
         public override async Task<ActionResult<bool>> DeactivatePermitType(Guid id)
         {
-            var command = new DeactivatePermitTypeCommand { PermitTypeId = id };
+            var command = new DeactivatePermitTypeCommand
+            {
+                PermitTypeId = id
+            };
             var result = await _mediator.Send(command, default);
             if (!result)
             {
@@ -104,6 +107,7 @@ namespace ATLAS.API.Controllers
             }
             
             return Ok(response);
-        }      
+        }
+
     }
 }

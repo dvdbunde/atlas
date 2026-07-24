@@ -48,36 +48,50 @@ PermitType (Aggregate Root)
 
 ---
 
-### 2. User Management Context
+### 2. User Projection Context
 
-**Core Domain:** Authentication, authorization, and user lifecycle.
+> **Architectural truth (ADR-013):** Microsoft Entra ID is the **sole source of truth** for identity. The `User` aggregate in ATLAS is a **synchronized, read-only projection** of an Entra ID principal — never an identity account.
+
+**Core Domain:** Synchronized application projection of an external identity (Entra ID).
 
 **Ubiquitous Language:**
 
-- User (synchronized projection), Role (Citizen/Officer/Admin), Account
-- Synchronize from Entra ID claims (read-only projection)
-- Authentication (Entra ID), Authorization (Entra roles)**
+- User (synchronized Entra projection), Role (Citizen/Officer/Admin, mirrored from Entra)
+- Synchronize from Entra ID claims (one-way, read-only projection)
+- Identity, Authentication, Authorization, Roles, Claims, Lifecycle — **all owned by Microsoft Entra ID**
 
 Domain Model:**
 
 ```text
-User (Synchronized Projection)
+User (Synchronized Projection — NOT an identity account)
 ├── Id (Entra Object ID), Email, FirstName, LastName
-├── Role (UserRole, synchronized from Entra)
-└── LastLoginDate (audit trail)
+├── Role (UserRole, mirrored from Entra app roles)
+└── LastLoginDate (audit trail only)
 ```
 
-**Responsibilities:**
+**Responsibilities (application-only, no identity management):**
 
-- User registration and profile management
-- Role assignment and permission enforcement
-- Account activation/deactivation
-- Integration with Microsoft Entra ID (all user types)
+- Synchronized Entra user projection (via `User.SynchronizeFromClaims`)
+- Ownership references (application/case ownership, assignment)
+- Audit attribution (who performed an action)
+- Workflow attribution (officer/citizen assignment)
+- Reporting (workload, assignment summaries)
+- Navigation (resolve display names, route by role)
+- Application context (link records to an Entra identity)
+
+**Explicitly NOT owned by ATLAS (owned by Microsoft Entra ID):**
+
+- Authentication
+- Authorization
+- Identity
+- Roles
+- Claims
+- Lifecycle (creation, activation, deactivation, deletion)
 
 **Key Use Cases:**
 
-- F-21: Administrators can manage user accounts and assign roles
-- Authentication and authorization for all user types
+- F-21: Administrators can **browse the synchronized User Directory** (read-only)
+- Application and audit records reference the User projection for attribution
 
 ---
 
@@ -157,8 +171,8 @@ graph TB
         PP[Application Aggregate<br/>PermitType Aggregate]
     end
 
-    subgraph "User Management Context"
-        UM[User Aggregate]
+    subgraph "User Projection Context"
+        UM[User Aggregate (Entra-synchronized projection)]
     end
 
     subgraph "Document Management Context"
@@ -183,7 +197,7 @@ graph TB
 
 ## Context Relationships
 
-### Permit Processing → User Management
+### Permit Processing → User Projection
 
 **Relationship Type:** Shared Kernel (shared User concept)
 
@@ -207,7 +221,7 @@ graph TB
 
 **Relationship Type:** Published Event (Domain Events)
 
-- All contexts publish domain events (e.g., `ApplicationSubmitted`, `UserRoleChanged`)
+- All contexts publish domain events (e.g., `ApplicationSubmitted`). Note: `UserRoleChanged` was removed in ADR-013 — role changes are Entra-driven and no longer raise domain events.
 - Audit context subscribes to events and creates `AuditLog` entries
 - Loose coupling via event-driven architecture
 
@@ -239,7 +253,7 @@ public class ApplicationSubmittedEventHandler : INotificationHandler<Application
 | Context | Aggregate Roots | Database Tables | External Dependencies |
 | --------- | ------------------ | ----------------- | ---------------------- |
 | **Permit Processing** | Application, PermitType | Applications, PermitTypes, Documents, Reviews | None (pure domain) |
-| **User Management** | User | Users | Microsoft Entra ID (Officers/Admins) |
+| **User Projection** | User | Users | Microsoft Entra ID (Officers/Admins) |
 | **Document Management** | Document (entity) | Documents (metadata only) | Azure Blob Storage |
 | **Audit & Compliance** | AuditLog | AuditLogs | None (read-only consumers) |
 

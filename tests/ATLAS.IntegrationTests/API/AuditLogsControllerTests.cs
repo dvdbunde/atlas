@@ -33,7 +33,7 @@ namespace ATLAS.IntegrationTests.API
         [Fact]
         public async Task GetAuditLogs_WithActionType_Should_Return200OK()
         {
-            var response = await _client.GetAsAsync("/api/auditlogs?actionType=APPLICATION_SUBMITTED", TestUserBuilder.AsAdmin());
+            var response = await _client.GetAsAsync("/api/auditlogs?action=APPLICATION_SUBMITTED", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -51,5 +51,31 @@ namespace ATLAS.IntegrationTests.API
             var response = await _client.GetAsAsync($"/api/auditlogs/export?userId={userId}", TestUserBuilder.AsAdmin());
             Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
         }
-    }
+
+        [Fact]
+        public async Task GetAuditLogs_Should_ReturnPagedResponse()
+        {
+            var response = await _client.GetAsAsync("/api/auditlogs?pageNumber=1&pageSize=10", TestUserBuilder.AsAdmin());
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            Assert.Contains("\"totalCount\"", content);
+            Assert.Contains("\"items\"", content);
+            Assert.Contains("\"totalPages\"", content);
+        }
+
+        [Fact]
+        public async Task GetAuditLogById_WithUnknownId_Should_Return404()
+        {
+            var id = Guid.NewGuid();
+            var response = await _client.GetAsAsync($"/api/auditlogs/{id}", TestUserBuilder.AsAdmin());
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetAuditLogs_WithoutAdminRole_Should_Return403()
+        {
+            var response = await _client.GetAsAsync("/api/auditlogs", TestUserBuilder.AsCitizen());
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }    }
 }
+

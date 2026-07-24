@@ -1,5 +1,4 @@
 using ATLAS.Application.DTOs;
-using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Domain.ValueObjects;
@@ -13,8 +12,10 @@ using System.Threading.Tasks;
 namespace ATLAS.Application.Queries.Applications;
 
 /// <summary>
-/// Read-only officer case review. Returns a single cohesive projection of one
-/// application for the officer review page. Never returns the Application aggregate.
+/// Read-only officer case review. Returns a composed projection containing
+/// general application information (ApplicationDetailDto) plus officer-specific
+/// review data (document requirements, assignment state).
+/// Never returns the Application aggregate.
 /// </summary>
 public class GetOfficerApplicationReviewQuery : IRequest<OfficerApplicationReviewDto?>
 {
@@ -26,19 +27,16 @@ public class GetOfficerApplicationReviewQueryHandler
 {
     private readonly IApplicationRepository _applicationRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IPermitTypeRepository _permitTypeRepository;    
-    private readonly ICurrentUserService _currentUserService; 
+    private readonly IPermitTypeRepository _permitTypeRepository;
 
     public GetOfficerApplicationReviewQueryHandler(
         IApplicationRepository applicationRepository,
         IUserRepository userRepository,
-        IPermitTypeRepository permitTypeRepository,
-        ICurrentUserService currentUserService)               
+        IPermitTypeRepository permitTypeRepository)
     {
         _applicationRepository = applicationRepository ?? throw new ArgumentNullException(nameof(applicationRepository));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _permitTypeRepository = permitTypeRepository ?? throw new ArgumentNullException(nameof(permitTypeRepository));
-        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));  // ← ADD
     }
 
     public async Task<OfficerApplicationReviewDto?> Handle(
@@ -62,22 +60,58 @@ public class GetOfficerApplicationReviewQueryHandler
             assignedOfficerName = officer?.GetFullName();
         }
 
-        // Submitted dynamic field values, projected with permit field metadata for labels.
-        var fieldValues = application.FieldValues
-            .OrderBy(fv => fv.SortOrder)
-            .ThenBy(fv => fv.FieldName)
-            .Select(fv =>
+        // Officer name from the latest review (if any)
+        var latestReview = application.Reviews.OrderByDescending(r => r.ReviewedDate).FirstOrDefault();
+        string? officerName = null;
+        if (latestReview != null)
+        {
+            var officer = await _userRepository.GetByIdAsync(latestReview.OfficerId, cancellationToken);
+            officerName = officer?.GetFullName();
+        }
+
+        // Build the shared ApplicationDetailDto
+        var appDetail = new ApplicationDetailDto
+        {
+            Id = application.Id,
+            ApplicationNumber = application.ApplicationNumber,
+            Status = application.Status,
+            SubmittedDate = application.SubmittedDate,
+            CitizenId = application.CitizenId,
+            PermitTypeId = application.PermitTypeId,
+            CitizenName = citizen?.GetFullName() ?? "Unknown",
+            CitizenEmail = citizen?.Email ?? string.Empty,
+            PermitTypeName = permitType?.Name ?? "Unknown",
+            PermitTypeDescription = permitType?.Description ?? string.Empty,
+            OfficerName = officerName ?? "Not assigned",
+            AssignedOfficerName = assignedOfficerName,
+            AssignedOfficerId = application.AssignedOfficerId,
+            ReviewedDate = application.ReviewedDate,
+            CitizenNotes = application.CitizenNotes,
+            OfficerNotes = application.OfficerNotes,
+            Documents = application.Documents.Select(d => new DocumentDto
             {
-                var meta = permitType?.Fields.FirstOrDefault(pf => pf.Name == fv.FieldName);
-                return new OfficerFieldValueDto
-                {
-                    FieldName = fv.FieldName,
-                    Label = meta?.Name ?? fv.FieldName,
-                    Value = fv.Value,
-                    FieldType = meta?.Type ?? FieldType.Text
-                };
-            })
-            .ToList();
+                Id = d.Id,
+                DocumentType = d.DocumentType,
+                FileName = d.FileName,
+                ContentType = d.ContentType,
+                FileSize = d.FileSize,
+                UploadedDate = d.UploadedDate,
+                UploadedById = d.UploadedById
+            }).ToList(),
+            Reviews = application.Reviews.Select(r => new ReviewDto
+            {
+                Id = r.Id,
+                OfficerId = r.OfficerId,
+                Decision = r.Decision,
+                ReasonCode = r.ReasonCode,
+                Comments = r.Comments,
+                ReviewedDate = r.ReviewedDate,
+                IsVisibleToCitizen = r.IsVisibleToCitizen
+            }).ToList(),
+            FieldValues = application.FieldValues.ToDictionary(
+                fv => fv.FieldName,
+                fv => fv.Value)
+        };
 
         // Requirement-centric document projection, keyed by the persisted DocumentType.
         var uploadedByType = application.Documents
@@ -108,8 +142,25 @@ public class GetOfficerApplicationReviewQueryHandler
             })
             .ToList();
 
-        // Existing reviews (read-only).
-        var reviews = application.Reviews
+        // Officer-specific field values with permit metadata (labels, types)
+        var officerFieldValues = application.FieldValues
+            .OrderBy(fv => fv.SortOrder)
+            .ThenBy(fv => fv.FieldName)
+            .Select(fv =>
+            {
+                var meta = permitType?.Fields.FirstOrDefault(pf => pf.Name == fv.FieldName);
+                return new OfficerFieldValueDto
+                {
+                    FieldName = fv.FieldName,
+                    Label = meta?.Name ?? fv.FieldName,
+                    Value = fv.Value,
+                    FieldType = meta?.Type ?? FieldType.Text
+                };
+            })
+            .ToList();
+
+        // Officer-specific review projection
+        var officerReviews = application.Reviews
             .OrderBy(r => r.ReviewedDate)
             .Select(r => new OfficerReviewDto
             {
@@ -122,26 +173,12 @@ public class GetOfficerApplicationReviewQueryHandler
             })
             .ToList();
 
-        var currentOfficerId = _currentUserService.UserId;            
-
         return new OfficerApplicationReviewDto
         {
-            ApplicationId = application.Id,
-            ApplicationNumber = application.ApplicationNumber,
-            Status = application.Status,
-            PermitTypeName = permitType?.Name ?? "Unknown",
-            PermitTypeDescription = permitType?.Description ?? string.Empty,
-            SubmittedDate = application.SubmittedDate,
-            LastUpdated = application.ReviewedDate ?? application.SubmittedDate,
-            CitizenId = application.CitizenId,
-            CitizenName = citizen?.GetFullName() ?? "Unknown",
-            CitizenEmail = citizen?.Email ?? string.Empty,
-            AssignedOfficerName = assignedOfficerName,
-            AssignedOfficerId = application.AssignedOfficerId,
-            CitizenNotes = application.CitizenNotes,
-            FieldValues = fieldValues,
+            Application = appDetail,
             DocumentRequirements = requirements,
-            Reviews = reviews
+            FieldValues = officerFieldValues,
+            Reviews = officerReviews
         };
     }
 }

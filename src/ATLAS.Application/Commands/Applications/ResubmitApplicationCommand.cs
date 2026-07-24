@@ -92,7 +92,7 @@ namespace ATLAS.Application.Commands.Applications
             // Use existing domain behavior
             application.Resubmit();
             await _repository.UpdateAsync(application, cancellationToken);
-            await _mediator.Publish(new ApplicationResubmittedEvent(application.Id, application.CitizenId), cancellationToken);
+            await _mediator.Publish(new ApplicationResubmittedEvent(application.Id), cancellationToken);
             
             _logger.LogInformation("Application {ApplicationId} resubmitted", request.ApplicationId);
 

@@ -87,7 +87,7 @@ public partial class OfficerApplicationReview : ComponentBase
 
     private async Task AssignToMe()
     {
-        if (_isAssigning || _viewModel?.Application?.ApplicationId == null)
+        if (_isAssigning || _viewModel?.Application?.Id == Guid.Empty)
         {
             return;
         }
@@ -97,13 +97,13 @@ public partial class OfficerApplicationReview : ComponentBase
 
         try
         {
-            var command = new AssignApplicationToMeCommand { ApplicationId = _viewModel.Application.ApplicationId };
+            var command = new AssignApplicationToMeCommand { ApplicationId = _viewModel.Application.Id };
             await Mediator.Send(command);
             await LoadReview();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to assign application {ApplicationId} to current officer", _viewModel.Application?.ApplicationId);
+            Logger.LogError(ex, "Failed to assign application {ApplicationId} to current officer", _viewModel.Application?.Id);
             _viewModel.HasError = true;
             _viewModel.ErrorMessage = "We were unable to assign this application. It may already be assigned to another officer.";
         }
@@ -113,8 +113,6 @@ public partial class OfficerApplicationReview : ComponentBase
             await InvokeAsync(StateHasChanged);
         }
     }
-
-    
 
     private async Task Decide(Func<Task> action)
     {
@@ -131,7 +129,7 @@ public partial class OfficerApplicationReview : ComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to record decision for application {ApplicationId}", _viewModel.Application?.ApplicationId);
+            Logger.LogError(ex, "Failed to record decision for application {ApplicationId}", _viewModel.Application?.Id);
             _viewModel.HasError = true;
             _viewModel.ErrorMessage = "We were unable to record the decision. The application may not be assigned to you or is in an invalid state.";
         }
@@ -151,7 +149,7 @@ public partial class OfficerApplicationReview : ComponentBase
 
         await Decide(() => Mediator.Send(new ApproveApplicationCommand
         {
-            ApplicationId = _viewModel.Application!.ApplicationId,
+            ApplicationId = _viewModel.Application!.Id,
             Comments = _viewModel.DecisionComments
         }));
     }
@@ -165,7 +163,7 @@ public partial class OfficerApplicationReview : ComponentBase
 
         await Decide(() => Mediator.Send(new RejectApplicationCommand
         {
-            ApplicationId = _viewModel.Application!.ApplicationId,
+            ApplicationId = _viewModel.Application!.Id,
             ReasonCode = _viewModel.DecisionReasonCode,
             Comments = _viewModel.DecisionComments
         }));
@@ -173,7 +171,7 @@ public partial class OfficerApplicationReview : ComponentBase
 
     private Task RequestInfo() => Decide(() => Mediator.Send(new RequestInfoCommand
     {
-        ApplicationId = _viewModel.Application!.ApplicationId,
+        ApplicationId = _viewModel.Application!.Id,
         Message = _viewModel.DecisionComments
     }));
 }

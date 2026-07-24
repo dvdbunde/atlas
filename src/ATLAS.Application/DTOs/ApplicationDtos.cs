@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 
 namespace ATLAS.Application.DTOs
@@ -26,6 +27,10 @@ namespace ATLAS.Application.DTOs
         public List<ReviewDto> Reviews { get; set; } = new();
         // NEW: Missing fields from PRD
         public string? OfficerName { get; set; }
+        public string? AssignedOfficerName { get; set; }
+        public Guid? AssignedOfficerId { get; set; }
+        public string CitizenEmail { get; set; } = string.Empty;
+        public string PermitTypeDescription { get; set; } = string.Empty;
 
         /// <summary>
         /// Current field values for this application.
@@ -63,6 +68,8 @@ namespace ATLAS.Application.DTOs
         public string Description { get; set; } = string.Empty;
         public decimal Fee { get; set; }
         public bool IsActive { get; set; }
+        public int FieldCount { get; set; }
+        public int DocumentRequirementCount { get; set; }
     }
 
     public class PermitTypeDto
@@ -73,10 +80,12 @@ namespace ATLAS.Application.DTOs
         public decimal Fee { get; set; }
         public bool IsActive { get; set; }
         public List<FieldDefinitionDto> Fields { get; set; } = new();
+        public List<FieldDefinitionDto> DocumentRequirements { get; set; } = new();
     }
 
     public class FieldDefinitionDto
     {
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public FieldType Type { get; set; } 
         public bool IsRequired { get; set; }
@@ -142,24 +151,48 @@ namespace ATLAS.Application.DTOs
     }
 
         /// <summary>Purpose-built read-only projection for the officer review page.</summary>
+    /// <summary>
+    /// Read-only projection for the officer review page.
+    /// Composes general application information (via ApplicationDetailDto)
+    /// with officer-specific review data.
+    /// </summary>
     public class OfficerApplicationReviewDto
     {
-        public Guid ApplicationId { get; set; }
-        public string ApplicationNumber { get; set; } = string.Empty;
-        public ApplicationStatus Status { get; set; }
-        public string PermitTypeName { get; set; } = string.Empty;
-        public string PermitTypeDescription { get; set; } = string.Empty;
-        public DateTime? SubmittedDate { get; set; }
-        public DateTime? LastUpdated { get; set; }
-        public Guid CitizenId { get; set; }
-        public string CitizenName { get; set; } = string.Empty;
-        public string CitizenEmail { get; set; } = string.Empty;
-        public string? AssignedOfficerName { get; set; }
-        public Guid? AssignedOfficerId { get; set; } 
-        public string CitizenNotes { get; set; } = string.Empty;
-        public List<OfficerFieldValueDto> FieldValues { get; set; } = new();
+        private ApplicationDetailDto? _application;
+
+        /// <summary>General application information shared across all personas.</summary>
+        public ApplicationDetailDto Application
+        {
+            get => _application ??= new ApplicationDetailDto();
+            set => _application = value;
+        }
+
+        /// <summary>Requirement-centric document projection for the officer view.</summary>
         public List<OfficerDocumentRequirementDto> DocumentRequirements { get; set; } = new();
+
+        /// <summary>Officer-specific field values with permit metadata (labels, types).</summary>
+        public List<OfficerFieldValueDto> FieldValues { get; set; } = new();
+
+        /// <summary>Officer-specific review projection.</summary>
         public List<OfficerReviewDto> Reviews { get; set; } = new();
+
+        /// <summary>Officer-specific document list for backward compatibility.</summary>
+        public List<OfficerDocumentDto> Documents { get; set; } = new();
+
+        // ── Convenience forwarders (delegate to Application) ──
+        public Guid ApplicationId { get => Application.Id; set => Application.Id = value; }
+        public string ApplicationNumber { get => Application.ApplicationNumber; set => Application.ApplicationNumber = value; }
+        public ApplicationStatus Status { get => Application.Status; set => Application.Status = value; }
+        public string PermitTypeName { get => Application.PermitTypeName; set => Application.PermitTypeName = value; }
+        public string PermitTypeDescription { get => Application.PermitTypeDescription; set => Application.PermitTypeDescription = value; }
+        public DateTime? SubmittedDate { get => Application.SubmittedDate; set => Application.SubmittedDate = value; }
+        public DateTime? LastUpdated { get => Application.ReviewedDate ?? Application.SubmittedDate; }
+        public Guid CitizenId { get => Application.CitizenId; set => Application.CitizenId = value; }
+        public string CitizenName { get => Application.CitizenName; set => Application.CitizenName = value; }
+        public string CitizenEmail { get => Application.CitizenEmail; set => Application.CitizenEmail = value; }
+        public string? AssignedOfficerName { get => Application.AssignedOfficerName; set => Application.AssignedOfficerName = value; }
+        public Guid? AssignedOfficerId { get => Application.AssignedOfficerId; set => Application.AssignedOfficerId = value; }
+        public string CitizenNotes { get => Application.CitizenNotes; set => Application.CitizenNotes = value; }
     }
     
     public class OfficerFieldValueDto
@@ -209,5 +242,40 @@ namespace ATLAS.Application.DTOs
         public string? Description { get; init; }
         public string? PerformedBy { get; init; }
         public string? PerformedByRole { get; init; }
+    }
+
+    /// <summary>
+    /// Lightweight projection of a User for list/table rendering.
+    /// The User aggregate is a synchronized, read-only projection of an Entra ID
+    /// principal (see ADR-013); role and status are owned by Entra and must not be
+    /// mutated locally.
+    /// </summary>
+    public class UserSummaryDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+    }
+
+    /// <summary>
+    /// Detailed projection of a User for the read-only detail view.
+    /// Includes the most recent audit entries associated with the principal
+    /// (projected from the audit log; read-only).
+    /// </summary>
+    public class UserDetailDto
+    {
+        public Guid Id { get; set; }
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public UserRole Role { get; set; }
+        public DateTime? LastLoginDate { get; set; }
+        public DateTime? CreatedDate { get; set; }
+        public IReadOnlyList<AuditLogDto> RecentAuditEntries { get; set; } = Array.Empty<AuditLogDto>();
     }
 }

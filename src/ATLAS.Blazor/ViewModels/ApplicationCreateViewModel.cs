@@ -23,7 +23,12 @@ public class ApplicationCreateViewModel
         PermitTypeId = dto.Id;
         PermitName = dto.Name;
         PermitDescription = dto.Description;
+
+        // M8 regression fix: document requirements live in a separate DTO list
+        // (PermitTypeDto.DocumentRequirements) and must be merged with the regular
+        // fields so FileUpload requirements render on the citizen create/edit form.
         Fields = dto.Fields
+            .Concat(dto.DocumentRequirements)
             .Select(DynamicFormFieldViewModel.FromFieldDefinition)
             .ToList();
     }

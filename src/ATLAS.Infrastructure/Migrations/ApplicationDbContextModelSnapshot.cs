@@ -129,6 +129,22 @@ namespace ATLAS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Action")
+                        .HasDatabaseName("IX_AuditLogs_Action");
+
+                    b.HasIndex("EntityId")
+                        .HasDatabaseName("IX_AuditLogs_EntityId");
+
+                    b.HasIndex("EntityType")
+                        .HasDatabaseName("IX_AuditLogs_EntityType");
+
+                    b.HasIndex("Timestamp")
+                        .IsDescending()
+                        .HasDatabaseName("IX_AuditLogs_Timestamp");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_AuditLogs_UserId");
+
                     b.ToTable("AuditLogs");
                 });
 
@@ -377,14 +393,8 @@ namespace ATLAS.Infrastructure.Migrations
                 {
                     b.OwnsMany("ATLAS.Domain.ValueObjects.DocumentRequirement", "DocumentRequirements", b1 =>
                         {
-                            b1.Property<Guid>("PermitTypeId")
+                            b1.Property<Guid>("Id")
                                 .HasColumnType("uniqueidentifier");
-
-                            b1.Property<int>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("int");
-
-                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
 
                             b1.PrimitiveCollection<string>("AllowedExtensions")
                                 .IsRequired()
@@ -405,7 +415,19 @@ namespace ATLAS.Infrastructure.Migrations
                                 .HasColumnType("bigint")
                                 .HasDefaultValue(26214400L);
 
-                            b1.HasKey("PermitTypeId", "Id");
+                            b1.Property<int>("Order")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int")
+                                .HasDefaultValue(1);
+
+                            b1.Property<Guid>("PermitTypeId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("Order");
+
+                            b1.HasIndex("PermitTypeId");
 
                             b1.ToTable("DocumentRequirement");
 
@@ -415,14 +437,8 @@ namespace ATLAS.Infrastructure.Migrations
 
                     b.OwnsMany("ATLAS.Domain.ValueObjects.PermitField", "Fields", b1 =>
                         {
-                            b1.Property<Guid>("PermitTypeId")
+                            b1.Property<Guid>("Id")
                                 .HasColumnType("uniqueidentifier");
-
-                            b1.Property<int>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("int");
-
-                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
 
                             b1.Property<string>("DefaultValue")
                                 .IsRequired()
@@ -439,6 +455,14 @@ namespace ATLAS.Infrastructure.Migrations
                                 .HasMaxLength(100)
                                 .HasColumnType("nvarchar(100)");
 
+                            b1.Property<int>("Order")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int")
+                                .HasDefaultValue(1);
+
+                            b1.Property<Guid>("PermitTypeId")
+                                .HasColumnType("uniqueidentifier");
+
                             b1.Property<int>("Type")
                                 .HasColumnType("int");
 
@@ -447,7 +471,11 @@ namespace ATLAS.Infrastructure.Migrations
                                 .HasColumnType("nvarchar(max)")
                                 .HasColumnName("Options");
 
-                            b1.HasKey("PermitTypeId", "Id");
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("Order");
+
+                            b1.HasIndex("PermitTypeId");
 
                             b1.ToTable("PermitField");
 

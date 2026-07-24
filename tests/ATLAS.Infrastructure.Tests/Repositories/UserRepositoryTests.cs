@@ -131,23 +131,21 @@ namespace ATLAS.Infrastructure.Tests.Repositories
         }
 
         [Fact]
-        public async Task DeleteAsync_ShouldRemoveUserFromDatabase()
+        public async Task ExistsAsync_ShouldReturnTrue_WhenUserPresent()
         {
             // Arrange
             using var context = CreateInMemoryContext();
-            var user = new User(Guid.NewGuid(), "delete@test.com", "Delete", "Me", UserRole.Citizen);
+            var user = new User(Guid.NewGuid(), "exists@test.com", "Exists", "Me", UserRole.Citizen);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
             var repository = new UserRepository(context);
 
             // Act
-            await repository.DeleteAsync(user);
-            await context.SaveChangesAsync();
+            var exists = await repository.ExistsAsync(user.Id);
 
             // Assert
-            var deleted = await context.Users.FirstOrDefaultAsync(u => u.Id == user.Id);
-            Assert.Null(deleted);
+            Assert.True(exists);
         }
 
         [Fact]

@@ -289,7 +289,7 @@ namespace ATLAS.API.Contracts.Generated
                 EntityType = dto.EntityType,
                 EntityId = dto.EntityId,
                 Details = dto.Details,
-                Timestamp = new DateTimeOffset(dto.Timestamp),
+                Timestamp = new DateTimeOffset(dto.Timestamp, TimeSpan.Zero),
                 IpAddress = dto.IpAddress
             };
         }
@@ -313,6 +313,15 @@ namespace ATLAS.API.Contracts.Generated
                 foreach (var field in dto.Fields)
                 {
                     response.Fields.Add(field.ToResponse());
+                }
+            }
+
+            if (dto.DocumentRequirements != null)
+            {
+                response.Fields ??= new List<FieldDefinitionResponse>();
+                foreach (var doc in dto.DocumentRequirements)
+                {
+                    response.Fields.Add(doc.ToResponse());
                 }
             }
 
@@ -537,6 +546,19 @@ namespace ATLAS.API.Contracts.Generated
                 PerformedBy = dto.PerformedBy,
                 PerformedByRole = dto.PerformedByRole
             };
-        }      
+        }
+
+        #region EmailTemplate: Response ↔ Application model
+        public static EmailTemplateResponse ToResponse(this ATLAS.Application.EmailTemplates.EmailTemplate template)
+        {
+            if (template == null) return null!;
+
+            return new EmailTemplateResponse
+            {
+                Name = template.Name,
+                Content = template.Content
+            };
+        }
+        #endregion
     }    
 }

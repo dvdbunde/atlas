@@ -18,5 +18,14 @@ namespace ATLAS.Domain.Interfaces
         Task<IEnumerable<Entities.AuditLog>> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default);
         Task<IEnumerable<Entities.AuditLog>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+
+        // Server-side paged query. Filtering, sorting, and paging are applied
+        // against the database (IQueryable) before materialization so the full
+        // append-only audit history is never loaded into memory.
+        Task<PagedAuditLogResult> GetPagedAsync(
+            AuditLogFilter filter,
+            AuditLogSortOption sort,
+            AuditLogPage page,
+            CancellationToken cancellationToken = default);
     }
 }

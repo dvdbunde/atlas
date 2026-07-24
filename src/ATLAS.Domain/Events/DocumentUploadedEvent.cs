@@ -7,15 +7,13 @@ namespace ATLAS.Domain.Events
     {
         public Guid DocumentId { get; }
         public Guid ApplicationId { get; }
-        public Guid UploadedById { get; }
         public string FileName { get; }
         public DateTime Timestamp { get; }
 
-        public DocumentUploadedEvent(Guid documentId, Guid applicationId, Guid uploadedById, string fileName)
+        public DocumentUploadedEvent(Guid documentId, Guid applicationId, string fileName)
         {
             DocumentId = documentId;
             ApplicationId = applicationId;
-            UploadedById = uploadedById;
             FileName = fileName;
             Timestamp = DateTime.UtcNow;
         }

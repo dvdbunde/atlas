@@ -17,31 +17,33 @@ namespace ATLAS.Application.Commands.PermitTypes
         public bool? IsActive { get; set; }
     }
 
-    public class UpdatePermitTypeCommandHandler : IRequestHandler<UpdatePermitTypeCommand, bool>
+        public class UpdatePermitTypeCommandHandler : IRequestHandler<UpdatePermitTypeCommand, bool>
     {
         private readonly IPermitTypeRepository _repository;
-
-        public UpdatePermitTypeCommandHandler(IPermitTypeRepository repository)
+        private readonly IMediator _mediator;
+    
+        public UpdatePermitTypeCommandHandler(IPermitTypeRepository repository, IMediator mediator)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
-
+    
         public async Task<bool> Handle(UpdatePermitTypeCommand request, CancellationToken cancellationToken)
         {
             var permitType = await _repository.GetByIdAsync(request.PermitTypeId, cancellationToken);
-            
             if (permitType == null)
                 return false;
-            
-            // Note: Name and Description are read-only (set in constructor)
-            // For MVP, we skip updating these fields
-            // TODO: Add UpdateDetails method to PermitType entity if needed
-            
-            if (request.IsActive.HasValue && request.IsActive.Value)
-                permitType.Activate();
-            
-            // Deactivation is handled by the dedicated DeactivatePermitTypeCommand
-            
+    
+            if (request.Fee.HasValue)
+            {
+                var oldFee = permitType.Fee;
+                permitType.UpdateFee(request.Fee.Value);
+                if (oldFee != request.Fee.Value)
+                    await _mediator.Publish(new PermitTypeFeeUpdatedEvent(permitType.Id, oldFee, request.Fee.Value), cancellationToken);
+            }
+    
+            // Activation/Deactivation is handled by the dedicated Activate/Deactivate PermitTypeCommand
+    
             await _repository.UpdateAsync(permitType, cancellationToken);
             return true;
         }

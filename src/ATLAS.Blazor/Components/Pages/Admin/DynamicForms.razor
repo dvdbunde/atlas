@@ -1,0 +1,22 @@
+@page "/admin/forms"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Dynamic Forms</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Dynamic Forms</li>
+        </ol>
+    </nav>
+
+    <PageHeader Title="Dynamic Forms" />
+
+    <EmptyState Title="Dynamic Forms coming soon"
+                Message="This area will be available in a later Milestone 8 phase."
+                PlannedPhase="Planned for implementation in a subsequent Milestone 8 phase." />
+</div>

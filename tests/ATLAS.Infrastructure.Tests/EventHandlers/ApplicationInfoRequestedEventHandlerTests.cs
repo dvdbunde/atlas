@@ -5,6 +5,8 @@ using ATLAS.Domain.Events;
 using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.EventHandlers;
 using ATLAS.Infrastructure.Repositories;
+using ATLAS.Application.Interfaces;
+using Moq;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -14,6 +16,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
     {
         private readonly ApplicationDbContext _context;
         private readonly AuditLogRepository _auditLogRepository;
+        private readonly Mock<ICurrentUserService> _currentUserService;
         private readonly ApplicationInfoRequestedEventHandler _handler;
 
         public ApplicationInfoRequestedEventHandlerTests()
@@ -23,7 +26,10 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
                 .Options;
             _context = new ApplicationDbContext(options);
             _auditLogRepository = new AuditLogRepository(_context);
-            _handler = new ApplicationInfoRequestedEventHandler(_auditLogRepository);
+            _currentUserService = new Mock<ICurrentUserService>();
+            _currentUserService.Setup(x => x.IsAuthenticated).Returns(true);
+            _currentUserService.Setup(x => x.UserId).Returns(Guid.NewGuid());
+            _handler = new ApplicationInfoRequestedEventHandler(_auditLogRepository, _currentUserService.Object);
         }
 
         [Fact]
@@ -33,7 +39,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
             var applicationId = Guid.NewGuid();
             var officerId = Guid.NewGuid();
             var infoRequested = "Please provide additional documentation";
-            var evt = new ApplicationInfoRequestedEvent(applicationId, officerId, infoRequested);
+            var evt = new ApplicationInfoRequestedEvent(applicationId, infoRequested);
 
             // Act
             await _handler.Handle(evt, CancellationToken.None);
@@ -45,7 +51,8 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
             Assert.Equal("ApplicationInfoRequested", log.Action);
             Assert.Equal("Application", log.EntityType);
             Assert.Equal(applicationId, log.EntityId);
-            Assert.Contains(officerId.ToString(), log.Details);
+            Assert.Equal(_currentUserService.Object.UserId, log.UserId);
+            Assert.Contains(_currentUserService.Object.UserId.ToString(), log.Details);
             Assert.Contains(infoRequested, log.Details);
         }
 
@@ -53,7 +60,7 @@ namespace ATLAS.Infrastructure.Tests.EventHandlers
         public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ApplicationInfoRequestedEventHandler(null!));
+            Assert.Throws<ArgumentNullException>(() => new ApplicationInfoRequestedEventHandler(null!, _currentUserService.Object));
         }
     }
 }

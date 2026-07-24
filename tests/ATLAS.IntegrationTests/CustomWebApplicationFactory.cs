@@ -1,10 +1,12 @@
 using ATLAS.Application.Behaviors;
+using ATLAS.Application.EmailTemplates;
 using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Entities;
 using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.Data.SeedData;
+using ATLAS.Infrastructure.EmailTemplates;
 using ATLAS.Infrastructure.Repositories;
 using ATLAS.Infrastructure.Services;
 using ATLAS.IntegrationTests.Auth;
@@ -225,6 +227,7 @@ public static class TestServiceCollectionExtensions
         //----------------------
         services.AddTransient<IEmailService, SmtpEmailService>();
         services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+        services.AddScoped<IEmailTemplateStore, FileEmailTemplateStore>();
 
         //----------------------
         // Repositories and MediatR (same as real infrastructure, but without external deps)

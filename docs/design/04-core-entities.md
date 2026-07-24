@@ -124,9 +124,10 @@ public string GetFullName()
 - `UpdateProfile()` — profile mutation removed; name comes from Entra
 - `IsActive` property — lifecycle removed; activation managed in Entra
 
-**Methods:**
+> **Archived historical example (ADR-013 Appendix — DO NOT USE):** The code below is preserved only as historical context showing what ADR-013 removed. It is **not** the current model and must not be copied into new code. In the current architecture, role mutations and deactivation are managed exclusively by Microsoft Entra ID; the `User` entity no longer has `ChangeRole()`, `Deactivate()`, `UpdateEmail()`, `UpdateProfile()`, `IsActive`, or the `UserRoleChangedEvent`/`UserDeactivatedEvent` events. See [ADR-013](../ADRs/adr-013-entra-single-source-of-truth.md) for the authoritative decision.
 
 ```csharp
+// ARCHIVED — removed by ADR-013. Kept for historical reference only.
 public void ChangeRole(UserRole newRole, Guid changedByAdminId)
 {
     if (Role == newRole)
@@ -146,8 +147,6 @@ public void Deactivate(Guid deactivatedByAdminId)
     AddDomainEvent(new UserDeactivatedEvent(Id, deactivatedByAdminId));
 }
 ```
-
-> **Note**: The methods above are historical documentation only. In the current Entra-first architecture (see ADR-013), role mutations and deactivation are managed through Entra ID. The `User` entity no longer has `ChangeRole()`, `Deactivate()`, `UpdateEmail()`, or `UpdateProfile()` methods. See the [User Entity (Entra Synchronized Projection)](#2-user-entity-entra-synchronized-projection) section above for the current model.
 
 ---
 

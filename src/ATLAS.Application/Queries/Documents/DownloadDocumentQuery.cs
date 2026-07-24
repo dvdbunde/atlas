@@ -75,7 +75,7 @@ namespace ATLAS.Application.Queries.Documents
 
             // Publish audit event
             await _mediator.Publish(
-                new DocumentDownloadedEvent(document.Id, application.Id, userId, document.BlobUrl),
+                new DocumentDownloadedEvent(document.Id, application.Id, document.BlobUrl),
                 ct);
 
             return new DownloadDocumentResult(sasUri, document.FileName, document.ContentType);

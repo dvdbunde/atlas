@@ -29,7 +29,7 @@ tags:
   - name: PermitTypes
     description: Permit type configuration
   - name: Users
-    description: User account management
+    description: User directory (read-only Entra ID projection)
   - name: AuditLogs
     description: Audit trail and compliance
 
@@ -954,6 +954,7 @@ paths:
           schema:
             type: string
             format: uuid
+            nullable: true
           description: Filter by user ID
         - name: action
           in: query
@@ -978,15 +979,37 @@ paths:
             type: string
             format: uuid
           description: Filter by entity ID
+        - name: searchTerm
+          in: query
+          schema:
+            type: string
+          description: Free-text search across action, entity type, and details (case-insensitive contains)
+        - name: sort
+          in: query
+          schema:
+            $ref: '#/components/schemas/AuditLogSortOption'
+          description: Sort order for the timestamp
+        - name: pageNumber
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 1
+          description: 1-based page number
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            format: int32
+            default: 20
+          description: Number of entries per page
       responses:
         '200':
-          description: List of audit logs
+          description: Paged list of audit logs
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AuditLogResponse'
+                $ref: '#/components/schemas/PagedAuditLogResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1006,6 +1029,7 @@ paths:
           schema:
             type: string
             format: uuid
+            nullable: true
           description: Filter by user ID
         - name: action
           in: query
@@ -1038,8 +1062,163 @@ paths:
       security:
         - EntraID: ['Admin']
 
+  /api/auditlogs/{id}:
+    get:
+      tags: [AuditLogs]
+      summary: Get audit log by ID
+      description: Retrieve a single audit log entry by its identifier (read-only).
+      operationId: getAuditLogById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Audit log identifier
+      responses:
+        '200':
+          description: The requested audit log entry
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Audit log entry not found
+      security:
+        - EntraID: ['Admin']
+
+  /api/emailtemplates:
+    get:
+      tags: [EmailTemplates]
+      summary: List email templates
+      description: Retrieve all application-owned email templates (name and content).
+      operationId: getEmailTemplates
+      responses:
+        '200':
+          description: The list of email templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmailTemplateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
+  /api/emailtemplates/{name}:
+    get:
+      tags: [EmailTemplates]
+      summary: Get email template by name
+      description: Retrieve a single email template by its name.
+      operationId: getEmailTemplateByName
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name
+      responses:
+        '200':
+          description: The requested email template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Email template not found
+      security:
+        - EntraID: ['Admin']
+
+    put:
+      tags: [EmailTemplates]
+      summary: Update email template
+      description: Persist edited email template content. Unknown placeholders are rejected.
+      operationId: updateEmailTemplate
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailTemplateRequest'
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Email template not found
+      security:
+        - EntraID: ['Admin']
+
+  /api/emailtemplates/{name}/preview:
+    post:
+      tags: [EmailTemplates]
+      summary: Preview rendered email template
+      description: Render arbitrary template content with a fixed sample model.
+      operationId: previewEmailTemplate
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name (used for routing only; content is supplied in the body)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewEmailTemplateRequest'
+      responses:
+        '200':
+          description: The rendered template
+          content:
+            application/json:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      security:
+        - EntraID: ['Admin']
+
 components:
   schemas:
+    AuditLogSortOption:
+      type: string
+      enum: [TimestampDesc, TimestampAsc]
     ApplicationSummaryResponse:
       type: object
       properties:
@@ -1185,10 +1364,7 @@ components:
         role:
           type: string
           example: 'Citizen'
-        isActive:
-          type: boolean
-          default: true
-      required: [id, email, firstName, lastName, role, isActive]
+      required: [id, email, firstName, lastName, role]
     
     AuditLogResponse:
       type: object
@@ -1219,6 +1395,31 @@ components:
           type: string
           example: '192.168.1.1'
       required: [id, action, entityType, entityId, timestamp]
+    
+    PagedAuditLogResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogResponse'
+        totalCount:
+          type: integer
+          format: int32
+          example: 128
+        pageNumber:
+          type: integer
+          format: int32
+          example: 1
+        pageSize:
+          type: integer
+          format: int32
+          example: 20
+        totalPages:
+          type: integer
+          format: int32
+          example: 7
+      required: [items, totalCount, pageNumber, pageSize, totalPages]
     
     ProblemDetails:
       type: object
@@ -1676,6 +1877,34 @@ components:
           type: string
           nullable: true
           
+    EmailTemplateResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Template name
+          example: SubmissionConfirmation
+        content:
+          type: string
+          description: Template body with placeholder tokens
+      required: [name, content]
+
+    UpdateEmailTemplateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: New template body content
+      required: [content]
+
+    PreviewEmailTemplateRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          description: Template body to render with a fixed sample model
+      required: [content]
+
   responses:
     Unauthorized:
       description: Unauthorized - Authentication required
@@ -1701,7 +1930,8 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ValidationProblemDetails'
-  
+
+
   securitySchemes:
     EntraID:
       type: openIdConnect
@@ -1710,3 +1940,5 @@ components:
         Microsoft Entra ID OAuth 2.0 authentication with OpenID Connect.
         Obtain a token from Microsoft Entra ID (https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize)
         using the Authorization Code flow, then include it in the Authorization header: "Bearer {token}"
+
+

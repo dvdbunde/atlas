@@ -74,6 +74,8 @@ namespace ATLAS.API.Auth
 
                 // AuditLogs — all operations require Admin
                 ("auditlogs", _) => "Admin",
+                // EmailTemplates — all operations require Admin
+                ("emailtemplates", _) => "Admin",
 
                 // Users: ALL -> Admin
                 ("users", "getusers")  => "Admin",

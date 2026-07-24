@@ -80,7 +80,6 @@ namespace ATLAS.Domain.Tests.Entities
             var domainEvent = Assert.Single(application.DomainEvents);
             var submittedEvent = Assert.IsType<ApplicationSubmittedEvent>(domainEvent);
             Assert.Equal(application.Id, submittedEvent.ApplicationId);
-            Assert.Equal(_citizenId, submittedEvent.CitizenId);
             Assert.Equal(_permitTypeId, submittedEvent.PermitTypeId);
         }
 
@@ -128,7 +127,6 @@ namespace ATLAS.Domain.Tests.Entities
             var domainEvent = Assert.Single(application.DomainEvents);
             var reviewEvent = Assert.IsType<ApplicationUnderReviewEvent>(domainEvent);
             Assert.Equal(application.Id, reviewEvent.ApplicationId);
-            Assert.Equal(_officerId, reviewEvent.OfficerId);
         }
 
         #endregion
@@ -176,7 +174,6 @@ namespace ATLAS.Domain.Tests.Entities
             var domainEvent = Assert.Single(application.DomainEvents);
             var approvedEvent = Assert.IsType<ApplicationApprovedEvent>(domainEvent);
             Assert.Equal(application.Id, approvedEvent.ApplicationId);
-            Assert.Equal(_officerId, approvedEvent.OfficerId);
         }
 
         [Fact]
@@ -276,7 +273,6 @@ namespace ATLAS.Domain.Tests.Entities
             var domainEvent = Assert.Single(application.DomainEvents);
             var rejectedEvent = Assert.IsType<ApplicationRejectedEvent>(domainEvent);
             Assert.Equal(application.Id, rejectedEvent.ApplicationId);
-            Assert.Equal(_officerId, rejectedEvent.OfficerId);
             Assert.Equal("IncompleteApplication", rejectedEvent.ReasonCode);
         }
 
@@ -352,7 +348,6 @@ namespace ATLAS.Domain.Tests.Entities
             var domainEvent = Assert.Single(application.DomainEvents);
             var infoEvent = Assert.IsType<ApplicationInfoRequestedEvent>(domainEvent);
             Assert.Equal(application.Id, infoEvent.ApplicationId);
-            Assert.Equal(_officerId, infoEvent.OfficerId);
         }
 
         [Fact]
@@ -429,7 +424,6 @@ namespace ATLAS.Domain.Tests.Entities
             var domainEvent = Assert.Single(application.DomainEvents);
             var resubmittedEvent = Assert.IsType<ApplicationResubmittedEvent>(domainEvent);
             Assert.Equal(application.Id, resubmittedEvent.ApplicationId);
-            Assert.Equal(_citizenId, resubmittedEvent.CitizenId);
         }
 
         [Fact]
