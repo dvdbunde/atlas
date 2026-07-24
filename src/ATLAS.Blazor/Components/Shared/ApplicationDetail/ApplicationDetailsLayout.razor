@@ -1,0 +1,326 @@
+/// Shared application detail layout.
+///
+/// Used by:
+/// - Citizen
+/// - Officer
+/// - Administrator
+///
+/// Role-specific behavior is injected through RenderFragments.
+/// This component must remain presentation-only.
+
+@namespace ATLAS.Blazor.Components.Shared.ApplicationDetail
+@using ATLAS.Domain.Enums
+@using ATLAS.Application.DTOs
+@using ATLAS.Blazor.ViewModels
+
+@* 
+    ApplicationDetailsLayout - Shared layout for all application detail pages.
+    Renders the common sections in a consistent single-column layout.
+    Role-specific content (actions, info request banners, etc.) is provided
+    via RenderFragment parameters, keeping role logic out of this component.
+*@
+
+<div class="mb-4">
+    <h1 class="mb-1">@ApplicationNumber</h1>
+    @if (!string.IsNullOrEmpty(PermitTypeDescription))
+    {
+        <p class="text-muted mb-2">@PermitTypeDescription</p>
+    }
+    <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+        <StatusBadge Status="@Status" />
+        <span class="text-muted small">Submitted: @SubmittedDateDisplay</span>
+        <span class="text-muted small">Last Updated: @LastUpdatedDisplay</span>
+        @if (!string.IsNullOrEmpty(AssignedOfficerName))
+        {
+            <span class="text-muted small">Officer: @AssignedOfficerName</span>
+        }
+        @Actions
+        <a href="@BackUrl" class="btn btn-outline-secondary btn-sm">
+            &larr; @BackText
+        </a>
+    </div>
+</div>
+
+@* Info request banner - role-specific content *@
+@InfoRequestBanner
+
+@* Workflow actions - role-specific content *@
+@WorkflowActions
+
+@* Additional role-specific content (e.g. Officer document requirements) *@
+@AdditionalContent
+
+@* Application Summary *@
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Application Summary</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Application Number</dt>
+            <dd class="col-sm-8">@ApplicationNumber</dd>
+
+            <dt class="col-sm-4">Permit Type</dt>
+            <dd class="col-sm-8">@PermitTypeName</dd>
+
+            <dt class="col-sm-4">Status</dt>
+            <dd class="col-sm-8"><StatusBadge Status="@Status" /></dd>
+
+            <dt class="col-sm-4">Submitted Date</dt>
+            <dd class="col-sm-8">@SubmittedDateDisplay</dd>
+
+            @if (!string.IsNullOrEmpty(CitizenName))
+            {
+                <dt class="col-sm-4">Applicant</dt>
+                <dd class="col-sm-8">@CitizenName</dd>
+            }
+
+            @if (!string.IsNullOrEmpty(AssignedOfficerName))
+            {
+                <dt class="col-sm-4">Assigned Officer</dt>
+                <dd class="col-sm-8">@AssignedOfficerName</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+@* Applicant Information *@
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Applicant</h5>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Name</dt>
+            <dd class="col-sm-8">@CitizenName</dd>
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8">@CitizenEmail</dd>
+        </dl>
+    </div>
+</div>
+
+@* Submitted Application Data *@
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Submitted Application Data</h5>
+
+        @if (!string.IsNullOrEmpty(CitizenNotes))
+        {
+            <div class="mb-3">
+                <label class="fw-semibold">Citizen Notes</label>
+                <p class="form-control-plaintext">@CitizenNotes</p>
+            </div>
+        }
+
+        @foreach (var field in Fields)
+        {
+            <div class="mb-3">
+                <label class="fw-semibold">@field.Label</label>
+                @if (field.Type == FieldType.FileUpload)
+                {
+                    if (field.Documents.Count > 0)
+                    {
+                        foreach (var doc in field.Documents)
+                        {
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>@doc.FileName</span>
+                                <small class="text-muted">(@(doc.FileSize / 1024)KB)</small>
+                                <a href="/documents/@doc.Id/download"
+                                   class="btn btn-sm btn-outline-primary"
+                                   target="_blank"
+                                   title="Download @doc.FileName">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="form-control-plaintext text-muted">No document uploaded</p>
+                    }
+                }
+                else
+                {
+                    <p class="form-control-plaintext">@field.Value</p>
+                }
+            </div>
+        }
+
+        @if (Fields.Count == 0 && string.IsNullOrEmpty(CitizenNotes))
+        {
+            <p class="text-muted">No application data available.</p>
+        }
+    </div>
+</div>
+
+@* Documents *@
+@if (DocumentSection is not null)
+{
+    @DocumentSection
+}
+else
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">All Documents</h5>
+            @if (Documents.Count == 0)
+            {
+                <p class="text-muted">No documents uploaded.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">File Name</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Size</th>
+                                <th scope="col">Uploaded</th>
+                                <th scope="col" class="text-end">Download</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in Documents)
+                            {
+                                <tr>
+                                    <td>@doc.FileName</td>
+                                    <td><span class="badge bg-secondary">@doc.DocumentType</span></td>
+                                    <td>@(doc.FileSize / 1024)KB</td>
+                                    <td>@doc.UploadedDate.ToLocalTime().ToString("g")</td>
+                                    <td class="text-end">
+                                        <a href="/documents/@doc.Id/download"
+                                           class="btn btn-sm btn-outline-primary"
+                                           target="_blank"
+                                           title="Download @doc.FileName">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@* Activity Timeline *@
+
+@* Activity Timeline *@
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Activity</h5>
+        @if (Activities.Count == 0)
+        {
+            <p class="text-muted small">No activity recorded yet.</p>
+        }
+        else
+        {
+            <ApplicationActivityFeed Activities="@Activities" />
+        }
+    </div>
+</div>
+
+@* Review History *@
+@if (HasReviews)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Review History</h5>
+            @foreach (var review in Reviews)
+            {
+                <div class="border rounded p-3 mb-2 @GetReviewCardClass(review.Decision)">
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <strong>@GetReviewDecisionLabel(review.Decision)</strong>
+                        <small class="text-muted">@review.ReviewedDateDisplay</small>
+                    </div>
+                    @if (!string.IsNullOrEmpty(review.ReasonCode))
+                    {
+                        <p class="mb-1 mt-1">
+                            <span class="badge bg-secondary">@review.ReasonCode</span>
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(review.Comments))
+                    {
+                        <p class="mb-0 mt-1">@review.Comments</p>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+else if (ShowEmptyReviews)
+{
+    <div class="alert alert-info" role="alert">No reviews recorded for this application yet.</div>
+}
+
+@* Officer Notes *@
+@if (ShowOfficerNotes && HasOfficerNotes)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Officer Notes</h5>
+            <p class="form-control-plaintext">@OfficerNotes</p>
+        </div>
+    </div>
+}
+
+@code {
+    // ── Data Parameters ──
+
+    [Parameter, EditorRequired] public string ApplicationNumber { get; set; } = string.Empty;
+    [Parameter] public string? PermitTypeName { get; set; }
+    [Parameter] public string? PermitTypeDescription { get; set; }
+    [Parameter, EditorRequired] public ApplicationStatus Status { get; set; }
+    [Parameter] public DateTime? SubmittedDate { get; set; }
+    [Parameter] public DateTime? LastUpdated { get; set; }
+    [Parameter] public string CitizenName { get; set; } = string.Empty;
+    [Parameter] public string CitizenEmail { get; set; } = string.Empty;
+    [Parameter] public string? AssignedOfficerName { get; set; }
+    [Parameter] public string CitizenNotes { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public IReadOnlyList<FieldDisplayViewModel> Fields { get; set; } = Array.Empty<FieldDisplayViewModel>();
+    [Parameter, EditorRequired] public IReadOnlyList<DocumentDto> Documents { get; set; } = Array.Empty<DocumentDto>();
+    [Parameter, EditorRequired] public IReadOnlyList<ApplicationActivityDto> Activities { get; set; } = Array.Empty<ApplicationActivityDto>();
+    [Parameter, EditorRequired] public IReadOnlyList<ReviewDisplayViewModel> Reviews { get; set; } = Array.Empty<ReviewDisplayViewModel>();
+    [Parameter] public string OfficerNotes { get; set; } = string.Empty;
+
+    // ── Navigation Parameters ──
+
+    [Parameter, EditorRequired] public string BackUrl { get; set; } = string.Empty;
+    [Parameter] public string BackText { get; set; } = "Back";
+
+    // ── Render Fragment Slots ──
+
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? WorkflowActions { get; set; }
+    [Parameter] public RenderFragment? InfoRequestBanner { get; set; }
+    [Parameter] public RenderFragment? AdditionalContent { get; set; }
+    [Parameter] public RenderFragment? DocumentSection { get; set; }
+
+    // ── Behavior Parameters ──
+
+    [Parameter] public bool ShowEmptyReviews { get; set; }
+    [Parameter] public bool ShowOfficerNotes { get; set; }
+
+    // ── Computed Properties ──
+
+    public string SubmittedDateDisplay => SubmittedDate?.ToLocalTime().ToString("MMM dd, yyyy") ?? "Not submitted";
+    public string LastUpdatedDisplay => LastUpdated?.ToLocalTime().ToString("MMM dd, yyyy") ?? "N/A";
+    public bool HasReviews => Reviews.Count > 0;
+    public bool HasOfficerNotes => !string.IsNullOrWhiteSpace(OfficerNotes);
+
+    private static string GetReviewDecisionLabel(ReviewDecision decision) => decision switch
+    {
+        ReviewDecision.Approve => "Approved",
+        ReviewDecision.Reject => "Rejected",
+        ReviewDecision.RequestInfo => "Information Requested",
+        _ => "Review Recorded"
+    };
+
+    private static string GetReviewCardClass(ReviewDecision decision) => decision switch
+    {
+        ReviewDecision.Approve => "border-success bg-success-subtle",
+        ReviewDecision.Reject => "border-danger bg-danger-subtle",
+        ReviewDecision.RequestInfo => "border-warning bg-warning-subtle",
+        _ => "border-secondary bg-light"
+    };
+}

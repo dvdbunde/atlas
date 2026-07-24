@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "Citizen")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
+@using ATLAS.Blazor.Components.Shared.ApplicationDetail
 @using ATLAS.Domain.Enums
 
 <PageTitle>@("Application " + (_viewModel.ApplicationNumber ?? "Detail"))</PageTitle>
@@ -13,6 +14,7 @@
             <li class="breadcrumb-item active" aria-current="page">@_viewModel.ApplicationNumber</li>
         </ol>
     </nav>
+
     @if (_viewModel.IsLoading)
     {
         <div class="d-flex justify-content-center align-items-center py-5" role="status">
@@ -33,96 +35,25 @@
     }
     else if (_viewModel.IsLoaded)
     {
-        @* Header Section *@
-        <div class="mb-4">
-            <h1 class="mb-1">@_viewModel.ApplicationNumber</h1>
-            <p class="text-muted mb-2">@_viewModel.PermitTypeDescription</p>
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <StatusBadge Status="@_viewModel.Status" />
-                <span class="text-muted small">Submitted: @_viewModel.SubmittedDateDisplay</span>
-                <span class="text-muted small">Last Updated: @_viewModel.ReviewedDateDisplay</span>
-                <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
-                    &larr; Back to Dashboard
-                </a>
-            </div>
-        </div>
-
-        <div class="row">
-            @* Activity Feed Section *@
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Activity</h5>
-                        @if (_viewModel.Activities.Count == 0)
-                        {
-                            <p class="text-muted small">Loading activity...</p>
-                        }
-                        else
-                        {
-                            <ApplicationActivityFeed Activities="@_viewModel.Activities" />
-                        }
-                    </div>
-                </div>
-            </div>
-
-            @* Details Section *@
-            <div class="col-md-8">
-                @* Application Data Section *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Application Data</h5>
-
-                        @if (!string.IsNullOrEmpty(_viewModel.CitizenNotes))
-                        {
-                            <div class="mb-3">
-                                <label class="fw-semibold">Citizen Notes</label>
-                                <p class="form-control-plaintext">@_viewModel.CitizenNotes</p>
-                            </div>
-                        }
-
-                        @foreach (var field in _viewModel.Fields)
-                        {
-                            <div class="mb-3">
-                                <label class="fw-semibold">@field.Label</label>
-                                @if (field.Type == FieldType.FileUpload)
-                                {
-                                    if (field.Documents.Count > 0)
-                                    {
-                                        foreach (var doc in field.Documents)
-                                        {
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <i class="bi bi-file-earmark-text"></i>
-                                                <span>@doc.FileName</span>
-                                                <small class="text-muted">(@(doc.FileSize / 1024)KB)</small>
-                                                <a href="/documents/@doc.Id/download"
-                                                   class="btn btn-sm btn-outline-primary"
-                                                   target="_blank"
-                                                   title="Download @doc.FileName">
-                                                    <i class="bi bi-download"></i> Download
-                                                </a>
-                                            </div>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <p class="form-control-plaintext text-muted">No document uploaded</p>
-                                    }
-                                }
-                                else
-                                {
-                                    <p class="form-control-plaintext">@field.Value</p>
-                                }
-                            </div>
-                        }
-
-                        @if (_viewModel.Fields.Count == 0 && string.IsNullOrEmpty(_viewModel.CitizenNotes))
-                        {
-                            <p class="text-muted">No application data available.</p>
-                        }
-                    </div>
-                </div>
-
-                @* O5: Information request banner — shown prominently when status is InfoRequested *@
+        <ApplicationDetailsLayout
+            ApplicationNumber="@_viewModel.ApplicationNumber"
+            PermitTypeName="@_viewModel.PermitTypeName"
+            PermitTypeDescription="@_viewModel.PermitTypeDescription"
+            Status="@_viewModel.Status"
+            SubmittedDate="@_viewModel.SubmittedDate"
+            LastUpdated="@_viewModel.LastUpdated"
+            CitizenName="@_viewModel.CitizenName"
+            CitizenEmail="@_viewModel.CitizenEmail"
+            AssignedOfficerName="@_viewModel.AssignedOfficerName"
+            CitizenNotes="@_viewModel.CitizenNotes"
+            Fields="@_viewModel.Fields"
+            Documents="@_viewModel.Documents"
+            Activities="@_viewModel.Activities"
+            Reviews="@_viewModel.Reviews"
+            OfficerNotes="@_viewModel.OfficerNotes"
+            BackUrl="/dashboard"
+            BackText="Back to Dashboard">
+            <InfoRequestBanner>
                 @if (_viewModel.Status == ApplicationStatus.InfoRequested)
                 {
                     <div class="alert alert-info" role="alert">
@@ -145,39 +76,7 @@
                         </a>
                     </div>
                 }
-
-                @* Review Section *@
-                @if (_viewModel.HasReviews)
-                {
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Reviews</h5>
-
-                            @foreach (var review in _viewModel.Reviews)
-                            {
-                                <div class="border rounded p-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <StatusBadge Status="@ReviewDecisionToStatus(review.Decision)" />
-                                        <small class="text-muted">@review.ReviewedDateDisplay</small>
-                                    </div>
-
-                                    @if (!string.IsNullOrEmpty(review.ReasonCode))
-                                    {
-                                        <p class="mb-1">
-                                            <strong>Reason:</strong> @review.ReasonCode
-                                        </p>
-                                    }
-
-                                    @if (!string.IsNullOrEmpty(review.Comments))
-                                    {
-                                        <p class="mb-0">@review.Comments</p>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
+            </InfoRequestBanner>
+        </ApplicationDetailsLayout>
     }
 </div>

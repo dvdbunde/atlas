@@ -43,6 +43,9 @@ public class AdminApplicationDetailViewModel
     public string OfficerNotes { get; set; } = string.Empty;
     public bool HasOfficerNotes => !string.IsNullOrWhiteSpace(OfficerNotes);
 
+    // Citizen notes
+    public string CitizenNotes { get; set; } = string.Empty;
+
     // Activity / timeline
     public List<ApplicationActivityDto> Activities { get; set; } = new();
 
@@ -68,6 +71,7 @@ public class AdminApplicationDetailViewModel
         LastUpdated = application.ReviewedDate ?? application.SubmittedDate;
         CitizenName = application.CitizenName ?? "Unknown";
         OfficerNotes = application.OfficerNotes;
+        CitizenNotes = application.CitizenNotes;
         AssignedOfficerName = application.AssignedOfficerName;
         Documents = application.Documents.ToList();
 

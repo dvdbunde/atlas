@@ -81,17 +81,6 @@ public partial class ApplicationDetail : ComponentBase
         }
     }
 
-    /// <summary>
-    /// Maps ReviewDecision to ApplicationStatus for StatusBadge display.
-    /// </summary>
-    private static ApplicationStatus ReviewDecisionToStatus(ReviewDecision decision) => decision switch
-    {
-        ReviewDecision.Approve => ApplicationStatus.Approved,
-        ReviewDecision.Reject => ApplicationStatus.Rejected,
-        ReviewDecision.RequestInfo => ApplicationStatus.InfoRequested,
-        _ => ApplicationStatus.UnderReview
-    };        
-
     private async Task LoadActivities()
     {
         try

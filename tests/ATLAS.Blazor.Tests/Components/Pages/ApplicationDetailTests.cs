@@ -291,6 +291,6 @@ public class ApplicationDetailTests : BunitContext
             parameters.Add(p => p.Id, _applicationId));
 
         // Assert
-        Assert.Contains("Loading activity...", cut.Markup);
+        Assert.Contains("No activity recorded yet.", cut.Markup);
     }
 }

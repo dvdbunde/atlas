@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
-@using ATLAS.Blazor.Components.Shared.Admin
+@using ATLAS.Blazor.Components.Shared.ApplicationDetail
 @using ATLAS.Domain.Enums
 
 <PageTitle>@("Application " + (_viewModel.ApplicationNumber ?? "Detail"))</PageTitle>
@@ -34,223 +34,24 @@
     }
     else if (_viewModel.IsLoaded)
     {
-        @* Header Section *@
-        <div class="mb-4">
-            <h1 class="mb-1">@_viewModel.ApplicationNumber</h1>
-            <p class="text-muted mb-2">@_viewModel.PermitTypeDescription</p>
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <StatusBadge Status="@_viewModel.Status" />
-                <span class="text-muted small">Submitted: @_viewModel.SubmittedDateDisplay</span>
-                <span class="text-muted small">Last Updated: @_viewModel.LastUpdatedDisplay</span>
-                <a href="/admin/applications" class="btn btn-outline-secondary btn-sm">
-                    &larr; Back to Applications
-                </a>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12">
-
-                @* General Information *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">General Information</h5>
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">Application Number</dt>
-                            <dd class="col-sm-8">@_viewModel.ApplicationNumber</dd>
-
-                            <dt class="col-sm-4">Permit Type</dt>
-                            <dd class="col-sm-8">@_viewModel.PermitTypeName</dd>
-
-                            <dt class="col-sm-4">Current Status</dt>
-                            <dd class="col-sm-8"><StatusBadge Status="@_viewModel.Status" /></dd>
-
-                            <dt class="col-sm-4">Submitted Date</dt>
-                            <dd class="col-sm-8">@_viewModel.SubmittedDateDisplay</dd>
-
-                            <dt class="col-sm-4">Last Updated</dt>
-                            <dd class="col-sm-8">@_viewModel.LastUpdatedDisplay</dd>
-                        </dl>
-                    </div>
-                </div>
-
-                @* Applicant Information *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Applicant</h5>
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">Name</dt>
-                            <dd class="col-sm-8">@_viewModel.CitizenName</dd>
-
-                            <dt class="col-sm-4">Email</dt>
-                            <dd class="col-sm-8">@_viewModel.CitizenEmail</dd>
-                        </dl>
-                    </div>
-                </div>
-
-                @* Assigned Officer *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Assigned Officer</h5>
-                        @if (_viewModel.IsAssigned)
-                        {
-                            <p class="mb-0">@_viewModel.AssignedOfficerDisplay</p>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">Not assigned</p>
-                        }
-                    </div>
-                </div>
-
-                @* Activity Feed *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Activity</h5>
-                        @if (_viewModel.Activities.Count == 0)
-                        {
-                            <p class="text-muted small">No activity recorded yet.</p>
-                        }
-                        else
-                        {
-                            <ApplicationActivityFeed Activities="@_viewModel.Activities" />
-                        }
-                    </div>
-                </div>
-
-                @* Application Data *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">Application Data</h5>
-
-                        @foreach (var field in _viewModel.Fields)
-                        {
-                            <div class="mb-3">
-                                <label class="fw-semibold">@field.Label</label>
-                                @if (field.Type == FieldType.FileUpload)
-                                {
-                                    if (field.Documents.Count > 0)
-                                    {
-                                        foreach (var doc in field.Documents)
-                                        {
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <i class="bi bi-file-earmark-text"></i>
-                                                <span>@doc.FileName</span>
-                                                <small class="text-muted">(@(doc.FileSize / 1024)KB)</small>
-                                                <a href="/documents/@doc.Id/download"
-                                                   class="btn btn-sm btn-outline-primary"
-                                                   target="_blank"
-                                                   title="Download @doc.FileName">
-                                                    <i class="bi bi-download"></i> Download
-                                                </a>
-                                            </div>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <p class="form-control-plaintext text-muted">No document uploaded</p>
-                                    }
-                                }
-                                else
-                                {
-                                    <p class="form-control-plaintext">@field.Value</p>
-                                }
-                            </div>
-                        }
-
-                        @if (_viewModel.Fields.Count == 0)
-                        {
-                            <p class="text-muted">No application data available.</p>
-                        }
-                    </div>
-                </div>
-
-                @* Documents Section *@
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">All Documents</h5>
-                        @if (_viewModel.Documents.Count == 0)
-                        {
-                            <p class="text-muted">No documents uploaded.</p>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">File Name</th>
-                                            <th scope="col">Type</th>
-                                            <th scope="col">Size</th>
-                                            <th scope="col">Uploaded</th>
-                                            <th scope="col" class="text-end">Download</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var doc in _viewModel.Documents)
-                                        {
-                                            <tr>
-                                                <td>@doc.FileName</td>
-                                                <td><span class="badge bg-secondary">@doc.DocumentType</span></td>
-                                                <td>@(doc.FileSize / 1024)KB</td>
-                                                <td>@doc.UploadedDate.ToLocalTime().ToString("g")</td>
-                                                <td class="text-end">
-                                                    <a href="/documents/@doc.Id/download"
-                                                       class="btn btn-sm btn-outline-primary"
-                                                       target="_blank"
-                                                       title="Download @doc.FileName">
-                                                        <i class="bi bi-download"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                @* Officer Notes *@
-                @if (_viewModel.HasOfficerNotes)
-                {
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Officer Notes</h5>
-                            <p class="form-control-plaintext">@_viewModel.OfficerNotes</p>
-                        </div>
-                    </div>
-                }
-
-                @* Reviews / Comments *@
-                @if (_viewModel.HasReviews)
-                {
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Review History</h5>
-                            @foreach (var review in _viewModel.Reviews)
-                            {
-                                <div class="border rounded p-3 mb-2 @GetReviewCardClass(review.Decision)">
-                                    <div class="d-flex justify-content-between align-items-baseline">
-                                        <strong>@GetReviewDecisionLabel(review.Decision)</strong>
-                                        <small class="text-muted">@review.ReviewedDateDisplay</small>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(review.ReasonCode))
-                                    {
-                                        <p class="mb-1 mt-1">
-                                            <span class="badge bg-secondary">@review.ReasonCode</span>
-                                        </p>
-                                    }
-                                    @if (!string.IsNullOrEmpty(review.Comments))
-                                    {
-                                        <p class="mb-0 mt-1">@review.Comments</p>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
+        <ApplicationDetailsLayout
+            ApplicationNumber="@_viewModel.ApplicationNumber"
+            PermitTypeName="@_viewModel.PermitTypeName"
+            PermitTypeDescription="@_viewModel.PermitTypeDescription"
+            Status="@_viewModel.Status"
+            SubmittedDate="@_viewModel.SubmittedDate"
+            LastUpdated="@_viewModel.LastUpdated"
+            CitizenName="@_viewModel.CitizenName"
+            CitizenEmail="@_viewModel.CitizenEmail"
+            AssignedOfficerName="@_viewModel.AssignedOfficerName"
+            CitizenNotes="@_viewModel.CitizenNotes"
+            Fields="@_viewModel.Fields"
+            Documents="@_viewModel.Documents"
+            Activities="@_viewModel.Activities"
+            Reviews="@_viewModel.Reviews"
+            OfficerNotes="@_viewModel.OfficerNotes"
+            ShowOfficerNotes="true"
+            BackUrl="/admin/applications"
+            BackText="Back to Applications" />
     }
 </div>

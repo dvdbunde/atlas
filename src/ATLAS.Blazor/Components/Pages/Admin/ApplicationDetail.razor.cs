@@ -105,20 +105,4 @@ public partial class ApplicationDetail : ComponentBase
             Logger.LogWarning(ex, "Failed to load activity for application {ApplicationId}", _viewModel.ApplicationId);
         }
     }
-
-    private static string GetReviewDecisionLabel(ReviewDecision decision) => decision switch
-    {
-        ReviewDecision.Approve => "Approved",
-        ReviewDecision.Reject => "Rejected",
-        ReviewDecision.RequestInfo => "Information Requested",
-        _ => "Review Recorded"
-    };
-
-    private static string GetReviewCardClass(ReviewDecision decision) => decision switch
-    {
-        ReviewDecision.Approve => "border-success bg-success-subtle",
-        ReviewDecision.Reject => "border-danger bg-danger-subtle",
-        ReviewDecision.RequestInfo => "border-warning bg-warning-subtle",
-        _ => "border-secondary bg-light"
-    };
 }

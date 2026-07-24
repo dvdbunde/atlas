@@ -27,7 +27,38 @@ public class OfficerApplicationReviewViewModel
     // True only when assigned to current officer AND status allows a decision.
     public bool CanDecide => IsAssignedToCurrentOfficer
         && Application?.Status == ApplicationStatus.UnderReview;
-    public List<ApplicationActivityDto> Activities { get; set; } = new();        
+    public List<ApplicationActivityDto> Activities { get; set; } = new();
+
+    // Mapped properties for shared layout consumption
+    public List<FieldDisplayViewModel> Fields => Application?.FieldValues
+        .Select(fv => new FieldDisplayViewModel
+        {
+            Label = fv.Label,
+            Value = fv.Value
+        })
+        .ToList() ?? new();
+
+    public List<DocumentDto> FlatDocuments => Application?.DocumentRequirements
+        .SelectMany(dr => dr.UploadedDocuments)
+        .Select(d => new DocumentDto
+        {
+            Id = d.Id,
+            FileName = d.FileName,
+            ContentType = d.ContentType,
+            FileSize = d.FileSize,
+            UploadedDate = d.UploadedDate
+        })
+        .ToList() ?? new();
+
+    public List<ReviewDisplayViewModel> MappedReviews => Application?.Reviews
+        .Select(r => new ReviewDisplayViewModel
+        {
+            Decision = r.Decision,
+            Comments = r.Comments ?? string.Empty,
+            ReviewedDate = r.ReviewedDate,
+            ReasonCode = r.ReasonCode
+        })
+        .ToList() ?? new();
 
     public static OfficerApplicationReviewViewModel FromDto(OfficerApplicationReviewDto dto, Guid? currentOfficerId) => new()
     {
