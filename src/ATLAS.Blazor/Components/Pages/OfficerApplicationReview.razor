@@ -39,7 +39,7 @@
             PermitTypeDescription="@_viewModel.Application.PermitTypeDescription"
             Status="@_viewModel.Application.Status"
             SubmittedDate="@_viewModel.Application.SubmittedDate"
-            LastUpdated="@_viewModel.Application.LastUpdated"
+            LastUpdated="@(_viewModel.Application.ReviewedDate ?? _viewModel.Application.SubmittedDate)"
             CitizenName="@_viewModel.Application.CitizenName"
             CitizenEmail="@_viewModel.Application.CitizenEmail"
             AssignedOfficerName="@_viewModel.Application.AssignedOfficerName"
@@ -115,7 +115,7 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
                         <h5 class="card-title">Documents</h5>
-                        @foreach (var req in _viewModel.Application!.DocumentRequirements)
+                        @foreach (var req in _viewModel.DocumentRequirements)
                         {
                             <div class="card mb-3 @(req.IsSatisfied ? "border-success" : req.IsRequired ? "border-warning" : "")">
                                 <div class="card-body">
@@ -167,7 +167,7 @@
                                 </div>
                             </div>
                         }
-                        @if (_viewModel.Application.DocumentRequirements.Count == 0)
+                        @if (_viewModel.DocumentRequirements.Count == 0)
                         {
                             <p class="text-muted">No document requirements defined.</p>
                         }

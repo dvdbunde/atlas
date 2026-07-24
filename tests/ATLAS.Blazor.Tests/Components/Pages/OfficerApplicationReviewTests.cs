@@ -77,6 +77,28 @@ public class OfficerApplicationReviewTests : BunitContext
                 new() { FieldName = "PropertyAddress", Label = "Property Address", Value = "123 Main St", FieldType = FieldType.Text },
                 new() { FieldName = "SquareFootage", Label = "Square Footage", Value = "2000", FieldType = FieldType.Number }
             },
+            Application =
+            {
+                CitizenNotes = "Building a new garage",
+                Documents = withDocs
+                    ? new List<DocumentDto>
+                    {
+                        new() { Id = Guid.NewGuid(), FileName = "house-final-v7.pdf", ContentType = "application/pdf", FileSize = 4096, UploadedDate = DateTime.UtcNow },
+                        new() { Id = Guid.NewGuid(), FileName = "passport.pdf", ContentType = "application/pdf", FileSize = 1024, UploadedDate = DateTime.UtcNow }
+                    }
+                    : new(),
+                FieldValues = new Dictionary<string, string>
+                {
+                    { "PropertyAddress", "123 Main St" },
+                    { "SquareFootage", "2000" }
+                },
+                Reviews = withReviews
+                    ? new List<ReviewDto>
+                    {
+                        new() { Id = Guid.NewGuid(), OfficerId = Guid.NewGuid(), Decision = ReviewDecision.RequestInfo, ReasonCode = "INCOMPLETE", Comments = "Need survey", ReviewedDate = DateTime.UtcNow.AddDays(-1), IsVisibleToCitizen = true }
+                    }
+                    : new()
+            },
             DocumentRequirements = requirements,
             Reviews = withReviews
                 ? new List<OfficerReviewDto>
@@ -143,8 +165,8 @@ public class OfficerApplicationReviewTests : BunitContext
             parameters.Add(p => p.ApplicationId, _applicationId));
 
         // Meaningful permit labels are rendered
-        Assert.Contains("Property Address", cut.Markup);
-        Assert.Contains("Square Footage", cut.Markup);
+        Assert.Contains("PropertyAddress", cut.Markup);
+        Assert.Contains("SquareFootage", cut.Markup);
         // Submitted values are rendered
         Assert.Contains("123 Main St", cut.Markup);
         Assert.Contains("2000", cut.Markup);

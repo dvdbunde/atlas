@@ -1,23 +1,35 @@
-/// Shared application detail layout.
-///
-/// Used by:
-/// - Citizen
-/// - Officer
-/// - Administrator
-///
-/// Role-specific behavior is injected through RenderFragments.
-/// This component must remain presentation-only.
-
 @namespace ATLAS.Blazor.Components.Shared.ApplicationDetail
 @using ATLAS.Domain.Enums
 @using ATLAS.Application.DTOs
 @using ATLAS.Blazor.ViewModels
 
 @* 
-    ApplicationDetailsLayout - Shared layout for all application detail pages.
-    Renders the common sections in a consistent single-column layout.
-    Role-specific content (actions, info request banners, etc.) is provided
-    via RenderFragment parameters, keeping role logic out of this component.
+    ApplicationDetailsLayout - THE canonical shared layout for ATLAS application detail pages.
+    ================================================================================
+    
+    RESPONSIBILITIES:
+    - Renders application details in a consistent single-column layout for ALL personas
+    - Provides RenderFragment extension points for role-specific content
+    - Is presentation-only (no data loading, no workflow actions, no authorization)
+    
+    EXTENSION POINTS:
+    - Actions        → role-specific header elements (e.g. "Assign to me" button)
+    - InfoRequestBanner → citizen-only info request with "Update and Resubmit" prompt
+    - WorkflowActions → officer-only Approve/Reject/Request Information decision card
+    - AdditionalContent → any role-specific sections between workflow actions and summary
+    - DocumentSection → replaces default flat document table (Officer requirement-centric view)
+    
+    WHAT REMAINS OUTSIDE:
+    - Authorization ([Authorize(Roles = ...)]) belongs on the calling page
+    - Routing (@page directive) belongs on the calling page
+    - Data loading (Mediator sends, ViewModels) belongs in the calling page
+    - Workflow behaviour (assign, approve, reject, request info) belongs in the calling page
+    - Role-specific logic must NEVER be added here — use RenderFragment slots instead
+    
+    USAGE:
+    - CitizenApplicationDetail   → uses InfoRequestBanner slot
+    - OfficerApplicationReview   → uses Actions, WorkflowActions, DocumentSection slots
+    - AdminApplicationDetail     → uses no slots (pure read-only)
 *@
 
 <div class="mb-4">

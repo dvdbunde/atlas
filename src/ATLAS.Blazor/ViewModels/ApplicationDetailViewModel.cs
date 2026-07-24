@@ -27,7 +27,6 @@ public class ApplicationDetailViewModel
 
     public List<FieldDisplayViewModel> Fields { get; set; } = new();
     public List<DocumentDto> Documents { get; set; } = new();
-    public List<TimelineEntryViewModel> TimelineEntries { get; set; } = new();
     public List<ReviewDisplayViewModel> Reviews { get; set; } = new();
 
     public bool IsLoading { get; set; } = true;
@@ -87,9 +86,6 @@ public class ApplicationDetailViewModel
             }
         }
         Fields = fieldList;
-
-        // Build timeline entries — retained for backward compatibility but no longer rendered
-        TimelineEntries = BuildTimeline(application.Status);
 
         // Activities are loaded from the API via a separate query
         // (not populated here — the page fetches them async after Load)

@@ -31,7 +31,7 @@ public class GetOfficerApplicationReviewQueryHandlerTests
         _mockPermitTypeRepo = new Mock<IPermitTypeRepository>();
         _mockCurrentUser = new Mock<ICurrentUserService>();
         _handler = new GetOfficerApplicationReviewQueryHandler(
-            _mockAppRepo.Object, _mockUserRepo.Object, _mockPermitTypeRepo.Object, _mockCurrentUser.Object);
+            _mockAppRepo.Object, _mockUserRepo.Object, _mockPermitTypeRepo.Object);
     }
 
     // ----- Domain builders (mirror GetOfficerDashboardQueryHandlerTests conventions) -----
