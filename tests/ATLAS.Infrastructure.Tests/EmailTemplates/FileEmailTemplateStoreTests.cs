@@ -30,11 +30,12 @@ namespace ATLAS.Infrastructure.Tests.EmailTemplates
         }
 
         [Fact]
-        public async Task GetTemplateNamesAsync_ReturnsFourKnownTemplates()
+        public async Task GetTemplateNamesAsync_ReturnsFiveKnownTemplates()
         {
             var names = await _store.GetTemplateNamesAsync();
-            Assert.Equal(4, names.Count);
+            Assert.Equal(5, names.Count);
             Assert.Contains("SubmissionConfirmation", names);
+            Assert.Contains("ReSubmissionConfirmation", names);
             Assert.Contains("ApprovalNotification", names);
             Assert.Contains("RejectionNotification", names);
             Assert.Contains("InfoRequestNotification", names);

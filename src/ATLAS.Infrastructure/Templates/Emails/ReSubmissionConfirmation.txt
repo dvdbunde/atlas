@@ -1,6 +1,6 @@
 Dear {{CitizenName}},
 
-Your permit application has been submitted successfully.
+Your permit application has been resubmitted successfully.
 
 Application Number: {{ApplicationNumber}}
 Permit Type: {{PermitTypeName}}

@@ -1,4 +1,4 @@
-Dear Citizen,
+Dear {{CitizenName}},
 
 Additional information has been requested for your permit application.
 

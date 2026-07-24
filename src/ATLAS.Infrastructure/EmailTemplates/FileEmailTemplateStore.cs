@@ -24,6 +24,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
         private static readonly IReadOnlyList<string> KnownTemplateNames = new List<string>
         {
             "SubmissionConfirmation",
+            "ReSubmissionConfirmation",
             "ApprovalNotification",
             "RejectionNotification",
             "InfoRequestNotification"

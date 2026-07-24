@@ -87,6 +87,7 @@ namespace ATLAS.Infrastructure
             services.AddScoped<INotificationHandler<ApplicationApprovedEvent>, ApplicationApprovedEmailHandler>();
             services.AddScoped<INotificationHandler<ApplicationRejectedEvent>, ApplicationRejectedEmailHandler>();
             services.AddScoped<INotificationHandler<ApplicationInfoRequestedEvent>, ApplicationInfoRequestedEmailHandler>();
+            services.AddScoped<INotificationHandler<ApplicationResubmittedEvent>, ApplicationResubmittedEmailHandler>();
 
 
             // Register repositories
