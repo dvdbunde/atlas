@@ -27,6 +27,8 @@ namespace ATLAS.Application.DTOs
         public List<ReviewDto> Reviews { get; set; } = new();
         // NEW: Missing fields from PRD
         public string? OfficerName { get; set; }
+        public string? AssignedOfficerName { get; set; }
+        public Guid? AssignedOfficerId { get; set; }
 
         /// <summary>
         /// Current field values for this application.
