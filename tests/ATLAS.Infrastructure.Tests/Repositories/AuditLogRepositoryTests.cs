@@ -259,6 +259,51 @@ namespace ATLAS.Infrastructure.Tests.Repositories
 
             Assert.Equal(0, result.TotalCount);
             Assert.Empty(result.Items);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithPartialActionFilter_ShouldReturnSubstringMatches()
+        {
+            _context.AuditLogs.AddRange(
+                new AuditLog(Guid.NewGuid(), "ApplicationSubmitted", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "PermitActivated", "Permit", Guid.NewGuid(), "Details 2", "127.0.0.1"));
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter { Action = "App" }, AuditLogSortOption.TimestampDesc, new AuditLogPage());
+
+            Assert.Equal(1, result.TotalCount);
+            Assert.Equal("ApplicationSubmitted", result.Items[0].Action);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithPartialEntityTypeFilter_ShouldReturnSubstringMatches()
+        {
+            _context.AuditLogs.AddRange(
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "Details 1", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "Create", "Permit", Guid.NewGuid(), "Details 2", "127.0.0.1"));
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter { EntityType = "per" }, AuditLogSortOption.TimestampDesc, new AuditLogPage());
+
+            Assert.Equal(1, result.TotalCount);
+            Assert.Equal("Permit", result.Items[0].EntityType);
+        }
+
+        [Fact]
+        public async Task GetPagedAsync_WithSearchTerm_ShouldBeCaseInsensitive()
+        {
+            _context.AuditLogs.AddRange(
+                new AuditLog(Guid.NewGuid(), "Create", "Application", Guid.NewGuid(), "alpha details", "127.0.0.1"),
+                new AuditLog(Guid.NewGuid(), "Update", "Permit", Guid.NewGuid(), "other details", "127.0.0.1"));
+            await _context.SaveChangesAsync();
+
+            var result = await _repository.GetPagedAsync(
+                new AuditLogFilter { SearchTerm = "permit" }, AuditLogSortOption.TimestampDesc, new AuditLogPage());
+
+            Assert.Equal(1, result.TotalCount);
+            Assert.Equal("Permit", result.Items[0].EntityType);
         }        public void Dispose()
         {
             _context?.Dispose();

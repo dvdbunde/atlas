@@ -25,22 +25,17 @@
             <span class="ms-3">Loading audit logs...</span>
         </div>
     }
-    else if (_viewModel.HasError)
-    {
-        <div class="alert alert-danger" role="alert">
-            <h4 class="alert-heading">Something went wrong</h4>
-            <p>@_viewModel.ErrorMessage</p>
-            <hr />
-            <button class="btn btn-outline-danger" @onclick="LoadLogs">Try Again</button>
-        </div>
-    }
-    else if (_viewModel.IsEmpty)
-    {
-        <EmptyState Title="No audit entries found"
-                    Message="No audit entries match the current filters. Try clearing the search or filters." />
-    }
     else
     {
+        if (_viewModel.HasError)
+        {
+            <div class="alert alert-danger" role="alert">
+                <h4 class="alert-heading">Something went wrong</h4>
+                <p>@_viewModel.ErrorMessage</p>
+                <hr />
+                <button class="btn btn-outline-danger" @onclick="() => LoadLogs()">Try Again</button>
+            </div>
+        }
         <div class="row g-3 mb-3">
             <div class="col-12 col-md-4">
                 <input type="search" class="form-control" placeholder="Search action, type, or details"
@@ -55,58 +50,66 @@
                        value="@_viewModel.EntityTypeFilter" @oninput="OnEntityTypeFilterChanged" aria-label="Filter by entity type" />
             </div>
             <div class="col-12 col-md-2">
-                <select class="form-select" @onchange="OnSortChanged" aria-label="Sort audit logs">
+                <select class="form-select" value="@_viewModel.SortBy" @onchange="OnSortChanged" aria-label="Sort audit logs">
                     <option value="TimestampDesc">Newest first</option>
                     <option value="TimestampAsc">Oldest first</option>
                 </select>
             </div>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th scope="col">Timestamp</th>
-                        <th scope="col">User</th>
-                        <th scope="col">Action</th>
-                        <th scope="col">Entity</th>
-                        <th scope="col">Entity ID</th>
-                        <th scope="col" class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in _viewModel.Items)
-                    {
-                        <tr>
-                            <td>@log.Timestamp.ToLocalTime().ToString("g")</td>
-                            <td>@(log.UserId?.ToString() ?? "System")</td>
-                            <td>@log.Action</td>
-                            <td>@log.EntityType</td>
-                            <td>@log.EntityId</td>
-                            <td class="text-end">
-                                <a class="btn btn-sm btn-outline-primary" href="@($"/admin/audit-logs/{log.Id}")">View</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        @if (_viewModel.TotalPages > 1)
+        @if (_viewModel.IsEmpty)
         {
-            <nav aria-label="Audit log pagination">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item @(_viewModel.PageNumber <= 1 ? "disabled" : "")">
-                        <button class="page-link" @onclick="() => GoToPage(_viewModel.PageNumber - 1)" disabled="@(_viewModel.PageNumber <= 1)">Previous</button>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">Page @_viewModel.PageNumber of @_viewModel.TotalPages</span>
-                    </li>
-                    <li class="page-item @(_viewModel.PageNumber >= _viewModel.TotalPages ? "disabled" : "")">
-                        <button class="page-link" @onclick="() => GoToPage(_viewModel.PageNumber + 1)" disabled="@(_viewModel.PageNumber >= _viewModel.TotalPages)">Next</button>
-                    </li>
-                </ul>
-            </nav>
+            <EmptyState Title="No audit entries found"
+                        Message="No audit entries match the current filters. Try clearing the search or filters." />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Timestamp</th>
+                            <th scope="col">User</th>
+                            <th scope="col">Action</th>
+                            <th scope="col">Entity</th>
+                            <th scope="col">Entity ID</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in _viewModel.Items)
+                        {
+                            <tr>
+                                <td>@log.Timestamp.ToLocalTime().ToString("g")</td>
+                                <td>@(log.UserId?.ToString() ?? "System")</td>
+                                <td>@log.Action</td>
+                                <td>@log.EntityType</td>
+                                <td>@log.EntityId</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-primary" href="@($"/admin/audit-logs/{log.Id}")">View</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (_viewModel.TotalPages > 1)
+            {
+                <nav aria-label="Audit log pagination">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(_viewModel.PageNumber <= 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(_viewModel.PageNumber - 1)" disabled="@(_viewModel.PageNumber <= 1)">Previous</button>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Page @_viewModel.PageNumber of @_viewModel.TotalPages</span>
+                        </li>
+                        <li class="page-item @(_viewModel.PageNumber >= _viewModel.TotalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => GoToPage(_viewModel.PageNumber + 1)" disabled="@(_viewModel.PageNumber >= _viewModel.TotalPages)">Next</button>
+                        </li>
+                    </ul>
+                </nav>
+            }
         }
     }
 </div>

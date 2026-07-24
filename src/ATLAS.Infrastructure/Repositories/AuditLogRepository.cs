@@ -86,7 +86,10 @@ namespace ATLAS.Infrastructure.Repositories
                 query = query.Where(a => a.UserId == filter.UserId.Value);
 
             if (!string.IsNullOrWhiteSpace(filter.Action))
-                query = query.Where(a => a.Action == filter.Action);
+            {
+                var action = filter.Action.Trim().ToLower();
+                query = query.Where(a => a.Action.ToLower().Contains(action));
+            }
 
             if (filter.DateFrom.HasValue)
                 query = query.Where(a => a.Timestamp >= filter.DateFrom.Value);
@@ -98,15 +101,18 @@ namespace ATLAS.Infrastructure.Repositories
                 query = query.Where(a => a.EntityId == filter.EntityId.Value);
 
             if (!string.IsNullOrWhiteSpace(filter.EntityType))
-                query = query.Where(a => a.EntityType == filter.EntityType);
+            {
+                var entityType = filter.EntityType.Trim().ToLower();
+                query = query.Where(a => a.EntityType.ToLower().Contains(entityType));
+            }
 
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
             {
-                var term = filter.SearchTerm.Trim();
+                var term = filter.SearchTerm.Trim().ToLower();
                 query = query.Where(a =>
-                    a.Action.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    a.EntityType.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    a.Details.Contains(term, StringComparison.OrdinalIgnoreCase));
+                    a.Action.ToLower().Contains(term) ||
+                    a.EntityType.ToLower().Contains(term) ||
+                    a.Details.ToLower().Contains(term));
             }
 
             query = sort == AuditLogSortOption.TimestampAsc

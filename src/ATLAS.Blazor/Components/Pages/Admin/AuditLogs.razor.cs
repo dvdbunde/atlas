@@ -23,9 +23,10 @@ public partial class AuditLogs : ComponentBase
         }
     }
 
-    private async Task LoadLogs()
+    private async Task LoadLogs(bool showSpinner = true)
     {
-        _viewModel.IsLoading = true;
+        if (showSpinner)
+            _viewModel.IsLoading = true;
         _viewModel.HasError = false;
         _viewModel.ErrorMessage = null;
 
@@ -55,7 +56,8 @@ public partial class AuditLogs : ComponentBase
         }
         finally
         {
-            _viewModel.IsLoading = false;
+            if (showSpinner)
+                _viewModel.IsLoading = false;
         }
     }
 
@@ -63,7 +65,7 @@ public partial class AuditLogs : ComponentBase
     {
         _viewModel.SearchTerm = e.Value?.ToString() ?? string.Empty;
         _viewModel.PageNumber = 1;
-        await LoadLogs();
+        await LoadLogs(showSpinner: false);
         StateHasChanged();
     }
 
@@ -71,7 +73,7 @@ public partial class AuditLogs : ComponentBase
     {
         _viewModel.ActionFilter = e.Value?.ToString();
         _viewModel.PageNumber = 1;
-        await LoadLogs();
+        await LoadLogs(showSpinner: false);
         StateHasChanged();
     }
 
@@ -79,7 +81,7 @@ public partial class AuditLogs : ComponentBase
     {
         _viewModel.EntityTypeFilter = e.Value?.ToString();
         _viewModel.PageNumber = 1;
-        await LoadLogs();
+        await LoadLogs(showSpinner: false);
         StateHasChanged();
     }
 
@@ -90,7 +92,7 @@ public partial class AuditLogs : ComponentBase
             ? sort
             : AuditLogSortOptionDto.TimestampDesc;
         _viewModel.PageNumber = 1;
-        await LoadLogs();
+        await LoadLogs(showSpinner: false);
         StateHasChanged();
     }
 
