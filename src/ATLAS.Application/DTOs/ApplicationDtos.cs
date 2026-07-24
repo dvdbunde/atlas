@@ -186,7 +186,7 @@ namespace ATLAS.Application.DTOs
         public string PermitTypeName { get => Application.PermitTypeName; set => Application.PermitTypeName = value; }
         public string PermitTypeDescription { get => Application.PermitTypeDescription; set => Application.PermitTypeDescription = value; }
         public DateTime? SubmittedDate { get => Application.SubmittedDate; set => Application.SubmittedDate = value; }
-        public DateTime? LastUpdated { get => Application.ReviewedDate ?? Application.SubmittedDate; set { } }
+        public DateTime? LastUpdated { get => Application.ReviewedDate ?? Application.SubmittedDate; }
         public Guid CitizenId { get => Application.CitizenId; set => Application.CitizenId = value; }
         public string CitizenName { get => Application.CitizenName; set => Application.CitizenName = value; }
         public string CitizenEmail { get => Application.CitizenEmail; set => Application.CitizenEmail = value; }

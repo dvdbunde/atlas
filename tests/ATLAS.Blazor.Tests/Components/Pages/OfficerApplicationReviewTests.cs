@@ -65,8 +65,7 @@ public class OfficerApplicationReviewTests : BunitContext
             Status = ApplicationStatus.Submitted,
             PermitTypeName = "Building Permit",
             PermitTypeDescription = "For construction",
-            SubmittedDate = DateTime.UtcNow.AddDays(-2),
-            LastUpdated = DateTime.UtcNow.AddDays(-1),
+            SubmittedDate = DateTime.UtcNow.AddDays(-2),            
             CitizenId = Guid.NewGuid(),
             CitizenName = "Jane Doe",
             CitizenEmail = "jane.doe@example.com",
@@ -79,6 +78,7 @@ public class OfficerApplicationReviewTests : BunitContext
             },
             Application =
             {
+                ReviewedDate = DateTime.UtcNow.AddDays(-1),
                 CitizenNotes = "Building a new garage",
                 Documents = withDocs
                     ? new List<DocumentDto>
