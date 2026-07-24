@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationInfoRequested",
                 "Application",
                 notification.ApplicationId,
-                $"Info requested for application {notification.ApplicationId} by officer {userId}: {notification.Message}",
+                $"Additional information was requested for application ({notification.ApplicationId}) by officer {AuditGuard.FormatUser(_currentUserService, userId)}: {notification.Message}",
                 "127.0.0.1"
             );
 

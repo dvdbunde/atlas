@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationResubmitted",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} resubmitted by citizen {userId}",
+                $"Application ({notification.ApplicationId}) was resubmitted by citizen {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

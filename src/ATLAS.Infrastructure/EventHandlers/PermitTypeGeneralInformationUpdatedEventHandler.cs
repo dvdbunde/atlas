@@ -9,26 +9,27 @@ using MediatR;
 
 namespace ATLAS.Infrastructure.EventHandlers
 {
-    public class PermitTypeActivatedEventHandler : INotificationHandler<PermitTypeActivatedEvent>
+    public class PermitTypeGeneralInformationUpdatedEventHandler : INotificationHandler<PermitTypeGeneralInformationUpdatedEvent>
     {
         private readonly IAuditLogRepository _auditLogRepository;
         private readonly ICurrentUserService _currentUserService;
 
-        public PermitTypeActivatedEventHandler(IAuditLogRepository auditLogRepository, ICurrentUserService currentUserService)
+        public PermitTypeGeneralInformationUpdatedEventHandler(IAuditLogRepository auditLogRepository, ICurrentUserService currentUserService)
         {
             _auditLogRepository = auditLogRepository ?? throw new ArgumentNullException(nameof(auditLogRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
-        public async Task Handle(PermitTypeActivatedEvent notification, CancellationToken cancellationToken)
+        public async Task Handle(PermitTypeGeneralInformationUpdatedEvent notification, CancellationToken cancellationToken)
         {
-            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "permit type activation");
-                        var auditLog = new ATLAS.Domain.Entities.AuditLog(
+            var userId = AuditGuard.RequireAuthenticatedUser(_currentUserService, "permit type general information update");
+
+            var auditLog = new ATLAS.Domain.Entities.AuditLog(
                 userId,
-                "PermitTypeActivated",
+                "PermitTypeGeneralInformationUpdated",
                 "PermitType",
                 notification.PermitTypeId,
-                $"Permit type ({notification.PermitTypeId}) was activated by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
+                $"General information for permit type \"{notification.Name}\" ({notification.PermitTypeId}) was updated by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

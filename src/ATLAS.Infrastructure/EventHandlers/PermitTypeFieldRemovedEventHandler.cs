@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "Removed",
                 "PermitField",
                 notification.FieldId,
-                $"Field '{notification.FieldName}' removed from permit type {notification.PermitTypeId}",
+                $"Field \"{notification.FieldName}\" ({notification.FieldId}) was removed from permit type ({notification.PermitTypeId}) by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

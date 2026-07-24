@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "Added",
                 "PermitField",
                 notification.FieldId,
-                $"Field '{notification.FieldName}' added to permit type {notification.PermitTypeId}",
+                $"Field \"{notification.FieldName}\" ({notification.FieldId}) was added to permit type ({notification.PermitTypeId}) by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

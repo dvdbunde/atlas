@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "PermitTypeDeactivated",
                 "PermitType",
                 notification.PermitTypeId,
-                $"Permit type {notification.PermitTypeId} deactivated by admin {userId}",
+                $"Permit type ({notification.PermitTypeId}) was deactivated by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

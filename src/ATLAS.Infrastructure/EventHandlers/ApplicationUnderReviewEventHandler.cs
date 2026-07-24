@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationUnderReview",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} moved to under review by officer {userId}",
+                $"Application ({notification.ApplicationId}) was moved to under review by officer {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

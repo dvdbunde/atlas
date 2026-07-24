@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationSubmitted",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} submitted by citizen {userId} for permit type {notification.PermitTypeId}",
+                $"Application ({notification.ApplicationId}) was submitted by citizen {AuditGuard.FormatUser(_currentUserService, userId)} for permit type ({notification.PermitTypeId}).",
                 "127.0.0.1"
             );
 

@@ -2,7 +2,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Commands.PermitTypes;
+using MediatR;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Events;
 using ATLAS.Domain.Interfaces;
 using Moq;
 using Xunit;
@@ -12,11 +14,12 @@ namespace ATLAS.Application.Tests.Commands
     public class UpdatePermitTypeGeneralInformationCommandHandlerTests
     {
         private readonly Mock<IPermitTypeRepository> _mockRepository = new();
+        private readonly Mock<IMediator> _mockMediator = new();
         private readonly UpdatePermitTypeGeneralInformationCommandHandler _handler;
 
         public UpdatePermitTypeGeneralInformationCommandHandlerTests()
         {
-            _handler = new UpdatePermitTypeGeneralInformationCommandHandler(_mockRepository.Object);
+            _handler = new UpdatePermitTypeGeneralInformationCommandHandler(_mockRepository.Object, _mockMediator.Object);
         }
 
         [Fact]
@@ -41,6 +44,7 @@ namespace ATLAS.Application.Tests.Commands
             Assert.Equal("Updated Name", permitType.Name);
             Assert.Equal("Updated description", permitType.Description);
             _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<PermitType>(), It.IsAny<CancellationToken>()), Times.Once);
+            _mockMediator.Verify(m => m.Publish(It.IsAny<PermitTypeGeneralInformationUpdatedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

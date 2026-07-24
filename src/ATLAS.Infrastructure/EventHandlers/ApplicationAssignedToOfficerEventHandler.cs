@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationAssignedToOfficer",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} assigned to officer {userId}",
+                $"Application ({notification.ApplicationId}) was assigned to an officer by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

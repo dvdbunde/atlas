@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "Removed",
                 "DocumentRequirement",
                 notification.DocumentRequirementId,
-                $"Document requirement '{notification.DocumentType}' removed from permit type {notification.PermitTypeId}",
+                $"Document requirement \"{notification.DocumentType}\" ({notification.DocumentRequirementId}) was removed from permit type ({notification.PermitTypeId}) by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

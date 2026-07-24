@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "Updated",
                 "DocumentRequirement",
                 notification.DocumentRequirementId,
-                $"Document requirement '{notification.DocumentType}' updated in permit type {notification.PermitTypeId}",
+                $"Document requirement \"{notification.DocumentType}\" ({notification.DocumentRequirementId}) was updated in permit type ({notification.PermitTypeId}) by administrator {AuditGuard.FormatUser(_currentUserService, userId)}. Required: {notification.IsRequired}.",
                 "127.0.0.1"
             );
 

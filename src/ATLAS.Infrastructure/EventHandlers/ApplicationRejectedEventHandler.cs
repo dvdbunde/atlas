@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationRejected",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} rejected by officer {userId}. Reason: {notification.ReasonCode}",
+                $"Application ({notification.ApplicationId}) was rejected by officer {AuditGuard.FormatUser(_currentUserService, userId)}. Reason: {notification.ReasonCode}",
                 "127.0.0.1"
             );
 

@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "DocumentDownloaded",
                 "Document",
                 notification.DocumentId,
-                $"Document downloaded from application {notification.ApplicationId} by user {userId}",
+                $"Document ({notification.DocumentId}) was downloaded from application ({notification.ApplicationId}) by user {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

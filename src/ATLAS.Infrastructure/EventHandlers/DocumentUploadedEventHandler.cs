@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "DocumentUploaded",
                 "Document",
                 notification.DocumentId,
-                $"Document {notification.FileName} uploaded to application {notification.ApplicationId} by user {userId}",
+                $"Document \"{notification.FileName}\" ({notification.DocumentId}) was uploaded to application ({notification.ApplicationId}) by user {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 

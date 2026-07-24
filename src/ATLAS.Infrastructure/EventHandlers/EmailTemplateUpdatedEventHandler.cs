@@ -40,7 +40,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "Updated",
                 "EmailTemplate",
                 notification.EntityId,
-                $"Email template '{notification.TemplateName}' updated.",
+                $"Email template \"{notification.TemplateName}\" was updated.",
                 string.Empty);
 
             await _auditLogs.AddAsync(auditLog, cancellationToken);

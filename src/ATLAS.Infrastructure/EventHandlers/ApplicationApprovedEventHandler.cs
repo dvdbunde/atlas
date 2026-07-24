@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "ApplicationApproved",
                 "Application",
                 notification.ApplicationId,
-                $"Application {notification.ApplicationId} approved by officer {userId}",
+                $"Application ({notification.ApplicationId}) was approved by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1" // TODO: Get actual IP address from HttpContext
             );
 

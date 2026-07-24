@@ -29,5 +29,16 @@ namespace ATLAS.Infrastructure.EventHandlers
 
             return currentUserService.UserId.Value;
         }
+
+        /// <summary>
+        /// Formats the acting user for an audit message as "Display Name" (Guid) or
+        /// (Guid) when no display name is available, keeping the immutable identifier
+        /// for traceability.
+        /// </summary>
+        public static string FormatUser(ICurrentUserService currentUserService, Guid userId)
+        {
+            var email = currentUserService?.Email;
+            return email != null ? $"\"{email}\" ({userId})" : $"({userId})";
+        }
     }
 }

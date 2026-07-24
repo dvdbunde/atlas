@@ -28,7 +28,7 @@ namespace ATLAS.Infrastructure.EventHandlers
                 "PermitTypeFeeUpdated",
                 "PermitType",
                 notification.PermitTypeId,
-                $"Permit type {notification.PermitTypeId} fee changed from {notification.OldFee} to {notification.NewFee}",
+                $"Fee for permit type ({notification.PermitTypeId}) was changed from {notification.OldFee:C} to {notification.NewFee:C} by administrator {AuditGuard.FormatUser(_currentUserService, userId)}.",
                 "127.0.0.1"
             );
 
