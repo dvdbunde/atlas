@@ -640,7 +640,7 @@ The following items are **explicitly out of scope** for the MVP release:
 
 - **Current State Architecture**: `docs/architecture/current-state.md` (Post-Milestone 8.1 snapshot)
 - **Architecture Design Documents**: `docs/design/` (C4 context/container diagrams, domain model, data flows)
-- **Architecture Decision Records**: `docs/ADRs/` (ADR-001 through ADR-018)
+- **Architecture Decision Records**: `docs/ADRs/` (ADR-001 through ADR-023)
 - **Developer README**: `README.md` (build, run, test instructions)
 - **Roadmap**: `plans/ROADMAP.md` (strategic planning and milestones)
 - **.NET 9 Documentation**: <https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-9>

@@ -1,6 +1,6 @@
 # ATLAS Current State Architecture — Post Milestone 8.1
 
-**Date**: July 27, 2026  
+**Date**: July 27, 2026
 **Purpose**: Establish a clear architectural baseline before Milestone 9 (Cloud Infrastructure & Azure Enablement)
 
 ---
@@ -43,7 +43,7 @@ ATLAS (Automated Tracking & Licensing Application System) is a permit processing
 
 ### Layer Structure
 
-```
+```txt
 ATLAS.slnx
 ├── src/
 │   ├── ATLAS.Domain/          — Entities, aggregates, value objects, domain events
@@ -253,7 +253,7 @@ The current implementation intentionally emphasizes:
 
 - **README**: `README.md`
 - **PRD**: `docs/PRDs/atlas-mvp-prd.md`
-- **ADRs**: `docs/ADRs/` (ADR-001 through ADR-018)
+- **ADRs**: `docs/ADRs/` (ADR-001 through ADR-023)
 - **Design Docs**: `docs/design/` (C4 diagrams, domain model, data flows)
 - **Roadmap**: `plans/ROADMAP.md`
 - **Engineering Guidelines**: `docs/engineering/`

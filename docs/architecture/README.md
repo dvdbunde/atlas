@@ -4,7 +4,7 @@ This directory describes the system architecture. It provides an entry point to 
 
 ## Architecture Decision Records
 
-- [Architecture Decision Records (ADRs)](../ADRs/README.md) — ADR-001 through ADR-018
+- [Architecture Decision Records (ADRs)](../ADRs/README.md) — ADR-001 through ADR-023
 
 ## Architecture Documents
 

@@ -75,4 +75,4 @@ Adopt a **shared layout component with RenderFragment extension points**:
 
 - ADR-001: Clean Architecture (layer separation enables clean component boundaries)
 - ADR-005: Blazor Server (component model supports RenderFragment composition)
-- Milestone 7 (Officer Review) and Milestone 8 (Administration) implementations
+- Milestone 7 (Officer Review) and Milestone 8 (Administration) implementation

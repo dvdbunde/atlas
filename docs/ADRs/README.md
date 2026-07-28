@@ -28,6 +28,11 @@ Add links to ADRs in sequential order using the naming convention `adr-NNNN-titl
 - [ADR-0016: Transaction Pipeline via MediatR TransactionBehavior](adr-016-transaction-behavior.md) ✅ Implemented
 - [ADR-0017: Citizen Editing After Information Request](adr-017-citizen-editing-after-information-request.md) ✅ Implemented
 - [ADR-0018: Shared Application Details Layout with RenderFragment Composition](adr-018-shared-application-details-layout.md) ✅ Implemented
+- [ADR-0019: Azure App Service as the Primary Production Hosting Platform](adr-019-azure-app-service-primary-hosting.md) ✅ Implemented
+- [ADR-0020: Infrastructure as Code Using Bicep](adr-020-infrastructure-as-code-bicep.md) ✅ Implemented
+- [ADR-0021: Environment-Based Configuration and Secret Management](adr-021-environment-based-configuration-secrets.md) ✅ Implemented
+- [ADR-0022: Managed Azure Services over Self-Hosted Infrastructure](adr-022-managed-azure-services-preference.md) ✅ Implemented
+- [ADR-0023: Production Observability Strategy](adr-023-production-observability-strategy.md) ✅ Implemented
 
 ## ADR Template
 
