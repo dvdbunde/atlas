@@ -1,9 +1,18 @@
+---
+> **⚠️ HISTORICAL DOCUMENT** — This plan covers Milestones 1–5 (the initial foundation), which were completed
+> in June 2026. The detailed phase breakdowns below reflect the original planning assumptions and may not
+> match the exact implementation. For current implementation status, see:
+> - [ROADMAP.md](ROADMAP.md) for milestone status
+> - [docs/architecture/current-state.md](../docs/architecture/current-state.md) for the architectural snapshot
+> - Individual ADRs in [docs/ADRs/](../docs/ADRs/) for specific decisions
+---
+
 # ATLAS Implementation Roadmap
 
 **Project**: ATLAS (Automated Tracking & Licensing Application System)
 **Version**: 1.2 (Updated)
 **Date**: June 23, 2026
-**Status**: ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+**Status**: ✅ Complete (superseded)
 
 ## Milestones M1–M5: Complete | M6: In Progress | M7–M10: Planned
 

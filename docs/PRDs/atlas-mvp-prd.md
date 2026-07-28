@@ -8,6 +8,7 @@
 | ---------- | ------ | ------------------ |
 | 2026-06-02 | David (Product Owner) | Initial MVP draft |
 | 2026-06-18 | Engineering Team | Milestone 5 completion: Permit Submission workflow (drafts, dynamic forms, dashboard, notifications, confirmation) |
+| 2026-07-27 | Engineering Team | Post-Milestone 8.1 alignment: Updated to reflect M6 (Document Management), M7 (Officer Review), and M8 (Administration) completion |
 
 ---
 
@@ -17,7 +18,7 @@
 Local governments currently manage permit applications using paper-based processes, disconnected spreadsheets, or legacy systems that lack integration. Citizens face long wait times, limited visibility into application status, and must submit physical documents in person. Permit officers struggle with manual review processes, lack of centralized notes, and no audit trail. Administrators have no efficient way to manage permit types or track system usage.
 
 **Value Proposition:**
-ATLAS (Automated Tracking & Licensing Application System) modernizes the permit processing workflow by providing a unified digital platform for all stakeholders. Citizens gain 24/7 online access to submit applications and track status. Permit officers receive a streamlined review interface with collaboration tools. Administrators gain configuration control and complete audit visibility. The platform reduces processing time, improves transparency, and ensures compliance through Azure-backed security and scalability.
+ATLAS (Automated Tracking & Licensing Application System) modernizes the permit processing workflow by providing a unified digital platform for all stakeholders. Citizens gain 24/7 online access to submit applications and track status. Permit officers receive a streamlined review interface with collaboration tools. Administrators gain configuration control and complete audit visibility. The platform reduces processing time, improves transparency, and establishes an architecture ready for secure Azure deployment and future scalability.
 
 ---
 
@@ -36,7 +37,7 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 - Reduce permit processing time by 40% compared to manual processes (Baseline: 14 days average, Target: 8 days)
 - Achieve 90% citizen satisfaction rate with status tracking transparency (Measure via post-approval survey)
 - Ensure 100% audit trail coverage for all permit actions (Officer reviews, approvals, rejections)
-- Support 500+ concurrent users on Azure infrastructure without performance degradation
+- Production Goal: Support 500+ concurrent users after Azure deployment without performance degradation.
 
 ---
 
@@ -214,8 +215,8 @@ ATLAS (Automated Tracking & Licensing Application System) modernizes the permit 
 | F-21 | Administrators manage user roles through Entra ID; roles are automatically synchronized to ATLAS | Should | ✅ Implemented |
 
 > **Note**: F-21 was originally specified as "Administrators can manage user accounts and assign roles." In the Entra-first architecture (see ADR-013), user account management is delegated to Microsoft Entra ID. ATLAS reads role assignments from Entra ID tokens and synchronizes them locally. The requirement is satisfied through Entra ID integration — administrators manage roles in the Entra ID admin portal, and changes propagate to ATLAS on the user's next authenticated request.
-| F-22 | Administrators can configure system-wide settings (notification templates, document size limits) | Should |
-| F-23 | Administrators can export audit data to CSV/Excel | Could |
+| F-22 | Administrators can configure system-wide settings (notification templates, document size limits) | Should | ✅ Implemented (Email templates only; document size limits and session timeout are deployment-time configuration) |
+| F-23 | Administrators can export audit data to CSV/Excel | Could | 🟡 Not implemented (deferred to post-MVP) |
 
 #### Acceptance Criteria
 
@@ -539,11 +540,11 @@ The following items are **explicitly out of scope** for the MVP release:
 #### Technical Constraints
 
 - **C-01**: Application must be built with **.NET 9** and **ASP.NET Core** (framework requirement)
-- **C-02**: Frontend must use **Blazor** (Server or WebAssembly TBD based on performance testing)
-- **C-03**: Database must use **Azure SQL Database** (Serverless tier for cost optimization)
-- **C-04**: Document storage must use **Azure Blob Storage** (with CDN for performance if needed)
-- **C-05**: Authentication must integrate with **Microsoft Entra ID** (Azure AD) for all users — Citizens, Permit Officers, and Administrators. No local accounts or separate authentication stores.
-- **C-06**: Application must be hosted on **Azure App Service** (Windows or Linux plan TBD)
+- **C-02**: Frontend uses **Blazor Server** (per ADR-005, confirmed via implementation)
+- **C-03**: Database uses **Azure SQL Database** (Serverless tier planned for production; local development uses LocalDB)
+- **C-04**: Document storage uses **Azure Blob Storage** (SDK integrated; local development uses Azurite storage emulator via `UseDevelopmentStorage=true`)
+- **C-05**: Authentication integrates with **Microsoft Entra ID** for all users — Citizens, Permit Officers, and Administrators. No local accounts or separate authentication stores.
+- **C-06**: Application hosted on **Azure App Service** (planned for Milestone 9; current development runs on localhost via Kestrel)
 
 #### Business Constraints
 
@@ -567,18 +568,21 @@ The following items are **explicitly out of scope** for the MVP release:
 
 #### High-Level Timeline (MVP)
 
-| Milestone | Target Date | Dependencies |
-| ----------- | ------------- | -------------- |
-| **Requirements Finalized** | June 15, 2026 | PRD approval (this document) |
-| **Technical Spike & Architecture** | June 30, 2026 | Azure subscription access, Entra ID setup |
-| **UI/UX Mockups Approved** | July 15, 2026 | Stakeholder review (Citizens, Officers, Admins) |
-| **Backend API & Database Schema Complete** | August 15, 2026 | Architecture approval |
-| **Frontend Blazor Components Complete** | September 1, 2026 | Backend API ready |
-| **Integration Testing Complete** | September 15, 2026 | Frontend + Backend complete |
-| **UAT with Stakeholders** | September 30, 2026 | Testing complete, training materials ready |
-| **Go-Live (MVP Launch)** | October 15, 2026 | UAT sign-off, production Azure resources deployed |
-| **Post-Launch Review** | November 15, 2026 | 30 days production metrics |
+| Milestone | Target Date | Status |
+| ----------- | ------------- | ------ |
+| **Requirements Finalized** | June 15, 2026 | ✅ Complete |
+| **Technical Spike & Architecture** | June 30, 2026 | ✅ Complete |
+| **UI/UX Mockups Approved** | July 15, 2026 | ✅ Complete |
+| **Backend API & Database Schema Complete** | August 15, 2026 | ✅ Complete (M1-M4) |
+| **Frontend Blazor Components Complete** | September 1, 2026 | ✅ Complete (M5-M8) |
+| **Integration Testing Complete** | September 15, 2026 | 🟡 In progress |
+| **UAT with Stakeholders** | September 30, 2026 | 🟡 Planned |
+| **Go-Live (MVP Launch)** | October 15, 2026 | 🟡 Planned |
+| **Post-Launch Review** | November 15, 2026 | 🟡 Planned |
 | **M5: Permit Submission** | June 18, 2026 | ✅ Implementation complete — Draft applications, dynamic forms, citizen dashboard, confirmation workflow, email notifications |
+| **M6: Document Management** | July 2026 | ✅ Implementation complete — Azure Blob Storage integration, upload/download, SAS tokens, FileUpload field type |
+| **M7: Officer Review Workflow** | July 2026 | ✅ Implementation complete — Officer dashboard, application review, approve/reject/request-info workflow |
+| **M8: Administration Portal** | July 2026 | ✅ Implementation complete — Admin dashboard, permit type management, user directory (read-only), audit log viewer, email template administration, application explorer |
 
 #### Critical Path
 
@@ -613,6 +617,7 @@ The following items are **explicitly out of scope** for the MVP release:
 2. **Q2**: What is the approval workflow for permits that require multiple officer reviews (e.g., Building + Zoning)?
    - *Impact*: May require workflow engine vs. simple linear approval
    - *Decision needed by*: June 30, 2026 (before architecture finalization)
+   - *Decision*: **Resolved — MVP uses single linear review workflow.** A single officer reviews and makes a decision. Multi-stage approval chains (e.g., Building → Zoning) are deferred to post-MVP. See also [Future Enhancements](#14-future-enhancements-post-mvp).
 
 3. **Q3**: Should rejected applications allow citizens to resubmit with corrections, or must they start a new application?
    - *Impact*: UX flow and database schema (versioning vs. new record)
@@ -633,16 +638,17 @@ The following items are **explicitly out of scope** for the MVP release:
 
 ### 13. References & Related Documents
 
-- **ATLAS Architecture Document**: `docs/architecture/atlas-architecture.md` (to be created)
-- **ATLAS Database Schema**: `docs/design/atlas-database-schema.md` (to be created)
-- **ATLAS UI/UX Mockups**: `docs/design/figma-link-here` (to be created)
-- **Azure Infrastructure (Bicep/Terraform)**: `infra/` directory (to be created)
+- **Current State Architecture**: `docs/architecture/current-state.md` (Post-Milestone 8.1 snapshot)
+- **Architecture Design Documents**: `docs/design/` (C4 context/container diagrams, domain model, data flows)
+- **Architecture Decision Records**: `docs/ADRs/` (ADR-001 through ADR-018)
+- **Developer README**: `README.md` (build, run, test instructions)
+- **Roadmap**: `plans/ROADMAP.md` (strategic planning and milestones)
 - **.NET 9 Documentation**: <https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-9>
 - **Blazor Documentation**: <https://learn.microsoft.com/en-us/aspnet/core/blazor/>
 - **Azure SQL Database Documentation**: <https://learn.microsoft.com/en-us/azure/azure-sql/>
 - **Azure Blob Storage Documentation**: <https://learn.microsoft.com/en-us/azure/storage/blobs/>
 - **Microsoft Entra ID Documentation**: <https://learn.microsoft.com/en-us/entra/>
-- **PRD Template**: `docs/PRDs/prd-template.md` (this document follows that template)
+- **PRD Template**: `docs/PRDs/prd-template.md`
 - **Success Metrics Snippet**: `.github/prompts/snippets/prd-success-metrics.snippet.md`
 
 ---

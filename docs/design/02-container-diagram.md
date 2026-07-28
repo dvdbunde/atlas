@@ -4,6 +4,8 @@
 
 This diagram shows the internal containers (deployable units) that make up ATLAS and how they interact with each other and external systems.
 
+> **Implementation Note**: This diagram shows the target Azure-hosted architecture. Currently, Azure SQL Database → LocalDB, Azure Blob Storage → Azurite emulator, and Email Service → SMTP (local). The container structure is identical — only service implementations differ.
+
 ## Container Diagram details
 
 ```mermaid
@@ -53,13 +55,17 @@ C4Container
 
 **Features by Role:**
 
-- **Citizens**: Application form, document upload, status dashboard
-- **Officers**: Review dashboard, application details, approval/rejection workflow
-- **Administrators**: Administration Portal (Milestone 8 Phase A1 foundation, extended in Phase A2)
-  - **Administration Dashboard** (implemented): lightweight summary counts (permit types, applications, officers, active email templates) via the `GetAdminDashboardQuery` CQRS query
-  - **Permit Type Administration** (implemented in Phase A2): browse, inspect, and manage operational settings of existing Permit Types via `GetPermitTypesQuery`, `GetPermitTypeByIdQuery`, `UpdatePermitTypeCommand`, and `DeactivatePermitTypeCommand`
-  - **Planned areas** (placeholder pages, no business logic yet): Dynamic Forms, Email Templates, Reference Data, Officers, System Settings
-  - Authorization: restricted to the `Admin` Entra ID role; Officers, Citizens, and anonymous users are denied (user management delegated to Entra ID)
+- **Citizens**: Application form, document upload, status dashboard, application detail with timeline, draft save/resume, info-request response
+- **Officers**: Review dashboard with search/filter, application details, approve/reject/request-info workflow, internal notes, activity timeline
+- **Administrators**: Full Administration Portal with:
+  - **Administration Dashboard**: summary counts (permit types, applications, officers, active email templates) via `GetAdminDashboardQuery`
+  - **Permit Type Administration**: browse, inspect, create, and manage permit types via the Permit Type Designer (fields, document requirements, live preview)
+  - **User Directory** (read-only): list and detail views synchronized from Entra ID; no role editing (ADR-013)
+  - **Audit Log Viewer**: read-only, filterable view over `GetAuditLogsQuery`
+  - **Email Template Administration**: list/edit rendered email templates
+  - **Application Explorer**: read-only view of all applications
+  - **Placeholder pages** (no business logic): Dynamic Forms, Reference Data, System Settings, Officers
+  - Authorization: restricted to `Admin` Entra ID role
 
 ### 2. ASP.NET Core API (Application Layer)
 
@@ -72,8 +78,8 @@ C4Container
 
 **API Structure (CQRS):**
 
-- **Commands** (Write): `CreateApplication`, `ApproveApplication`, `RejectApplication`, `CreatePermitType`
-- **Queries** (Read): `GetApplicationById`, `GetApplicationsByStatus`, `GetPermitTypes`
+- **Commands** (Write): `CreateApplication`, `ApproveApplication`, `RejectApplication`, `CreatePermitType`, `UpdatePermitType`, `DeactivatePermitType`, `UploadDocument`, `ResubmitApplication`, `RequestInfoAction`
+- **Queries** (Read): `GetApplicationById`, `GetApplicationsByStatus`, `GetPermitTypes`, `GetUsers`, `GetAuditLogs`, `GetAdminDashboard`
 
 ### 3. Domain Layer (Business Logic)
 
@@ -86,8 +92,8 @@ C4Container
 
 **Core Concepts:**
 
-- `Application` (Aggregate Root), `PermitType`, `Document`, `Review`, `User`
-- Domain Events: `ApplicationSubmitted`, `ApplicationApproved`, `DocumentUploaded`
+- `Application` (Aggregate Root), `PermitType`, `Document`, `Review`, `User`, `AuditLog`
+- Domain Events: `ApplicationSubmitted`, `ApplicationApproved`, `ApplicationRejected`, `ApplicationInfoRequested`, `DocumentUploaded`, `PermitTypeActivated`, `PermitTypeDeactivated`
 
 ### 4. Infrastructure Layer (Data Access & External Services)
 
@@ -100,20 +106,19 @@ C4Container
 
 **Integrations:**
 
-- **EF Core** → Azure SQL Database (relational data)
-- **Azure.Storage.Blobs** → Azure Blob Storage (documents)
-- **Azure.Identity** → Microsoft Entra ID (authentication)
-- **SendGrid/Azure.Communication** → Email Service (notifications)
+- **EF Core** → SQL Server (LocalDB dev, Azure SQL target)
+- **Azure.Storage.Blobs** → Azure Blob Storage (Azurite dev, production target)
+- **Microsoft Entra ID** → JWT Bearer authentication (all environments)
 
 ## Supported Experiences (Blazor Portals)
 
-ATLAS exposes three role-scoped Blazor experiences, all hosted within the single Blazor Web App container and sharing the common app shell, navigation, styling, and Entra ID authentication. Each experience is gated by an authorization policy derived from the user's Entra ID role (`UserRole`: Citizen = 1, Officer = 2, Admin = 3).
+ATLAS exposes three role-scoped Blazor experiences, all hosted within the single Blazor Web App container and sharing the common app shell, navigation, styling, and Entra ID authentication. Each experience is gated by an authorization policy derived from the user's Entra ID role.
 
-| Experience | Route Prefix | Intended Audience | Authorization Boundary | Status (Milestone 8 Phase A1) |
-| ----------- | ------------ | ----------------- | ---------------------- | ----------------------------- |
-| **Citizen Portal** | `/` (root) | Members of the public applying for permits | `Citizen` role (policy `Citizen`) | Established in earlier milestones |
-| **Officer Portal** | `/officer/*` | Permit officers reviewing applications | `Officer` role (policy `Officer`, or `OfficerOrAdmin`) | Established in earlier milestones |
-| **Administration Portal** | `/admin/*` | System administrators | `Admin` role (policy `Admin`) | Foundation implemented this phase |
+| Experience | Route Prefix | Intended Audience | Authorization Boundary | Status |
+| ----------- | ------------ | ----------------- | ---------------------- | ------ |
+| **Citizen Portal** | `/` (root) | Members of the public applying for permits | `Citizen` role | ✅ Implemented |
+| **Officer Portal** | `/officer/*` | Permit officers reviewing applications | `Officer` role | ✅ Implemented |
+| **Administration Portal** | `/admin/*` | System administrators | `Admin` role | ✅ Implemented |
 
 ### Administration Portal (Milestone 8 Phase A1)
 

@@ -8,23 +8,26 @@ ADRs document significant architectural decisions along with their context and c
 
 ## Index
 
-Add links to ADRs in sequential order using the naming convention \dr-NNNN-title-slug.md\.
+Add links to ADRs in sequential order using the naming convention `adr-NNNN-title-slug.md`.
 
-- [ADR-0001: Clean Architecture](adr-001-clean-architecture.md)
-- [ADR-0002: CQRS with MediatR](adr-002-cqrs-mediatr.md)
-- [ADR-0003: Azure SQL & Blob Storage](adr-003-azure-sql-blob.md)
-- [ADR-0004: Domain-Driven Design](adr-004-domain-driven-design.md)
-- [ADR-0005: Blazor Web App](adr-005-blazor-web-app.md)
-- [ADR-0006: GitHub Actions](adr-006-github-actions.md)
-- [ADR-0007: Bicep](adr-007-bicep.md)
-- [ADR-0008: Microsoft Entra ID](adr-008-microsoft-entra-id.md)
-- [ADR-0009: Azure Key Vault](adr-009-azure-key-vault.md)
-- [ADR-0010: Row-Level Security](adr-010-row-level-security.md)
-- [ADR-0011: Data Lifecycle Management](adr-011-data-lifecycle-management.md)
-- [ADR-0012: Generated API Layer with NSwag](adr-012-generated-api-layer.md)
-- [ADR-0013: Entra ID as Single Source of Truth for User Identity](adr-013-entra-single-source-of-truth.md)
-- [ADR-0014: Dynamic Permit Form Storage Strategy](adr-014-dynamic-permit-form-storage.md)
-- [ADR-0015: Document Storage Architecture](adr-015-document-storage-architecture.md)
+- [ADR-0001: Clean Architecture](adr-001-clean-architecture.md) ✅ Implemented
+- [ADR-0002: CQRS with MediatR](adr-002-cqrs-mediatr.md) ✅ Implemented
+- [ADR-0003: Azure SQL & Blob Storage](adr-003-azure-sql-blob.md) ✅ Implemented (LocalDB dev, Azurite local storage)
+- [ADR-0004: Domain-Driven Design](adr-004-domain-driven-design.md) ✅ Implemented
+- [ADR-0005: Blazor Server Web App](adr-005-blazor-web-app.md) ✅ Implemented
+- [ADR-0006: GitHub Actions](adr-006-github-actions.md) ✅ Implemented (CI only; CD deferred)
+- [ADR-0007: Bicep Infrastructure as Code](adr-007-bicep.md) 🟡 Accepted, not implemented (deferred to Milestone 9)
+- [ADR-0008: Microsoft Entra ID](adr-008-microsoft-entra-id.md) ✅ Implemented
+- [ADR-0009: Azure Key Vault](adr-009-azure-key-vault.md) 🟡 Partially Implemented (packages installed, full integration deferred to M9)
+- [ADR-0010: Row-Level Security](adr-010-row-level-security.md) 🟡 Accepted (app-layer filtering implemented; RLS deferred)
+- [ADR-0011: Data Lifecycle Management](adr-011-data-lifecycle-management.md) 🟡 Proposed (not yet implemented)
+- [ADR-0012: Generated API Layer with NSwag](adr-012-generated-api-layer.md) ✅ Implemented
+- [ADR-0013: Entra ID as Single Source of Truth for User Identity](adr-013-entra-single-source-of-truth.md) ✅ Implemented
+- [ADR-0014: Dynamic Permit Form Storage Strategy](adr-014-dynamic-permit-form-storage.md) ✅ Implemented
+- [ADR-0015: Document Storage Architecture](adr-015-document-storage-architecture.md) ✅ Implemented
+- [ADR-0016: Transaction Pipeline via MediatR TransactionBehavior](adr-016-transaction-behavior.md) ✅ Implemented
+- [ADR-0017: Citizen Editing After Information Request](adr-017-citizen-editing-after-information-request.md) ✅ Implemented
+- [ADR-0018: Shared Application Details Layout with RenderFragment Composition](adr-018-shared-application-details-layout.md) ✅ Implemented
 
 ## ADR Template
 

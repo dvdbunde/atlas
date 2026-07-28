@@ -4,6 +4,8 @@
 
 This document illustrates the key data flows and process interactions in ATLAS using sequence diagrams. These flows show how data moves between the Blazor Web App, ASP.NET Core API, Domain Layer, and external systems.
 
+> **Implementation Note**: These diagrams show the target Azure-hosted architecture. Currently, Azure SQL Database → LocalDB, Azure Blob Storage → Azurite emulator, and Email Service → local SMTP (Smtp4Dev/Papercut). The flow structure and interfaces are identical — only the endpoint addresses differ.
+
 ## Prerequisites
 
 - **User is authenticated** via Microsoft Entra ID (all user types — Citizen, Officer, Admin)

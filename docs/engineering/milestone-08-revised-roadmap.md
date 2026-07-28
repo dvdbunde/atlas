@@ -1,3 +1,10 @@
+---
+> **⚠️ HISTORICAL DOCUMENT** — All phases of Milestone 8 have been completed as of July 2026.
+> This revised roadmap is preserved for historical reference. A4 (User Directory), A5 (Audit Log Viewer),
+> A6 (Reference Data — conformant no-op), and A7 (Email Template Administration) have all been delivered.
+> See [ROADMAP.md](../../plans/ROADMAP.md) for current status and upcoming milestones.
+---
+
 # Milestone 8 — Revised Roadmap (Remaining Phases)
 
 ## Context & Method
@@ -14,10 +21,10 @@ The original Milestone 8 plan was written before A1–A3 were implemented. Those
 | A2 | Permit Type Administration | ✅ Done | List/detail/settings, deactivate |
 | A2.5 | PermitType Aggregate Evolution | ✅ Done | Field/docreq editing operations |
 | A3 | Complete Permit Type Designer | ✅ Done | Fields, Doc Reqs, Live Preview |
-| **A4** | **User Directory (Entra-synchronized)** | 🟦 Revised | **Read-only** user directory (list + detail) per ADR-013; no role/activation writes |
-| **A5** | **Audit Log Viewer** | 🟦 Simplified | Read-only viewer over existing `GetAuditLogsQuery` |
-| **A6** | **Reference Data & System Settings** | 🟥 Reduced / Conformant | No new subsystem — see `docs/design/a6-rescope-proposal.md` |
-| **A7** | **Email Template Administration** | 🟦 Revised | Admin UI over existing `IEmailTemplateRenderer` (final config-admin phase) |
+| **A4** | **User Directory (Entra-synchronized)** | ✅ Done | **Read-only** user directory (list + detail) per ADR-013 |
+| **A5** | **Audit Log Viewer** | ✅ Done | Read-only viewer over existing `GetAuditLogsQuery` |
+| **A6** | **Reference Data & System Settings** | ✅ Done | Reduced / Conformant — no new subsystem (see `docs/design/a6-rescope-proposal.md`) |
+| **A7** | **Email Template Administration** | ✅ Done | Admin UI over existing `IEmailTemplateRenderer` |
 
 **Eliminated from original plan:**
 

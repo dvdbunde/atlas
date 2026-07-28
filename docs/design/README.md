@@ -10,9 +10,11 @@ ATLAS is built using:
 - **Domain-Driven Design (DDD)** - Rich domain models with aggregates, entities, and value objects
 - **CQRS (Command Query Responsibility Segregation)** - Separate models for reads and writes using MediatR
 - **ASP.NET Core API** - RESTful backend services
-- **Blazor Web App** - Interactive web frontend
-- **EF Core** - ORM for Azure SQL Database
-- **Azure Blob Storage** - Document storage
+- **Blazor Server** - Interactive web frontend
+- **EF Core** - ORM for SQL Server (LocalDB development, Azure SQL target)
+- **Azure Blob Storage** - Document storage (Azurite emulator for local development)
+
+> **Note on Deployment**: The diagrams in this directory show Azure infrastructure (Azure SQL, Blob Storage, App Service, etc.) as the intended production target. As of Milestone 8.1, ATLAS runs locally using LocalDB (SQL Server), Azurite (Blob Storage emulator), and Kestrel (ASP.NET Core). Azure deployment is planned for Milestone 9. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
 
 ## Document Index
 

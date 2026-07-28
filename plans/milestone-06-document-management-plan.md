@@ -1,9 +1,15 @@
+---
+> **⚠️ HISTORICAL DOCUMENT** — Milestone 6 (Document Management) was completed successfully in July 2026.
+> This plan document is preserved for historical reference. All phases D1–D8 have been implemented.
+> See [ROADMAP.md](../ROADMAP.md) for current status and upcoming milestones.
+---
+
 # Milestone 6: Document Management
 
 **Project**: ATLAS (Automated Tracking & Licensing Application System)
 **Version**: 1.0
 **Date**: June 23, 2026
-**Status**: ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+**Status**: ✅ Complete
 
 ## Objective
 

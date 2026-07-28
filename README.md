@@ -12,39 +12,33 @@ ATLAS replaces paper-based and disconnected permit processing with a unified dig
 
 ## Technology Stack
 
-ATLAS is built with modern Microsoft technologies and hosted on Azure:
+ATLAS is built with modern Microsoft technologies, targeting Azure for production deployment:
 
 - **.NET 9** with **ASP.NET Core** (backend framework)
-- **Blazor** (interactive web UI)
-- **Azure SQL Database** (relational data storage)
-- **Azure Blob Storage** (document storage)
+- **Blazor Server** (interactive web UI)
+- **SQL Server** (Azure SQL Database target; LocalDB for local development)
+- **Azure Blob Storage** (document storage; Azurite emulator for local development)
 - **Microsoft Entra ID** (authentication & authorization)
-- **Azure App Service** (hosting)
+- **Azure App Service** (target hosting platform; Milestone 9)
 
 ## Project Status
 
-**Current Milestone**: Milestone 5 - Permit Submission ✅ IMPLEMENTED
+**Current Milestone**: Milestone 8 — Administration Portal ✅ IMPLEMENTED
+
+**Next Milestone**: Milestone 9 — Cloud Infrastructure & Azure Enablement (see [ROADMAP.md](plans/ROADMAP.md))
 
 **Completed Features**:
 
-- ✅ Clean Architecture foundation (Milestone 1)
-- ✅ Domain model with DDD patterns (Milestone 2)
-- ✅ Entity Framework Core with Azure SQL Database
-- ✅ CQRS pattern with MediatR
-- ✅ Repository pattern implementation
-- ✅ FluentValidation for command validation
-- ✅ Microsoft Entra ID authentication & authorization (Milestone 4)
-- ✅ Permit Submission workflow (Milestone 5):
-- ✅Browse permit types with dynamic form fields
-- ✅ Create and save draft applications
-- ✅Edit draft applications with dynamic forms
-- ✅ Submit applications for review
-- ✅ Citizen dashboard with status overview
-- ✅ Application detail view with status history
-- ✅ Email notifications on status changes (SMTP)
-- ✅ Confirmation workflow after submission
+- ✅ **M1: Solution Foundation** — Clean Architecture with 4 layers (Domain, Application, Infrastructure, API), GitHub Actions CI pipeline
+- ✅ **M2: Domain Model** — DDD entities, aggregates, value objects, domain events with rich business logic
+- ✅ **M3: Database Persistence** — EF Core with LocalDB, repository pattern, UnitOfWork, data migrations
+- ✅ **M4: Authentication** — Microsoft Entra ID with role-based authorization (Citizen, Officer, Admin)
+- ✅ **M5: Permit Submission** — Draft applications, dynamic forms, citizen dashboard, application detail/edit, confirmation workflow, email notifications
+- ✅ **M6: Document Management** — Azure Blob Storage integration, upload/download, SAS token security, FileUpload field type
+- ✅ **M7: Officer Review Workflow** — Officer dashboard, application review, approve/reject/request-info workflow, internal notes, activity timeline
+- ✅ **M8: Administration Portal** — Admin dashboard, permit type designer, User Directory (read-only), Audit Log viewer, Email Template administration, Application Explorer
 
-**Next Milestone**: Milestone 6 - Document Management (see [ROADMAP.md](plans/ROADMAP.md) for details)
+**Next Milestone**: Milestone 9 — Cloud Infrastructure & Azure Enablement (see [ROADMAP.md](plans/ROADMAP.md))
 
 ## Who this is for
 
@@ -86,9 +80,48 @@ This repository contains both the ATLAS application code and comprehensive docum
 
 1. **Understand the project**: Read the [ATLAS MVP PRD](docs/PRDs/atlas-mvp-prd.md) for requirements and scope
 2. **Set up development environment**: Ensure you have .NET 9 SDK installed (run `dotnet --list-sdks` to verify)
-3. **Review architecture**: Check [architecture documentation](docs/architecture/) when available
-4. **Review coding standards**: Read [backend instructions](.github/instructions/backend.instructions.md) and [frontend instructions](.github/instructions/frontend.instructions.md)
-5. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) for current priorities
+3. **Configure local database**: ATLAS uses LocalDB for development. Run `dotnet ef database update` from the Infrastructure project to create the schema
+4. **Configure authentication**: See [Authentication Setup](#authentication-setup) below for Microsoft Entra ID configuration
+5. **Azure Storage emulation**: Document upload/download uses Azure Blob Storage. For local development, Azurite storage emulator is used automatically (configured in `appsettings.Development.json`). Install Azurite via `npm install -g azurite` and start it with `azurite`
+6. **Review architecture**: See [architecture documentation](docs/architecture/)
+7. **Review coding standards**: Read [backend instructions](.github/instructions/backend.instructions.md) and [frontend instructions](.github/instructions/frontend.instructions.md)
+8. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) for current priorities
+
+## Authentication Setup
+
+ATLAS uses Microsoft Entra ID for authentication. Local development requires:
+
+1. An Entra ID tenant with app registrations for the Blazor UI and API
+2. App roles configured: `Citizen`, `Officer`, `Admin`
+3. Configuration in `src/ATLAS.API/appsettings.json` under the `AzureAd` section:
+   - `TenantId`, `ClientId`, `Audience` for the API
+   - `SwaggerClientId` for Swagger UI OAuth2 flow
+
+See ADR-008 and ADR-013 for architecture details.
+
+## Running Locally
+
+```bash
+# Start the API
+dotnet run --project src/ATLAS.API/
+
+# In a separate terminal, start the Blazor frontend (requires API running)
+dotnet run --project src/ATLAS.Blazor/
+```
+
+The Blazor Server app should be started in a terminal alongside the API.
+
+## Building
+
+```bash
+dotnet build ATLAS.slnx
+```
+
+## Testing
+
+```bash
+dotnet test ATLAS.slnx
+```
 
 ## Development Workflow
 
