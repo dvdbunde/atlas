@@ -12,3 +12,42 @@ Performance & DTO Simplification
 dotnet build --property Warninglevel=0
 dotnet run --project src/ATLAS.Blazor/ --property Warninglevel=0
 
+# Login
+az login
+
+# Verify subscription
+az account show --output table
+
+# Create the Resource Group (first time only)
+az group create `
+    --name atlas-dev-rg `
+    --location westeurope
+
+# Validate the template
+az deployment group validate `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
+
+# Preview the deployment
+az deployment group what-if `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
+
+# Deploy
+az deployment group create `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
+	
+	
+	
+
+az deployment group list `
+    --resource-group atlas-dev-rg `
+    --output table	
+	
+	
+az group delete `
+--name atlas-dev-rg
