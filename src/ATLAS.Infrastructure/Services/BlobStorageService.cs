@@ -27,6 +27,9 @@ namespace ATLAS.Infrastructure.Services
         private readonly BlobContainerClient _containerClient;
         private readonly TimeSpan _sasTokenExpiry;
 
+        /// <summary>
+        /// Constructor using connection string (local development with Azurite).
+        /// </summary>
         public BlobStorageService(IOptions<StorageOptions> options)
         {
             if (options == null)
@@ -47,6 +50,39 @@ namespace ATLAS.Infrastructure.Services
 
             var blobServiceClient = new BlobServiceClient(storageOptions.ConnectionString);
             _containerClient = blobServiceClient.GetBlobContainerClient(storageOptions.ContainerName);
+        }
+
+        /// <summary>
+        /// Constructor using BlobServiceClient (production with Managed Identity).
+        /// </summary>
+        public BlobStorageService(IOptions<StorageOptions> options, BlobServiceClient? blobServiceClient)
+        {
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
+
+            var storageOptions = options.Value;
+
+            if (string.IsNullOrWhiteSpace(storageOptions.ContainerName))
+                throw new InvalidOperationException("Storage:ContainerName must be configured.");
+
+            var expiryHours = storageOptions.SasTokenExpiryHours > 0
+                ? storageOptions.SasTokenExpiryHours
+                : 1;
+            _sasTokenExpiry = TimeSpan.FromHours(expiryHours);
+
+            if (blobServiceClient != null)
+            {
+                _containerClient = blobServiceClient.GetBlobContainerClient(storageOptions.ContainerName);
+            }
+            else
+            {
+                // Fallback to connection string if BlobServiceClient not registered
+                if (string.IsNullOrWhiteSpace(storageOptions.ConnectionString))
+                    throw new InvalidOperationException("Either a BlobServiceClient or a Storage:ConnectionString must be configured.");
+
+                var fallbackClient = new BlobServiceClient(storageOptions.ConnectionString);
+                _containerClient = fallbackClient.GetBlobContainerClient(storageOptions.ContainerName);
+            }
         }
 
                /// <summary>

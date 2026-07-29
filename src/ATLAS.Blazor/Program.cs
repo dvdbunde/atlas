@@ -2,12 +2,46 @@ using ATLAS.Application.Queries.Documents;
 using ATLAS.Blazor.Components;
 using ATLAS.Infrastructure;
 using ATLAS.Infrastructure.Data.SeedData;
+using Azure.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Azure Application Insights telemetry (skip in Testing)
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
+
+// Azure Key Vault configuration provider (production only)
+var keyVaultName = builder.Configuration["KeyVault:VaultName"];
+Uri? keyVaultUri = null;
+if (!string.IsNullOrWhiteSpace(keyVaultName))
+{
+    keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+    builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+}
+
+// Health checks
+var healthChecks = builder.Services.AddHealthChecks();
+
+var storageAccountName = builder.Configuration["Storage:AccountName"];
+if (!string.IsNullOrWhiteSpace(storageAccountName))
+{
+    healthChecks.AddAzureBlobStorage("AccountName=" + storageAccountName,
+        name: "blob-storage", tags: ["storage", "azure"]);
+}
+
+if (keyVaultUri != null)
+{
+    healthChecks.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential(),
+        options => { },
+        name: "key-vault", tags: ["secrets", "azure"]);
+}
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -75,6 +109,28 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();   // Authenticate using OpenID Connect cookies
 app.UseAuthorization();    // Enforce authorization policies
+
+// Map health check endpoints
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(
+            new { status = report.Status.ToString(), totalDuration = report.TotalDuration.TotalMilliseconds }));
+    }
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("storage") || check.Tags.Contains("secrets"),
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(
+            new { status = report.Status.ToString(), totalDuration = report.TotalDuration.TotalMilliseconds }));
+    }
+});
 
 app.UseAntiforgery();
 

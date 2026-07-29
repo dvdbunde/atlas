@@ -7,7 +7,7 @@ namespace ATLAS.Infrastructure.Tests.Options
     public class StorageOptionsValidationTests
     {
         [Fact]
-        public void ConnectionString_ShouldBeRequired()
+        public void ConnectionString_ShouldBeOptional()
         {
             var options = new StorageOptions
             {
@@ -17,7 +17,7 @@ namespace ATLAS.Infrastructure.Tests.Options
             };
 
             var results = ValidateModel(options);
-            Assert.Contains(results, r => r.MemberNames.Contains(nameof(StorageOptions.ConnectionString)));
+            Assert.DoesNotContain(results, r => r.MemberNames.Contains(nameof(StorageOptions.ConnectionString)));
         }
 
         [Fact]

@@ -16,9 +16,9 @@ namespace ATLAS.Infrastructure.Options
         /// <summary>
         /// Azure Blob Storage connection string.
         /// Use "UseDevelopmentStorage=true" for Azurite local development.
+        /// Null/empty in production where Managed Identity is used.
         /// </summary>
-        [Required(ErrorMessage = "Storage:ConnectionString is required.")]
-        public string ConnectionString { get; set; } = string.Empty;
+        public string? ConnectionString { get; set; }
 
         /// <summary>
         /// Name of the blob container for document storage.
