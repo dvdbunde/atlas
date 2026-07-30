@@ -29,9 +29,9 @@ resource plan 'Microsoft.Web/serverfarms@2023-12-01' = {
     name: skuSize
     capacity: capacity
   }
-  kind: 'app'
+  kind: 'linux'
   properties: {
-    reserved: false // Windows
+    reserved: true // Linux
   }
 }
 

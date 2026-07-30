@@ -18,8 +18,12 @@ var effectiveSuffix = !empty(uniqueSuffix) ? uniqueSuffix : take(replace(subscri
 var resourceGroupName = 'atlas-${environment}-rg'
 
 // -- Compute ----------------------------------------------------------------
-var appServicePlanName = 'atlas-${environment}-plan'
-var appServiceName     = 'atlas-${environment}-app${effectiveSuffix}'
+var appServicePlanName    = 'atlas-${environment}-plan'
+var apiAppServiceName     = 'atlas-api-${environment}'
+var blazorAppServiceName  = 'atlas-blazor-${environment}'
+
+// -- Container Registry -----------------------------------------------------
+var containerRegistryName = 'atlas-acr-pxto'
 
 // -- Database ---------------------------------------------------------------
 var sqlServerName   = 'atlas${environment}sql${effectiveSuffix}'
@@ -31,9 +35,6 @@ var storageAccountName = replace('atlas${environment}storage${effectiveSuffix}',
 // -- Security ---------------------------------------------------------------
 var keyVaultName = 'atlas${environment}kv${effectiveSuffix}'
 
-// -- Identity ---------------------------------------------------------------
-var managedIdentityName = 'atlas-${environment}-mi'
-
 // -- Observability ----------------------------------------------------------
 var logAnalyticsWorkspaceName = 'atlas-${environment}-logs'
 var applicationInsightsName   = 'atlas${environment}appi'
@@ -43,11 +44,12 @@ var applicationInsightsName   = 'atlas${environment}appi'
 // ---------------------------------------------------------------------------
 output resourceGroupName          string = resourceGroupName
 output appServicePlanName         string = appServicePlanName
-output appServiceName             string = appServiceName
+output apiAppServiceName          string = apiAppServiceName
+output blazorAppServiceName       string = blazorAppServiceName
+output containerRegistryName      string = containerRegistryName
 output sqlServerName              string = sqlServerName
 output sqlDatabaseName            string = sqlDatabaseName
 output storageAccountName         string = storageAccountName
 output keyVaultName               string = keyVaultName
-output managedIdentityName        string = managedIdentityName
 output logAnalyticsWorkspaceName  string = logAnalyticsWorkspaceName
 output applicationInsightsName    string = applicationInsightsName

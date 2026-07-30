@@ -51,6 +51,15 @@ param logAnalyticsRetentionInDays int = 30
 @description('Enable CanNotDelete resource lock at resource group scope (recommended for production)')
 param enableResourceLock bool = false
 
+@description('Container Registry login server (e.g. atlasacr.azurecr.io). Override for production.')
+param acrLoginServer string = ''
+
+@description('API container image tag. Defaults to commit SHA in CI/CD.')
+param apiImageTag string = 'latest'
+
+@description('Blazor container image tag. Defaults to commit SHA in CI/CD.')
+param blazorImageTag string = 'latest'
+
 // -- Central naming & tagging -----------------------------------------------
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
@@ -89,16 +98,6 @@ module appInsights 'modules/appinsights.bicep' = {
   }
 }
 
-// -- User-Assigned Managed Identity ------------------------------------------
-module managedIdentity 'modules/managedidentity.bicep' = {
-  name: '${deployment().name}-managedidentity'
-  params: {
-    name: names.outputs.managedIdentityName
-    location: location
-    tags: tags.outputs.tags
-  }
-}
-
 // -- App Service Plan --------------------------------------------------------
 module appServicePlan 'modules/appserviceplan.bicep' = {
   name: '${deployment().name}-appserviceplan'
@@ -112,14 +111,33 @@ module appServicePlan 'modules/appserviceplan.bicep' = {
   }
 }
 
-// -- App Service -------------------------------------------------------------
-module appService 'modules/appservice.bicep' = {
-  name: '${deployment().name}-appservice'
+// -- API App Service (Linux Container) ---------------------------------------
+module apiAppService 'modules/appservice.bicep' = {
+  name: '${deployment().name}-api-appservice'
   params: {
-    name: names.outputs.appServiceName
+    name: names.outputs.apiAppServiceName
     location: location
     tags: tags.outputs.tags
     planId: appServicePlan.outputs.id
+    healthCheckPath: '/health'
+    acrLoginServer: acrLoginServer
+    imageRepository: 'atlas-api'
+    imageTag: apiImageTag
+  }
+}
+
+// -- Blazor App Service (Linux Container) ------------------------------------
+module blazorAppService 'modules/appservice.bicep' = {
+  name: '${deployment().name}-blazor-appservice'
+  params: {
+    name: names.outputs.blazorAppServiceName
+    location: location
+    tags: tags.outputs.tags
+    planId: appServicePlan.outputs.id
+    healthCheckPath: '/'
+    acrLoginServer: acrLoginServer
+    imageRepository: 'atlas-blazor'
+    imageTag: blazorImageTag
   }
 }
 
@@ -183,11 +201,57 @@ resource resourceLock 'Microsoft.Authorization/locks@2020-05-01' = if (enableRes
   }
 }
 
+// -- Azure Container Registry ------------------------------------------------
+module containerRegistry 'modules/containerregistry.bicep' = {
+  name: '${deployment().name}-acr'
+  params: {
+    name: names.outputs.containerRegistryName
+    location: location
+    tags: tags.outputs.tags
+  }
+}
+
+// Reference the existing ACR for resource-scoped role assignments.
+// Uses the deterministic ACR name (compile-time constant) to avoid BCP120.
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: 'atlas-acr-pxto'
+}
+
+// -- AcrPull: API App Service ------------------------------------------------
+resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid('atlas-acr-pxto', 'api-acrpull', subscription().subscriptionId)
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    principalId: apiAppService.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- AcrPull: Blazor App Service ---------------------------------------------
+resource blazorAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid('atlas-acr-pxto', 'blazor-acrpull', subscription().subscriptionId)
+  scope: acr
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    principalId: blazorAppService.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // -- Outputs -----------------------------------------------------------------
 output resourceGroupName            string = names.outputs.resourceGroupName
-output appServiceName               string = names.outputs.appServiceName
-output appServiceResourceId         string = appService.outputs.id
-output appServiceDefaultHostName    string = appService.outputs.defaultHostName
+output apiAppServiceName            string = names.outputs.apiAppServiceName
+output apiAppServiceResourceId      string = apiAppService.outputs.id
+output apiHostname                  string = apiAppService.outputs.defaultHostName
+output apiPrincipalId               string = apiAppService.outputs.principalId
+output blazorAppServiceName         string = names.outputs.blazorAppServiceName
+output blazorAppServiceResourceId   string = blazorAppService.outputs.id
+output blazorHostname               string = blazorAppService.outputs.defaultHostName
+output blazorPrincipalId            string = blazorAppService.outputs.principalId
+output containerRegistryName        string = names.outputs.containerRegistryName
+output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
+output containerRegistryResourceId  string = containerRegistry.outputs.id
 output appServicePlanName           string = names.outputs.appServicePlanName
 output sqlServerName                string = names.outputs.sqlServerName
 output sqlServerFqdn                string = sqlServer.outputs.fullyQualifiedDomainName
@@ -199,7 +263,4 @@ output keyVaultUri                  string = keyVault.outputs.vaultUri
 output keyVaultTenantId             string = subscription().tenantId
 output applicationInsightsName      string = names.outputs.applicationInsightsName
 output applicationInsightsConnectionString string = appInsights.outputs.connectionString
-output managedIdentityName          string = names.outputs.managedIdentityName
-output managedIdentityPrincipalId   string = managedIdentity.outputs.principalId
-output managedIdentityClientId      string = managedIdentity.outputs.clientId
 output logAnalyticsWorkspaceName    string = names.outputs.logAnalyticsWorkspaceName
