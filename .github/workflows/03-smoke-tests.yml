@@ -1,0 +1,44 @@
+# --------------------------------------------------------------------------
+# Smoke Tests
+# Post-deployment validation of health, API, and Blazor endpoints.
+# Uses jq for robust JSON parsing (pre-installed on ubuntu-latest).
+# --------------------------------------------------------------------------
+
+name: 03 - Smoke Tests
+
+on:
+  workflow_run:
+    workflows: [02 - Deploy Dev]
+    types: [completed]
+    branches: [main]
+
+env:
+  API_BASE_URL: ${{ vars.API_BASE_URL }}
+  BLAZOR_BASE_URL: ${{ vars.BLAZOR_BASE_URL }}
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: dev
+    steps:
+      - name: Check liveness
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_BASE_URL }}/health/live)
+          test "$STATUS" = "200" || (echo "::error::Liveness check failed ($STATUS)"; exit 1)
+      - name: Check readiness
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_BASE_URL }}/health/ready)
+          test "$STATUS" = "200" || (echo "::error::Readiness check failed ($STATUS)"; exit 1)
+      - name: Verify health response
+        run: |
+          STATUS=$(curl -s ${{ env.API_BASE_URL }}/health/live | jq -r '.status')
+          test "$STATUS" = "Healthy" || (echo "::error::Health check status is $STATUS"; exit 1)
+      - name: Check Blazor
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.BLAZOR_BASE_URL }})
+          test "$STATUS" = "200" || (echo "::error::Blazor check failed ($STATUS)"; exit 1)
+      - name: Check API endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_BASE_URL }}/api/applications)
+          test "$STATUS" = "401" -o "$STATUS" = "200" || (echo "::error::API endpoint check failed ($STATUS)"; exit 1)
