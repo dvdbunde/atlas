@@ -18,7 +18,7 @@ param adminLogin string
 @secure()
 param adminLoginPassword string
 
-resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2025-01-01' = {
   name: name
   location: location
   tags: tags

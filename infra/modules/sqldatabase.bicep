@@ -31,7 +31,7 @@ param minCapacity int = 1
 
 var databaseName = '${serverName}/${name}'
 
-resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
+resource sqlDatabase 'Microsoft.Sql/servers/databases@2025-01-01' = {
   name: databaseName
   location: location
   tags: tags

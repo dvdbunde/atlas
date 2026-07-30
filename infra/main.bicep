@@ -51,9 +51,6 @@ param logAnalyticsRetentionInDays int = 30
 @description('Enable CanNotDelete resource lock at resource group scope (recommended for production)')
 param enableResourceLock bool = false
 
-@description('Container Registry login server (e.g. atlasacr.azurecr.io). Override for production.')
-param acrLoginServer string = ''
-
 @description('API container image tag. Defaults to commit SHA in CI/CD.')
 param apiImageTag string = 'latest'
 
@@ -111,6 +108,24 @@ module appServicePlan 'modules/appserviceplan.bicep' = {
   }
 }
 
+// -- Azure Container Registry ------------------------------------------------
+module containerRegistry 'modules/containerregistry.bicep' = {
+  name: '${deployment().name}-acr'
+  params: {
+    name: names.outputs.containerRegistryName
+    location: location
+    tags: tags.outputs.tags
+  }
+}
+
+// Reference the existing ACR for resource-scoped role assignments.
+// Bicep requires the `name` to be a compile-time constant for resource-scoped
+// role assignments. The ACR name is deterministic from the naming module.
+var acrName = 'atlas-acr-pxto'
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: acrName
+}
+
 // -- API App Service (Linux Container) ---------------------------------------
 module apiAppService 'modules/appservice.bicep' = {
   name: '${deployment().name}-api-appservice'
@@ -120,7 +135,7 @@ module apiAppService 'modules/appservice.bicep' = {
     tags: tags.outputs.tags
     planId: appServicePlan.outputs.id
     healthCheckPath: '/health'
-    acrLoginServer: acrLoginServer
+    acrLoginServer: containerRegistry.outputs.loginServer
     imageRepository: 'atlas-api'
     imageTag: apiImageTag
   }
@@ -135,7 +150,7 @@ module blazorAppService 'modules/appservice.bicep' = {
     tags: tags.outputs.tags
     planId: appServicePlan.outputs.id
     healthCheckPath: '/'
-    acrLoginServer: acrLoginServer
+    acrLoginServer: containerRegistry.outputs.loginServer
     imageRepository: 'atlas-blazor'
     imageTag: blazorImageTag
   }
@@ -201,28 +216,15 @@ resource resourceLock 'Microsoft.Authorization/locks@2020-05-01' = if (enableRes
   }
 }
 
-// -- Azure Container Registry ------------------------------------------------
-module containerRegistry 'modules/containerregistry.bicep' = {
-  name: '${deployment().name}-acr'
-  params: {
-    name: names.outputs.containerRegistryName
-    location: location
-    tags: tags.outputs.tags
-  }
-}
-
-// Reference the existing ACR for resource-scoped role assignments.
-// Uses the deterministic ACR name (compile-time constant) to avoid BCP120.
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: 'atlas-acr-pxto'
-}
+// -- AcrPull role definition (built-in) --------------------------------------
+var acrPullRoleDefinitionId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
 // -- AcrPull: API App Service ------------------------------------------------
-resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid('atlas-acr-pxto', 'api-acrpull', subscription().subscriptionId)
+resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {  
+  name: guid(acrName, 'api-acrpull', subscription().subscriptionId)
   scope: acr
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleDefinitionId)
     principalId: apiAppService.outputs.principalId
     principalType: 'ServicePrincipal'
   }
@@ -230,10 +232,10 @@ resource apiAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 
 // -- AcrPull: Blazor App Service ---------------------------------------------
 resource blazorAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid('atlas-acr-pxto', 'blazor-acrpull', subscription().subscriptionId)
+  name: guid(acrName, 'blazor-acrpull', subscription().subscriptionId)
   scope: acr
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleDefinitionId)
     principalId: blazorAppService.outputs.principalId
     principalType: 'ServicePrincipal'
   }

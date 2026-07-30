@@ -316,6 +316,8 @@ These values should correspond to the resource names defined by the Bicep templa
 
 Because the project uses deterministic naming, these variables can be configured before the infrastructure is provisioned.
 
+The Bicep templates expose apiImageTag and blazorImageTag deployment parameters. During the first deployment these default to latest. Future CI/CD deployments should supply immutable image tags (for example the Git commit SHA) when invoking the Bicep deployment.
+
 ---
 
 ### Phase 1 Checklist
@@ -342,32 +344,64 @@ If the Resource Group is ever deleted and recreated, this entire phase should be
 
 ### Step 6 – Deploy the Azure Infrastructure
 
+If the target Resource Group does not already exist, create it before continuing.
+
+```powershell
+az group create `
+    --name atlas-dev-rg `
+    --location westeurope
+```
+
 Deploy the Infrastructure-as-Code (Bicep) templates.
 
-For example:
-
-```bash
-az deployment sub create \
-    --location westeurope \
-    --template-file infra/main.bicep \
-    --parameters environment=dev
+```powershell
+az deployment group create `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
 ```
+
+If required, supply additional secure parameters (such as the SQL administrator password) during deployment.
 
 Verify that the deployment completes successfully.
 
 The deployment should provision the following resources:
 
-- Resource Group
 - Azure Container Registry
+- Linux App Service Plan
 - Azure App Service (API)
 - Azure App Service (Blazor)
 - Azure SQL Server
 - Azure SQL Database
+- Azure Storage Account
+- Azure Key Vault
 - Application Insights
 - Log Analytics Workspace
-- Managed Identity (if enabled)
+- System Assigned Managed Identity (API App Service)
+- System Assigned Managed Identity (Blazor App Service)
 
 Resolve any deployment errors before continuing.
+
+---
+
+#### Step 6A – Verify Azure Resources
+
+Before continuing, verify that all expected Azure resources have been provisioned successfully.
+
+Confirm that the following resources exist and are in a healthy state:
+
+- Azure Container Registry
+- Linux App Service Plan
+- API App Service
+- Blazor App Service
+- Azure SQL Server
+- Azure SQL Database
+- Azure Storage Account
+- Azure Key Vault
+- Application Insights
+- Log Analytics Workspace
+
+Resolve any provisioning failures before continuing.
 
 ---
 
@@ -531,19 +565,22 @@ Without this role assignment:
 
 ---
 
-### Step 12 – Verify App Service Configuration
+### Step 12 – Validate the Deployment
 
-Verify that the App Services contain the required application settings.
+Verify that the infrastructure and applications have been deployed successfully.
 
-Typical examples include:
+Confirm the following:
 
-- `ASPNETCORE_ENVIRONMENT`
-- Application Insights connection string
-- Microsoft Entra configuration
-- API-specific settings
-- Blazor-specific settings
+- The API App Service is running.
+- The Blazor App Service is running.
+- Both App Services have started successfully using their configured container images.
+- The API endpoint responds successfully (for example, the Swagger endpoint or a health endpoint).
+- The Blazor application loads successfully in a browser.
+- The App Services can pull container images from Azure Container Registry using their System Assigned Managed Identities.
+- Application Insights is receiving telemetry.
+- No deployment errors or startup failures are reported in the App Service logs.
 
-If these settings are provisioned by the Bicep templates, no further action is required.
+Resolve any issues before proceeding with application testing.
 
 ---
 
