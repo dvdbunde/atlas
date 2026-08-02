@@ -384,27 +384,6 @@ Resolve any deployment errors before continuing.
 
 ---
 
-#### Step 6A – Verify Azure Resources
-
-Before continuing, verify that all expected Azure resources have been provisioned successfully.
-
-Confirm that the following resources exist and are in a healthy state:
-
-- Azure Container Registry
-- Linux App Service Plan
-- API App Service
-- Blazor App Service
-- Azure SQL Server
-- Azure SQL Database
-- Azure Storage Account
-- Azure Key Vault
-- Application Insights
-- Log Analytics Workspace
-
-Resolve any provisioning failures before continuing.
-
----
-
 ### Step 7 – Assign Azure Container Registry Permissions
 
 The deployment workflow publishes Docker images to Azure Container Registry.
@@ -413,7 +392,7 @@ The **ATLAS GitHub Actions** deployment identity requires the **AcrPush** role o
 
 #### Retrieve the Azure Container Registry Resource ID
 
-Run the following command to retrieve the Azure Container Registry resource ID:
+Run the following commands to retrieve the Azure Container Registry resource ID, and ATLAS GitHub Actions Application (Client) ID:
 
 ```powershell
 $acrName = "<Azure Container Registry Name>"
@@ -424,6 +403,15 @@ $acrResourceId = az acr show `
     --output tsv
 
 Write-Host "Azure Container Registry Resource ID: $acrResourceId"
+```
+
+```powershell
+$appId = "<ATLAS GitHub Actions Application (Client) ID>"
+
+$spObjectId = az ad sp show `
+    --id $appId `
+    --query id `
+    --output tsv
 ```
 
 #### Assign the AcrPush Role
@@ -517,6 +505,13 @@ dotnet ef database update \
 The deployment workflow executes EF Core migrations from a GitHub-hosted runner.
 
 Verify that the Azure SQL Server firewall allows the runner to connect.
+
+```powershell
+az sql server firewall-rule list `
+    --resource-group atlas-dev-rg `
+    --server atlasdevsqlde96db `
+    --output table
+```
 
 Typical options include:
 

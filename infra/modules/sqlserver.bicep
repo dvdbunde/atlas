@@ -31,6 +31,20 @@ resource sqlServer 'Microsoft.Sql/servers@2025-01-01' = {
   }
 }
 
+// --------------------------------------------------------------------------
+// Allow Azure services (GitHub Actions, App Services, etc.) to connect
+// Development environment only.
+// --------------------------------------------------------------------------
+
+resource allowAzureServices 'Microsoft.Sql/servers/firewallRules@2025-01-01' = {
+  name: 'AllowAzureServices'
+  parent: sqlServer
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
+  }
+}
+
 output id                       string = sqlServer.id
 output name                     string = sqlServer.name
 output fullyQualifiedDomainName string = sqlServer.properties.fullyQualifiedDomainName

@@ -19,11 +19,11 @@ var resourceGroupName = 'atlas-${environment}-rg'
 
 // -- Compute ----------------------------------------------------------------
 var appServicePlanName    = 'atlas-${environment}-plan'
-var apiAppServiceName     = 'atlas-api-${environment}'
-var blazorAppServiceName  = 'atlas-blazor-${environment}'
+var apiAppServiceName     = 'atlas-api-${environment}-${effectiveSuffix}'
+var blazorAppServiceName  = 'atlas-blazor-${environment}-${effectiveSuffix}'
 
 // -- Container Registry -----------------------------------------------------
-var containerRegistryName = 'atlas-acr-pxto'
+var containerRegistryName = 'atlasacr${effectiveSuffix}'
 
 // -- Database ---------------------------------------------------------------
 var sqlServerName   = 'atlas${environment}sql${effectiveSuffix}'

@@ -337,13 +337,13 @@ logAnalyticsWorkspaceName
 API
 
 ```txt
-atlas-api-dev
+atlas-api-dev-de96db
 ```
 
 Blazor
 
 ```txt
-atlas-blazor-dev
+atlas-blazor-dev-de96db
 ```
 
 These names intentionally produce predictable URLs.
@@ -361,7 +361,7 @@ atlas-dev-rg
 ## Azure Container Registry
 
 ```
-atlas-acr-pxto
+atlasacrde96db
 ```
 
 ---
@@ -372,12 +372,12 @@ The following GitHub Environment Variables shall remain valid.
 
 | Variable | Expected Value |
 |------------|----------------|
-| ACR_NAME | atlas-acr-pxto |
+| ACR_NAME | atlasacrde96db |
 | AZURE_RESOURCE_GROUP | atlas-dev-rg |
-| API_APP_NAME | atlas-api-dev |
-| API_BASE_URL | https://atlas-api-dev.azurewebsites.net |
-| BLAZOR_APP_NAME | atlas-blazor-dev |
-| BLAZOR_BASE_URL | https://atlas-blazor-dev.azurewebsites.net |
+| API_APP_NAME | atlas-api-dev-de96db |
+| API_BASE_URL | https://atlas-api-dev-de96db.azurewebsites.net |
+| BLAZOR_APP_NAME | atlas-blazor-dev-de96db |
+| BLAZOR_BASE_URL | https://atlas-blazor-dev-de96db.azurewebsites.net |
 
 The IaC shall be modified to match these values.
 

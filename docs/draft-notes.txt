@@ -51,3 +51,6 @@ az deployment group list `
 	
 az group delete `
 --name atlas-dev-rg
+
+
+SqlServer db admin password: AAA123456XXX$$$

@@ -20,36 +20,51 @@ param tags object
   'Premium'
 ])
 param sku string = 'Basic'
+
+@description('Retention period for untagged manifests (Premium only)')
 param retentionDays int = 7
+
+@description('Enable retention policy (Premium only)')
 param enableRetention bool = true
+
+// Premium-only features
+var supportsPolicies = sku == 'Premium'
 
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: name
   location: location
   tags: tags
+
   sku: {
     name: sku
   }
-  properties: {
-    adminUserEnabled: false
-    publicNetworkAccess: 'Enabled'
-    zoneRedundancy: 'Disabled'
-    policies: {
-      quarantinePolicy: {
-        status: 'disabled'
-      }
-      trustPolicy: {
-        type: 'Notary'
-        status: 'disabled'
-      }
-      retentionPolicy: {
-        days: retentionDays
-        status: enableRetention ? 'enabled' : 'disabled'
-      }
-    }
-  }
+
+  properties: union(
+    {
+      adminUserEnabled: false
+      publicNetworkAccess: 'Enabled'
+      zoneRedundancy: 'Disabled'
+    },
+    supportsPolicies
+      ? {
+          policies: {
+            quarantinePolicy: {
+              status: 'disabled'
+            }
+            trustPolicy: {
+              type: 'Notary'
+              status: 'disabled'
+            }
+            retentionPolicy: {
+              days: retentionDays
+              status: enableRetention ? 'enabled' : 'disabled'
+            }
+          }
+        }
+      : {}
+  )
 }
 
-output name          string = containerRegistry.name
-output loginServer   string = containerRegistry.properties.loginServer
-output id            string = containerRegistry.id
+output name string = containerRegistry.name
+output loginServer string = containerRegistry.properties.loginServer
+output id string = containerRegistry.id

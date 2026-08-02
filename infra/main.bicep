@@ -121,7 +121,7 @@ module containerRegistry 'modules/containerregistry.bicep' = {
 // Reference the existing ACR for resource-scoped role assignments.
 // Bicep requires the `name` to be a compile-time constant for resource-scoped
 // role assignments. The ACR name is deterministic from the naming module.
-var acrName = 'atlas-acr-pxto'
+var acrName = 'atlasacrde96db'
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: acrName
 }
