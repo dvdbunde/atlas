@@ -12,6 +12,10 @@ on:
     types: [completed]
     branches: [main]
 
+permissions:
+  contents: read
+  id-token: write     
+
 env:
   API_BASE_URL: ${{ vars.API_BASE_URL }}
   BLAZOR_BASE_URL: ${{ vars.BLAZOR_BASE_URL }}
