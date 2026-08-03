@@ -1,0 +1,58 @@
+# --------------------------------------------------------------------------
+# Deploy to Dev
+# Authenticates via OIDC, deploys containers to App Service,
+# runs EF Core migrations, and restarts applications.
+# --------------------------------------------------------------------------
+
+name: 02 - Deploy Dev
+
+on:
+  workflow_run:
+    workflows: [01 - Package]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write     
+
+env:
+  AZURE_CONTAINER_REGISTRY: ${{ vars.ACR_NAME }}
+  API_IMAGE_NAME: atlas-api
+  BLAZOR_IMAGE_NAME: atlas-blazor
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure OIDC login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy API
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.API_APP_NAME }}
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+      - name: Deploy Blazor
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.BLAZOR_APP_NAME }}
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ github.sha }}
+      - name: Run EF migrations
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef database update \
+            --project src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj \
+            --startup-project src/ATLAS.API/ATLAS.Api.csproj \
+            --connection "${{ secrets.SQL_CONNECTION_STRING }}"
+      - name: Restart API
+        run: az webapp restart --name ${{ vars.API_APP_NAME }} --resource-group ${{ vars.AZURE_RESOURCE_GROUP }}
+      - name: Restart Blazor
+        run: az webapp restart --name ${{ vars.BLAZOR_APP_NAME }} --resource-group ${{ vars.AZURE_RESOURCE_GROUP }}
+        

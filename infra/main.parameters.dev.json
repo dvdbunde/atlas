@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "westeurope"
+    },
+    "uniqueSuffix": {
+      "value": ""
+    },
+    "sqlAdminLogin": {
+      "value": "atlasadmin"
+    },
+    "appServicePlanSkuTier": {
+      "value": "Standard"
+    },
+    "appServicePlanSkuSize": {
+      "value": "S1"
+    },
+    "appServicePlanCapacity": {
+      "value": 1
+    },
+    "sqlDatabaseSkuName": {
+      "value": "GP_S_Gen5"
+    },
+    "sqlDatabaseCapacity": {
+      "value": 1
+    },
+    "sqlDatabaseAutoPauseDelay": {
+      "value": 60
+    },
+    "sqlDatabaseMaxSizeBytes": {
+      "value": 34359738368
+    },
+    "storageSku": {
+      "value": "Standard_LRS"
+    },
+    "logAnalyticsRetentionInDays": {
+      "value": 30
+    },
+    "enableResourceLock": {
+      "value": false
+    }
+  }
+}

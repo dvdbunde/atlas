@@ -1,0 +1,59 @@
+# --------------------------------------------------------------------------
+# Container Packaging
+# Builds Docker images and pushes to Azure Container Registry.
+# No deployment logic — this workflow only packages.
+# Dockerfiles handle the complete .NET build internally (multi-stage).
+# --------------------------------------------------------------------------
+
+name: 01 - Package
+
+on:
+  push:
+    branches: [main]
+    
+permissions:
+  contents: read
+  id-token: write    
+
+env:
+  AZURE_CONTAINER_REGISTRY: ${{ vars.ACR_NAME }}
+  API_IMAGE_NAME: atlas-api
+  BLAZOR_IMAGE_NAME: atlas-blazor
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure OIDC login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: ACR login via OIDC
+        run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
+      - name: Build and push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.api
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:latest
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:${{ github.ref_name }}
+      - name: Build and push Blazor
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.blazor
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:latest
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ github.ref_name }}

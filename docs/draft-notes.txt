@@ -1,0 +1,53 @@
+https://localhost:7295/api/documents/39ebbf67-b9ce-4c82-a784-216be05a3e85/download
+https://localhost:7295/api/documents/a6c8d57f-edec-42a1-bf43-d483f2c04505/download
+
+
+http://127.0.0.1:10000/devstoreaccount1/permit-documents/devstoreaccount1/permit-documents/28e5f1c4-4fe1-45ee-9d01-a12994fdd325/39ebbf67-b9ce-4c82-a784-216be05a3e85/David%2520VAN%2520DEN%2520BUNDER%2520-%2520DKV%2520attest.pdf?sv=2025-05-05&st=2026-07-01T13%3A47%3A27Z&se=2026-07-01T14%3A47%3A27Z&sr=b&sp=r&sig=TPN%2BMTuTxb0%2BlOrf1%2Bmy0Swjt4dbq1rmd5XOGqnAcP4%3D
+
+todo
+Remove Publish in commands and replace with adddomainevent + 1 publish in unitofwork
+Audit Message Enrichment
+Performance & DTO Simplification
+
+dotnet build --property Warninglevel=0
+dotnet run --project src/ATLAS.Blazor/ --property Warninglevel=0
+
+# Login
+az login
+
+# Verify subscription
+az account show --output table
+
+# Create the Resource Group (first time only)
+az group create `
+    --name atlas-dev-rg `
+    --location westeurope
+
+# Validate the template
+az deployment group validate `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
+
+# Preview the deployment
+az deployment group what-if `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
+
+# Deploy
+az deployment group create `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json
+	
+	
+	
+
+az deployment group list `
+    --resource-group atlas-dev-rg `
+    --output table	
+	
+	
+az group delete `
+--name atlas-dev-rg

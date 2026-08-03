@@ -5,14 +5,49 @@ using ATLAS.API.Controllers;
 using ATLAS.Application.Behaviors;
 using ATLAS.Infrastructure;
 using ATLAS.Infrastructure.Data.SeedData;
+using Azure.Identity;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Azure Application Insights telemetry (skip in Testing — test factory uses its own config)
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
+
+// Azure Key Vault configuration provider (production only)
+var keyVaultName = builder.Configuration["KeyVault:VaultName"];
+Uri? keyVaultUri = null;
+if (!string.IsNullOrWhiteSpace(keyVaultName))
+{
+    keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+    builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+}
+
+// Health checks
+var healthChecks = builder.Services.AddHealthChecks();
+
+var storageAccountName = builder.Configuration["Storage:AccountName"];
+if (!string.IsNullOrWhiteSpace(storageAccountName))
+{
+    healthChecks.AddAzureBlobStorage("AccountName=" + storageAccountName,
+        name: "blob-storage", tags: ["storage", "azure"]);
+}
+
+if (keyVaultUri != null)
+{
+    healthChecks.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential(),
+        options => { },
+        name: "key-vault", tags: ["secrets", "azure"]);
+}
 
 // Add services to the container.
 // Only register SQL Server if not in test environment (tests use InMemory)
@@ -241,6 +276,30 @@ app.UseCors("AllowBlazor");
 app.UseAuthentication();  // Authenticate JWT Bearer tokens
 app.UseAuthorization();   // Enforce authorization policies
 app.UseMiddleware<ATLAS.API.Middleware.GlobalExceptionMiddleware>();
+
+// Map health check endpoints
+// /health/live — lightweight liveness probe (app is running)
+// /health/ready — readiness probe (dependencies are available)
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => false,
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(
+            new { status = report.Status.ToString(), totalDuration = report.TotalDuration.TotalMilliseconds }));
+    }
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("database") || check.Tags.Contains("storage") || check.Tags.Contains("secrets"),
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(
+            new { status = report.Status.ToString(), totalDuration = report.TotalDuration.TotalMilliseconds }));
+    }
+});
 
 app.MapControllers();
 

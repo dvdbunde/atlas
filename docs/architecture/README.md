@@ -4,15 +4,15 @@ This directory describes the system architecture. It provides an entry point to 
 
 ## Architecture Decision Records
 
-- [Architecture Decision Records (ADRs)](../ADRs/README.md)
+- [Architecture Decision Records (ADRs)](../ADRs/README.md) — ADR-001 through ADR-023
 
 ## Architecture Documents
 
-Architecture docs that are specific to this repository should live here. Organization-wide or platform architecture documents may live outside—link those in the External section.
-
 ### In-repository Architecture documents
 
-- (Add links to architecture docs in this repository)
+- [Current State Architecture](current-state.md) — Post-Milestone 8.1 architectural snapshot. This is the authoritative baseline for the implemented system before Milestone 9 begins.
+- [Design Documents](../design/README.md) — C4 context/container diagrams, domain model, data flows, aggregate roots, bounded contexts
+- [Extension Points](../design/08-extension-points.md) — Documented future capabilities (notifications, service bus, reporting, workflow)
 
 ### External Architecture documents
 

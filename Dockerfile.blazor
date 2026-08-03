@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY ATLAS.slnx ./
+COPY src/ATLAS.Domain/ATLAS.Domain.csproj src/ATLAS.Domain/
+COPY src/ATLAS.Application/ATLAS.Application.csproj src/ATLAS.Application/
+COPY src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj src/ATLAS.Infrastructure/
+COPY src/ATLAS.Blazor/ATLAS.Blazor.csproj src/ATLAS.Blazor/
+RUN dotnet restore src/ATLAS.Blazor/ATLAS.Blazor.csproj
+COPY . .
+RUN dotnet publish src/ATLAS.Blazor/ATLAS.Blazor.csproj --no-restore --configuration Release --output /app
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+COPY --from=build /app .
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENTRYPOINT ["dotnet", "ATLAS.Blazor.dll"]
