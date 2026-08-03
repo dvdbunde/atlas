@@ -34,6 +34,8 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3          
       - name: ACR login via OIDC
         run: az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
       - name: Build and push API
@@ -46,8 +48,7 @@ jobs:
           cache-to: type=gha,mode=max
           tags: |
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:latest
-            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.API_IMAGE_NAME }}:${{ github.sha }}            
       - name: Build and push Blazor
         uses: docker/build-push-action@v6
         with:
@@ -58,5 +59,4 @@ jobs:
           cache-to: type=gha,mode=max
           tags: |
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:latest
-            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ github.sha }}            
