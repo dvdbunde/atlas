@@ -384,90 +384,36 @@ Resolve any deployment errors before continuing.
 
 ---
 
-### Step 7 – Assign Azure Container Registry Permissions
+### Step 7 – Execute the Infrastructure Bootstrap
 
-The deployment workflow publishes Docker images to Azure Container Registry.
+After the Azure infrastructure has been successfully provisioned, execute the infrastructure bootstrap script.
 
-The **ATLAS GitHub Actions** deployment identity requires the **AcrPush** role on the Azure Container Registry so that the `01-package.yml` workflow can push Docker images during deployment.
-
-#### Retrieve the Azure Container Registry Resource ID
-
-Run the following commands to retrieve the Azure Container Registry resource ID, and ATLAS GitHub Actions Application (Client) ID:
-
-```powershell
-$acrName = "<Azure Container Registry Name>"
-
-$acrResourceId = az acr show `
-    --name $acrName `
-    --query id `
-    --output tsv
-
-Write-Host "Azure Container Registry Resource ID: $acrResourceId"
-```
-
-```powershell
-$appId = "<ATLAS GitHub Actions Application (Client) ID>"
-
-$spObjectId = az ad sp show `
-    --id $appId `
-    --query id `
-    --output tsv
-```
-
-#### Assign the AcrPush Role
+The bootstrap script performs all required post-deployment Azure configuration and validation before the first GitHub Actions deployment.
 
 Run:
 
 ```powershell
-az role assignment create `
-    --assignee-object-id $spObjectId `
-    --assignee-principal-type ServicePrincipal `
-    --role AcrPush `
-    --scope $acrResourceId
+$GitHubClientId = "<ATLAS GitHub Actions Application (Client) ID>"
+
+.\infra\bootstrap.ps1 `
+    -ResourceGroup atlas-dev-rg `
+    -DeploymentName main `
+    -GitHubClientId $GitHubClientId
 ```
 
-Expected output:
+The bootstrap script automatically performs the following tasks:
 
-```text
-"roleDefinitionName": "AcrPush"
-"principalType": "ServicePrincipal"
-```
+- Assigns the **AcrPush** role to the **ATLAS GitHub Actions** Service Principal on the Azure Container Registry (if not already assigned).
+- Verifies that the API and Blazor App Services have **System Assigned Managed Identities**.
+- Verifies that both App Services have the **AcrPull** role assignment on the Azure Container Registry.
+- Verifies the Azure SQL Server, SQL Database and SQL Administrator configuration.
+- Verifies that the **AllowAzureServices** SQL firewall rule exists.
+- Verifies that all required Azure infrastructure resources have been provisioned successfully.
+- Produces a deployment summary showing the validation results for each Azure resource.
 
-#### Verify the Role Assignment (AcrPush)
+The script is fully **idempotent** and can safely be executed after every infrastructure deployment. Existing role assignments are detected and will not be recreated.
 
-Verify that the role assignment was created successfully:
-
-```powershell
-az role assignment list `
-    --assignee $spObjectId `
-    --scope $acrResourceId `
-    --all
-```
-
-The output should include:
-
-```text
-Role: AcrPush
-Principal Type: ServicePrincipal
-Scope: /subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.ContainerRegistry/registries/<acr-name>
-```
-
-> **Important**
->
-> Although the Azure Portal documentation indicates that service principals can be selected from **Access control (IAM) → Add role assignment → Select members**, some Azure tenants only display users and groups in the member picker. The Azure CLI performs the same RBAC assignment reliably and is therefore recommended for this step.
-
----
-
-> **Checkpoint**
-
-Before continuing, verify:
-
-- ✅ Azure Container Registry has been provisioned.
-- ✅ `AcrPush` role assigned successfully.
-- ✅ `az role assignment list` shows the `AcrPush` assignment.
-- ✅ The **ATLAS GitHub Actions** deployment identity has both:
-  - **Contributor** (Subscription scope)
-  - **AcrPush** (Azure Container Registry scope)
+Resolve any reported failures before continuing.
 
 ---
 
@@ -481,114 +427,44 @@ Create the following GitHub Environment Secret.
 
 Retrieve the connection string from:
 
-> **Azure Portal → Azure SQL Database → Connection strings → ADO.NET**
+>**Azure Portal → Azure SQL Database → Connection strings → ADO.NET**
 
 Replace the placeholder username and password with the SQL administrator credentials created during infrastructure deployment.
 
 The deployment workflow uses this connection string to execute EF Core database migrations.
 
-```bash
-dotnet ef database update \
-    --project src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj \
-    --startup-project src/ATLAS.API/ATLAS.Api.csproj \
-    --connection "${{ secrets.SQL_CONNECTION_STRING }}"
+```text
+Server=tcp:<sql-server>.database.windows.net,1433;
+Initial Catalog=<database>;
+Persist Security Info=False;
+User ID=<sql-admin>;
+Password=<password>;
+MultipleActiveResultSets=False;
+Encrypt=True;
+TrustServerCertificate=False;
+Connection Timeout=30;
 ```
 
 > **Important**
 >
-> This secret is environment-specific and should be stored as an **Environment Secret**, not as a Repository Secret.
-
----
-
-### Step 9 – Verify Azure SQL Firewall
-
-The deployment workflow executes EF Core migrations from a GitHub-hosted runner.
-
-Verify that the Azure SQL Server firewall allows the runner to connect.
-
-```powershell
-az sql server firewall-rule list `
-    --resource-group atlas-dev-rg `
-    --server atlasdevsqlde96db `
-    --output table
-```
-
-Typical options include:
-
-- Allow Azure services and resources to access the server
-- Configure explicit firewall rules
-- Use a Private Endpoint (future enhancement)
-
-If the firewall blocks incoming connections, the deployment will fail during database migration.
-
-> **Note**
->
-> GitHub-hosted runners use dynamic IP addresses. For development environments, enabling **Allow Azure services and resources to access this server** is usually sufficient. Production environments should use a more secure networking configuration.
-
----
-
-### Step 10 – Verify SQL Administrator
-
-Verify that the SQL administrator account created during infrastructure deployment is available.
-
-Confirm:
-
-- Administrator username
-- Administrator password
-- Administrator has sufficient permissions on the database
-
-These credentials are required by the SQL connection string used during deployment.
-
----
-
-### Step 11 – Verify Azure Container Registry Permissions
-
-The App Services must be able to pull Docker images from Azure Container Registry.
-
-Verify that the Managed Identity assigned to each App Service has the **AcrPull** role assignment on the Azure Container Registry.
-
-Verify both:
-
-- API App Service Managed Identity
-- Blazor App Service Managed Identity
-
-Without this role assignment:
-
-- The deployment succeeds
-- Docker images are pushed successfully
-- App Services fail to start because they cannot pull the container images
-
----
-
-### Step 12 – Validate the Deployment
-
-Verify that the infrastructure and applications have been deployed successfully.
-
-Confirm the following:
-
-- The API App Service is running.
-- The Blazor App Service is running.
-- Both App Services have started successfully using their configured container images.
-- The API endpoint responds successfully (for example, the Swagger endpoint or a health endpoint).
-- The Blazor application loads successfully in a browser.
-- The App Services can pull container images from Azure Container Registry using their System Assigned Managed Identities.
-- Application Insights is receiving telemetry.
-- No deployment errors or startup failures are reported in the App Service logs.
-
-Resolve any issues before proceeding with application testing.
+> Store this value as a **GitHub Environment Secret**, not as a Repository Secret.
 
 ---
 
 ### Phase 2 Checklist
 
 - [ ] Azure infrastructure successfully deployed
-- [ ] SQL connection string configured
+- [ ] Infrastructure bootstrap completed successfully
+- [ ] GitHub Actions `AcrPush` permission configured
+- [ ] App Service Managed Identities verified
+- [ ] Azure Container Registry permissions verified
+- [ ] Azure SQL configuration verified
 - [ ] Azure SQL firewall verified
-- [ ] SQL administrator verified
-- [ ] `AcrPull` role assigned to App Services
-- [ ] App Service configuration verified
+- [ ] SQL connection string configured as the `SQL_CONNECTION_STRING` GitHub Environment Secret
 
 At this point, the Azure environment is fully configured and ready for the first application deployment.
+
+---
 
 ## Phase 3 – First Application Deployment & Validation
 
@@ -598,7 +474,7 @@ This phase validates that the complete CI/CD pipeline functions correctly and th
 
 ---
 
-### Step 13 – Execute the Deployment Pipeline
+### Step 9 – Execute the Deployment Pipeline
 
 After the Pull Request has been approved, merged into the `main` branch and the CI validation has completed successfully, verify that the deployment workflows execute automatically in the following order:
 
@@ -623,7 +499,7 @@ Verify that:
 
 ---
 
-### Step 14 – Verify the Deployed Applications
+### Step 10 – Verify the Deployed Applications
 
 After deployment, verify that both applications are accessible.
 
@@ -655,7 +531,7 @@ Verify:
 
 ---
 
-### Step 15 – Verify Database Migration
+### Step 11 – Verify Database Migration
 
 Confirm that the EF Core migrations executed successfully.
 
@@ -668,7 +544,7 @@ Verify:
 
 ---
 
-### Step 16 – Verify Application Insights
+### Step 12 – Verify Application Insights
 
 Open the Application Insights resource.
 
@@ -684,7 +560,7 @@ Confirm that:
 
 ---
 
-### Step 17 – Verify Smoke Tests
+### Step 13 – Verify Smoke Tests
 
 Confirm that the `03-smoke-tests.yml` workflow completed successfully.
 
