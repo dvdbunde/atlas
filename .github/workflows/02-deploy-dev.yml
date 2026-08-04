@@ -61,6 +61,8 @@ jobs:
         with:
           app-name: ${{ vars.BLAZOR_APP_NAME }}
           images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      - name: Restore solution
+        run: dotnet restore ATLAS.sln          
       - name: Run EF migrations
         run: |
           dotnet tool install --global dotnet-ef
