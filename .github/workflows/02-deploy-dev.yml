@@ -51,13 +51,17 @@ jobs:
           echo "Registry    : ${{ env.AZURE_CONTAINER_REGISTRY }}"
           echo "API         : ${{ vars.API_APP_NAME }}"
           echo "Blazor      : ${{ vars.BLAZOR_APP_NAME }}"    
-      - name: Debug connection string
+      - name: Parse connection string
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
           IFS=';' read -ra PARTS <<< "$CS"
+
           for p in "${PARTS[@]}"; do
-            echo "$p"
+            if [[ "$p" == Password=* ]]; then
+              echo "Password key exists"
+              echo "Password length: ${#p}"
+            fi
           done
       - name: Deploy API
         uses: azure/webapps-deploy@v3
