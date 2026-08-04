@@ -63,7 +63,7 @@ jobs:
           images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
       - name: Install NSwag
         run: |
-          dotnet tool install --global NSwag.ConsoleCore --version 14.1.0        
+          dotnet tool install --global NSwag.ConsoleCore
       - name: Restore solution
         run: dotnet restore
       - name: Verify API builds
