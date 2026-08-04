@@ -63,6 +63,9 @@ jobs:
           images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BLAZOR_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
       - name: Restore solution
         run: dotnet restore
+      - name: Verify API builds
+        run: |
+          dotnet build --property Warninglevel=0
       - name: Run EF migrations
         run: |
           dotnet tool install --global dotnet-ef
