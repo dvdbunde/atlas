@@ -55,7 +55,10 @@ jobs:
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          echo "$CS"
+          IFS=';' read -ra PARTS <<< "$CS"
+          for p in "${PARTS[@]}"; do
+            echo "$p"
+          done
       - name: Deploy API
         uses: azure/webapps-deploy@v3
         with:
