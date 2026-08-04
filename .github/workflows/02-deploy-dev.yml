@@ -65,13 +65,29 @@ jobs:
         run: |
           dotnet tool install --global NSwag.ConsoleCore --version 14.7.1
       - name: Restore solution
-        run: dotnet restore      
-      - name: Show connection string details
+        run: dotnet restore            
+      - name: Inspect connection string
         env:
           CS: ${{ secrets.SQL_CONNECTION_STRING }}
         run: |
-          echo "$CS" \
-            | sed -E 's/Password=[^;]+/Password=***/I'          
+          python3 - <<'PY'
+            import os
+
+            cs = os.environ["CS"]
+
+            parts = {}
+            for item in cs.split(";"):
+                if "=" in item:
+                    k,v = item.split("=",1)
+                    parts[k.strip()] = v
+
+            print("Server :", parts.get("Server"))
+            print("Database :", parts.get("Initial Catalog"))
+            print("User :", parts.get("User ID"))
+            print("Password length :", len(parts.get("Password","")))
+            print("Password starts with :", parts.get("Password","")[:2])
+            print("Password ends with :", parts.get("Password","")[-2:])
+            PY
       - name: Run EF migrations
         run: |
           dotnet tool install --global dotnet-ef
