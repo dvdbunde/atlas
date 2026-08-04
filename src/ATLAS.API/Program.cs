@@ -18,7 +18,7 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Azure Application Insights telemetry (skip in Testing — test factory uses its own config)
-if (builder.Environment.EnvironmentName != "Testing")
+if (builder.Environment.EnvironmentName != "Testing" && !builder.Environment.IsDevelopment())
 {
     builder.Services.AddApplicationInsightsTelemetry();
 }

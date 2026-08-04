@@ -50,19 +50,7 @@ jobs:
           echo "Image tag   : $IMAGE_TAG"
           echo "Registry    : ${{ env.AZURE_CONTAINER_REGISTRY }}"
           echo "API         : ${{ vars.API_APP_NAME }}"
-          echo "Blazor      : ${{ vars.BLAZOR_APP_NAME }}"    
-      - name: Parse connection string
-        env:
-          CS: ${{ secrets.SQL_CONNECTION_STRING }}
-        run: |
-          IFS=';' read -ra PARTS <<< "$CS"
-
-          for p in "${PARTS[@]}"; do
-            if [[ "$p" == Password=* ]]; then
-              echo "Password key exists"
-              echo "Password length: ${#p}"
-            fi
-          done
+          echo "Blazor      : ${{ vars.BLAZOR_APP_NAME }}"        
       - name: Deploy API
         uses: azure/webapps-deploy@v3
         with:
