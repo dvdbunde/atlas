@@ -1,4 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+RUN dotnet tool install --global NSwag.ConsoleCore
+ENV PATH="${PATH}:/root/.dotnet/tools"
 WORKDIR /src
 COPY ATLAS.slnx ./
 COPY src/ATLAS.Domain/ATLAS.Domain.csproj src/ATLAS.Domain/
