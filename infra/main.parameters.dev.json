@@ -39,7 +39,7 @@
       "value": "Standard_LRS"
     },
     "logAnalyticsRetentionInDays": {
-      "value": 7
+      "value": 30
     },
     "enableResourceLock": {
       "value": false
