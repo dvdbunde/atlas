@@ -143,6 +143,10 @@ module apiAppService 'modules/appservice.bicep' = {
     imageTag: apiImageTag
     appSettings: [
       {
+        name: 'ASPNETCORE_FORWARDEDHEADERS_ENABLED'
+        value: 'true'
+      }
+      {
         name: 'ASPNETCORE_ENVIRONMENT'
         value: environmentName
       }
@@ -179,6 +183,10 @@ module blazorAppService 'modules/appservice.bicep' = {
     imageRepository: 'atlas-blazor'
     imageTag: blazorImageTag
     appSettings: [
+      {
+        name: 'ASPNETCORE_FORWARDEDHEADERS_ENABLED'
+        value: 'true'
+      }
       {
         name: 'ASPNETCORE_ENVIRONMENT'
         value: environmentName

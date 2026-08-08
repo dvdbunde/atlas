@@ -127,7 +127,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -138,6 +137,14 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Ignore all lib folders
+lib/
+
+# But keep Bootstrap CSS for the Blazor app
+!src/ATLAS.Blazor/wwwroot/lib/
+!src/ATLAS.Blazor/wwwroot/lib/bootstrap/
+!src/ATLAS.Blazor/wwwroot/lib/bootstrap/**
 
 # PyInstaller
 *.manifest
