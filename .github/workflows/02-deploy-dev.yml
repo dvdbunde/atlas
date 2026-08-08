@@ -67,12 +67,27 @@ jobs:
       - name: Restore solution
         run: dotnet restore                
       - name: Run EF migrations
+        shell: bash
         run: |
           dotnet tool install --global dotnet-ef
+
+          SQL_CONNECTION_STRING=$(az keyvault secret show \
+            --vault-name "${{ vars.AZURE_KEY_VAULT_NAME }}" \
+            --name "sql-connection-string" \
+            --query "value" \
+            --output tsv)
+
+          if [[ -z "$SQL_CONNECTION_STRING" ]]; then
+            echo "::error::Key Vault secret 'sql-connection-string' returned an empty value."
+            exit 1
+          fi
+
+          echo "::add-mask::$SQL_CONNECTION_STRING"
+
           dotnet ef database update \
             --project src/ATLAS.Infrastructure/ATLAS.Infrastructure.csproj \
             --startup-project src/ATLAS.API/ATLAS.Api.csproj \
-            --connection "${{ secrets.SQL_CONNECTION_STRING }}"
+            --connection "$SQL_CONNECTION_STRING"
       - name: Restart API
         run: az webapp restart --name ${{ vars.API_APP_NAME }} --resource-group ${{ vars.AZURE_RESOURCE_GROUP }}
       - name: Restart Blazor

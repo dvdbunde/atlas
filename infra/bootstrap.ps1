@@ -227,18 +227,63 @@ function Ensure-AcrPushRoleAssignment {
     param(
         [string]$PrincipalId,
         [string]$Scope,
-        [string]$PrincipalName
+        [string]$PrincipalName,
+        [string]$KeyVaultName
     )
 
     Write-Step "Phase 3 – Configuring AcrPush for $PrincipalName"
 
+    # ----------------------------------------------------------------------
+    # GitHub Actions -> Key Vault Secrets User
+    # ----------------------------------------------------------------------
+
+    # Resolve the Key Vault resource ID from Azure rather than constructing
+    # it manually. This avoids invalid-scope errors caused by missing or
+    # stale subscription/resource-name variables.
+    $KeyVaultResourceId = az keyvault show `
+        --name $KeyVaultName `
+        --resource-group $ResourceGroup `
+        --query id `
+        --output tsv 2>$null
+
+    Assert-True ($null -ne $KeyVaultResourceId -and $KeyVaultResourceId.Trim() -ne '') `
+        "Key Vault '$KeyVaultName' could not be resolved."
+
+    $githubKeyVaultRole = az role assignment list `
+        --assignee-object-id $PrincipalId `
+        --scope $KeyVaultResourceId `
+        --role $KeyVaultSecretsUserRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -eq $githubKeyVaultRole -or @($githubKeyVaultRole).Count -eq 0) {
+
+        az role assignment create `
+            --assignee-object-id $PrincipalId `
+            --assignee-principal-type ServicePrincipal `
+            --role $KeyVaultSecretsUserRoleId `
+            --scope $KeyVaultResourceId `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to assign Key Vault Secrets User to $PrincipalName."
+
+        Write-Pass "GitHub Actions has Key Vault Secrets User"
+    }
+    else {
+        Write-Pass "GitHub Actions already has Key Vault Secrets User"
+    }
+
+    # ----------------------------------------------------------------------
+    # GitHub Actions -> AcrPush
+    # ----------------------------------------------------------------------
+
     $existing = az role assignment list `
-        --assignee $PrincipalId `
+        --assignee-object-id $PrincipalId `
         --scope $Scope `
         --role $AcrPushRoleId `
         --output json 2>$null | ConvertFrom-Json
 
-    if ($existing) {
+    if ($null -ne $existing -and @($existing).Count -gt 0) {
         Write-Pass "AcrPush already assigned to $PrincipalName"
         return
     }
@@ -248,17 +293,21 @@ function Ensure-AcrPushRoleAssignment {
         --assignee-principal-type ServicePrincipal `
         --role $AcrPushRoleId `
         --scope $Scope `
-        --output none 2>$null
+        --output none
+
+    Assert-True ($LASTEXITCODE -eq 0) `
+        "Failed to assign AcrPush to $PrincipalName."
 
     # Immediate verification
     $verify = az role assignment list `
-        --assignee $PrincipalId `
+        --assignee-object-id $PrincipalId `
         --scope $Scope `
         --role $AcrPushRoleId `
         --output json 2>$null | ConvertFrom-Json
 
     Assert-True ($null -ne $verify -and @($verify).Count -gt 0) `
         "AcrPush role assignment for $PrincipalName could not be verified."
+
     Write-Pass "AcrPush assigned to $PrincipalName"
 }
 
@@ -381,6 +430,7 @@ function Verify-AcrPermissions {
 function Verify-KeyVaultIntegration {
     param(
         [string]$KeyVaultName,
+        [string]$GitHubPrincipalId,
         [string]$ApiPrincipalId,
         [string]$BlazorPrincipalId
     )
@@ -398,6 +448,18 @@ function Verify-KeyVaultIntegration {
         "Key Vault '$KeyVaultName' does not use RBAC authorization."
 
     Write-Pass "Key Vault exists and uses RBAC authorization"
+
+    # GitHub Actions -> Key Vault Secrets User
+    $githubKeyVaultRole = az role assignment list `
+        --assignee $GitHubPrincipalId `
+        --scope $vault.id `
+        --role $KeyVaultSecretsUserRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $githubKeyVaultRole -and @($githubKeyVaultRole).Count -gt 0) `
+        "GitHub Actions is missing Key Vault Secrets User."
+
+    Write-Pass "GitHub Actions has Key Vault Secrets User"
 
     # API App Service -> Key Vault Secrets User
     $apiRole = az role assignment list `
@@ -756,7 +818,8 @@ $githubSp = Get-GitHubServicePrincipal -ClientId $GitHubClientId
 Ensure-AcrPushRoleAssignment `
     -PrincipalId $githubSp.id `
     -Scope $outputs.containerRegistryResourceId `
-    -PrincipalName "GitHub Actions"
+    -PrincipalName "GitHub Actions" `
+    -KeyVaultName $outputs.keyVaultName
 
 # Phase 3b
 Ensure-DeveloperStorageAccess `
@@ -777,6 +840,7 @@ Verify-AcrPermissions `
 # Phase 6
 Verify-KeyVaultIntegration `
     -KeyVaultName $outputs.keyVaultName `
+    -GitHubPrincipalId $githubSp.id `
     -ApiPrincipalId $outputs.apiPrincipalId `
     -BlazorPrincipalId $outputs.blazorPrincipalId
 
