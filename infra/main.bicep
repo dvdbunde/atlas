@@ -294,7 +294,7 @@ resource sqlConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01
 }
 
 // -- Key Vault reference strings for App Service settings --------------------
-var sqlConnectionStringRef = '@Microsoft.KeyVault(SecretUri=${keyVault.outputs.vaultUri}secrets/sql-connection-string/)'
+var sqlConnectionStringRef = '@Microsoft.KeyVault(SecretUri=${keyVault.outputs.vaultUri}/secrets/sql-connection-string/)'
 
 // -- Resource Lock -----------------------------------------------------------
 resource resourceLock 'Microsoft.Authorization/locks@2020-05-01' = if (enableResourceLock) {
@@ -360,7 +360,7 @@ resource blazorKeyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022
 // -- Storage Blob Data Contributor role definition (built-in) ----------------
 // Grants read/write/delete access to Blob Storage so App Services can access
 // blobs via their System Assigned Managed Identity (no Storage Account keys).
-var storageBlobDataContributorRoleDefinitionId = 'ba92f5b4-2d11-453d-a813-e6ada43e52a3'
+var storageBlobDataContributorRoleDefinitionId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 
 // -- Storage Blob Data Contributor: API App Service --------------------------
 resource apiStorageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

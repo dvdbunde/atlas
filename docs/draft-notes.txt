@@ -10,6 +10,19 @@ Remove Publish in commands and replace with adddomainevent + 1 publish in unitof
 Audit Message Enrichment
 Performance & DTO Simplification
 
+Production backlog
+SQL Managed Identity
+Azure Communication Services
+Application Health Checks
+Diagnostic Settings export
+Availability Tests
+Deployment Slots
+Separate migration workflow
+Production parameter file
+Backup policies
+Azure Front Door / WAF (if needed later)
+
+
 dotnet build --property Warninglevel=0
 dotnet run --project src/ATLAS.Blazor/ --property Warninglevel=0
 
@@ -52,3 +65,8 @@ az deployment group list `
 	
 az group delete `
 --name atlas-dev-rg
+
+
+ $GitHubClientId = "4226094a-bba0-4cf2-9464-25e22391c158"     
+
+ .\infra\bootstrap.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId
