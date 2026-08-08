@@ -13,6 +13,11 @@ on:
     branches: [main]
 
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -42,8 +47,8 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
             echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_ENV"
           else
-            echo "IMAGE_TAG=${{ github.sha }}" >> "$GITHUB_ENV"
-          fi          
+            echo "IMAGE_TAG=${{ inputs.image_tag }}" >> "$GITHUB_ENV"
+          fi
       - name: Display deployment information
         run: |
           echo "Trigger     : ${{ github.event_name }}"

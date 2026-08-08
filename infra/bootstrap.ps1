@@ -381,7 +381,45 @@ function Verify-ManagedIdentities {
 }
 
 # --------------------------------------------------------------------------
-# Phase 5 – Verify ACR Permissions
+# Phase 4b – Configure App Service ACR Pull Authentication
+# --------------------------------------------------------------------------
+function Ensure-AppServiceAcrPullConfiguration {
+    param(
+        [string]$ApiAppName,
+        [string]$BlazorAppName
+    )
+
+    Write-Step "Phase 4b – Configuring App Service ACR pull authentication"
+
+    foreach ($appName in @($ApiAppName, $BlazorAppName)) {
+        az webapp config set `
+            --name $appName `
+            --resource-group $ResourceGroup `
+            --acr-use-identity true `
+            --acr-identity '[system]' `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to configure managed identity ACR pull authentication for '$appName'."
+
+        $config = az webapp config show `
+            --name $appName `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        Assert-True ($null -ne $config) `
+            "Unable to read ACR pull configuration for '$appName'."
+        Assert-True ($config.acrUseManagedIdentityCreds -eq $true) `
+            "App Service '$appName' is not configured to use managed identity for ACR pulls."
+        Assert-True ([string]::IsNullOrWhiteSpace($config.acrUserManagedIdentityID)) `
+            "App Service '$appName' unexpectedly has a user-assigned ACR identity configured."
+
+        Write-Pass "$appName uses SystemAssigned Managed Identity for ACR pulls"
+    }
+}
+
+# --------------------------------------------------------------------------
+# Phase 5 – Configure and Verify ACR Permissions
 # --------------------------------------------------------------------------
 function Verify-AcrPermissions {
     param(
@@ -405,22 +443,58 @@ function Verify-AcrPermissions {
 
     # API AcrPull
     $apiPull = az role assignment list `
-        --assignee $ApiPrincipalId `
+        --assignee-object-id $ApiPrincipalId `
+        --scope $AcrResourceId `
+        --role $AcrPullRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -eq $apiPull -or @($apiPull).Count -eq 0) {
+        az role assignment create `
+            --assignee-object-id $ApiPrincipalId `
+            --assignee-principal-type ServicePrincipal `
+            --role $AcrPullRoleId `
+            --scope $AcrResourceId `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to assign AcrPull to API App Service."
+    }
+
+    $apiPull = az role assignment list `
+        --assignee-object-id $ApiPrincipalId `
         --scope $AcrResourceId `
         --role $AcrPullRoleId `
         --output json 2>$null | ConvertFrom-Json
     Assert-True ($null -ne $apiPull -and @($apiPull).Count -gt 0) `
-        "API App Service missing AcrPull on ACR."
+        "API App Service AcrPull on ACR could not be verified."
     Write-Pass "API AcrPull"
 
     # Blazor AcrPull
     $blazorPull = az role assignment list `
-        --assignee $BlazorPrincipalId `
+        --assignee-object-id $BlazorPrincipalId `
+        --scope $AcrResourceId `
+        --role $AcrPullRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -eq $blazorPull -or @($blazorPull).Count -eq 0) {
+        az role assignment create `
+            --assignee-object-id $BlazorPrincipalId `
+            --assignee-principal-type ServicePrincipal `
+            --role $AcrPullRoleId `
+            --scope $AcrResourceId `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to assign AcrPull to Blazor App Service."
+    }
+
+    $blazorPull = az role assignment list `
+        --assignee-object-id $BlazorPrincipalId `
         --scope $AcrResourceId `
         --role $AcrPullRoleId `
         --output json 2>$null | ConvertFrom-Json
     Assert-True ($null -ne $blazorPull -and @($blazorPull).Count -gt 0) `
-        "Blazor App Service missing AcrPull on ACR."
+        "Blazor App Service AcrPull on ACR could not be verified."
     Write-Pass "Blazor AcrPull"
 }
 
@@ -827,6 +901,11 @@ Ensure-DeveloperStorageAccess `
 
 # Phase 4
 Verify-ManagedIdentities `
+    -ApiAppName $outputs.apiAppServiceName `
+    -BlazorAppName $outputs.blazorAppServiceName
+
+# Phase 4b
+Ensure-AppServiceAcrPullConfiguration `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName
 
