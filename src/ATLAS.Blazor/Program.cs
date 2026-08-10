@@ -1,6 +1,7 @@
 using ATLAS.Application.Queries.Documents;
 using ATLAS.Blazor.Components;
 using ATLAS.Infrastructure;
+using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.Data.SeedData;
 using Azure.Identity;
 using MediatR;
@@ -42,6 +43,11 @@ if (keyVaultUri != null)
         options => { },
         name: "key-vault", tags: ["secrets", "azure"]);
 }
+
+healthChecks.AddDbContextCheck<ApplicationDbContext>(
+    name: "database",
+    tags: ["database", "critical"]);
+
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -123,7 +129,7 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 });
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
-    Predicate = check => check.Tags.Contains("storage") || check.Tags.Contains("secrets"),
+    Predicate = check => check.Tags.Contains("database") || check.Tags.Contains("storage") || check.Tags.Contains("secrets"),
     ResponseWriter = async (context, report) =>
     {
         context.Response.ContentType = "application/json";

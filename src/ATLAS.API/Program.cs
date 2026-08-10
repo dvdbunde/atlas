@@ -4,6 +4,7 @@ using ATLAS.API.Auth;
 using ATLAS.API.Controllers;
 using ATLAS.Application.Behaviors;
 using ATLAS.Infrastructure;
+using ATLAS.Infrastructure.Data;
 using ATLAS.Infrastructure.Data.SeedData;
 using Azure.Identity;
 using FluentValidation;
@@ -48,6 +49,10 @@ if (keyVaultUri != null)
         options => { },
         name: "key-vault", tags: ["secrets", "azure"]);
 }
+
+healthChecks.AddDbContextCheck<ApplicationDbContext>(
+    name: "database",
+    tags: ["database", "critical"]);
 
 // Add services to the container.
 // Only register SQL Server if not in test environment (tests use InMemory)
