@@ -17,7 +17,7 @@ param tags object
 param planId string
 
 @description('Health check path (e.g. /health). Default: /')
-param healthCheckPath string = '/'
+param healthCheckPath string
 
 @description('Container Registry login server (e.g. atlasacr.azurecr.io)')
 param acrLoginServer string

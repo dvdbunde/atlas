@@ -137,7 +137,7 @@ module apiAppService 'modules/appservice.bicep' = {
     location: location
     tags: tags.outputs.tags
     planId: appServicePlan.outputs.id
-    healthCheckPath: '/health'
+    healthCheckPath: '/health/ready'
     acrLoginServer: containerRegistry.outputs.loginServer
     imageRepository: 'atlas-api'
     imageTag: apiImageTag
@@ -178,7 +178,7 @@ module blazorAppService 'modules/appservice.bicep' = {
     location: location
     tags: tags.outputs.tags
     planId: appServicePlan.outputs.id
-    healthCheckPath: '/'
+    healthCheckPath: '/health/ready'
     acrLoginServer: containerRegistry.outputs.loginServer
     imageRepository: 'atlas-blazor'
     imageTag: blazorImageTag
