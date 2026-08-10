@@ -15,10 +15,10 @@
       "value": "atlasadmin"
     },
     "appServicePlanSkuTier": {
-      "value": "Standard"
+      "value": "Basic"
     },
     "appServicePlanSkuSize": {
-      "value": "S1"
+      "value": "B1"
     },
     "appServicePlanCapacity": {
       "value": 1
@@ -30,7 +30,7 @@
       "value": 1
     },
     "sqlDatabaseAutoPauseDelay": {
-      "value": 60
+      "value": 15
     },
     "sqlDatabaseMaxSizeBytes": {
       "value": 34359738368

@@ -1,45 +1,52 @@
 <#
 .SYNOPSIS
-    Bootstraps the ATLAS Azure infrastructure after Bicep deployment.
+    Bootstraps and validates the ATLAS development Azure environment.
 
 .DESCRIPTION
-    Automates post-deployment configuration and validation steps required
-    after a successful 'az deployment group create' of the ATLAS Bicep
-    infrastructure. This script does NOT deploy Azure resources — that
-    remains the responsibility of main.bicep.
+    Performs post-deployment configuration and validation for the ATLAS
+    development environment defined by the Bicep infrastructure.
 
-    The script consumes deployment outputs from main.bicep as the single
-    source of truth for Azure resource names. It does not duplicate names.
+    The script:
+      - Reads deployment outputs from the completed Bicep deployment.
+      - Resolves the GitHub Actions Service Principal.
+      - Configures and verifies ACR permissions for GitHub Actions.
+      - Verifies managed identities for the API and Blazor App Services.
+      - Verifies ACR pull permissions for both App Services.
+      - Verifies Key Vault RBAC configuration and application identity access.
+      - Verifies Storage Account RBAC configuration and application identity access.
+      - Verifies App Service configuration, including Key Vault references
+        for the SQL connection string.
+      - Verifies the SQL Server firewall configuration.
+      - Verifies that all expected Azure resources exist.
+      - Prints a final deployment validation summary.
 
-    Phases:
-      1. Load deployment outputs from the ARM deployment
-      2. Resolve the GitHub Actions Service Principal
-      3. Configure AcrPush for the GitHub Service Principal
-      4. Verify App Service Managed Identities
-      5. Verify AcrPull permissions for both App Services
-      6. Verify SQL Server, Database, Administrator, and Firewall
-      7. Verify all expected Azure resources exist
-      8. Print deployment summary
+    This script does not deploy the Azure infrastructure itself.
+    Run main.bicep first with the appropriate environment parameters.
 
-.PARAMETER ResourceGroup
-    The Azure Resource Group name where ATLAS is deployed.
+    The script is intended for the ATLAS development environment.
+
+.PARAMETER ResourceGroupName
+    Name of the Azure Resource Group containing the ATLAS development
+    environment.
 
 .PARAMETER DeploymentName
-    The name of the Bicep deployment to retrieve outputs from.
-
-.PARAMETER GitHubClientId
-    The Application (Client) ID of the ATLAS GitHub Actions
-    Microsoft Entra App Registration.
+    Name of the ARM/Bicep deployment whose outputs are used by this script.
 
 .EXAMPLE
     .\bootstrap.ps1 `
-        -ResourceGroup atlas-dev-rg `
-        -DeploymentName main `
-        -GitHubClientId "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        -ResourceGroupName "atlas-dev-rg" `
+        -DeploymentName "main"
 
 .NOTES
-    Requires: PowerShell 7, Azure CLI, logged into Azure (az login)
-    Idempotent: Safe to run multiple times.
+    Prerequisites:
+      - Azure CLI installed and available on PATH.
+      - Authenticated Azure CLI session with access to the target subscription.
+      - main.bicep deployment completed successfully.
+      - Appropriate permissions to inspect and configure the Azure resources.
+
+    The script validates Azure resource configuration and RBAC assignments.
+    It does not grant the executing developer account access to application
+    secrets in Key Vault unless explicitly configured to do so elsewhere.
 #>
 
 [CmdletBinding()]
@@ -63,18 +70,16 @@ $EXIT_SUCCESS            = 0
 $EXIT_DEPLOYMENT         = 1
 $EXIT_AUTHENTICATION     = 2
 $EXIT_SERVICEPRINCIPAL   = 3
-$EXIT_RBAC              = 4
-$EXIT_SQL               = 5
-$EXIT_INFRASTRUCTURE    = 6
-$EXIT_PREREQUISITES     = 7
+$EXIT_INFRASTRUCTURE    = 4
+$EXIT_PREREQUISITES     = 5
 
 # --------------------------------------------------------------------------
 # Constants
 # --------------------------------------------------------------------------
 $AcrPushRoleId = '8311e382-0749-4cb8-b61a-304f252e45ec'
 $AcrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-$BlobContainerName = 'permit-documents'
 $StorageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+$KeyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 
 # --------------------------------------------------------------------------
 # Helper functions
@@ -222,18 +227,63 @@ function Ensure-AcrPushRoleAssignment {
     param(
         [string]$PrincipalId,
         [string]$Scope,
-        [string]$PrincipalName
+        [string]$PrincipalName,
+        [string]$KeyVaultName
     )
 
     Write-Step "Phase 3 – Configuring AcrPush for $PrincipalName"
 
+    # ----------------------------------------------------------------------
+    # GitHub Actions -> Key Vault Secrets User
+    # ----------------------------------------------------------------------
+
+    # Resolve the Key Vault resource ID from Azure rather than constructing
+    # it manually. This avoids invalid-scope errors caused by missing or
+    # stale subscription/resource-name variables.
+    $KeyVaultResourceId = az keyvault show `
+        --name $KeyVaultName `
+        --resource-group $ResourceGroup `
+        --query id `
+        --output tsv 2>$null
+
+    Assert-True ($null -ne $KeyVaultResourceId -and $KeyVaultResourceId.Trim() -ne '') `
+        "Key Vault '$KeyVaultName' could not be resolved."
+
+    $githubKeyVaultRole = az role assignment list `
+        --assignee-object-id $PrincipalId `
+        --scope $KeyVaultResourceId `
+        --role $KeyVaultSecretsUserRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -eq $githubKeyVaultRole -or @($githubKeyVaultRole).Count -eq 0) {
+
+        az role assignment create `
+            --assignee-object-id $PrincipalId `
+            --assignee-principal-type ServicePrincipal `
+            --role $KeyVaultSecretsUserRoleId `
+            --scope $KeyVaultResourceId `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to assign Key Vault Secrets User to $PrincipalName."
+
+        Write-Pass "GitHub Actions has Key Vault Secrets User"
+    }
+    else {
+        Write-Pass "GitHub Actions already has Key Vault Secrets User"
+    }
+
+    # ----------------------------------------------------------------------
+    # GitHub Actions -> AcrPush
+    # ----------------------------------------------------------------------
+
     $existing = az role assignment list `
-        --assignee $PrincipalId `
+        --assignee-object-id $PrincipalId `
         --scope $Scope `
         --role $AcrPushRoleId `
         --output json 2>$null | ConvertFrom-Json
 
-    if ($existing) {
+    if ($null -ne $existing -and @($existing).Count -gt 0) {
         Write-Pass "AcrPush already assigned to $PrincipalName"
         return
     }
@@ -243,16 +293,21 @@ function Ensure-AcrPushRoleAssignment {
         --assignee-principal-type ServicePrincipal `
         --role $AcrPushRoleId `
         --scope $Scope `
-        --output none 2>$null
+        --output none
+
+    Assert-True ($LASTEXITCODE -eq 0) `
+        "Failed to assign AcrPush to $PrincipalName."
 
     # Immediate verification
     $verify = az role assignment list `
-        --assignee $PrincipalId `
+        --assignee-object-id $PrincipalId `
         --scope $Scope `
         --role $AcrPushRoleId `
         --output json 2>$null | ConvertFrom-Json
 
-    Assert-True ($verify -ne $null) "AcrPush role assignment for $PrincipalName could not be verified."
+    Assert-True ($null -ne $verify -and @($verify).Count -gt 0) `
+        "AcrPush role assignment for $PrincipalName could not be verified."
+
     Write-Pass "AcrPush assigned to $PrincipalName"
 }
 
@@ -274,16 +329,26 @@ function Ensure-DeveloperStorageAccess {
         --role $StorageBlobDataContributorRoleId `
         --output json | ConvertFrom-Json
 
-    if ($assignment.Count -gt 0) {
+    if ($null -ne $assignment -and @($assignment).Count -gt 0) {
         Write-Pass "Developer already has Storage Blob Data Contributor"
         return
     }
 
     az role assignment create `
+    --assignee-object-id $currentUser.id `
+    --assignee-principal-type User `
+    --role $StorageBlobDataContributorRoleId `
+    --scope $StorageAccountResourceId `
+    --output none
+
+    $verify = az role assignment list `
         --assignee $currentUser.id `
-        --role $StorageBlobDataContributorRoleId `
         --scope $StorageAccountResourceId `
-        --output none
+        --role $StorageBlobDataContributorRoleId `
+        --output json | ConvertFrom-Json
+
+    Assert-True ($null -ne $verify -and @($verify).Count -gt 0) `
+        "Developer Storage Blob Data Contributor role could not be verified."
 
     Write-Pass "Developer granted Storage Blob Data Contributor"
 }
@@ -305,10 +370,10 @@ function Verify-ManagedIdentities {
             --resource-group $ResourceGroup `
             --output json 2>$null | ConvertFrom-Json
 
-        Assert-True ($app -ne $null) "App Service '$appName' not found."
+        Assert-True ($null -ne $app) "App Service '$appName' not found."
 
         $identity = $app.identity
-        Assert-True ($identity -ne $null) "App Service '$appName' has no Managed Identity."
+        Assert-True ($null -ne $identity) "App Service '$appName' has no Managed Identity."
         Assert-True ($identity.type -eq 'SystemAssigned') "App Service '$appName' does not use SystemAssigned identity."
 
         Write-Pass "$appName has SystemAssigned Managed Identity (Principal ID: $($identity.principalId))"
@@ -316,7 +381,45 @@ function Verify-ManagedIdentities {
 }
 
 # --------------------------------------------------------------------------
-# Phase 5 – Verify ACR Permissions
+# Phase 4b – Configure App Service ACR Pull Authentication
+# --------------------------------------------------------------------------
+function Ensure-AppServiceAcrPullConfiguration {
+    param(
+        [string]$ApiAppName,
+        [string]$BlazorAppName
+    )
+
+    Write-Step "Phase 4b – Configuring App Service ACR pull authentication"
+
+    foreach ($appName in @($ApiAppName, $BlazorAppName)) {
+        az webapp config set `
+            --name $appName `
+            --resource-group $ResourceGroup `
+            --acr-use-identity true `
+            --acr-identity '[system]' `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to configure managed identity ACR pull authentication for '$appName'."
+
+        $config = az webapp config show `
+            --name $appName `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        Assert-True ($null -ne $config) `
+            "Unable to read ACR pull configuration for '$appName'."
+        Assert-True ($config.acrUseManagedIdentityCreds -eq $true) `
+            "App Service '$appName' is not configured to use managed identity for ACR pulls."
+        Assert-True ([string]::IsNullOrWhiteSpace($config.acrUserManagedIdentityID)) `
+            "App Service '$appName' unexpectedly has a user-assigned ACR identity configured."
+
+        Write-Pass "$appName uses SystemAssigned Managed Identity for ACR pulls"
+    }
+}
+
+# --------------------------------------------------------------------------
+# Phase 5 – Configure and Verify ACR Permissions
 # --------------------------------------------------------------------------
 function Verify-AcrPermissions {
     param(
@@ -334,30 +437,265 @@ function Verify-AcrPermissions {
         --scope $AcrResourceId `
         --role $AcrPushRoleId `
         --output json 2>$null | ConvertFrom-Json
-    Assert-True ($ghPush -ne $null) "GitHub Service Principal missing AcrPush on ACR."
+    Assert-True ($null -ne $ghPush -and @($ghPush).Count -gt 0) `
+        "GitHub Service Principal missing AcrPush on ACR."
     Write-Pass "GitHub AcrPush"
 
     # API AcrPull
     $apiPull = az role assignment list `
-        --assignee $ApiPrincipalId `
+        --assignee-object-id $ApiPrincipalId `
         --scope $AcrResourceId `
         --role $AcrPullRoleId `
         --output json 2>$null | ConvertFrom-Json
-    Assert-True ($apiPull -ne $null) "API App Service missing AcrPull on ACR."
+
+    if ($null -eq $apiPull -or @($apiPull).Count -eq 0) {
+        az role assignment create `
+            --assignee-object-id $ApiPrincipalId `
+            --assignee-principal-type ServicePrincipal `
+            --role $AcrPullRoleId `
+            --scope $AcrResourceId `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to assign AcrPull to API App Service."
+    }
+
+    $apiPull = az role assignment list `
+        --assignee-object-id $ApiPrincipalId `
+        --scope $AcrResourceId `
+        --role $AcrPullRoleId `
+        --output json 2>$null | ConvertFrom-Json
+    Assert-True ($null -ne $apiPull -and @($apiPull).Count -gt 0) `
+        "API App Service AcrPull on ACR could not be verified."
     Write-Pass "API AcrPull"
 
     # Blazor AcrPull
     $blazorPull = az role assignment list `
-        --assignee $BlazorPrincipalId `
+        --assignee-object-id $BlazorPrincipalId `
         --scope $AcrResourceId `
         --role $AcrPullRoleId `
         --output json 2>$null | ConvertFrom-Json
-    Assert-True ($blazorPull -ne $null) "Blazor App Service missing AcrPull on ACR."
+
+    if ($null -eq $blazorPull -or @($blazorPull).Count -eq 0) {
+        az role assignment create `
+            --assignee-object-id $BlazorPrincipalId `
+            --assignee-principal-type ServicePrincipal `
+            --role $AcrPullRoleId `
+            --scope $AcrResourceId `
+            --output none
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Failed to assign AcrPull to Blazor App Service."
+    }
+
+    $blazorPull = az role assignment list `
+        --assignee-object-id $BlazorPrincipalId `
+        --scope $AcrResourceId `
+        --role $AcrPullRoleId `
+        --output json 2>$null | ConvertFrom-Json
+    Assert-True ($null -ne $blazorPull -and @($blazorPull).Count -gt 0) `
+        "Blazor App Service AcrPull on ACR could not be verified."
     Write-Pass "Blazor AcrPull"
 }
 
 # --------------------------------------------------------------------------
-# Phase 6 – Verify SQL
+# Phase 6 – Verify Key Vault Integration
+# --------------------------------------------------------------------------
+function Verify-KeyVaultIntegration {
+    param(
+        [string]$KeyVaultName,
+        [string]$GitHubPrincipalId,
+        [string]$ApiPrincipalId,
+        [string]$BlazorPrincipalId
+    )
+
+    Write-Step "Phase 6 – Verifying Key Vault integration"
+
+    # Key Vault exists and uses RBAC authorization
+    $vault = az keyvault show `
+        --name $KeyVaultName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $vault) "Key Vault '$KeyVaultName' not found."
+    Assert-True ($vault.properties.enableRbacAuthorization -eq $true) `
+        "Key Vault '$KeyVaultName' does not use RBAC authorization."
+
+    Write-Pass "Key Vault exists and uses RBAC authorization"
+
+    # GitHub Actions -> Key Vault Secrets User
+    $githubKeyVaultRole = az role assignment list `
+        --assignee $GitHubPrincipalId `
+        --scope $vault.id `
+        --role $KeyVaultSecretsUserRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $githubKeyVaultRole -and @($githubKeyVaultRole).Count -gt 0) `
+        "GitHub Actions is missing Key Vault Secrets User."
+
+    Write-Pass "GitHub Actions has Key Vault Secrets User"
+
+    # API App Service -> Key Vault Secrets User
+    $apiRole = az role assignment list `
+        --assignee $ApiPrincipalId `
+        --scope $vault.id `
+        --role $KeyVaultSecretsUserRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $apiRole -and @($apiRole).Count -gt 0) `
+        "API App Service is missing Key Vault Secrets User role."
+
+    Write-Pass "API App Service has Key Vault Secrets User"
+
+    # Blazor App Service -> Key Vault Secrets User
+    $blazorRole = az role assignment list `
+        --assignee $BlazorPrincipalId `
+        --scope $vault.id `
+        --role $KeyVaultSecretsUserRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $blazorRole -and @($blazorRole).Count -gt 0) `
+        "Blazor App Service is missing Key Vault Secrets User role."
+
+    Write-Pass "Blazor App Service has Key Vault Secrets User" 
+
+    # Required SQL secret
+    # Verify the secret resource through Azure Resource Manager rather than
+    # reading the secret value. This does not require the developer account
+    # to have Key Vault Secrets User permissions.
+    $sqlSecretResource = az resource show `
+        --ids "$($vault.id)/secrets/sql-connection-string" `
+        --api-version "2023-07-01" `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $sqlSecretResource) `
+        "Key Vault secret 'sql-connection-string' does not exist."
+
+    Write-Pass "SQL connection string secret exists"
+
+    # Obsolete storage connection string must not exist anymore.
+    # Query the secret resource through Azure Resource Manager rather than
+    # attempting to read its value.
+    $storageSecretResource = az resource show `
+        --ids "$($vault.id)/secrets/storage-connection-string" `
+        --api-version "2023-07-01" `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -eq $storageSecretResource) `
+        "Obsolete Key Vault secret 'storage-connection-string' still exists."
+
+    Write-Pass "Storage connection string secret is absent"
+}
+
+# --------------------------------------------------------------------------
+# Phase 7 – Verify Storage Managed Identity Integration
+# --------------------------------------------------------------------------
+function Verify-StorageManagedIdentity {
+    param(
+        [string]$StorageAccountResourceId,
+        [string]$ApiPrincipalId,
+        [string]$BlazorPrincipalId
+    )
+
+    Write-Step "Phase 7 – Verifying Storage Managed Identity integration"
+
+    # API App Service -> Storage Blob Data Contributor
+    $apiRole = az role assignment list `
+        --assignee $ApiPrincipalId `
+        --scope $StorageAccountResourceId `
+        --role $StorageBlobDataContributorRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $apiRole -and @($apiRole).Count -gt 0) `
+        "API App Service is missing Storage Blob Data Contributor."
+
+    Write-Pass "API App Service has Storage Blob Data Contributor"
+
+    # Blazor App Service -> Storage Blob Data Contributor
+    $blazorRole = az role assignment list `
+        --assignee $BlazorPrincipalId `
+        --scope $StorageAccountResourceId `
+        --role $StorageBlobDataContributorRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True ($null -ne $blazorRole -and @($blazorRole).Count -gt 0) `
+        "Blazor App Service is missing Storage Blob Data Contributor."
+
+    Write-Pass "Blazor App Service has Storage Blob Data Contributor"
+}
+
+# --------------------------------------------------------------------------
+# Phase 8 – Verify App Service Configuration
+# --------------------------------------------------------------------------
+function Verify-AppServiceConfiguration {
+    param(
+        [string]$ApiAppName,
+        [string]$BlazorAppName,
+        [string]$KeyVaultName
+    )
+
+    Write-Step "Phase 8 - Verifying App Service configuration"
+
+    foreach ($appName in @($ApiAppName, $BlazorAppName)) {
+
+        $settings = az webapp config appsettings list `
+            --name $appName `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        Assert-True ($null -ne $settings) `
+            "Unable to read App Service settings for '$appName'."
+
+        $settingMap = @{}
+
+        foreach ($setting in $settings) {
+            $settingMap[$setting.name] = $setting.value
+        }
+
+        # Required common settings
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['ASPNETCORE_ENVIRONMENT'])) `
+            "$appName is missing ASPNETCORE_ENVIRONMENT."
+
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['APPLICATIONINSIGHTS_CONNECTION_STRING'])) `
+            "$appName is missing APPLICATIONINSIGHTS_CONNECTION_STRING."
+
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['KeyVault__VaultName'])) `
+            "$appName is missing KeyVault__VaultName."
+
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Storage__AccountName'])) `
+            "$appName is missing Storage__AccountName."
+
+        # SQL connection string must be a Key Vault reference
+        $sqlSetting = $settingMap['ConnectionStrings__DefaultConnection']
+
+        Assert-True (-not [string]::IsNullOrWhiteSpace($sqlSetting)) `
+            "$appName is missing ConnectionStrings__DefaultConnection."
+
+        $expectedSqlSecretUri =
+            "https://$KeyVaultName.vault.azure.net/secrets/sql-connection-string/"
+
+        Assert-True `
+            ($sqlSetting -match '^@Microsoft\.KeyVault\(SecretUri=(.+)\)$') `
+            "$appName ConnectionStrings__DefaultConnection must be a Key Vault SecretUri reference."
+
+        $actualSqlSecretUri = $Matches[1].TrimEnd('/')
+
+        Assert-True `
+            ($actualSqlSecretUri -ieq $expectedSqlSecretUri.TrimEnd('/')) `
+            "$appName ConnectionStrings__DefaultConnection must reference sql-connection-string."
+
+        Write-Host "  PASS ConnectionStrings__DefaultConnection references sql-connection-string"
+
+        # Storage connection string must no longer exist
+        Assert-True (-not $settingMap.ContainsKey('Storage__ConnectionString')) `
+            "$appName still contains obsolete Storage__ConnectionString."
+
+        Write-Pass "$appName App Service configuration is valid"
+    }
+}
+
+# --------------------------------------------------------------------------
+# Phase 9 – Verify SQL
 # --------------------------------------------------------------------------
 function Verify-SqlInfrastructure {
     param(
@@ -365,14 +703,14 @@ function Verify-SqlInfrastructure {
         [string]$SqlDatabaseName
     )
 
-    Write-Step "Phase 6 – Verifying SQL infrastructure"
+    Write-Step "Phase 9 – Verifying SQL infrastructure"
 
     # SQL Server exists
     $server = az sql server show `
         --name $SqlServerName `
         --resource-group $ResourceGroup `
         --output json 2>$null | ConvertFrom-Json
-    Assert-True ($server -ne $null) "SQL Server '$SqlServerName' not found."
+    Assert-True ($null -ne $server) "SQL Server '$SqlServerName' not found."
     Write-Pass "SQL Server"
 
     # SQL Administrator configured
@@ -385,7 +723,7 @@ function Verify-SqlInfrastructure {
         --server $SqlServerName `
         --resource-group $ResourceGroup `
         --output json 2>$null | ConvertFrom-Json
-    Assert-True ($db -ne $null) "SQL Database '$SqlDatabaseName' not found."
+    Assert-True ($null -ne $db) "SQL Database '$SqlDatabaseName' not found."
     Write-Pass "Database"
 
     # SQL Firewall – AllowAzureServices
@@ -395,12 +733,13 @@ function Verify-SqlInfrastructure {
         --output json 2>$null | ConvertFrom-Json
 
     $allowAzure = $fwRules | Where-Object { $_.name -eq 'AllowAzureServices' -or $_.startIpAddress -eq '0.0.0.0' -and $_.endIpAddress -eq '0.0.0.0' }
-    Assert-True ($allowAzure -ne $null) "SQL Firewall rule 'AllowAzureServices' (0.0.0.0 – 0.0.0.0) not found."
+    Assert-True ($null -ne $allowAzure -and @($allowAzure).Count -gt 0) `
+        "SQL Firewall rule 'AllowAzureServices' (0.0.0.0 – 0.0.0.0) not found."
     Write-Pass "SQL Firewall"
 }
 
 # --------------------------------------------------------------------------
-# Phase 7 – Verify Infrastructure Resources
+# Phase 10 – Verify Infrastructure Resources
 # --------------------------------------------------------------------------
 function Verify-InfrastructureResources {
     param(
@@ -416,37 +755,37 @@ function Verify-InfrastructureResources {
         [string]$SqlDatabaseName
     )
 
-    Write-Step "Phase 7 – Verifying infrastructure resources"
+    Write-Step "Phase 10 – Verifying infrastructure resources"
 
     $results = @()
 
     # Resource Group
     $rg = az group show --name $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Resource Group"; Status = ($rg -ne $null); Detail = $ResourceGroup }
+    $results += [PSCustomObject]@{ Name = "Resource Group"; Status = ($null -ne $rg); Detail = $ResourceGroup }
 
     # Container Registry
     $acr = az acr show --name $ContainerRegistryName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Container Registry"; Status = ($acr -ne $null); Detail = $ContainerRegistryName }
+    $results += [PSCustomObject]@{ Name = "Container Registry"; Status = ($null -ne $acr); Detail = $ContainerRegistryName }
 
     # App Service Plan
     $plan = az appservice plan show --name $AppServicePlanName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "App Service Plan"; Status = ($plan -ne $null); Detail = $AppServicePlanName }
+    $results += [PSCustomObject]@{ Name = "App Service Plan"; Status = ($null -ne $plan); Detail = $AppServicePlanName }
 
     # API App Service
     $api = az webapp show --name $ApiAppServiceName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "API App Service"; Status = ($api -ne $null); Detail = $ApiAppServiceName }
+    $results += [PSCustomObject]@{ Name = "API App Service"; Status = ($null -ne $api); Detail = $ApiAppServiceName }
 
     # Blazor App Service
     $blazor = az webapp show --name $BlazorAppServiceName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Blazor App Service"; Status = ($blazor -ne $null); Detail = $BlazorAppServiceName }
+    $results += [PSCustomObject]@{ Name = "Blazor App Service"; Status = ($null -ne $blazor); Detail = $BlazorAppServiceName }
 
     # Storage Account
     $stor = az storage account show --name $StorageAccountName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Storage Account"; Status = ($stor -ne $null); Detail = $StorageAccountName }    
+    $results += [PSCustomObject]@{ Name = "Storage Account"; Status = ($null -ne $stor); Detail = $StorageAccountName }    
 
     # Key Vault
     $kv = az keyvault show --name $KeyVaultName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Key Vault"; Status = ($kv -ne $null); Detail = $KeyVaultName }
+    $results += [PSCustomObject]@{ Name = "Key Vault"; Status = ($null -ne $kv); Detail = $KeyVaultName }
 
     # Application Insights (generic ARM query — no extension required)
     $ai = az resource show `
@@ -454,19 +793,19 @@ function Verify-InfrastructureResources {
         --resource-type "Microsoft.Insights/components" `
         --name $ApplicationInsightsName `
         --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Application Insights"; Status = ($ai -ne $null); Detail = $ApplicationInsightsName }
+    $results += [PSCustomObject]@{ Name = "Application Insights"; Status = ($null -ne $ai); Detail = $ApplicationInsightsName }
 
     # Log Analytics
     $la = az monitor log-analytics workspace show --workspace-name $LogAnalyticsWorkspaceName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "Log Analytics"; Status = ($la -ne $null); Detail = $LogAnalyticsWorkspaceName }
+    $results += [PSCustomObject]@{ Name = "Log Analytics"; Status = ($null -ne $la); Detail = $LogAnalyticsWorkspaceName }
 
     # SQL Server (already verified in Phase 6, but check existence here too)
     $sqlSrv = az sql server show --name $SqlServerName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "SQL Server"; Status = ($sqlSrv -ne $null); Detail = $SqlServerName }
+    $results += [PSCustomObject]@{ Name = "SQL Server"; Status = ($null -ne $sqlSrv); Detail = $SqlServerName }
 
     # SQL Database
     $sqlDb = az sql db show --name $SqlDatabaseName --server $SqlServerName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
-    $results += [PSCustomObject]@{ Name = "SQL Database"; Status = ($sqlDb -ne $null); Detail = "$SqlServerName/$SqlDatabaseName" }
+    $results += [PSCustomObject]@{ Name = "SQL Database"; Status = ($null -ne $sqlDb); Detail = "$SqlServerName/$SqlDatabaseName" }
 
     # Check all passed
     $allPassed = $true
@@ -485,7 +824,7 @@ function Verify-InfrastructureResources {
 }
 
 # --------------------------------------------------------------------------
-# Phase 8 – Write Summary
+# Phase 11 – Write Summary
 # --------------------------------------------------------------------------
 function Write-Summary {
     param(
@@ -553,7 +892,8 @@ $githubSp = Get-GitHubServicePrincipal -ClientId $GitHubClientId
 Ensure-AcrPushRoleAssignment `
     -PrincipalId $githubSp.id `
     -Scope $outputs.containerRegistryResourceId `
-    -PrincipalName "GitHub Actions"
+    -PrincipalName "GitHub Actions" `
+    -KeyVaultName $outputs.keyVaultName
 
 # Phase 3b
 Ensure-DeveloperStorageAccess `
@@ -561,6 +901,11 @@ Ensure-DeveloperStorageAccess `
 
 # Phase 4
 Verify-ManagedIdentities `
+    -ApiAppName $outputs.apiAppServiceName `
+    -BlazorAppName $outputs.blazorAppServiceName
+
+# Phase 4b
+Ensure-AppServiceAcrPullConfiguration `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName
 
@@ -572,11 +917,30 @@ Verify-AcrPermissions `
     -BlazorPrincipalId $outputs.blazorPrincipalId
 
 # Phase 6
+Verify-KeyVaultIntegration `
+    -KeyVaultName $outputs.keyVaultName `
+    -GitHubPrincipalId $githubSp.id `
+    -ApiPrincipalId $outputs.apiPrincipalId `
+    -BlazorPrincipalId $outputs.blazorPrincipalId
+
+# Phase 7
+Verify-StorageManagedIdentity `
+    -StorageAccountResourceId $outputs.storageAccountResourceId `
+    -ApiPrincipalId $outputs.apiPrincipalId `
+    -BlazorPrincipalId $outputs.blazorPrincipalId
+
+# Phase 8
+Verify-AppServiceConfiguration `
+    -ApiAppName $outputs.apiAppServiceName `
+    -BlazorAppName $outputs.blazorAppServiceName `
+    -KeyVaultName $outputs.keyVaultName
+
+# Phase 9
 Verify-SqlInfrastructure `
     -SqlServerName $outputs.sqlServerName `
     -SqlDatabaseName $outputs.sqlDatabaseName
 
-# Phase 7
+# Phase 10
 $infraResults = Verify-InfrastructureResources `
     -ContainerRegistryName $outputs.containerRegistryName `
     -AppServicePlanName $outputs.appServicePlanName `
@@ -589,7 +953,7 @@ $infraResults = Verify-InfrastructureResources `
     -SqlServerName $outputs.sqlServerName `
     -SqlDatabaseName $outputs.sqlDatabaseName
 
-# Phase 8
+# Phase 11
 Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults
 
 exit $EXIT_SUCCESS

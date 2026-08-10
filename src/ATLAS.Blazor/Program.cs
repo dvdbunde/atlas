@@ -12,7 +12,7 @@ using Microsoft.Identity.Web.UI;
 var builder = WebApplication.CreateBuilder(args);
 
 // Azure Application Insights telemetry (skip in Testing)
-if (builder.Environment.EnvironmentName != "Testing")
+if (builder.Environment.EnvironmentName != "Testing" && !builder.Environment.IsDevelopment())
 {
     builder.Services.AddApplicationInsightsTelemetry();
 }

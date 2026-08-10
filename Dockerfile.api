@@ -1,4 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+RUN dotnet tool install --global NSwag.ConsoleCore --version 14.7.1
+ENV PATH="${PATH}:/root/.dotnet/tools"
 WORKDIR /src
 COPY ATLAS.slnx ./
 COPY src/ATLAS.Domain/ATLAS.Domain.csproj src/ATLAS.Domain/
@@ -14,4 +16,4 @@ WORKDIR /app
 COPY --from=build /app .
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
-ENTRYPOINT ["dotnet", "ATLAS.API.dll"]
+ENTRYPOINT ["dotnet", "ATLAS.Api.dll"]

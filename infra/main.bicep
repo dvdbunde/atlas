@@ -57,6 +57,9 @@ param apiImageTag string = 'latest'
 @description('Blazor container image tag. Defaults to commit SHA in CI/CD.')
 param blazorImageTag string = 'latest'
 
+@description('ASP.NET Core environment name applied to App Services (e.g. Development, Production). Defaults to Development.') 
+param environmentName string = 'Development'
+
 // -- Central naming & tagging -----------------------------------------------
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
@@ -138,6 +141,32 @@ module apiAppService 'modules/appservice.bicep' = {
     acrLoginServer: containerRegistry.outputs.loginServer
     imageRepository: 'atlas-api'
     imageTag: apiImageTag
+    appSettings: [
+      {
+        name: 'ASPNETCORE_FORWARDEDHEADERS_ENABLED'
+        value: 'true'
+      }
+      {
+        name: 'ASPNETCORE_ENVIRONMENT'
+        value: environmentName
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
+      }
+      {
+        name: 'ConnectionStrings__DefaultConnection'
+        value: sqlConnectionStringRef
+      }
+      {
+        name: 'Storage__AccountName'
+        value: storage.outputs.name
+      }
+      {
+        name: 'KeyVault__VaultName'
+        value: keyVault.outputs.name
+      }
+    ]
   }
 }
 
@@ -153,6 +182,32 @@ module blazorAppService 'modules/appservice.bicep' = {
     acrLoginServer: containerRegistry.outputs.loginServer
     imageRepository: 'atlas-blazor'
     imageTag: blazorImageTag
+    appSettings: [
+      {
+        name: 'ASPNETCORE_FORWARDEDHEADERS_ENABLED'
+        value: 'true'
+      }
+      {
+        name: 'ASPNETCORE_ENVIRONMENT'
+        value: environmentName
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
+      }
+      {
+        name: 'ConnectionStrings__DefaultConnection'
+        value: sqlConnectionStringRef
+      }
+      {
+        name: 'Storage__AccountName'
+        value: storage.outputs.name
+      }
+      {
+        name: 'KeyVault__VaultName'
+        value: keyVault.outputs.name
+      }
+    ]
   }
 }
 
@@ -197,6 +252,18 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
+// Deterministic suffix derived from the subscription ID (or explicit override).
+// Used to compute globally unique names (Key Vault, etc.) in main.bicep.
+var effectiveSuffix = !empty(uniqueSuffix) ? uniqueSuffix : take(replace(subscription().subscriptionId, '-', ''), 6)
+
+// Reference the Storage Account as an existing resource so RBAC role
+// assignments can be scoped to it. The name is deterministic (derived from
+// environment + uniqueSuffix), matching the naming module.
+var storageAccountName = replace('atlas${environment}storage${effectiveSuffix}', '-', '')
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+  name: storageAccountName
+}
+
 // -- Key Vault ---------------------------------------------------------------
 module keyVault 'modules/keyvault.bicep' = {
   name: '${deployment().name}-keyvault'
@@ -206,6 +273,36 @@ module keyVault 'modules/keyvault.bicep' = {
     tags: tags.outputs.tags
   }
 }
+
+// Reference the Key Vault as an existing resource so RBAC role assignments can
+// be scoped to it. The name is deterministic (derived from environment +
+// uniqueSuffix), matching the naming module.
+var keyVaultName = 'atlas${environment}kv${effectiveSuffix}'
+resource keyVaultResource 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
+
+// -- Key Vault Secrets -------------------------------------------------------
+// Store the runtime secrets in Key Vault so App Service settings can use
+// Key Vault references instead of plaintext values. This leaves Key Vault fully
+// populated after deployment with no manual secret creation required.
+//
+// Each secret has an explicit dependsOn on the Key Vault module deployment so
+// ARM deterministically deploys Key Vault -> secrets -> App Service settings,
+// rather than relying on ARM's implicit ordering.
+resource sqlConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVaultResource
+  name: 'sql-connection-string'
+  properties: {
+    value: 'Server=tcp:${sqlServer.outputs.fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabase.outputs.name};Persist Security Info=False;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  }
+  dependsOn: [
+    keyVault
+  ]
+}
+
+// -- Key Vault reference strings for App Service settings --------------------
+var sqlConnectionStringRef = '@Microsoft.KeyVault(SecretUri=${keyVault.outputs.vaultUri}/secrets/sql-connection-string/)'
 
 // -- Resource Lock -----------------------------------------------------------
 resource resourceLock 'Microsoft.Authorization/locks@2020-05-01' = if (enableResourceLock) {
@@ -236,6 +333,60 @@ resource blazorAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   scope: acr
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleDefinitionId)
+    principalId: blazorAppService.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- Key Vault Secrets User role definition (built-in) -----------------------
+// Grants read access to Key Vault secrets so App Service Key Vault references
+// can be resolved. Key Vault uses RBAC (enableRbacAuthorization: true).
+var keyVaultSecretsUserRoleDefinitionId = '4633458b-17de-408a-b874-0445c86b69e6'
+
+// -- Key Vault Secrets User: API App Service ---------------------------------
+resource apiKeyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVaultName, 'api-kv-secrets-user', subscription().subscriptionId)
+  scope: keyVaultResource
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleDefinitionId)
+    principalId: apiAppService.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- Key Vault Secrets User: Blazor App Service ------------------------------
+resource blazorKeyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVaultName, 'blazor-kv-secrets-user', subscription().subscriptionId)
+  scope: keyVaultResource
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleDefinitionId)
+    principalId: blazorAppService.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- Storage Blob Data Contributor role definition (built-in) ----------------
+// Grants read/write/delete access to Blob Storage so App Services can access
+// blobs via their System Assigned Managed Identity (no Storage Account keys).
+var storageBlobDataContributorRoleDefinitionId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+
+// -- Storage Blob Data Contributor: API App Service --------------------------
+resource apiStorageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccountName, 'api-storage-blob-contributor', subscription().subscriptionId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataContributorRoleDefinitionId)
+    principalId: apiAppService.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- Storage Blob Data Contributor: Blazor App Service ------------------------
+resource blazorStorageBlobDataContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccountName, 'blazor-storage-blob-contributor', subscription().subscriptionId)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataContributorRoleDefinitionId)
     principalId: blazorAppService.outputs.principalId
     principalType: 'ServicePrincipal'
   }
