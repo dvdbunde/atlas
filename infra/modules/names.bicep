@@ -32,6 +32,9 @@ var sqlDatabaseName = 'atlas-${environment}-db'
 // -- Storage ----------------------------------------------------------------
 var storageAccountName = replace('atlas${environment}storage${effectiveSuffix}', '-', '')
 
+// -- Communication Services -------------------------------------------------
+var communicationServicesName = 'atlas-comm-${environment}-${effectiveSuffix}'
+
 // -- Security ---------------------------------------------------------------
 var keyVaultName = 'atlas${environment}kv${effectiveSuffix}'
 
@@ -50,6 +53,7 @@ output containerRegistryName      string = containerRegistryName
 output sqlServerName              string = sqlServerName
 output sqlDatabaseName            string = sqlDatabaseName
 output storageAccountName         string = storageAccountName
+output communicationServicesName  string = communicationServicesName
 output keyVaultName               string = keyVaultName
 output logAnalyticsWorkspaceName  string = logAnalyticsWorkspaceName
 output applicationInsightsName    string = applicationInsightsName

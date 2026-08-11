@@ -4,7 +4,9 @@
 //----------------------
 
 using System;
+using ATLAS.Application.Interfaces;
 using ATLAS.Infrastructure.Options;
+using ATLAS.Infrastructure.Services;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -135,6 +137,94 @@ namespace ATLAS.Infrastructure.Tests.Data
             var services = new ServiceCollection();
             Assert.Throws<ArgumentNullException>(() =>
                 services.AddInfrastructure(null!));
+        }
+
+        [Fact]
+        public void AddInfrastructure_WithAcsConfigured_ResolvesAcsEmailService()
+        {
+            var config = CreateConfiguration(v =>
+            {
+                v["Email:Acs:Endpoint"] = "https://atlas-comm-test.communication.azure.com";
+                v["Email:Acs:SenderAddress"] = "DoNotReply@atlas.com";
+            });
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var emailService = provider.GetRequiredService<IEmailService>();
+            Assert.IsType<AcsEmailService>(emailService);
+        }
+
+        [Fact]
+        public void AddInfrastructure_Development_WithoutAcs_ResolvesLocalEmailService()
+        {
+            var config = CreateConfiguration(v =>
+            {
+                v["ASPNETCORE_ENVIRONMENT"] = "Development";
+            });
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var emailService = provider.GetRequiredService<IEmailService>();
+            Assert.IsType<LocalEmailService>(emailService);
+        }
+
+        [Fact]
+        public void AddInfrastructure_NonDevelopment_WithoutAcs_Throws()
+        {
+            // A deployed (non-development) environment must fail fast when ACS email is not
+            // configured, rather than silently falling back to the local sink.
+            var config = CreateConfiguration(v =>
+            {
+                v["ASPNETCORE_ENVIRONMENT"] = "Production";
+            });
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            Assert.Throws<InvalidOperationException>(() =>
+                provider.GetRequiredService<IEmailService>());
+        }
+
+        [Fact]
+        public void AddInfrastructure_NonDevelopment_WithAcs_ResolvesAcsEmailService()
+        {
+            var config = CreateConfiguration(v =>
+            {
+                v["ASPNETCORE_ENVIRONMENT"] = "Production";
+                v["Email:Acs:Endpoint"] = "https://atlas-comm-test.communication.azure.com";
+                v["Email:Acs:SenderAddress"] = "DoNotReply@atlas.com";
+            });
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var emailService = provider.GetRequiredService<IEmailService>();
+            Assert.IsType<AcsEmailService>(emailService);
+        }
+
+        [Fact]
+        public void AddInfrastructure_WithAcsConfigured_DoesNotResolveSmtp()
+        {
+            // There must be no SMTP fallback in production. With ACS configured, the
+            // resolved service must be the ACS implementation (SmtpEmailService no longer exists).
+            var config = CreateConfiguration(v =>
+            {
+                v["Email:Acs:Endpoint"] = "https://atlas-comm-test.communication.azure.com";
+                v["Email:Acs:SenderAddress"] = "DoNotReply@atlas.com";
+            });
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var emailService = provider.GetRequiredService<IEmailService>();
+            Assert.IsType<AcsEmailService>(emailService);
         }
     }
 }

@@ -225,7 +225,7 @@ public static class TestServiceCollectionExtensions
         //----------------------
         // Email Services (Phase E1) - REQUIRED FOR TESTS
         //----------------------
-        services.AddTransient<IEmailService, SmtpEmailService>();
+        services.AddTransient<IEmailService, LocalEmailService>();
         services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddScoped<IEmailTemplateStore, FileEmailTemplateStore>();
 

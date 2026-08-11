@@ -11,6 +11,9 @@
     "uniqueSuffix": {
       "value": ""
     },
+    "emailDomainName": {
+      "value": "atlas.com"
+    },
     "sqlAdminLogin": {
       "value": "atlasadmin"
     },

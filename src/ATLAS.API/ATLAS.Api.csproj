@@ -36,8 +36,8 @@
   </ItemGroup>
     
   <Target Name="GenerateOpenApiControllers" BeforeTargets="BeforeBuild">
-    <Exec Command="nswag run nswag.json" />
-  </Target> 
+    <Exec Command="$(NSwagExe_Net90) run nswag.json" />
+  </Target>
 
 </Project>
 

@@ -1,0 +1,134 @@
+# ATLAS - Useful Commands
+# Deduplicated and organized reference of terminal commands used during development.
+
+## .NET Build / Run
+dotnet build --property Warninglevel=0
+dotnet clean
+dotnet run --project src/ATLAS.Blazor/ --property Warninglevel=0
+dotnet run --project src/ATLAS.Api/ --property Warninglevel=0
+dotnet ef database update --project src/ATLAS.Infrastructure --startup-project src/ATLAS.API
+dotnet nuget locals --list all
+dotnet nuget locals all --clear
+
+## NSwag
+& "C:\Users\David\.nuget\packages\nswag.msbuild\14.1.0\tools\Win\NSwag.exe" run src\ATLAS.API\nswag.json
+
+## Azure CLI - Login / Version
+az login
+az login --tenant "a3704c86-b904-4d1c-8f3c-969cd34ca31f"
+az login --tenant "a3704c86-b904-4d1c-8f3c-969cd34ca31f" --use-device-code
+az logout
+az account show
+az account show --output table
+az --version
+az upgrade
+az bicep version
+az bicep install
+
+## Azure - Resource Group / Deployment
+az group create --name atlas-dev-rg --location westeurope
+az group delete --name atlas-dev-rg
+az deployment group list --resource-group atlas-dev-rg --output table
+az deployment group list --resource-group atlas-dev-rg --query "[].{Name:name,State:properties.provisioningState,Timestamp:properties.timestamp}" --output table
+az deployment group show --resource-group atlas-dev-rg --name main --query properties.outputs.keyVaultName.value --output tsv
+az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json
+az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json *> validation-output.txt
+az deployment group what-if --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json
+az deployment group create --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json
+az deployment operation group list --resource-group atlas-dev-rg --name main-acr --output json
+az resource list --resource-group atlas-dev-rg --output table
+
+## Azure - Bicep
+az bicep build --file infra\main.bicep
+az bicep build --file main.bicep
+
+## Azure - Service Principal / RBAC
+az ad sp show --id 4226094a-bba0-4cf2-9464-25e22391c158
+az role assignment create --assignee-object-id 8efd7b92-e8c4-45d4-9efe-389f2dd5f7f6 --assignee-principal-type ServicePrincipal --role Contributor --scope /subscriptions/de96dbbf-6362-4f96-854d-a9666dc30595
+az role assignment list --assignee 8efd7b92-e8c4-45d4-9efe-389f2dd5f7f6 --all
+
+## Azure - ACR (Container Registry)
+az acr check-name --name atlasacrpxto
+az provider show --namespace Microsoft.ContainerRegistry --expand "resourceTypes/aliases" --output table
+az acr create --resource-group atlas-dev-rg --name atlasacrpxto --sku Standard
+az acr create --resource-group atlas-dev-rg --name atlasacrpxto --sku Basic --admin-enabled false
+az acr config retention update --resource-group atlas-dev-rg --registry atlasacrpxto --status enabled --days 7
+az acr config retention update --registry atlasacrpxto --status enabled --days 7 --type UntaggedManifests
+az acr show --resource-group atlas-dev-rg --name atlasacrde96db --output table
+az acr repository show-tags --name atlasacrde96db --repository atlas-api --output table
+az acr repository show-tags --name atlasacrde96db --repository atlas-blazor --output table
+
+## Azure - SQL
+az sql server show --resource-group atlas-dev-rg --name atlasdevsqlde96db --query administratorLogin
+az sql server show --resource-group atlas-dev-rg --name atlasdevsqlde96db --query "{AdministratorLogin:administratorLogin,FullyQualifiedDomainName:fullyQualifiedDomainName,Version:version}" --output table
+az sql db list --resource-group atlas-dev-rg --server atlasdevsqlde96db --output table
+az sql server firewall-rule list --resource-group atlas-dev-rg --server atlasdevsqlde96db --output table
+az sql server firewall-rule create --resource-group atlas-dev-rg --server atlasdevsqlde96db --name AllowAzureServices --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+
+## Azure - Storage
+az storage account show --resource-group atlas-dev-rg --name atlasdevstoragede96db --query "networkRuleSet" --output json
+az resource show --resource-group atlas-dev-rg --resource-type Microsoft.Storage/storageAccounts/blobServices/containers --name atlasdevstoragede96db/permit-documents
+
+## Azure - Web Apps
+az webapp list --resource-group atlas-dev-rg --query "[].{Name:name,State:state,Host:defaultHostName}" --output table
+az webapp show --name atlas-api-dev-de96db --resource-group atlas-dev-rg --query "{state:state, defaultHostName:defaultHostName, linuxFxVersion:siteConfig.linuxFxVersion}" --output json
+az webapp show --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --query "{state:state, defaultHostName:defaultHostName, linuxFxVersion:siteConfig.linuxFxVersion}" --output json
+az webapp show --name atlas-api-dev-de96db --resource-group atlas-dev-rg --query "{state:state, host:defaultHostName}" --output json
+az webapp show --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --query "{state:state, host:defaultHostName}" --output json
+az webapp config container show --resource-group atlas-dev-rg --name atlas-api-dev-de96db
+az webapp config container show --resource-group atlas-dev-rg --name atlas-blazor-dev-de96db
+az webapp config show --name atlas-api-dev-de96db --resource-group atlas-dev-rg --query "{acrUseManagedIdentityCreds:acrUseManagedIdentityCreds,acrUserManagedIdentityID:acrUserManagedIdentityID}" --output json
+az webapp config show --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --query "{acrUseManagedIdentityCreds:acrUseManagedIdentityCreds,acrUserManagedIdentityID:acrUserManagedIdentityID}" --output json
+az webapp identity show --name atlas-api-dev-de96db --resource-group atlas-dev-rg --query "{principalId:principalId, clientId:clientId, tenantId:tenantId}" --output json
+az webapp identity show --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --query "{principalId:principalId, clientId:clientId, tenantId:tenantId}" --output json
+az webapp config appsettings list --name atlas-api-dev-de96db --resource-group atlas-dev-rg --query "[?name=='ConnectionStrings__DefaultConnection'].value" --output tsv
+az webapp config appsettings list --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --query "[?name=='ConnectionStrings__DefaultConnection'].value" --output tsv
+az webapp config appsettings list --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --query "[?name=='WEBSITE_AUTH_ENABLED' || name=='ASPNETCORE_FORWARDEDHEADERS_ENABLED' || name=='WEBSITES_PORT']"
+az webapp config appsettings list --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg
+az webapp config appsettings set --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --settings ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+az webapp log config --name atlas-api-dev-de96db --resource-group atlas-dev-rg --docker-container-logging filesystem
+az webapp log config --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg --docker-container-logging filesystem
+az webapp log tail --name atlas-api-dev-de96db --resource-group atlas-dev-rg
+az webapp log tail --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg
+az webapp restart --name atlas-api-dev-de96db --resource-group atlas-dev-rg
+az webapp restart --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg
+
+## Azure - Extensions
+az extension add --name application-insights
+
+## Azure - Bootstrap / Role Assignments (PowerShell)
+$GitHubClientId = "4226094a-bba0-4cf2-9464-25e22391c158"
+.\infra\bootstrap.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId
+
+$userObjectId = az ad signed-in-user show --query id --output tsv
+$storageId = az storage account show --resource-group atlas-dev-rg --name atlasdevstoragede96db --query id --output tsv
+az role assignment list --assignee $userObjectId --scope $storageId --output table
+az role assignment create --assignee $userObjectId --role "Storage Blob Data Contributor" --scope $storageId
+
+$appId = "4226094a-bba0-4cf2-9464-25e22391c158"
+$spObjectId = az ad sp show --id $appId --query id --output tsv
+$acrResourceId = az acr show --name atlasacrde96db --query id --output tsv
+az role assignment create --assignee-object-id $spObjectId --assignee-principal-type ServicePrincipal --role AcrPush --scope $acrResourceId
+az role assignment list --assignee $spObjectId --scope $acrResourceId --all
+az role assignment list --scope $acrResourceId --output table
+
+$SubscriptionId = "de96dbbf-6362-4f96-854d-a9666dc30595"
+$Location = "westeurope"
+$ResourceGroup = "atlas-dev-rg"
+$AcrName = "atlasacrde96db"
+az acr create --resource-group $ResourceGroup --name $AcrName --sku Basic --admin-enabled false
+$PrincipalId = "4226094a-bba0-4cf2-9464-25e22391c158"
+$AcrId = az acr show --resource-group $ResourceGroup --name $AcrName --query id --output tsv
+az role assignment create --assignee $PrincipalId --role AcrPush --scope $AcrId
+
+## SQL Tools
+sqlcmd -?
+winget install Microsoft.Sqlcmd
+$conn = New-Object Microsoft.Data.SqlClient.SqlConnection($connectionString)
+
+## GitHub
+gh workflow lint
+
+## Misc / Debug
+Get-ChildItem -Recurse -File | Select-String "bootstrap.min.css"
+Get-ChildItem src\ATLAS.Blazor\obj -Recurse -File | Select-String "lib/bootstrap/dist/css/bootstrap.min.css" | Select-Object -First 1

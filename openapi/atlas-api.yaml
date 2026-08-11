@@ -1659,7 +1659,7 @@ components:
         defaultValue:
           type: string
           nullable: true
-          example: null,
+          example: null
         options:
           type: array
           items:
@@ -1971,5 +1971,3 @@ components:
         Microsoft Entra ID OAuth 2.0 authentication with OpenID Connect.
         Obtain a token from Microsoft Entra ID (https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize)
         using the Authorization Code flow, then include it in the Authorization header: "Bearer {token}"
-
-
