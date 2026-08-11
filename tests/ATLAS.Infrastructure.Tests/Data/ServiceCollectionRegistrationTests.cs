@@ -42,15 +42,69 @@ namespace ATLAS.Infrastructure.Tests.Data
         }
 
         [Fact]
-        public void AddInfrastructure_WithoutAccountName_DoesNotRegisterBlobServiceClient()
+        public void AddInfrastructure_WithConnectionStringOnly_RegistersBlobServiceClient()
         {
-            var config = CreateConfiguration(v => { });
+            // Local development: a connection string must produce a usable Blob client so
+            // customized email templates can actually be persisted to Azurite.
+            var config = CreateConfiguration(v => v["Storage:AccountName"] = "");
+            var services = new ServiceCollection();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var client = provider.GetService<BlobServiceClient>();
+            Assert.NotNull(client);
+        }
+
+        [Fact]
+        public void AddInfrastructure_WithNeither_DoesNotRegisterBlobServiceClient()
+        {
+            var config = CreateConfiguration(v =>
+            {
+                v["Storage:AccountName"] = "";
+                v["Storage:ConnectionString"] = "";
+            });
             var services = new ServiceCollection();
             services.AddInfrastructure(config);
             var provider = services.BuildServiceProvider();
 
             var client = provider.GetService<BlobServiceClient>();
             Assert.Null(client);
+        }
+
+        [Fact]
+        public void AddInfrastructure_WithAccountNamePrefersAzure_NotConnectionString()
+        {
+            // Even when a connection string is also present, a configured account name must
+            // win so production remains Managed Identity / DefaultAzureCredential based.
+            var config = CreateConfiguration(v => v["Storage:AccountName"] = "testaccount");
+            var services = new ServiceCollection();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var client = provider.GetService<BlobServiceClient>();
+            Assert.NotNull(client);
+            Assert.EndsWith("testaccount.blob.core.windows.net", client.Uri.Host);
+        }
+
+        [Fact]
+        public void AddInfrastructure_WithConnectionStringOnly_ConfiguresEmailTemplateStoreAgainstLocalStorage()
+        {
+            // Regression test for the reported defect: with a connection string configured and
+            // no account name (local development), the email-template store must be backed by a
+            // Blob Service client so saving actually persists to Azurite instead of being a no-op.
+            var config = CreateConfiguration(v => v["Storage:AccountName"] = "");
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddInfrastructure(config);
+            var provider = services.BuildServiceProvider();
+
+            var store = provider.GetRequiredService<ATLAS.Application.EmailTemplates.IEmailTemplateStore>();
+            Assert.IsType<ATLAS.Infrastructure.EmailTemplates.BlobEmailTemplateStore>(store);
+
+            // The connection string must be usable against the Azurite emulator.
+            var client = provider.GetRequiredService<BlobServiceClient>();
+            Assert.Equal("127.0.0.1", client.Uri.Host);
+            Assert.Equal(10000, client.Uri.Port);
         }
 
         [Fact]

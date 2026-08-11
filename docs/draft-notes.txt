@@ -13,7 +13,6 @@ Performance & DTO Simplification
 Production backlog
 SQL Managed Identity
 Azure Communication Services
-Application Health Checks
 Diagnostic Settings export
 Availability Tests
 Deployment Slots

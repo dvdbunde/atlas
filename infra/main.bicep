@@ -163,6 +163,10 @@ module apiAppService 'modules/appservice.bicep' = {
         value: storage.outputs.name
       }
       {
+        name: 'Storage__EmailTemplatesContainer'
+        value: 'email-templates'
+      }
+      {
         name: 'KeyVault__VaultName'
         value: keyVault.outputs.name
       }
@@ -202,6 +206,10 @@ module blazorAppService 'modules/appservice.bicep' = {
       {
         name: 'Storage__AccountName'
         value: storage.outputs.name
+      }
+      {
+        name: 'Storage__EmailTemplatesContainer'
+        value: 'email-templates'
       }
       {
         name: 'KeyVault__VaultName'

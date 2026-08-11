@@ -63,5 +63,13 @@ namespace ATLAS.API.Controllers
             var rendered = await _mediator.Send(new PreviewEmailTemplateQuery(body.Content), default);
             return Ok(rendered);
         }
+
+        public override async Task<ActionResult<bool>> ResetEmailTemplate(string name)
+        {
+            var reset = await _mediator.Send(new ResetEmailTemplateCommand(name), default);
+            if (!reset)
+                return NotFound();
+            return Ok(reset);
+        }
     }
 }

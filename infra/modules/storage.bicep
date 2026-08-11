@@ -70,6 +70,14 @@ resource permitDocumentsContainer 'Microsoft.Storage/storageAccounts/blobService
   }
 }
 
+resource emailTemplatesContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  name: 'email-templates'
+  parent: blobService
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 output id                     string = storageAccount.id
 output name                   string = storageAccount.name
 output primaryBlobEndpoint    string = storageAccount.properties.primaryEndpoints.blob

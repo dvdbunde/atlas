@@ -46,5 +46,12 @@ namespace ATLAS.Application.EmailTemplates
         /// unknown names and confine writes to the managed template set.
         /// </summary>
         Task SaveAsync(EmailTemplate template, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Resets a template to its default by removing any customized version.
+        /// Implementations must reject unknown names. After a successful reset, the
+        /// next <see cref="GetByNameAsync"/> returns the source-code default.
+        /// </summary>
+        Task ResetAsync(string name, CancellationToken cancellationToken = default);
     }
 }

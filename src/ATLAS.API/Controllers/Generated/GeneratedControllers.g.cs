@@ -419,6 +419,17 @@ namespace ATLAS.API.Controllers.Generated
         [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}/preview", Name = "previewEmailTemplate")]
         public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<string>> PreviewEmailTemplate(string name, [Microsoft.AspNetCore.Mvc.FromBody] PreviewEmailTemplateRequest body);
 
+        /// <summary>
+        /// Reset email template to default
+        /// </summary>
+        /// <remarks>
+        /// Delete any customized version of the template from Blob Storage so the source-code default is used again. The source-code default is never modified.
+        /// </remarks>
+        /// <param name="name">Template name</param>
+        /// <returns>Template reset (true). Returns true even when the template already had no customization.</returns>
+        [Microsoft.AspNetCore.Mvc.HttpPost, Microsoft.AspNetCore.Mvc.Route("api/emailtemplates/{name}/reset", Name = "resetEmailTemplate")]
+        public abstract System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.ActionResult<bool>> ResetEmailTemplate(string name);
+
     }
 
     
