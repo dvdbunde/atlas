@@ -1,58 +1,70 @@
 // --------------------------------------------------------------------------
 // Azure Communication Services (Email)
-// Provides the ACS resource and email domain used by ATLAS for email delivery.
-// No connection strings or access keys are exposed; the application authenticates
-// via Managed Identity (DefaultAzureCredential).
+// Provides the ACS resource and Azure-managed email domain used by ATLAS
+// for email delivery.
+//
+// The sender address is NOT known during deployment. It will be discovered
+// later by the bootstrap script and written into the Blazor App Service
+// configuration.
 // --------------------------------------------------------------------------
 
 @description('Name of the Azure Communication Services resource')
 param name string
 
-@description('Azure region')
-param location string
-
 @description('Resource tags')
 param tags object
 
-@description('Email domain name (e.g. atlas.com). The sender address is DoNotReply@<domain>.')
-param emailDomainName string
+@description('Data location for the ACS resource (e.g. Europe)')
+param dataLocation string = 'Europe'
 
-@description('Data location for the ACS resource (e.g. United States, Europe)')
-param dataLocation string = 'United States'
+// --------------------------------------------------------------------------
+// Azure Communication Services
+// --------------------------------------------------------------------------
 
-// -- Azure Communication Services resource ----------------------------------
 resource communicationService 'Microsoft.Communication/communicationServices@2023-04-01-preview' = {
   name: name
-  location: location
+  location: 'global'
   tags: tags
+
   properties: {
     dataLocation: dataLocation
   }
 }
 
-// -- Email Service (domain) -------------------------------------------------
+// --------------------------------------------------------------------------
+// Email Service
+// --------------------------------------------------------------------------
+
 resource emailService 'Microsoft.Communication/emailServices@2023-04-01-preview' = {
   name: '${name}-email'
-  location: location
+  location: 'global'
   tags: tags
+
   properties: {
     dataLocation: dataLocation
   }
 }
 
-// -- Email Domain (verified sender domain) ----------------------------------
+// --------------------------------------------------------------------------
+// Azure-managed email domain
+// --------------------------------------------------------------------------
+
 resource emailDomain 'Microsoft.Communication/emailServices/domains@2023-04-01-preview' = {
   parent: emailService
-  name: emailDomainName
-  location: location
+  name: 'AzureManagedDomain'
+  location: 'global'
+
   properties: {
     domainManagement: 'AzureManaged'
     userEngagementTracking: 'Disabled'
   }
 }
 
-output id                 string = communicationService.id
-output name               string = communicationService.name
-output endpoint           string = 'https://${communicationService.name}.communication.azure.com'
-output emailDomainName    string = emailDomainName
-output senderAddress      string = 'DoNotReply@${emailDomainName}'
+// --------------------------------------------------------------------------
+// Outputs
+// --------------------------------------------------------------------------
+
+output communicationServiceId string = communicationService.id
+output communicationServiceName string = communicationService.name
+output emailServiceName string = emailService.name
+output endpoint string = 'https://${communicationService.name}.communication.azure.com'

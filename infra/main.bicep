@@ -60,8 +60,6 @@ param blazorImageTag string = 'latest'
 @description('ASP.NET Core environment name applied to App Services (e.g. Development, Production). Defaults to Development.') 
 param environmentName string = 'Development'
 
-@description('Email domain name for Azure Communication Services (e.g. atlas.com). The sender address is DoNotReply@<domain>.')
-param emailDomainName string = 'atlas.com'
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
   params: {
@@ -170,11 +168,7 @@ module apiAppService 'modules/appservice.bicep' = {
       {
         name: 'Email__Acs__Endpoint'
         value: communicationServices.outputs.endpoint
-      }
-      {
-        name: 'Email__Acs__SenderAddress'
-        value: communicationServices.outputs.senderAddress
-      }
+      }      
       {
         name: 'KeyVault__VaultName'
         value: keyVault.outputs.name
@@ -223,11 +217,7 @@ module blazorAppService 'modules/appservice.bicep' = {
       {
         name: 'Email__Acs__Endpoint'
         value: communicationServices.outputs.endpoint
-      }
-      {
-        name: 'Email__Acs__SenderAddress'
-        value: communicationServices.outputs.senderAddress
-      }
+      }      
       {
         name: 'KeyVault__VaultName'
         value: keyVault.outputs.name
@@ -281,10 +271,8 @@ module storage 'modules/storage.bicep' = {
 module communicationServices 'modules/communicationservices.bicep' = {
   name: '${deployment().name}-communicationservices'
   params: {
-    name: names.outputs.communicationServicesName
-    location: location
-    tags: tags.outputs.tags
-    emailDomainName: emailDomainName
+    name: names.outputs.communicationServicesName    
+    tags: tags.outputs.tags   
   }
 }
 
@@ -428,31 +416,6 @@ resource blazorStorageBlobDataContributor 'Microsoft.Authorization/roleAssignmen
   }
 }
 
-// -- Azure Communication Services Email Sender role definition (built-in) ----
-// Grants the Blazor App Service (which performs the email send) permission to send
-// emails through ACS using its System Assigned Managed Identity. No connection string
-// or access key is used. The API App Service does NOT receive this role.
-var acsEmailSenderRoleDefinitionId = 'c273bd1b-3068-4be7-9e8e-a081e4d5f5f4'
-
-// Reference the ACS resource as an existing resource so the role assignment can be
-// scoped to it. The name is deterministic (derived from environment + uniqueSuffix),
-// matching the naming module.
-var communicationServicesName = 'atlas-comm-${environment}-${effectiveSuffix}'
-resource communicationServicesResource 'Microsoft.Communication/communicationServices@2023-04-01-preview' existing = {
-  name: communicationServicesName
-}
-
-// -- ACS Email Sender: Blazor App Service ------------------------------------
-resource blazorAcsEmailSender 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(communicationServicesName, 'blazor-acs-email-sender', subscription().subscriptionId)
-  scope: communicationServicesResource
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acsEmailSenderRoleDefinitionId)
-    principalId: blazorAppService.outputs.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
 // -- Outputs -----------------------------------------------------------------
 output resourceGroupName            string = names.outputs.resourceGroupName
 output apiAppServiceName            string = names.outputs.apiAppServiceName
@@ -478,6 +441,6 @@ output keyVaultTenantId             string = subscription().tenantId
 output applicationInsightsName      string = names.outputs.applicationInsightsName
 output applicationInsightsConnectionString string = appInsights.outputs.connectionString
 output logAnalyticsWorkspaceName    string = names.outputs.logAnalyticsWorkspaceName
-output communicationServicesName    string = names.outputs.communicationServicesName
+output communicationServiceName     string = communicationServices.outputs.communicationServiceName
 output communicationServicesEndpoint string = communicationServices.outputs.endpoint
-output communicationServicesSenderAddress string = communicationServices.outputs.senderAddress
+output communicationEmailServiceName string = communicationServices.outputs.emailServiceName

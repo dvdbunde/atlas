@@ -199,6 +199,8 @@ function Get-DeploymentOutputs {
         applicationInsightsName    = $outputs.applicationInsightsName.value
         applicationInsightsConnectionString = $outputs.applicationInsightsConnectionString.value
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
+        communicationServiceName = $outputs.communicationServiceName.value
+        communicationEmailServiceName = $outputs.communicationEmailServiceName.value        
     }
 }
 
@@ -625,7 +627,108 @@ function Verify-StorageManagedIdentity {
 }
 
 # --------------------------------------------------------------------------
-# Phase 8 – Verify App Service Configuration
+# Phase 8a – Configure Azure Communication Services sender address
+# --------------------------------------------------------------------------
+function Configure-AcsSenderAddress {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory)]
+        [string]$EmailServiceName,
+
+        [Parameter(Mandatory)]
+        [string]$ApiAppName,
+
+        [Parameter(Mandatory)]
+        [string]$BlazorAppName
+    )
+
+    Write-Step "Configuring Azure Communication Services sender address"
+
+    #
+    # Resolve the Azure-managed sender domain
+    #
+    $domain = az communication email domain show `
+        --resource-group $ResourceGroup `
+        --email-service-name $EmailServiceName `
+        --domain-name AzureManagedDomain `
+        --query "fromSenderDomain" `
+        -o tsv
+
+    Assert-True (![string]::IsNullOrWhiteSpace($domain)) `
+        "Unable to resolve Azure Communication Services managed sender domain."
+
+    Write-Pass "Managed sender domain: $domain"
+
+    #
+    # Resolve the DoNotReply sender username
+    #
+    $username = az communication email domain sender-username show `
+        --resource-group $ResourceGroup `
+        --email-service-name $EmailServiceName `
+        --domain-name AzureManagedDomain `
+        --sender-username DoNotReply `
+        --query "username" `
+        -o tsv
+
+    Assert-True (![string]::IsNullOrWhiteSpace($username)) `
+        "Unable to resolve Azure Communication Services sender username."
+
+    Write-Pass "Sender username: $username"
+
+    #
+    # Build the sender address
+    #
+    $senderAddress = "$username@$domain"
+
+    Write-Pass "Resolved sender address: $senderAddress"
+
+    #
+    # Local helper
+    #
+    function Update-AppServiceSenderAddress {
+        param(
+            [Parameter(Mandatory)]
+            [string]$AppName
+        )
+
+        $currentSender = az webapp config appsettings list `
+            --resource-group $ResourceGroup `
+            --name $AppName `
+            --query "[?name=='Email__Acs__SenderAddress'].value | [0]" `
+            -o tsv
+
+        if ($currentSender -eq $senderAddress) {
+            Write-Pass "$AppName already configured."
+            return
+        }
+
+        az webapp config appsettings set `
+            --resource-group $ResourceGroup `
+            --name $AppName `
+            --settings Email__Acs__SenderAddress="$senderAddress" `
+            --only-show-errors | Out-Null
+
+        Write-Pass "$AppName updated."
+
+        az webapp restart `
+            --resource-group $ResourceGroup `
+            --name $AppName `
+            --only-show-errors | Out-Null
+
+        Write-Pass "$AppName restarted."
+    }
+
+    #
+    # Configure both App Services
+    #
+    Update-AppServiceSenderAddress -AppName $ApiAppName
+    Update-AppServiceSenderAddress -AppName $BlazorAppName
+}
+
+# --------------------------------------------------------------------------
+# Phase 8b – Verify App Service Configuration
 # --------------------------------------------------------------------------
 function Verify-AppServiceConfiguration {
     param(
@@ -664,6 +767,17 @@ function Verify-AppServiceConfiguration {
 
         Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Storage__AccountName'])) `
             "$appName is missing Storage__AccountName."
+
+        # Azure Communication Services
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Email__Acs__Endpoint'])) `
+            "$appName is missing Email__Acs__Endpoint."
+
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Email__Acs__SenderAddress'])) `
+            "$appName is missing Email__Acs__SenderAddress."
+
+        Assert-True `
+            ($settingMap['Email__Acs__SenderAddress'] -match '^DoNotReply@.+\.azurecomm\.net$') `
+            "$appName Email__Acs__SenderAddress is not a valid Azure Communication Services sender."
 
         # SQL connection string must be a Key Vault reference
         $sqlSetting = $settingMap['ConnectionStrings__DefaultConnection']
@@ -752,10 +866,16 @@ function Verify-InfrastructureResources {
         [string]$ApplicationInsightsName,
         [string]$LogAnalyticsWorkspaceName,
         [string]$SqlServerName,
-        [string]$SqlDatabaseName
+        [string]$SqlDatabaseName,
+        [string]$CommunicationServiceName,
+        [string]$CommunicationEmailServiceName
     )
 
     Write-Step "Phase 10 – Verifying infrastructure resources"
+
+    Write-Host "Resource Group : $ResourceGroup"
+    Write-Host "CommunicationServiceName : $CommunicationServiceName"
+    Write-Host "CommunicationEmailServiceName : $CommunicationEmailServiceName"
 
     $results = @()
 
@@ -782,6 +902,73 @@ function Verify-InfrastructureResources {
     # Storage Account
     $stor = az storage account show --name $StorageAccountName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
     $results += [PSCustomObject]@{ Name = "Storage Account"; Status = ($null -ne $stor); Detail = $StorageAccountName }    
+
+    # Azure Communication Service
+    $acs = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type Microsoft.Communication/communicationServices `
+        --name $CommunicationServiceName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $acsValid = $null -ne $acs
+
+    $results += [PSCustomObject]@{
+        Name   = "Azure Communication Service"
+        Status = $acsValid
+        Detail = $CommunicationServiceName
+    }
+
+    # Azure Communication Email Service
+    $emailService = az communication email show `
+        --name $CommunicationEmailServiceName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    $emailServiceValid =
+        $null -ne $emailService `
+        -and $emailService.provisioningState -eq "Succeeded"
+
+    $results += [PSCustomObject]@{
+        Name   = "Communication Email Service"
+        Status = $emailServiceValid
+        Detail = $CommunicationEmailServiceName
+    }
+
+    # Azure Managed Email Domain
+    $domain = az communication email domain show `
+        --resource-group $ResourceGroup `
+        --email-service-name $CommunicationEmailServiceName `
+        --domain-name AzureManagedDomain `
+        --output json 2>$null | ConvertFrom-Json
+
+    $domainValid =
+        $null -ne $domain `
+        -and $domain.provisioningState -eq "Succeeded" `
+        -and $domain.domainManagement -eq "AzureManaged"
+
+    $results += [PSCustomObject]@{
+        Name   = "Azure Managed Email Domain"
+        Status = $domainValid
+        Detail = "AzureManagedDomain"
+    }
+
+    # DoNotReply sender username
+    $senderUser = az communication email domain sender-username show `
+        --resource-group $ResourceGroup `
+        --email-service-name $CommunicationEmailServiceName `
+        --domain-name AzureManagedDomain `
+        --sender-username DoNotReply `
+        --output json 2>$null | ConvertFrom-Json
+
+    $senderValid =
+        $null -ne $senderUser `
+        -and $senderUser.username -eq "DoNotReply"
+
+    $results += [PSCustomObject]@{
+        Name   = "ACS Sender Username"
+        Status = $senderValid
+        Detail = "DoNotReply"
+    }
 
     # Key Vault
     $kv = az keyvault show --name $KeyVaultName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
@@ -929,7 +1116,14 @@ Verify-StorageManagedIdentity `
     -ApiPrincipalId $outputs.apiPrincipalId `
     -BlazorPrincipalId $outputs.blazorPrincipalId
 
-# Phase 8
+# Phase 8a
+Configure-AcsSenderAddress `
+    -ResourceGroup $ResourceGroup `
+    -EmailServiceName $outputs.communicationEmailServiceName `
+    -ApiAppName $outputs.apiAppServiceName `
+    -BlazorAppName $outputs.blazorAppServiceName    
+
+# Phase 8b
 Verify-AppServiceConfiguration `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName `
@@ -951,7 +1145,9 @@ $infraResults = Verify-InfrastructureResources `
     -ApplicationInsightsName $outputs.applicationInsightsName `
     -LogAnalyticsWorkspaceName $outputs.logAnalyticsWorkspaceName `
     -SqlServerName $outputs.sqlServerName `
-    -SqlDatabaseName $outputs.sqlDatabaseName
+    -SqlDatabaseName $outputs.sqlDatabaseName `
+    -CommunicationServiceName $outputs.communicationServiceName `
+    -CommunicationEmailServiceName $outputs.communicationEmailServiceName
 
 # Phase 11
 Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults
