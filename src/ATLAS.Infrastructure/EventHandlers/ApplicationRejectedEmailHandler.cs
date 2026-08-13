@@ -13,6 +13,7 @@ using ATLAS.Application.Interfaces;
 using ATLAS.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using ATLAS.Application.EmailTemplates;
 
 namespace ATLAS.Infrastructure.EventHandlers
 {
@@ -71,10 +72,11 @@ namespace ATLAS.Infrastructure.EventHandlers
                 {
                     ApplicationNumber = application.ApplicationNumber,
                     PermitTypeName = permitTypeName,
-                    ReasonCode = notification.ReasonCode
+                    ReasonCode = notification.ReasonCode,
+                    CitizenName = citizen.FirstName + " " + citizen.LastName
                 };
 
-                var body = await _templateRenderer.RenderAsync("RejectionNotification", model, cancellationToken);
+                var body = await _templateRenderer.RenderAsync(KnownEmailTemplates.RejectionNotification, model, cancellationToken);
 
                 await _emailService.SendAsync(
                     citizen.Email,

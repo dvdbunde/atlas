@@ -63,7 +63,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
 
         public async Task<EmailTemplate?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (!KnownEmailTemplates.IsKnown(name))
+            if (!KnownEmailTemplates.Names.Contains(name))
                 return null;
 
             if (_blobClient is not null)
@@ -87,7 +87,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
         {
             if (template is null)
                 throw new ArgumentNullException(nameof(template));
-            if (!KnownEmailTemplates.IsKnown(template.Name))
+            if (!KnownEmailTemplates.Names.Contains(template.Name))
                 throw new ArgumentException($"Unknown email template '{template.Name}'.", nameof(template));
 
             if (_blobClient is null)
@@ -105,7 +105,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
 
         public async Task ResetAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (!KnownEmailTemplates.IsKnown(name))
+            if (!KnownEmailTemplates.Names.Contains(name))
                 throw new ArgumentException($"Unknown email template '{name}'.", nameof(name));
 
             if (_blobClient is null)

@@ -42,7 +42,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
 
         public async Task<EmailTemplate?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (!KnownEmailTemplates.IsKnown(name))
+            if (!KnownEmailTemplates.Names.Contains(name))
                 return null;
 
             var file = ResolveFile(name);
@@ -57,7 +57,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
         {
             if (template is null)
                 throw new ArgumentNullException(nameof(template));
-            if (!KnownEmailTemplates.IsKnown(template.Name))
+            if (!KnownEmailTemplates.Names.Contains(template.Name))
                 throw new ArgumentException($"Unknown email template '{template.Name}'.", nameof(template));
 
             var file = ResolveFile(template.Name);
@@ -66,7 +66,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
 
         public Task ResetAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (!KnownEmailTemplates.IsKnown(name))
+            if (!KnownEmailTemplates.Names.Contains (name))
                 throw new ArgumentException($"Unknown email template '{name}'.", nameof(name));
 
             // The file store IS the source-code default; there is no customization to
@@ -76,7 +76,7 @@ namespace ATLAS.Infrastructure.EmailTemplates
 
         private bool IsKnownTemplate(string name)
         {
-            return KnownEmailTemplates.IsKnown(name);
+            return KnownEmailTemplates.Names.Contains(name);
         }
 
         private string ResolveFile(string name)

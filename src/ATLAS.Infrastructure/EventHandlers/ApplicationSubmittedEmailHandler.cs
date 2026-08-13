@@ -15,6 +15,7 @@ using ATLAS.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using ATLAS.Domain.Enums;
+using ATLAS.Application.EmailTemplates;
 
 namespace ATLAS.Infrastructure.EventHandlers
 {
@@ -75,10 +76,11 @@ namespace ATLAS.Infrastructure.EventHandlers
                     Status = ApplicationStatus.Submitted,
                     SubmittedDate = application.SubmittedDate,
                     CitizenId = application.CitizenId,
-                    PermitTypeId = application.PermitTypeId
+                    PermitTypeId = application.PermitTypeId,
+                    CitizenName = citizen.FirstName + " " + citizen.LastName
                 };
 
-                var body = await _templateRenderer.RenderAsync("SubmissionConfirmation", model, cancellationToken);
+                var body = await _templateRenderer.RenderAsync(KnownEmailTemplates.SubmissionConfirmation, model, cancellationToken);
 
                 await _emailService.SendAsync(
                     citizen.Email,

@@ -18,25 +18,25 @@ namespace ATLAS.Application.EmailTemplates
     /// content may be edited. This allow-list is the primary security boundary for
     /// template read/write/reset operations.
     /// </summary>
-    public static class KnownEmailTemplates
+   public static class KnownEmailTemplates
     {
-        public static readonly IReadOnlyList<string> Names = new List<string>
-        {
-            "SubmissionConfirmation",
-            "ReSubmissionConfirmation",
-            "ApprovalNotification",
-            "RejectionNotification",
-            "InfoRequestNotification"
-        };
+        public const string SubmissionConfirmation = nameof(SubmissionConfirmation);
 
-        /// <summary>
-        /// Returns true when <paramref name="name"/> is a known, application-owned
-        /// template name (case-insensitive).
-        /// </summary>
-        public static bool IsKnown(string name)
-        {
-            return !string.IsNullOrWhiteSpace(name)
-                && Names.Contains(name, StringComparer.OrdinalIgnoreCase);
-        }
+        public const string ReSubmissionConfirmation = nameof(ReSubmissionConfirmation);
+
+        public const string ApprovalNotification = nameof(ApprovalNotification);
+
+        public const string RejectionNotification = nameof(RejectionNotification);
+
+        public const string InfoRequestNotification = nameof(InfoRequestNotification);
+
+        public static readonly IReadOnlyList<string> Names =
+        [
+            SubmissionConfirmation,
+            ReSubmissionConfirmation,
+            ApprovalNotification,
+            RejectionNotification,
+            InfoRequestNotification
+        ];
     }
 }

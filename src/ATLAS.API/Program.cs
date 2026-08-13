@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Azure.Storage.Blobs;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,16 +39,40 @@ if (!string.IsNullOrWhiteSpace(keyVaultName))
 var healthChecks = builder.Services.AddHealthChecks();
 
 var storageAccountName = builder.Configuration["Storage:AccountName"];
-if (!string.IsNullOrWhiteSpace(storageAccountName))
+
+if (!builder.Environment.IsDevelopment() &&
+    builder.Environment.EnvironmentName != "Testing" &&
+    !string.IsNullOrWhiteSpace(storageAccountName))
 {
-    healthChecks.AddAzureBlobStorage("AccountName=" + storageAccountName,
-        name: "blob-storage", tags: ["storage", "azure"]);
+    var storageUri = new Uri(
+        $"https://{storageAccountName}.blob.core.windows.net");
+
+    var blobServiceClient = new BlobServiceClient(
+        storageUri,
+        new DefaultAzureCredential());
+
+    healthChecks.AddCheck(
+        "permit-documents-storage",
+        new BlobContainerHealthCheck(
+            blobServiceClient,
+            "permit-documents"),
+        tags: ["storage", "azure"]);
+
+    healthChecks.AddCheck(
+        "email-templates-storage",
+        new BlobContainerHealthCheck(
+            blobServiceClient,
+            "email-templates"),
+        tags: ["storage", "azure"]);
 }
 
 if (keyVaultUri != null)
 {
     healthChecks.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential(),
-        options => { },
+        options =>
+        {
+            options.AddSecret("sql-connection-string");
+        },
         name: "key-vault", tags: ["secrets", "azure"]);
 }
 
@@ -311,3 +337,46 @@ app.MapControllers();
 app.Run();
 
 public partial class Program { }
+
+
+public sealed class BlobContainerHealthCheck : IHealthCheck
+{
+    private readonly BlobServiceClient _blobServiceClient;
+    private readonly string _containerName;
+
+    public BlobContainerHealthCheck(
+        BlobServiceClient blobServiceClient,
+        string containerName)
+    {
+        _blobServiceClient = blobServiceClient;
+        _containerName = containerName;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var containerClient =
+                _blobServiceClient.GetBlobContainerClient(_containerName);
+
+            var exists = await containerClient.ExistsAsync(cancellationToken);
+
+            if (!exists.Value)
+            {
+                return HealthCheckResult.Unhealthy(
+                    $"Blob container '{_containerName}' does not exist.");
+            }
+
+            return HealthCheckResult.Healthy(
+                $"Blob container '{_containerName}' is accessible.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy(
+                $"Blob container '{_containerName}' is not accessible.",
+                ex);
+        }
+    }
+}
