@@ -7,7 +7,7 @@ Blob Storage, source-code defaults) and replaces the old SMTP production path wi
 
 ## Email flow
 
-```
+```txt
 ATLAS application
       |
       | IEmailTemplateStore
