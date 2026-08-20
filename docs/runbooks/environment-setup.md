@@ -411,6 +411,14 @@ The bootstrap script automatically performs the following tasks:
 - Verifies that all required Azure infrastructure resources have been provisioned successfully.
 - Produces a deployment summary showing the validation results for each Azure resource.
 
+**Azure Communication Services (email) configuration:**
+
+- Assigns the **Communication and Email Service Owner** role to both App Services (system-assigned Managed Identities) on the ACS Email Service.
+- Assigns the **Storage Blob Data Contributor** role to the developer identity on the Storage Account (for email-template administration).
+- Discovers the **Azure-managed sender domain** (`AzureManagedDomain`) and the `DoNotReply` sender username, then resolves the sender address (for example `DoNotReply@<domain>.azurecomm.net`).
+- Sets the resolved sender address as the `Email__Acs__SenderAddress` app setting on both the API and Blazor App Services.
+- Validates that both App Services have a valid `Email__Acs__SenderAddress` and that the ACS Email Service is provisioned successfully.
+
 The script is fully **idempotent** and can safely be executed after every infrastructure deployment. Existing role assignments are detected and will not be recreated.
 
 Resolve any reported failures before continuing.
@@ -528,6 +536,15 @@ Verify:
 - Authentication works correctly
 - API communication succeeds
 - No browser console errors are present
+
+#### Email (Azure Communication Services)
+
+Verify:
+
+- Both App Services have the `Email__Acs__SenderAddress` app setting set to a valid ACS sender (for example `DoNotReply@<domain>.azurecomm.net`)
+- Both App Services have the **Communication and Email Service Owner** role on the ACS Email Service
+- Both App Services have the **Storage Blob Data Contributor** role on the Storage Account (for email-template persistence)
+- A status change (for example an application submission or approval) triggers an email notification delivered via ACS
 
 ---
 
@@ -648,6 +665,9 @@ Verify:
 - [ ] SQL administrator verified
 - [ ] `AcrPull` permissions verified
 - [ ] App Service configuration verified
+- [ ] ACS sender address configured (`Email__Acs__SenderAddress`)
+- [ ] ACS Email Service Owner role assigned to both App Services
+- [ ] Storage Blob Data Contributor role assigned (email-template persistence)
 
 ## Phase 3 – Deployment Validation
 
@@ -675,6 +695,7 @@ Upon completion of this runbook:
 - The Azure SQL Database schema is up to date.
 - Smoke tests validate the deployment.
 - Application Insights is collecting telemetry.
+- Email notifications are delivered via Azure Communication Services using the configured sender address.
 - Future deployments require only pushing changes to the `main` branch.
 
 ---

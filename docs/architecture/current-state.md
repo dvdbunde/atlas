@@ -1,20 +1,20 @@
-# ATLAS Current State Architecture — Post Milestone 8.1
+# ATLAS Current State Architecture — Post Email Integration
 
-**Date**: July 27, 2026
-**Purpose**: Establish a clear architectural baseline before Milestone 9 (Cloud Infrastructure & Azure Enablement)
+**Date**: August 20, 2026
+**Purpose**: Establish an authoritative architectural baseline for the current implementation, including Azure Communication Services email delivery and Blob Storage email-template persistence.
 
 ---
 
 ## 1. Overview
 
-ATLAS (Automated Tracking & Licensing Application System) is a permit processing platform for local government. After completing Milestones 1–8, the application is fully functional as a local development environment. All core business logic, UI, and infrastructure abstractions are implemented. Azure deployment is planned as the next milestone.
+ATLAS (Automated Tracking & Licensing Application System) is a permit processing platform for local government. After completing Milestones 1–8 plus the Email Integration milestone, the application is fully functional in local development and prepared for Azure deployment. All core business logic, UI, and infrastructure abstractions are implemented, including Azure Communication Services email delivery and Blob Storage email-template persistence.
 
 **Key facts:**
 
 - **Status**: All MVP features implemented and tested locally
-- **Deployment**: Local development environment only (Kestrel, LocalDB, Azurite)
+- **Deployment**: Local development environment (Kestrel, LocalDB, Azurite); Azure-ready via Bicep IaC
 - **Authentication**: Microsoft Entra ID (all user types)
-- **Storage**: LocalDB (SQL Server), Azurite (Blob Storage), SMTP (email)
+- **Storage**: LocalDB (SQL Server), Azurite (Blob Storage), Azure Communication Services (email)
 
 ---
 
@@ -30,7 +30,9 @@ ATLAS (Automated Tracking & Licensing Application System) is a permit processing
 | **Validation** | FluentValidation | 11.11.0 | Command/Query validation |
 | **ORM** | Entity Framework Core | 9.0 | Code-first, migrations |
 | **Database** | SQL Server (LocalDB) | Local | Production target: Azure SQL |
-| **Blob Storage** | Azure.Storage.Blobs + Azurite | 12.24 | Production target: Azure Blob Storage |
+| **Blob Storage** | Azure.Storage.Blobs + Azurite | 12.24 | Documents + email templates; production target: Azure Blob Storage |
+| **Email Delivery** | Azure.Communication.Email | 1.1.0 | ACS Email via Managed Identity; local dev uses a deterministic local sink |
+| **Identity for Azure** | Azure.Identity | — | DefaultAzureCredential (Managed Identity) for ACS + Blob |
 | **Authentication** | Microsoft Entra ID | — | JWT Bearer, OAuth 2.0 |
 | **Auth Libraries** | Microsoft.Identity.Web | 4.10.0 | Blazor auth components |
 | **CI/CD** | GitHub Actions | — | Build, test, security scanning |
@@ -99,7 +101,7 @@ Domain (no deps) ← Application (Domain only)
 | ---- | ------- | -------------- |
 | **Relational data** | LocalDB | EF Core DbContext, code-first migrations |
 | **Documents** | Azurite (Blob Storage emulator) | `BlobStorageService` via Azure.Storage.Blobs SDK |
-| **Email templates** | File system | `Templates/Emails/*.txt`, loaded by `EmailTemplateRenderer` |
+| **Email templates** | Blob Storage (Azurite locally) | `BlobEmailTemplateStore`; customized templates override source-code defaults |
 | **Seed data** | JSON file | `PermitTypes.json` on startup |
 
 ### Database Schema (EF Core)
@@ -153,7 +155,7 @@ Tables: `Users`, `Applications`, `PermitTypes`, `PermitFields`, `DocumentRequire
 - Draft save/resume
 - Application field values storage (JSON serialized)
 - Status history tracking
-- Email notifications via SMTP + `EmailTemplateRenderer`
+- Email notifications via Azure Communication Services (`AcsEmailService`) + `EmailTemplateRenderer`
 
 ### Document Management (M6, ADR-015)
 
@@ -178,7 +180,7 @@ Tables: `Users`, `Applications`, `PermitTypes`, `PermitFields`, `DocumentRequire
 - **Permit Type Designer**: create/edit permit types, add/remove fields and document requirements, live preview
 - **User Directory**: read-only list + detail (Entra-synchronized, no writes)
 - **Audit Log Viewer**: read-only, filterable (user/action/date/entity)
-- **Email Template Administration**: list/edit rendered email templates
+- **Email Template Administration**: list/edit/preview/save/reset email templates; customized templates persisted in Blob Storage (override source-code defaults, with Reset-to-default)
 - **Application Explorer**: read-only admin view of all applications
 - **Placeholder pages** (no business logic): Dynamic Forms (superseded), Reference Data, System Settings, Officers
 
@@ -194,9 +196,9 @@ Tables: `Users`, `Applications`, `PermitTypes`, `PermitFields`, `DocumentRequire
 | Domain-Driven Design | ADR-004 | Rich domain model with aggregates and domain events |
 | Blazor Server | ADR-005 | Interactive Server rendering for real-time UI |
 | GitHub Actions CI | ADR-006 | CI build, test, security scanning |
-| Bicep IaC | ADR-007 | Accepted but deferred to Milestone 9 |
+| Bicep IaC | ADR-007 | Bicep templates prepared for Azure deployment |
 | Microsoft Entra ID | ADR-008 | Single identity provider for all users |
-| Azure Key Vault | ADR-009 | Packages installed, integration deferred to M9 |
+| Azure Key Vault | ADR-009 | Packages installed; SQL connection string stored in Key Vault |
 | Row-Level Security | ADR-010 | App-layer filtering implemented; RLS deferred |
 | Data Lifecycle Mgmt | ADR-011 | Not yet implemented (proposed) |
 | NSwag API Generation | ADR-012 | OpenAPI → generated controllers |
@@ -219,10 +221,12 @@ Milestone 9 will focus on Azure infrastructure enablement:
 | **Database** | LocalDB | Azure SQL Database (Serverless) |
 | **Blob Storage** | Azurite emulator | Azure Blob Storage (GRS) |
 | **Secrets** | `appsettings.json` / user-secrets | Azure Key Vault (ADR-009) |
-| **Infrastructure** | Manual setup | Bicep templates (ADR-007) |
+| **Infrastructure** | Bicep templates prepared | Full Azure deployment via Bicep |
 | **Deployment** | Manual | CI/CD to Azure |
 | **Domain** | localhost | Custom domain with SSL |
 | **Monitoring** | Console logging | Application Insights |
+
+Email delivery and email-template persistence are already implemented for Azure: **Azure Communication Services** (via Managed Identity) and **Blob Storage** (email templates) are the current production paths, with local development using a deterministic local email sink and Azurite.
 
 Post-MVP phases may include:
 

@@ -10,14 +10,15 @@ The implemented infrastructure is intentionally focused on the minimum set of Az
 
 Subsequent phases will introduce:
 
-- Managed Identity integration
-- Key Vault secrets
+- Key Vault secrets (partially implemented — SQL connection string stored in Key Vault)
 - Azure SQL authentication using Microsoft Entra ID
 - Continuous Deployment
 - Monitoring & Diagnostics
 - Deployment Slots
 - Production networking (Private Endpoints / VNet integration)
 - Production hardening
+
+> **Note:** Managed Identity is already implemented via **system-assigned** identities on the App Services (used for Azure Communication Services and Blob Storage access).
 
 ## Overview
 
@@ -53,14 +54,15 @@ infra/
     ├── names.bicep               # Central naming convention
     ├── tags.bicep                # Central resource tagging
     ├── appserviceplan.bicep      # App Service Plan
-    ├── appservice.bicep          # App Service (Web App)
+    ├── appservice.bicep          # App Service (Web App) — used for both API and Blazor
+    ├── containerregistry.bicep   # Azure Container Registry
     ├── sqlserver.bicep           # Azure SQL Server
     ├── sqldatabase.bicep         # Azure SQL Database
-    ├── storage.bicep             # Storage Account (Blob)
+    ├── storage.bicep             # Storage Account (Blob) — documents + email templates
+    ├── communicationservices.bicep # Azure Communication Services (email)
     ├── keyvault.bicep            # Azure Key Vault
     ├── loganalytics.bicep        # Log Analytics Workspace
-    ├── appinsights.bicep         # Application Insights
-    └── managedidentity.bicep     # User-Assigned Managed Identity
+    └── appinsights.bicep         # Application Insights
 ```
 
 ## Bootstrap
@@ -115,7 +117,8 @@ az account set `
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
 | App Service Plan | atlas-{env}-plan | atlas-dev-plan |
-| App Service (Web App) | atlas-{env}-app | atlas-dev-app |
+| App Service (API) | atlas-{env}-api | atlas-dev-api |
+| App Service (Blazor) | atlas-{env}-app | atlas-dev-app |
 
 ### Database
 
@@ -129,6 +132,8 @@ az account set `
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
 | Storage Account | atlas{env}storage | atlasdevstorage |
+| Blob Container (documents) | permit-documents | permit-documents |
+| Blob Container (email templates) | email-templates | email-templates |
 
 ### Security
 
@@ -136,11 +141,19 @@ az account set `
 | ---------- | ------------- | ----------- |
 | Key Vault | atlas{env}kv | atlasdevkv |
 
+### Messaging / Email
+
+| Resource | Name Pattern | Dev Value |
+| ---------- | ------------- | ----------- |
+| Communication Services | atlas-{env}-acs | atlas-dev-acs |
+| Email Service | atlas-{env}-email | atlas-dev-email |
+| Email Domain | AzureManagedDomain | AzureManagedDomain |
+
 ### Identity
 
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
-| Managed Identity | atlas-{env}-mi | atlas-dev-mi |
+| Managed Identity | System-assigned on each App Service | System-assigned |
 
 ### Observability
 
@@ -296,16 +309,15 @@ After deployment, the following outputs are available:
 | keyVaultTenantId | Microsoft Entra tenant identifier |
 | applicationInsightsName | Name of the Application Insights resource |
 | applicationInsightsConnectionString | Application Insights connection string |
-| managedIdentityName | Name of the User-Assigned Managed Identity |
-| managedIdentityPrincipalId | Principal ID of the Managed Identity |
-| managedIdentityClientId | Client ID of the Managed Identity |
+| applicationInsightsConnectionString | Application Insights connection string |
 | logAnalyticsWorkspaceName | Name of the Log Analytics Workspace |
+| emailServiceName | Name of the ACS Email Service |
+| emailServiceResourceId | ARM resource ID of the ACS Email Service |
 
 These outputs are intended to be consumed by later milestones and deployment automation, including:
 
 - application configuration
 - GitHub Actions deployment pipelines
-- Managed Identity integration
 - Key Vault access configuration
 - health checks
 - operational validation

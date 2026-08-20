@@ -1,11 +1,9 @@
-Azure Communication Services integration for email
+Metrics, logging config + visualization
+Change look & feel + styling
 Remove Publish in commands and replace with adddomainevent + 1 publish in unitofwork
 Audit Message Enrichment
 Performance & DTO Simplification
-
-Production backlog
 SQL Managed Identity
-Azure Communication Services
 Diagnostic Settings export
 Availability Tests
 Deployment Slots
@@ -13,52 +11,3 @@ Separate migration workflow
 Production parameter file
 Backup policies
 Azure Front Door / WAF (if needed later)
-
-
-dotnet build --property Warninglevel=0
-dotnet run --project src/ATLAS.Blazor/ --property Warninglevel=0
-
-# Login
-az login
-
-# Verify subscription
-az account show --output table
-
-# Create the Resource Group (first time only)
-az group create `
-    --name atlas-dev-rg `
-    --location westeurope
-
-# Validate the template
-az deployment group validate `
-    --resource-group atlas-dev-rg `
-    --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
-
-# Preview the deployment
-az deployment group what-if `
-    --resource-group atlas-dev-rg `
-    --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
-
-# Deploy
-az deployment group create `
-    --resource-group atlas-dev-rg `
-    --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json	
-	
-
-az deployment group list `
-    --resource-group atlas-dev-rg `
-    --output table	
-	
-	
-az group delete `
---name atlas-dev-rg
-
-
- $GitHubClientId = "4226094a-bba0-4cf2-9464-25e22391c158"     
-
- .\infra\bootstrap.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId
-
-

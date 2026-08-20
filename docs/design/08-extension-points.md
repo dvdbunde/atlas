@@ -10,7 +10,7 @@ This document identifies future extension points for ATLAS based on the current 
 
 ### Current State (MVP)
 
-- Basic email notifications via SendGrid/Azure Communication Services
+- Basic email notifications via Azure Communication Services
 - Triggered by domain events (`ApplicationSubmittedEvent`, `ApplicationApprovedEvent`)
 - Simple notification handler in Infrastructure layer
 

@@ -17,19 +17,20 @@ superseded_by: ""
 **Implementation Notes:**
 
 - Development uses user-secrets for local development
-- Azure Key Vault packages installed but not fully configured
-- Full Azure Key Vault integration deferred to Milestone 9 (Production Hardening)
-- Connection strings currently retrieved from configuration (not Key Vault)
+- Azure Key Vault packages installed and configured
+- The SQL connection string is stored in Key Vault
+- Azure Blob Storage and Azure Communication Services are accessed via **Managed Identity** (no storage keys or client secrets)
+- Full Azure Key Vault integration for remaining secrets deferred to Milestone 9 (Production Hardening)
 
 ## Context
 
 ATLAS is a public-sector application handling sensitive permit data and personally identifiable information (PII). The application requires multiple secrets and connection strings:
 
 1. **Azure SQL Database connection string** - Required by Entity Framework Core
-2. **Azure Blob Storage connection string/key** - Required for document uploads
-3. **Microsoft Entra ID client secrets** - Required for authentication (ADR-008)
-4. **SendGrid/email service API keys** - Required for notifications (F-06)
-5. **Application Insights instrumentation key** - Required for telemetry
+2. **Microsoft Entra ID client secrets** - Required for authentication (ADR-008)
+3. **Application Insights instrumentation key** - Required for telemetry
+
+> **Note:** Azure Blob Storage and Azure Communication Services (email) are accessed via **Managed Identity** (system-assigned on the App Services), so no storage account keys or email API keys are stored. See ADR-022 (Managed Azure Services Preference).
 
 **Current State (MVP Planning):**
 
@@ -56,7 +57,7 @@ flowchart TD
     A[ATLAS.Blazor App] -->|Managed Identity| B[Azure Key Vault]
     B -->|Retrieve Secret| A
     A -->|Use Connection String| C[Azure SQL Database]
-    A -->|Use Storage Key| D[Azure Blob Storage]
+    A -->|Managed Identity| D[Azure Blob Storage]
     A -->|Use Client Secret| E[Microsoft Entra ID]
     
     F[GitHub Actions] -->|OIDC Federated Identity| B
@@ -72,10 +73,10 @@ flowchart TD
 | Secret Name | Purpose | Access Required |
 | ------------- | --------- | ----------------- |
 | `SqlConnectionString` | Azure SQL Database connection | ATLAS.Blazor (App Service) |
-| `BlobStorageConnectionString` | Azure Blob Storage access | ATLAS.Blazor (App Service) |
 | `EntraID-ClientSecret` | Microsoft Entra ID app authentication | ATLAS.Blazor (App Service) |
-| `SendGrid-ApiKey` | Email notification service | ATLAS.Blazor (App Service) |
 | `ApplicationInsights-ConnectionString` | Telemetry and monitoring | ATLAS.Blazor (App Service) |
+
+> **Note:** Azure Blob Storage and Azure Communication Services (email) are accessed via **Managed Identity** (system-assigned on the App Services), so no `BlobStorageConnectionString` or email API key secrets are required.
 
 ### Access Pattern
 

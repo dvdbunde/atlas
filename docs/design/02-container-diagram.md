@@ -4,7 +4,7 @@
 
 This diagram shows the internal containers (deployable units) that make up ATLAS and how they interact with each other and external systems.
 
-> **Implementation Note**: This diagram shows the target Azure-hosted architecture. Currently, Azure SQL Database → LocalDB, Azure Blob Storage → Azurite emulator, and Email Service → SMTP (local). The container structure is identical — only service implementations differ.
+> **Implementation Note**: This diagram shows the target Azure-hosted architecture. Currently, Azure SQL Database → LocalDB, Azure Blob Storage → Azurite emulator, and Email Service → Azure Communication Services (with a deterministic local email sink in local development). The container structure is identical — only service implementations differ.
 
 ## Container Diagram details
 
@@ -17,7 +17,7 @@ C4Container
     Person(admin, "Administrator", "Manages system configuration")
 
     System_Ext(entra, "Microsoft Entra ID", "Identity provider")
-    System_Ext(email, "Email Service", "SendGrid / Azure Communication Services")
+    System_Ext(email, "Email Service", "Azure Communication Services")
 
     System_Boundary(atlas, "ATLAS System") {
         Container(blazor, "Blazor Web App", "ASP.NET Core Blazor", "Interactive web UI for citizens, officers, and administrators")
@@ -38,7 +38,7 @@ C4Container
     Rel(domain, infra, "Uses repositories and services", "In-process")
     Rel(infra, sql, "Reads/writes data", "TDS / Entity Framework Core")
     Rel(infra, blob, "Stores/retrieves documents", "REST API / Azure.Storage.Blobs")
-    Rel(infra, email, "Sends notifications", "REST API / SMTP")
+    Rel(infra, email, "Sends notifications", "REST API")
     Rel(api, entra, "Validates tokens", "OAuth 2.0 / OIDC")
 ```
 
@@ -62,7 +62,7 @@ C4Container
   - **Permit Type Administration**: browse, inspect, create, and manage permit types via the Permit Type Designer (fields, document requirements, live preview)
   - **User Directory** (read-only): list and detail views synchronized from Entra ID; no role editing (ADR-013)
   - **Audit Log Viewer**: read-only, filterable view over `GetAuditLogsQuery`
-  - **Email Template Administration**: list/edit rendered email templates
+  - **Email Template Administration**: list/edit/preview/save/reset email templates; customized templates persisted in Blob Storage (override source-code defaults, with Reset-to-default)
   - **Application Explorer**: read-only view of all applications
   - **Placeholder pages** (no business logic): Dynamic Forms, Reference Data, System Settings, Officers
   - Authorization: restricted to `Admin` Entra ID role
@@ -127,12 +127,13 @@ The Administration Portal is a new, third experience introduced in Milestone 8 P
 **Responsibilities & scope:**
 
 - **Administration Dashboard** (`/admin`): lightweight, read-only summary counts (permit types, applications, officers, active email templates) sourced from the `GetAdminDashboardQuery` CQRS query. No write operations.
-- **Placeholder areas** (no business logic in this phase): Dynamic Forms (`/admin/forms`), Email Templates (`/admin/email-templates`), Reference Data (`/admin/reference-data`), Officers (`/admin/officers`), System Settings (`/admin/settings`). Each renders a `PageHeader` and an `EmptyState` indicating the capability is planned for a later phase.
+- **Placeholder areas** (no business logic in this phase): Dynamic Forms (`/admin/forms`), Reference Data (`/admin/reference-data`), Officers (`/admin/officers`), System Settings (`/admin/settings`). Each renders a `PageHeader` and an `EmptyState` indicating the capability is planned for a later phase.
 - **Permit Type Administration** (implemented in Phase A2): exposes the existing Permit Type capabilities through the Administration Portal.
   - **List** (`/admin/permit-types`): search by name, filter Active/Inactive, sort by name, and shows field/document-requirement counts. Uses the extended `GetPermitTypesQuery` (now supports `SearchTerm`, `ActiveOnly`, `InactiveOnly`, `SortBy`).
   - **Detail** (`/admin/permit-types/{id}`): read-only view of general info, fee, status, configured fields, document requirements, and metadata. Uses `GetPermitTypeByIdQuery`.
   - **Settings** (`/admin/permit-types/{id}/settings`): edit Fee and toggle Active status (`UpdatePermitTypeCommand`); deactivate via `DeactivatePermitTypeCommand`. Name and Description remain immutable by design.
   - `NavMenu` shows both **Administration** and **Permit Types** entries inside an `<AuthorizeView Roles="Admin">` block.
+  - **Email Template Administration** (implemented): list/edit/preview/save/reset email templates. Customized templates are persisted in Blob Storage (`email-templates` container) and override source-code defaults; Reset restores the default template.
 
 **Authorization model:**
 

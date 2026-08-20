@@ -1,5 +1,7 @@
 # A7 Discovery — Email Template Administration
 
+> **⚠️ HISTORICAL DOCUMENT** — This discovery document reflects the state of the codebase at the time it was written (2026-07-22). Since then, Email Template Administration has been **implemented**: templates are persisted in Azure Blob Storage (`BlobEmailTemplateStore`), customized templates override source-code defaults, and the Administration Portal supports list/edit/preview/save/reset. See [email-delivery-acs.md](../architecture/email-delivery-acs.md) and [current-state.md](../architecture/current-state.md) for the current implementation.
+
 **Status:** Discovery / Inspection (no implementation)
 **Date:** 2026-07-22
 **Milestone:** 8 (Phase A7)

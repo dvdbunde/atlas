@@ -17,13 +17,15 @@ ATLAS is built with modern Microsoft technologies, targeting Azure for productio
 - **.NET 9** with **ASP.NET Core** (backend framework)
 - **Blazor Server** (interactive web UI)
 - **SQL Server** (Azure SQL Database target; LocalDB for local development)
-- **Azure Blob Storage** (document storage; Azurite emulator for local development)
+- **Azure Blob Storage** (document storage and email-template persistence; Azurite emulator for local development)
+- **Azure Communication Services (ACS) Email** (email delivery via Managed Identity)
 - **Microsoft Entra ID** (authentication & authorization)
-- **Azure App Service** (target hosting platform; Milestone 9)
+- **Azure App Service** (hosting platform; API and Blazor App Services)
+- **Azure Key Vault** (secrets management, e.g. SQL connection string)
 
 ## Project Status
 
-**Current Milestone**: Milestone 8 — Administration Portal ✅ IMPLEMENTED
+**Current Milestone**: Email Integration — Azure Communication Services Email + Blob Storage email templates ✅ IMPLEMENTED
 
 **Next Milestone**: Milestone 9 — Cloud Infrastructure & Azure Enablement (see [ROADMAP.md](plans/ROADMAP.md))
 
@@ -37,8 +39,8 @@ ATLAS is built with modern Microsoft technologies, targeting Azure for productio
 - ✅ **M6: Document Management** — Azure Blob Storage integration, upload/download, SAS token security, FileUpload field type
 - ✅ **M7: Officer Review Workflow** — Officer dashboard, application review, approve/reject/request-info workflow, internal notes, activity timeline
 - ✅ **M8: Administration Portal** — Admin dashboard, permit type designer, User Directory (read-only), Audit Log viewer, Email Template administration, Application Explorer
-
-**Next Milestone**: Milestone 9 — Cloud Infrastructure & Azure Enablement (see [ROADMAP.md](plans/ROADMAP.md))
+- ✅ **M9: Azure Infrastructure & Deployment** — Production-ready Azure infrastructure using Bicep (App Services, Azure SQL, Key Vault, Blob Storage, Container Registry, Application Insights, Log Analytics, Azure Communication Services); GitHub Actions CI/CD with workload identity federation; fully automated, idempotent deployment and bootstrap using Managed Identity and RBAC
+- ✅ **M10: Azure Communication Services Email Integration** — Azure Communication Services email delivery with Managed Identity; email templates persisted in Azure Blob Storage (customized templates override source-code defaults, with Reset-to-default); local development uses a deterministic local email sink
 
 ## Who this is for
 
@@ -63,6 +65,7 @@ This repository contains both the ATLAS application code and comprehensive docum
   - [Design Docs](docs/design/) - Technical design specifications
   - [Engineering Guidelines](docs/engineering/) - Development process documentation
     - [Contract Governance](docs/engineering/contract-governance.md) - Contract-first development workflow
+  - [Runbooks](docs/runbooks/) - Operational runbooks (e.g., [Email Delivery Deployment Checklist](docs/architecture/email-delivery-deployment-checklist.md))
 
 ### Project Management
 
@@ -83,9 +86,10 @@ This repository contains both the ATLAS application code and comprehensive docum
 3. **Configure local database**: ATLAS uses LocalDB for development. Run `dotnet ef database update` from the Infrastructure project to create the schema
 4. **Configure authentication**: See [Authentication Setup](#authentication-setup) below for Microsoft Entra ID configuration
 5. **Azure Storage emulation**: Document upload/download uses Azure Blob Storage. For local development, Azurite storage emulator is used automatically (configured in `appsettings.Development.json`). Install Azurite via `npm install -g azurite` and start it with `azurite`
-6. **Review architecture**: See [architecture documentation](docs/architecture/)
-7. **Review coding standards**: Read [backend instructions](.github/instructions/backend.instructions.md) and [frontend instructions](.github/instructions/frontend.instructions.md)
-8. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) for current priorities
+6. **Email behavior**: In local development, email delivery uses a deterministic local sink (no external service required). In Azure, email is delivered via Azure Communication Services using Managed Identity. Email templates are persisted in Blob Storage and can be administered from the Administration Portal
+7. **Review architecture**: See [architecture documentation](docs/architecture/)
+8. **Review coding standards**: Read [backend instructions](.github/instructions/backend.instructions.md) and [frontend instructions](.github/instructions/frontend.instructions.md)
+9. **Check the roadmap**: Review [ROADMAP.md](plans/ROADMAP.md) for current priorities
 
 ## Authentication Setup
 
