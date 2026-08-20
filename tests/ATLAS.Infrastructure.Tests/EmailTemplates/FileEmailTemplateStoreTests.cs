@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.EmailTemplates;
 using ATLAS.Infrastructure.EmailTemplates;
@@ -13,20 +10,13 @@ namespace ATLAS.Infrastructure.Tests.EmailTemplates
 {
     public class FileEmailTemplateStoreTests
     {
-        private readonly string _root;
         private readonly FileEmailTemplateStore _store;
 
         public FileEmailTemplateStoreTests()
         {
-            _root = Path.Combine(Path.GetTempPath(), "atlas-emailtests-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(_root);
-            var config = new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["Email:Templates:Path"] = _root
-                })
-                .Build();
-            _store = new FileEmailTemplateStore(config, NullLogger<FileEmailTemplateStore>.Instance);
+            _store = new FileEmailTemplateStore(
+                new ConfigurationBuilder().Build(),
+                NullLogger<FileEmailTemplateStore>.Instance);
         }
 
         [Fact]
@@ -72,12 +62,18 @@ namespace ATLAS.Infrastructure.Tests.EmailTemplates
         }
 
         [Fact]
-        public async Task ResolveFile_ConfinesToRootDirectory()
+        public async Task ResetAsync_IsNoOp_ForKnownTemplate()
         {
-            // Even a name that resolves inside root is allowed; traversal is blocked.
-            await _store.SaveAsync(new EmailTemplate { Name = "RejectionNotification", Content = "x" });
-            var file = Path.Combine(_root, "RejectionNotification.txt");
-            Assert.True(File.Exists(file));
+            // The file store IS the source-code default; resetting leaves it untouched.
+            await _store.ResetAsync("RejectionNotification");
+            Assert.NotNull(await _store.GetByNameAsync("RejectionNotification"));
+        }
+
+        [Fact]
+        public async Task ResetAsync_Throws_ForUnknownTemplate()
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _store.ResetAsync("EvilTemplate"));
         }
     }
 }

@@ -1,0 +1,13 @@
+Metrics, logging config + visualization
+Change look & feel + styling
+Remove Publish in commands and replace with adddomainevent + 1 publish in unitofwork
+Audit Message Enrichment
+Performance & DTO Simplification
+SQL Managed Identity
+Diagnostic Settings export
+Availability Tests
+Deployment Slots
+Separate migration workflow
+Production parameter file
+Backup policies
+Azure Front Door / WAF (if needed later)

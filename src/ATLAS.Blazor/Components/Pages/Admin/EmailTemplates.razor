@@ -106,7 +106,19 @@
                         <button type="button" class="btn btn-outline-secondary" @onclick="PreviewTemplate" disabled="@_isPreviewing">
                             @(_isPreviewing ? "Rendering…" : "Preview")
                         </button>
+                        <button type="button" class="btn btn-outline-danger" @onclick="ResetTemplate" disabled="@(_isResetting || _isSaving)">
+                            @(_isResetting ? "Resetting…" : "Reset to default")
+                        </button>
                     </div>
+
+                    @if (!string.IsNullOrEmpty(_resetMessage))
+                    {
+                        <div class="alert alert-success mt-3" role="alert">@_resetMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_resetError))
+                    {
+                        <div class="alert alert-danger mt-3" role="alert">@_resetError</div>
+                    }
 
                     @if (!string.IsNullOrEmpty(_previewOutput))
                     {

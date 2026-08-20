@@ -80,6 +80,7 @@ $AcrPushRoleId = '8311e382-0749-4cb8-b61a-304f252e45ec'
 $AcrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 $StorageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 $KeyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
+$CommunicationEmailServiceOwnerRoleId = '09976791-48a7-449e-bb21-39d1a415f350'
 
 # --------------------------------------------------------------------------
 # Helper functions
@@ -199,6 +200,9 @@ function Get-DeploymentOutputs {
         applicationInsightsName    = $outputs.applicationInsightsName.value
         applicationInsightsConnectionString = $outputs.applicationInsightsConnectionString.value
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
+        communicationServiceName = $outputs.communicationServiceName.value
+        communicationEmailServiceName = $outputs.communicationEmailServiceName.value    
+        communicationServiceResourceId = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Communication/communicationServices/$($outputs.communicationServiceName.value)"
     }
 }
 
@@ -221,7 +225,7 @@ function Get-GitHubServicePrincipal {
 }
 
 # --------------------------------------------------------------------------
-# Phase 3 – Configure GitHub AcrPush
+# Phase 3a – Configure GitHub AcrPush
 # --------------------------------------------------------------------------
 function Ensure-AcrPushRoleAssignment {
     param(
@@ -231,7 +235,7 @@ function Ensure-AcrPushRoleAssignment {
         [string]$KeyVaultName
     )
 
-    Write-Step "Phase 3 – Configuring AcrPush for $PrincipalName"
+    Write-Step "Phase 3a – Configuring AcrPush for $PrincipalName"
 
     # ----------------------------------------------------------------------
     # GitHub Actions -> Key Vault Secrets User
@@ -354,7 +358,69 @@ function Ensure-DeveloperStorageAccess {
 }
 
 # --------------------------------------------------------------------------
-# Phase 4 – Verify Managed Identities
+# Phase 3c – Configure Azure Communication Services permissions
+# --------------------------------------------------------------------------
+function Ensure-AcsPermissions {
+    param(
+        [Parameter(Mandatory)]
+        [string]$CommunicationServiceResourceId,
+
+        [Parameter(Mandatory)]
+        [string]$ApiPrincipalId,
+
+        [Parameter(Mandatory)]
+        [string]$BlazorPrincipalId
+    )
+
+    Write-Step "Phase 3c – Configuring Azure Communication Services permissions"
+
+    foreach ($app in @(
+        [PSCustomObject]@{
+            Name = "API App Service"
+            PrincipalId = $ApiPrincipalId
+        },
+        [PSCustomObject]@{
+            Name = "Blazor App Service"
+            PrincipalId = $BlazorPrincipalId
+        }
+    )) {
+        $existing = az role assignment list `
+            --assignee-object-id $app.PrincipalId `
+            --scope $CommunicationServiceResourceId `
+            --role $CommunicationEmailServiceOwnerRoleId `
+            --output json 2>$null | ConvertFrom-Json
+
+        if ($null -eq $existing -or @($existing).Count -eq 0) {
+            az role assignment create `
+                --assignee-object-id $app.PrincipalId `
+                --assignee-principal-type ServicePrincipal `
+                --role $CommunicationEmailServiceOwnerRoleId `
+                --scope $CommunicationServiceResourceId `
+                --output none
+
+            Assert-True ($LASTEXITCODE -eq 0) `
+                "Failed to assign Communication and Email Service Owner to $($app.Name)."
+
+            Write-Pass "$($app.Name) granted Communication and Email Service Owner"
+        }
+        else {
+            Write-Pass "$($app.Name) already has Communication and Email Service Owner"
+        }
+
+        # Immediate verification
+        $verify = az role assignment list `
+            --assignee-object-id $app.PrincipalId `
+            --scope $CommunicationServiceResourceId `
+            --role $CommunicationEmailServiceOwnerRoleId `
+            --output json 2>$null | ConvertFrom-Json
+
+        Assert-True ($null -ne $verify -and @($verify).Count -gt 0) `
+            "$($app.Name) Communication and Email Service Owner role could not be verified."
+    }
+}
+
+# --------------------------------------------------------------------------
+# Phase 4a – Verify Managed Identities
 # --------------------------------------------------------------------------
 function Verify-ManagedIdentities {
     param(
@@ -362,7 +428,7 @@ function Verify-ManagedIdentities {
         [string]$BlazorAppName
     )
 
-    Write-Step "Phase 4 – Verifying Managed Identities"
+    Write-Step "Phase 4a – Verifying Managed Identities"
 
     foreach ($appName in @($ApiAppName, $BlazorAppName)) {
         $app = az webapp show `
@@ -625,7 +691,108 @@ function Verify-StorageManagedIdentity {
 }
 
 # --------------------------------------------------------------------------
-# Phase 8 – Verify App Service Configuration
+# Phase 8a – Configure Azure Communication Services sender address
+# --------------------------------------------------------------------------
+function Configure-AcsSenderAddress {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory)]
+        [string]$EmailServiceName,
+
+        [Parameter(Mandatory)]
+        [string]$ApiAppName,
+
+        [Parameter(Mandatory)]
+        [string]$BlazorAppName
+    )
+
+    Write-Step "Configuring Azure Communication Services sender address"
+
+    #
+    # Resolve the Azure-managed sender domain
+    #
+    $domain = az communication email domain show `
+        --resource-group $ResourceGroup `
+        --email-service-name $EmailServiceName `
+        --domain-name AzureManagedDomain `
+        --query "fromSenderDomain" `
+        -o tsv
+
+    Assert-True (![string]::IsNullOrWhiteSpace($domain)) `
+        "Unable to resolve Azure Communication Services managed sender domain."
+
+    Write-Pass "Managed sender domain: $domain"
+
+    #
+    # Resolve the DoNotReply sender username
+    #
+    $username = az communication email domain sender-username show `
+        --resource-group $ResourceGroup `
+        --email-service-name $EmailServiceName `
+        --domain-name AzureManagedDomain `
+        --sender-username DoNotReply `
+        --query "username" `
+        -o tsv
+
+    Assert-True (![string]::IsNullOrWhiteSpace($username)) `
+        "Unable to resolve Azure Communication Services sender username."
+
+    Write-Pass "Sender username: $username"
+
+    #
+    # Build the sender address
+    #
+    $senderAddress = "$username@$domain"
+
+    Write-Pass "Resolved sender address: $senderAddress"
+
+    #
+    # Local helper
+    #
+    function Update-AppServiceSenderAddress {
+        param(
+            [Parameter(Mandatory)]
+            [string]$AppName
+        )
+
+        $currentSender = az webapp config appsettings list `
+            --resource-group $ResourceGroup `
+            --name $AppName `
+            --query "[?name=='Email__Acs__SenderAddress'].value | [0]" `
+            -o tsv
+
+        if ($currentSender -eq $senderAddress) {
+            Write-Pass "$AppName already configured."
+            return
+        }
+
+        az webapp config appsettings set `
+            --resource-group $ResourceGroup `
+            --name $AppName `
+            --settings Email__Acs__SenderAddress="$senderAddress" `
+            --only-show-errors | Out-Null
+
+        Write-Pass "$AppName updated."
+
+        az webapp restart `
+            --resource-group $ResourceGroup `
+            --name $AppName `
+            --only-show-errors | Out-Null
+
+        Write-Pass "$AppName restarted."
+    }
+
+    #
+    # Configure both App Services
+    #
+    Update-AppServiceSenderAddress -AppName $ApiAppName
+    Update-AppServiceSenderAddress -AppName $BlazorAppName
+}
+
+# --------------------------------------------------------------------------
+# Phase 8b – Verify App Service Configuration
 # --------------------------------------------------------------------------
 function Verify-AppServiceConfiguration {
     param(
@@ -664,6 +831,17 @@ function Verify-AppServiceConfiguration {
 
         Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Storage__AccountName'])) `
             "$appName is missing Storage__AccountName."
+
+        # Azure Communication Services
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Email__Acs__Endpoint'])) `
+            "$appName is missing Email__Acs__Endpoint."
+
+        Assert-True (-not [string]::IsNullOrWhiteSpace($settingMap['Email__Acs__SenderAddress'])) `
+            "$appName is missing Email__Acs__SenderAddress."
+
+        Assert-True `
+            ($settingMap['Email__Acs__SenderAddress'] -match '^DoNotReply@.+\.azurecomm\.net$') `
+            "$appName Email__Acs__SenderAddress is not a valid Azure Communication Services sender."
 
         # SQL connection string must be a Key Vault reference
         $sqlSetting = $settingMap['ConnectionStrings__DefaultConnection']
@@ -752,10 +930,16 @@ function Verify-InfrastructureResources {
         [string]$ApplicationInsightsName,
         [string]$LogAnalyticsWorkspaceName,
         [string]$SqlServerName,
-        [string]$SqlDatabaseName
+        [string]$SqlDatabaseName,
+        [string]$CommunicationServiceName,
+        [string]$CommunicationEmailServiceName
     )
 
     Write-Step "Phase 10 – Verifying infrastructure resources"
+
+    Write-Host "Resource Group : $ResourceGroup"
+    Write-Host "CommunicationServiceName : $CommunicationServiceName"
+    Write-Host "CommunicationEmailServiceName : $CommunicationEmailServiceName"
 
     $results = @()
 
@@ -782,6 +966,73 @@ function Verify-InfrastructureResources {
     # Storage Account
     $stor = az storage account show --name $StorageAccountName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
     $results += [PSCustomObject]@{ Name = "Storage Account"; Status = ($null -ne $stor); Detail = $StorageAccountName }    
+
+    # Azure Communication Service
+    $acs = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type Microsoft.Communication/communicationServices `
+        --name $CommunicationServiceName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $acsValid = $null -ne $acs
+
+    $results += [PSCustomObject]@{
+        Name   = "Azure Communication Service"
+        Status = $acsValid
+        Detail = $CommunicationServiceName
+    }
+
+    # Azure Communication Email Service
+    $emailService = az communication email show `
+        --name $CommunicationEmailServiceName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    $emailServiceValid =
+        $null -ne $emailService `
+        -and $emailService.provisioningState -eq "Succeeded"
+
+    $results += [PSCustomObject]@{
+        Name   = "Communication Email Service"
+        Status = $emailServiceValid
+        Detail = $CommunicationEmailServiceName
+    }
+
+    # Azure Managed Email Domain
+    $domain = az communication email domain show `
+        --resource-group $ResourceGroup `
+        --email-service-name $CommunicationEmailServiceName `
+        --domain-name AzureManagedDomain `
+        --output json 2>$null | ConvertFrom-Json
+
+    $domainValid =
+        $null -ne $domain `
+        -and $domain.provisioningState -eq "Succeeded" `
+        -and $domain.domainManagement -eq "AzureManaged"
+
+    $results += [PSCustomObject]@{
+        Name   = "Azure Managed Email Domain"
+        Status = $domainValid
+        Detail = "AzureManagedDomain"
+    }
+
+    # DoNotReply sender username
+    $senderUser = az communication email domain sender-username show `
+        --resource-group $ResourceGroup `
+        --email-service-name $CommunicationEmailServiceName `
+        --domain-name AzureManagedDomain `
+        --sender-username DoNotReply `
+        --output json 2>$null | ConvertFrom-Json
+
+    $senderValid =
+        $null -ne $senderUser `
+        -and $senderUser.username -eq "DoNotReply"
+
+    $results += [PSCustomObject]@{
+        Name   = "ACS Sender Username"
+        Status = $senderValid
+        Detail = "DoNotReply"
+    }
 
     # Key Vault
     $kv = az keyvault show --name $KeyVaultName --resource-group $ResourceGroup --output json 2>$null | ConvertFrom-Json
@@ -888,7 +1139,7 @@ $outputs = Get-DeploymentOutputs -ResourceGroup $ResourceGroup -DeploymentName $
 # Phase 2
 $githubSp = Get-GitHubServicePrincipal -ClientId $GitHubClientId
 
-# Phase 3
+# Phase 3a
 Ensure-AcrPushRoleAssignment `
     -PrincipalId $githubSp.id `
     -Scope $outputs.containerRegistryResourceId `
@@ -899,7 +1150,13 @@ Ensure-AcrPushRoleAssignment `
 Ensure-DeveloperStorageAccess `
     -StorageAccountResourceId $outputs.storageAccountResourceId    
 
-# Phase 4
+# Phase 3c
+Ensure-AcsPermissions `
+    -CommunicationServiceResourceId $outputs.communicationServiceResourceId `
+    -ApiPrincipalId $outputs.apiPrincipalId `
+    -BlazorPrincipalId $outputs.blazorPrincipalId    
+
+# Phase 4a
 Verify-ManagedIdentities `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName
@@ -929,7 +1186,14 @@ Verify-StorageManagedIdentity `
     -ApiPrincipalId $outputs.apiPrincipalId `
     -BlazorPrincipalId $outputs.blazorPrincipalId
 
-# Phase 8
+# Phase 8a
+Configure-AcsSenderAddress `
+    -ResourceGroup $ResourceGroup `
+    -EmailServiceName $outputs.communicationEmailServiceName `
+    -ApiAppName $outputs.apiAppServiceName `
+    -BlazorAppName $outputs.blazorAppServiceName    
+
+# Phase 8b
 Verify-AppServiceConfiguration `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName `
@@ -951,7 +1215,9 @@ $infraResults = Verify-InfrastructureResources `
     -ApplicationInsightsName $outputs.applicationInsightsName `
     -LogAnalyticsWorkspaceName $outputs.logAnalyticsWorkspaceName `
     -SqlServerName $outputs.sqlServerName `
-    -SqlDatabaseName $outputs.sqlDatabaseName
+    -SqlDatabaseName $outputs.sqlDatabaseName `
+    -CommunicationServiceName $outputs.communicationServiceName `
+    -CommunicationEmailServiceName $outputs.communicationEmailServiceName
 
 # Phase 11
 Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults

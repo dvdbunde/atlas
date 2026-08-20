@@ -4,7 +4,7 @@
 
 This diagram shows ATLAS (Automated Tracking & Licensing Application System) in the context of its users and external systems. It follows the C4 Model Context diagram convention.
 
-> **Implementation Note**: This diagram shows the target Azure-hosted architecture. As of Milestone 8.1, ATLAS runs locally: LocalDB replaces Azure SQL Database, Azurite replaces Azure Blob Storage, SMTP (Smtp4Dev/Papercut) replaces the production email service, and the application runs on Kestrel (not Azure App Service). The structure and interfaces are identical — only the hosting platform differs. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
+> **Implementation Note**: This diagram shows the target Azure-hosted architecture. As of the Email Integration milestone, ATLAS runs locally: LocalDB replaces Azure SQL Database, Azurite replaces Azure Blob Storage, and a deterministic local email sink replaces the production email service (Azure Communication Services). The application runs on Kestrel (not Azure App Service). The structure and interfaces are identical — only the hosting platform differs. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
 
 ## Context Diagram
 
@@ -19,7 +19,7 @@ C4Context
     System(atlas, "ATLAS", "Automated Tracking & Licensing Application System", "Digital permit processing platform for local government")
 
     System_Ext(entra, "Microsoft Entra ID", "Identity provider for OAuth 2.0 authentication and authorization")
-    System_Ext(email, "Email Service", "SendGrid or Azure Communication Services for notifications")
+    System_Ext(email, "Email Service", "Azure Communication Services for notifications")
     System_Ext(sql, "Azure SQL Database", "Relational database for structured data (applications, users, permit types)")
     System_Ext(blob, "Azure Blob Storage", "Object storage for permit documents and attachments")
 
@@ -28,7 +28,7 @@ C4Context
     Rel(admin, atlas, "Manages permit types, views audit logs", "HTTPS")
 
     Rel(atlas, entra, "Authenticates users via", "OAuth 2.0")
-    Rel(atlas, email, "Sends notifications via", "SMTP/REST")
+    Rel(atlas, email, "Sends notifications via", "REST API")
     Rel(atlas, sql, "Reads/writes application data", "TDS/SQL")
     Rel(atlas, blob, "Stores/retrieves documents", "REST API")
 ```

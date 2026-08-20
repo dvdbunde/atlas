@@ -1214,6 +1214,37 @@ paths:
       security:
         - EntraID: ['Admin']
 
+  /api/emailtemplates/{name}/reset:
+    post:
+      tags: [EmailTemplates]
+      summary: Reset email template to default
+      description: Delete any customized version of the template from Blob Storage so the source-code default is used again. The source-code default is never modified.
+      operationId: resetEmailTemplate
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Template name
+      responses:
+        '200':
+          description: Template reset (true). Returns true even when the template already had no customization.
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Email template not found
+      security:
+        - EntraID: ['Admin']
+
 components:
   schemas:
     AuditLogSortOption:
@@ -1628,7 +1659,7 @@ components:
         defaultValue:
           type: string
           nullable: true
-          example: null,
+          example: null
         options:
           type: array
           items:
@@ -1940,5 +1971,3 @@ components:
         Microsoft Entra ID OAuth 2.0 authentication with OpenID Connect.
         Obtain a token from Microsoft Entra ID (https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize)
         using the Authorization Code flow, then include it in the Authorization header: "Bearer {token}"
-
-

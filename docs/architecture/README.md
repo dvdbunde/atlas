@@ -11,6 +11,8 @@ This directory describes the system architecture. It provides an entry point to 
 ### In-repository Architecture documents
 
 - [Current State Architecture](current-state.md) — Post-Milestone 8.1 architectural snapshot. This is the authoritative baseline for the implemented system before Milestone 9 begins.
+- [Email Delivery — Azure Communication Services](email-delivery-acs.md) — Phase B email delivery via ACS with Managed Identity.
+- [Email Deployment Checklist](email-delivery-deployment-checklist.md) — Phase C deployment prerequisites and manual ACS domain-verification step.
 - [Design Documents](../design/README.md) — C4 context/container diagrams, domain model, data flows, aggregate roots, bounded contexts
 - [Extension Points](../design/08-extension-points.md) — Documented future capabilities (notifications, service bus, reporting, workflow)
 

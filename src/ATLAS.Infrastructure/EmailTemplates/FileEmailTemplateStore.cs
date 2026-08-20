@@ -19,25 +19,13 @@ namespace ATLAS.Infrastructure.EmailTemplates
 {
     public class FileEmailTemplateStore : IEmailTemplateStore
     {
-        // The application owns exactly these four templates. Names are fixed; only
-        // content is editable. This allow-list is the primary security boundary.
-        private static readonly IReadOnlyList<string> KnownTemplateNames = new List<string>
-        {
-            "SubmissionConfirmation",
-            "ReSubmissionConfirmation",
-            "ApprovalNotification",
-            "RejectionNotification",
-            "InfoRequestNotification"
-        };
-
         private readonly string _templatePath;
 
         public FileEmailTemplateStore(IConfiguration configuration, ILogger<FileEmailTemplateStore> logger)
         {
             _ = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _templatePath = configuration.GetValue<string>("Email:Templates:Path")
-                ?? Path.Combine(AppContext.BaseDirectory, "Templates", "Emails");
+            _templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "Emails");
 
             if (!Directory.Exists(_templatePath))
             {
@@ -49,12 +37,12 @@ namespace ATLAS.Infrastructure.EmailTemplates
 
         public Task<IReadOnlyList<string>> GetTemplateNamesAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(KnownTemplateNames);
+            return Task.FromResult(KnownEmailTemplates.Names);
         }
 
         public async Task<EmailTemplate?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
-            if (!IsKnownTemplate(name))
+            if (!KnownEmailTemplates.Names.Contains(name))
                 return null;
 
             var file = ResolveFile(name);
@@ -69,17 +57,26 @@ namespace ATLAS.Infrastructure.EmailTemplates
         {
             if (template is null)
                 throw new ArgumentNullException(nameof(template));
-            if (!IsKnownTemplate(template.Name))
+            if (!KnownEmailTemplates.Names.Contains(template.Name))
                 throw new ArgumentException($"Unknown email template '{template.Name}'.", nameof(template));
 
             var file = ResolveFile(template.Name);
             await File.WriteAllTextAsync(file, template.Content ?? string.Empty, cancellationToken);
         }
 
+        public Task ResetAsync(string name, CancellationToken cancellationToken = default)
+        {
+            if (!KnownEmailTemplates.Names.Contains (name))
+                throw new ArgumentException($"Unknown email template '{name}'.", nameof(name));
+
+            // The file store IS the source-code default; there is no customization to
+            // delete. Reset is a no-op that leaves the default intact.
+            return Task.CompletedTask;
+        }
+
         private bool IsKnownTemplate(string name)
         {
-            return !string.IsNullOrWhiteSpace(name)
-                && KnownTemplateNames.Contains(name, StringComparer.OrdinalIgnoreCase);
+            return KnownEmailTemplates.Names.Contains(name);
         }
 
         private string ResolveFile(string name)

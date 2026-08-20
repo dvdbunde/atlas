@@ -560,7 +560,7 @@ The following items are **explicitly out of scope** for the MVP release:
 - **A-03**: Azure subscription and resource quotas are approved and available
 - **A-04**: IT department will support Entra ID configuration and user provisioning
 - **A-05**: Current permit types and requirements are well-documented and stable (no major regulatory changes during MVP development)
-- **A-06**: Email delivery service (SendGrid or Azure Communication Services) is approved for notifications
+- **A-06**: Email delivery service (Azure Communication Services) is approved for notifications
 
 ---
 
@@ -627,7 +627,7 @@ The following items are **explicitly out of scope** for the MVP release:
 4. **Q4**: What email service should be used for notifications (SendGrid, Azure Communication Services, SMTP relay)?
    - *Impact*: Cost, deliverability, configuration effort
    - *Decision needed by*: July 1, 2026 (before integration testing)
-   - *Decision*: **Resolved — SMTP email service implemented.** `SmtpEmailService` with `EmailTemplateRenderer` for configurable templates. Infrastructure supports swapping to Azure Communication Services in future.
+   - *Decision*: **Resolved — Azure Communication Services (ACS) email implemented.** `AcsEmailService` with `EmailTemplateRenderer` for configurable templates. Email is delivered via ACS using Managed Identity; local development uses a deterministic local email sink. Email templates are persisted in Blob Storage.
 
 5. **Q5**: Should the MVP include a public-facing permit status lookup (no login required, just confirmation number)?
    - *Impact*: Security considerations, citizen convenience

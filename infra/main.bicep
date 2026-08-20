@@ -60,7 +60,6 @@ param blazorImageTag string = 'latest'
 @description('ASP.NET Core environment name applied to App Services (e.g. Development, Production). Defaults to Development.') 
 param environmentName string = 'Development'
 
-// -- Central naming & tagging -----------------------------------------------
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
   params: {
@@ -163,6 +162,14 @@ module apiAppService 'modules/appservice.bicep' = {
         value: storage.outputs.name
       }
       {
+        name: 'Storage__EmailTemplatesContainer'
+        value: 'email-templates'
+      }
+      {
+        name: 'Email__Acs__Endpoint'
+        value: communicationServices.outputs.endpoint
+      }      
+      {
         name: 'KeyVault__VaultName'
         value: keyVault.outputs.name
       }
@@ -203,6 +210,14 @@ module blazorAppService 'modules/appservice.bicep' = {
         name: 'Storage__AccountName'
         value: storage.outputs.name
       }
+      {
+        name: 'Storage__EmailTemplatesContainer'
+        value: 'email-templates'
+      }
+      {
+        name: 'Email__Acs__Endpoint'
+        value: communicationServices.outputs.endpoint
+      }      
       {
         name: 'KeyVault__VaultName'
         value: keyVault.outputs.name
@@ -249,6 +264,15 @@ module storage 'modules/storage.bicep' = {
     location: location
     tags: tags.outputs.tags
     sku: storageSku
+  }
+}
+
+// -- Azure Communication Services (Email) ------------------------------------
+module communicationServices 'modules/communicationservices.bicep' = {
+  name: '${deployment().name}-communicationservices'
+  params: {
+    name: names.outputs.communicationServicesName    
+    tags: tags.outputs.tags   
   }
 }
 
@@ -417,3 +441,6 @@ output keyVaultTenantId             string = subscription().tenantId
 output applicationInsightsName      string = names.outputs.applicationInsightsName
 output applicationInsightsConnectionString string = appInsights.outputs.connectionString
 output logAnalyticsWorkspaceName    string = names.outputs.logAnalyticsWorkspaceName
+output communicationServiceName     string = communicationServices.outputs.communicationServiceName
+output communicationServicesEndpoint string = communicationServices.outputs.endpoint
+output communicationEmailServiceName string = communicationServices.outputs.emailServiceName

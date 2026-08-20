@@ -526,3 +526,7 @@ book/
 # Repository-specific ignores
 # ==========================
 # Add project-specific patterns below
+
+# Azurite local storage
+__azurite_db_*
+__blobstorage__/

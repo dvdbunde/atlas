@@ -27,6 +27,11 @@ public partial class EmailTemplates : ComponentBase
     private string? _saveMessage;
     private string? _saveError;
 
+    // Reset state.
+    private bool _isResetting;
+    private string? _resetMessage;
+    private string? _resetError;
+
     // Preview state.
     private bool _isPreviewing;
     private string? _previewOutput;
@@ -71,6 +76,8 @@ public partial class EmailTemplates : ComponentBase
         _selectedName = name;
         _saveMessage = null;
         _saveError = null;
+        _resetMessage = null;
+        _resetError = null;
         _previewOutput = null;
         _previewError = null;
         _isPreviewing = false;
@@ -152,6 +159,45 @@ public partial class EmailTemplates : ComponentBase
         finally
         {
             _isPreviewing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResetTemplate()
+    {
+        if (_selectedName is null)
+            return;
+
+        _isResetting = true;
+        _resetMessage = null;
+        _resetError = null;
+
+        try
+        {
+            var result = await Mediator.Send(new ResetEmailTemplateCommand(_selectedName));
+            if (!result)
+            {
+                _resetError = "The template could not be reset. It may have been removed.";
+            }
+            else
+            {
+                _resetMessage = "Template reset to its default.";
+                _resetError = null;
+
+                // Reload the list and refresh the editor with the now-active default.
+                await LoadTemplates();
+                var template = await Mediator.Send(new GetEmailTemplateByNameQuery(_selectedName));
+                _editorContent = template?.Content ?? string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to reset email template {Name}", _selectedName);
+            _resetError = "We were unable to reset the template. Please try again later.";
+        }
+        finally
+        {
+            _isResetting = false;
             StateHasChanged();
         }
     }

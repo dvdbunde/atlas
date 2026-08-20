@@ -39,4 +39,13 @@ namespace ATLAS.Application.EmailTemplates.Validators
                 .NotNull().WithMessage("Template content is required");
         }
     }
+
+    public class ResetEmailTemplateCommandValidator : AbstractValidator<ResetEmailTemplateCommand>
+    {
+        public ResetEmailTemplateCommandValidator()
+        {
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Template name is required");
+        }
+    }
 }

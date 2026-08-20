@@ -28,6 +28,12 @@ namespace ATLAS.Infrastructure.Options
         public string ContainerName { get; set; } = "permit-documents";
 
         /// <summary>
+        /// Name of the blob container for customized email templates.
+        /// Default: "email-templates".
+        /// </summary>
+        public string EmailTemplatesContainer { get; set; } = "email-templates";
+
+        /// <summary>
         /// Number of hours for SAS token expiry.
         /// Default: 1 hour per ADR-015.
         /// </summary>
