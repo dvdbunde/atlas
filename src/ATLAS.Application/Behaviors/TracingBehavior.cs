@@ -62,16 +62,24 @@ namespace ATLAS.Application.Behaviors
                 return await next();
             }
 
+            // O4: command duration metric. The Activity name is the stable command
+            // type name - bounded cardinality (one dimension value per command
+            // type), never IDs or user data.
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 var response = await next();
                 activity.SetStatus(ActivityStatusCode.Ok);
+                ATLAS.Application.Telemetry.AtlasMetrics.CommandDuration.Record(
+                    stopwatch.ElapsedMilliseconds, new KeyValuePair<string, object?>("command", activityName));
                 return response;
             }
             catch (Exception ex)
             {
                 activity.SetStatus(ActivityStatusCode.Error, ex.Message);
                 activity.AddException(ex);
+                ATLAS.Application.Telemetry.AtlasMetrics.CommandDuration.Record(
+                    stopwatch.ElapsedMilliseconds, new KeyValuePair<string, object?>("command", activityName));
                 throw;
             }
         }

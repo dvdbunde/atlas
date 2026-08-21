@@ -513,3 +513,34 @@ Genuinely remaining infrastructure evolution includes:
 - Monitoring alerts and action groups (Milestone 11 – O7)
 
 The modular Bicep architecture established during this milestone is intended to support future enhancements without requiring significant restructuring of the infrastructure code.
+
+## Metrics (Milestone 11 – O4)
+
+ATLAS emits application metrics via `System.Diagnostics.Metrics` under the
+meter name `ATLAS.Application` (same identity as the O3 ActivitySource). They
+are exported through the same OpenTelemetry → Azure Monitor pipeline as traces,
+and only when an Application Insights connection string is configured — locally
+the instruments simply have no listener.
+
+### Instruments
+
+| Metric | Type | Dimensions | Emission boundary |
+|---|---|---|---|
+| `atlas.applications.transitions` | Counter<long> | `transition` (created, submitted, approved, rejected, info_requested, resubmitted — fixed set of 6) | Application command handlers, once per successful business transition |
+| `atlas.email.sends` | Counter<long> | `outcome` (success, failure) | `AcsEmailService.SendAsync`, exactly once per send attempt |
+| `atlas.email.duration` | Histogram<double> (ms) | `outcome` (success, failure) | Same boundary as above |
+| `atlas.command.duration` | Histogram<double> (ms) | `command` (MediatR command type name — bounded by the number of command types) | `TracingBehavior`, around every command execution |
+
+### Conventions
+
+- **Cardinality**: dimensions are strictly low-cardinality. ApplicationId,
+  UserId, DocumentId, email addresses and blob names are never used as
+  dimensions; those values live in logs/traces where per-event analysis is
+  possible without unbounded time series.
+- **Separation of concerns**: metrics answer "what is happening repeatedly?",
+  logs answer "what happened in this event?", traces answer "what happened in
+  this operation?", and the business Audit Log remains the permanent business
+  history. None replace another.
+- **No duplication of Azure-native telemetry**: Blob Storage operations are not
+  custom-instrumented because Azure Monitor already provides storage metrics;
+  HTTP request metrics remain with classic Application Insights.

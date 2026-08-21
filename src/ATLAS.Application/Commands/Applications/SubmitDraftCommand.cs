@@ -124,6 +124,7 @@ namespace ATLAS.Application.Commands.Applications
                 cancellationToken);
 
             _logger.LogInformation("Draft application {ApplicationId} submitted", request.ApplicationId);
+            ATLAS.Application.Telemetry.AtlasMetrics.ApplicationTransitions.Add(1, new KeyValuePair<string, object?>("transition", "submitted"));
 
             return Unit.Value;
         }

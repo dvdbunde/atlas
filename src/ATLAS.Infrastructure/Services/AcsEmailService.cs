@@ -43,15 +43,44 @@ namespace ATLAS.Infrastructure.Services
             // failures with service-specific context, and callers (email handlers)
             // log failures with application context. Logging here as well would
             // duplicate the same exception at multiple layers.
-            await _emailClient.SendAsync(
-                _senderAddress,
-                to,
-                subject,
-                body,
-                isHtml,
-                cancellationToken);
+            //
+            // O4 metrics: this is the single logical email-send boundary — the
+            // outcome counter increments exactly once per attempt here, never in
+            // AcsEmailClient or the event handlers. No recipient/PII dimensions.
+            // Cancellation is neither a success nor a delivery failure: duration
+            // is recorded without an outcome tag and the failure counter is not
+            // incremented; the cancellation propagates unchanged.
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                await _emailClient.SendAsync(
+                    _senderAddress,
+                    to,
+                    subject,
+                    body,
+                    isHtml,
+                    cancellationToken);
 
-            _logger.LogInformation("Email sent successfully to {EmailRecipient}, subject: {Subject}", to, subject);
+                RecordOutcome("success", stopwatch.ElapsedMilliseconds);
+                _logger.LogInformation("Email sent successfully to {EmailRecipient}, subject: {Subject}", to, subject);
+            }
+            catch (OperationCanceledException)
+            {
+                ATLAS.Application.Telemetry.AtlasMetrics.EmailDuration.Record(stopwatch.ElapsedMilliseconds);
+                throw;
+            }
+            catch (Exception)
+            {
+                RecordOutcome("failure", stopwatch.ElapsedMilliseconds);
+                throw;
+            }
+        }
+
+        private static void RecordOutcome(string outcome, double durationMs)
+        {
+            var tags = new KeyValuePair<string, object?>("outcome", outcome);
+            ATLAS.Application.Telemetry.AtlasMetrics.EmailSends.Add(1, tags);
+            ATLAS.Application.Telemetry.AtlasMetrics.EmailDuration.Record(durationMs, tags);
         }
     }
 }

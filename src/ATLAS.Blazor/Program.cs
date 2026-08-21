@@ -42,6 +42,17 @@ builder.Services.AddOpenTelemetry()
         {
             tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = appInsightsConnectionString);
         }
+    })
+    // O4: export ATLAS metrics (business transitions, email outcomes, command
+    // durations) through the same Azure Monitor pipeline as traces.
+    .WithMetrics(metrics =>
+    {
+        metrics.AddMeter(ATLAS.Application.Telemetry.AtlasMetrics.MeterName);
+
+        if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+        {
+            metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = appInsightsConnectionString);
+        }
     });
 
 // Azure Key Vault configuration provider (production only)

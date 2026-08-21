@@ -48,6 +48,7 @@ namespace ATLAS.Application.Commands.Applications
             await _repository.UpdateAsync(application, cancellationToken);
             await _mediator.Publish(new Domain.Events.ApplicationInfoRequestedEvent(application.Id, request.Message), cancellationToken);
             
+            ATLAS.Application.Telemetry.AtlasMetrics.ApplicationTransitions.Add(1, new KeyValuePair<string, object?>("transition", "info_requested"));
             return true;
         }
     }
