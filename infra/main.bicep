@@ -97,6 +97,19 @@ module appInsights 'modules/appinsights.bicep' = {
   }
 }
 
+// -- Azure Managed Grafana (O2 – primary dashboard platform) -----------------
+// SystemAssigned identity; Azure Monitor RBAC role assignments are granted
+// after this module below. No dependency on App Services / SQL etc., so no
+// circular references.
+module grafana 'modules/grafana.bicep' = {
+  name: '${deployment().name}-grafana'
+  params: {
+    name: names.outputs.grafanaName
+    location: location
+    tags: tags.outputs.tags
+  }
+}
+
 // -- App Service Plan --------------------------------------------------------
 module appServicePlan 'modules/appserviceplan.bicep' = {
   name: '${deployment().name}-appserviceplan'
@@ -416,16 +429,213 @@ resource blazorStorageBlobDataContributor 'Microsoft.Authorization/roleAssignmen
   }
 }
 
-// -- Outputs -----------------------------------------------------------------
-output resourceGroupName            string = names.outputs.resourceGroupName
-output apiAppServiceName            string = names.outputs.apiAppServiceName
-output apiAppServiceResourceId      string = apiAppService.outputs.id
-output apiHostname                  string = apiAppService.outputs.defaultHostName
-output apiPrincipalId               string = apiAppService.outputs.principalId
-output blazorAppServiceName         string = names.outputs.blazorAppServiceName
-output blazorAppServiceResourceId   string = blazorAppService.outputs.id
-output blazorHostname               string = blazorAppService.outputs.defaultHostName
-output blazorPrincipalId            string = blazorAppService.outputs.principalId
+// ==========================================================================
+// O2 – Azure Monitor Integration
+// ==========================================================================
+
+// -- Grafana RBAC -------------------------------------------------------------
+// Managed Grafana's managed identity needs read access to Azure Monitor data
+// (Log Analytics workspace queries + resource metrics) so Grafana's Azure
+// Monitor data sources can query ATLAS telemetry. No secrets are used.
+
+// Monitoring Reader on the resource group: covers metric/list access for all
+// ATLAS resources in one assignment (least privilege at the required scope).
+var monitoringReaderRoleDefinitionId = '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
+
+// Deploy-time constant name (must mirror names.bicep) for role assignment IDs,
+// which require values computable at deployment start.
+var grafanaResourceName = 'atlas-${environment}-grafana'
+
+resource grafanaMonitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().name, grafanaResourceName, 'monitoring-reader', subscription().subscriptionId)
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', monitoringReaderRoleDefinitionId)
+    principalId: grafana.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Log Analytics Reader on the workspace: allows Grafana to run KQL queries
+// against the workspace (Application Insights tables + resource diagnostic logs).
+// Role definition verified against Azure CLI: az role definition list --name "Log Analytics Reader"
+var logAnalyticsReaderRoleDefinitionId = '73c42c96-874c-492b-b04d-ab87d138a893'
+
+// Reference the existing Log Analytics workspace so the role assignment is
+// scoped to the workspace itself (not the resource group), matching the
+// bootstrap verification. Name mirrors names.bicep (deploy-time constant
+// required for scope resolution).
+var logAnalyticsWorkspaceNameConst = 'atlas-${environment}-logs'
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: logAnalyticsWorkspaceNameConst
+}
+
+resource grafanaLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(logAnalyticsWorkspaceNameConst, grafanaResourceName, 'la-reader', subscription().subscriptionId)
+  scope: logAnalyticsWorkspace
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', logAnalyticsReaderRoleDefinitionId)
+    principalId: grafana.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- Diagnostic Settings (O2) -------------------------------------------------
+// Each diagnostic setting targets its Azure resource through the Bicep `scope`
+// mechanism (extension resources), NOT via properties.targetResourceId — the
+// latter is rejected by the Azure provider during What-If/deployment.
+//
+// The generic string-based module was removed because Bicep scopes require
+// actual resource references; the six settings are therefore defined directly
+// where those references are available.
+//
+// Category names are curated for operational value vs. cost: high-volume/noisy
+// categories (e.g. App Service HTTP logs, which duplicate App Insights request
+// telemetry) are intentionally excluded.
+
+var appServiceLogCategories = [
+  'AppServiceAuditLogs'
+  'AppServiceIPSecAuditLogs'
+  'AppServicePlatformLogs'
+]
+
+// Extension-resource scope requires actual resource references. Resources that
+// live inside modules are referenced as existing resources (names come from
+// the names module / module-level vars).
+var apiAppServiceNameConst = 'atlas-api-${environment}-${effectiveSuffix}'
+resource apiAppServiceRef 'Microsoft.Web/sites@2023-12-01' existing = {
+  name: apiAppServiceNameConst
+}
+
+var blazorAppServiceNameConst = 'atlas-blazor-${environment}-${effectiveSuffix}'
+resource blazorAppServiceRef 'Microsoft.Web/sites@2023-12-01' existing = {
+  name: blazorAppServiceNameConst
+}
+
+var sqlServerNameConst = 'atlas${environment}sql${effectiveSuffix}'
+resource sqlServerResource 'Microsoft.Sql/servers@2021-11-01' existing = {
+  name: sqlServerNameConst
+}
+
+resource sqlDatabaseRef 'Microsoft.Sql/servers/databases@2021-11-01' existing = {
+  parent: sqlServerResource
+  name: 'atlas-${environment}-db'
+}
+
+resource keyVaultRef 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
+
+var communicationServicesNameConst = 'atlas-comm-${environment}-${effectiveSuffix}'
+resource communicationServicesRef 'Microsoft.Communication/communicationServices@2023-04-01-preview' existing = {
+  name: communicationServicesNameConst
+}
+
+resource storageBlobServiceRef 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' existing = {
+  parent: storageAccount
+  name: 'default'
+}
+
+// -- API App Service ----------------------------------------------------------
+resource apiAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: apiAppServiceRef
+  name: 'atlas-api-diagnostics'
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [for category in appServiceLogCategories: {
+      category: category
+      enabled: true
+    }]
+    metrics: [{
+      category: 'AllMetrics'
+      enabled: true
+    }]
+  }
+}
+
+// -- Blazor App Service -------------------------------------------------------
+resource blazorAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: blazorAppServiceRef
+  name: 'atlas-blazor-diagnostics'
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [for category in appServiceLogCategories: {
+      category: category
+      enabled: true
+    }]
+    metrics: [{
+      category: 'AllMetrics'
+      enabled: true
+    }]
+  }
+}
+
+// -- SQL Database -------------------------------------------------------------
+// SQLSecurityAuditEvents (audit trail, compliance-relevant) plus insights and
+// automatic tuning recommendations.
+resource sqlDatabaseDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: sqlDatabaseRef
+  name: 'atlas-sql-diagnostics'
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [
+      { category: 'SQLSecurityAuditEvents', enabled: true }
+      { category: 'SQLInsights', enabled: true }
+      { category: 'AutomaticTuning', enabled: true }
+    ]
+    metrics: [{
+      category: 'Basic'
+      enabled: true
+    }]
+  }
+}
+
+// -- Storage Blob Service -----------------------------------------------------
+// Blob log categories are exposed by the blobServices/default child resource,
+// not the account root.
+resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: storageBlobServiceRef
+  name: 'atlas-storage-diagnostics'
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [
+      { category: 'StorageRead', enabled: true }
+      { category: 'StorageWrite', enabled: true }
+      { category: 'StorageDelete', enabled: true }
+    ]
+    metrics: [{
+      category: 'Transaction'
+      enabled: true
+    }]
+  }
+}
+
+// -- Key Vault ----------------------------------------------------------------
+resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: keyVaultRef
+  name: 'atlas-keyvault-diagnostics'
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [{ category: 'AuditEvent', enabled: true }]
+    metrics: [{
+      category: 'AllMetrics'
+      enabled: true
+    }]
+  }
+}
+
+// -- Azure Communication Services --------------------------------------------
+// Request-level usage logs at the Communication Service scope; the email
+// service child does not expose diagnostic settings.
+resource communicationServicesDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: communicationServicesRef
+  name: 'atlas-acs-diagnostics'
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [{ category: 'RequestLogs', enabled: true }]
+  }
+}
+
 output containerRegistryName        string = names.outputs.containerRegistryName
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output containerRegistryResourceId  string = containerRegistry.outputs.id
@@ -441,6 +651,10 @@ output keyVaultTenantId             string = subscription().tenantId
 output applicationInsightsName      string = names.outputs.applicationInsightsName
 output applicationInsightsConnectionString string = appInsights.outputs.connectionString
 output logAnalyticsWorkspaceName    string = names.outputs.logAnalyticsWorkspaceName
+output logAnalyticsWorkspaceId      string = logAnalytics.outputs.id
+output grafanaName                  string = names.outputs.grafanaName
+output grafanaEndpoint              string = grafana.outputs.endpoint
+output grafanaPrincipalId           string = grafana.outputs.principalId
 output communicationServiceName     string = communicationServices.outputs.communicationServiceName
 output communicationServicesEndpoint string = communicationServices.outputs.endpoint
 output communicationEmailServiceName string = communicationServices.outputs.emailServiceName

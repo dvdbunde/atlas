@@ -81,3 +81,4 @@ resource emailTemplatesContainer 'Microsoft.Storage/storageAccounts/blobServices
 output id                     string = storageAccount.id
 output name                   string = storageAccount.name
 output primaryBlobEndpoint    string = storageAccount.properties.primaryEndpoints.blob
+output blobServiceId          string = blobService.id

@@ -8,17 +8,20 @@ Milestone 9 – Phase 1 establishes the core Azure infrastructure required to ho
 
 The implemented infrastructure is intentionally focused on the minimum set of Azure resources required to support application development, testing, and future deployment automation.
 
-Subsequent phases will introduce:
+Since Milestone 9 – Phase 1, the following capabilities have been implemented and are documented in this file:
 
-- Key Vault secrets (partially implemented — SQL connection string stored in Key Vault)
-- Azure SQL authentication using Microsoft Entra ID
-- Continuous Deployment
-- Monitoring & Diagnostics
+- Key Vault secrets (SQL connection string stored in Key Vault; App Services use Key Vault references)
+- Continuous Deployment (GitHub Actions workflows build and deploy both App Services)
+- Monitoring & Diagnostics (Milestone 11 – O2: Log Analytics, Application Insights, diagnostic settings, Azure Managed Grafana — see [Observability & Monitoring](#observability--monitoring-milestone-11--o2))
+- Managed Identity via **system-assigned** identities on the App Services (used for Azure Communication Services, Blob Storage, ACR pull, and Key Vault access)
+
+Remaining future infrastructure work:
+
+- Azure SQL authentication using Microsoft Entra ID (current implementation uses SQL administrator authentication)
 - Deployment Slots
 - Production networking (Private Endpoints / VNet integration)
 - Production hardening
-
-> **Note:** Managed Identity is already implemented via **system-assigned** identities on the App Services (used for Azure Communication Services and Blob Storage access).
+- Monitoring alerts and action groups (O7)
 
 ## Overview
 
@@ -62,8 +65,69 @@ infra/
     ├── communicationservices.bicep # Azure Communication Services (email)
     ├── keyvault.bicep            # Azure Key Vault
     ├── loganalytics.bicep        # Log Analytics Workspace
-    └── appinsights.bicep         # Application Insights
+    ├── appinsights.bicep         # Application Insights
+    ├── grafana.bicep             # Azure Managed Grafana (O2)
+    └── diagnosticsettings.bicep  # Reusable diagnostic settings module (O2)
 ```
+
+## Observability & Monitoring (Milestone 11 – O2)
+
+The O2 phase establishes the Azure telemetry foundation. All monitoring
+infrastructure is deployed through Bicep; no manual portal configuration is
+required.
+
+### Telemetry topology
+
+```text
+API App Service ──────┐
+Blazor App Service ───┤
+SQL Database ─────────┤  diagnostic settings   ┌─────────────────────┐
+Storage (Blob) ───────┼───────────────────────►│ Log Analytics       │◄── Application
+Key Vault ────────────┤                        │ (atlas-{env}-logs)  │    Insights
+ACS ──────────────────┘                        └──────────▲──────────┘    (workspace-backed)
+                                                          │ KQL + metrics (RBAC)
+                                              ┌───────────┴───────────┐
+                                              │ Managed Grafana       │
+                                              │ (atlas-{env}-grafana) │
+                                              └───────────────────────┘
+```
+
+- **Application Insights** (`atlas{env}appi`) is workspace-based and linked to
+  the central Log Analytics workspace. Both App Services receive the
+  connection string via `APPLICATIONINSIGHTS_CONNECTION_STRING`. No
+  instrumentation-key configuration is used.
+- **Diagnostic settings** route curated platform log and metric categories from
+  each resource to the Log Analytics workspace. Categories are deliberately
+  curated for operational value versus ingestion cost — e.g. App Service HTTP
+  logs are excluded because Application Insights already captures request
+  telemetry, and Blob Storage diagnostics are configured on the account's
+  `blobServices/default` child resource where those categories are exposed.
+- **Azure Managed Grafana** is the primary operational dashboard platform.
+  Dashboards themselves are a later phase (O5/O6); O2 delivers the provisioned,
+  authorized instance only.
+
+### Grafana identity and RBAC
+
+Grafana uses a **system-assigned managed identity** — no API keys, passwords,
+or stored credentials. Two built-in role assignments grant read access to
+monitoring data:
+
+| Role | Role definition ID | Scope | Purpose |
+|---|---|---|---|
+| Monitoring Reader | `43d0d8ad-25c7-4714-9337-8ba259a9fe05` | ATLAS resource group | Metric/list access across all ATLAS resources |
+| Log Analytics Reader | `73c42c96-874c-492b-b04d-ab87d138a893` | Log Analytics workspace | KQL queries against workspace tables |
+
+Role assignment names use deterministic `guid()` seeds so re-deployments are
+idempotent. After deployment, Grafana's Azure Monitor data source authenticates
+via this managed identity automatically; no post-deployment credential setup is
+required to query data (building dashboards on top remains O5/O6 work).
+
+### Bootstrap verification
+
+`infra/bootstrap.ps1` Phase 11 verifies the O2 foundation against live Azure:
+workspace health, Application Insights workspace linkage and connection-string
+configuration, existence and destination of every diagnostic setting, Grafana
+provisioning state, and both Grafana role assignments at their expected scopes.
 
 ## Bootstrap
 
@@ -117,8 +181,9 @@ az account set `
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
 | App Service Plan | atlas-{env}-plan | atlas-dev-plan |
-| App Service (API) | atlas-{env}-api | atlas-dev-api |
-| App Service (Blazor) | atlas-{env}-app | atlas-dev-app |
+| App Service (API) | atlas-api-{env}-{suffix} | atlas-api-dev-{suffix} |
+| App Service (Blazor) | atlas-blazor-{env}-{suffix} | atlas-blazor-dev-{suffix} |
+| Container Registry | atlasacr{suffix} | atlasacr{suffix} |
 
 ### Database
 
@@ -145,15 +210,15 @@ az account set `
 
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
-| Communication Services | atlas-{env}-acs | atlas-dev-acs |
-| Email Service | atlas-{env}-email | atlas-dev-email |
+| Communication Services | atlas-comm-{env}-{suffix} | atlas-comm-dev-{suffix} |
+| Email Service | atlas-comm-{env}-{suffix}-email | atlas-comm-dev-{suffix}-email |
 | Email Domain | AzureManagedDomain | AzureManagedDomain |
 
 ### Identity
 
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
-| Managed Identity | System-assigned on each App Service | System-assigned |
+| Managed Identity | System-assigned on each App Service and on Managed Grafana | System-assigned |
 
 ### Observability
 
@@ -161,6 +226,7 @@ az account set `
 | ---------- | ------------- | ----------- |
 | Log Analytics Workspace | atlas-{env}-logs | atlas-dev-logs |
 | Application Insights | atlas{env}appi | atlasdevappi |
+| Azure Managed Grafana | atlas-{env}-grafana | atlas-dev-grafana |
 
 ## Naming Convention
 
@@ -190,11 +256,18 @@ Tags are defined centrally in `modules/tags.bicep` and applied consistently to e
 {
   "environment": "dev",
   "location": "westeurope",
+  "uniqueSuffix": "",
   "sqlAdminLogin": "atlasadmin",
-  "appServicePlanSkuTier": "Standard",
-  "appServicePlanSkuSize": "S1",
+  "appServicePlanSkuTier": "Basic",
+  "appServicePlanSkuSize": "B1",
+  "appServicePlanCapacity": 1,
   "sqlDatabaseSkuName": "GP_S_Gen5",
-  "storageSku": "Standard_LRS"
+  "sqlDatabaseCapacity": 1,
+  "sqlDatabaseAutoPauseDelay": 15,
+  "sqlDatabaseMaxSizeBytes": 34359738368,
+  "storageSku": "Standard_LRS",
+  "logAnalyticsRetentionInDays": 30,
+  "enableResourceLock": false
 }
 ```
 
@@ -295,10 +368,19 @@ After deployment, the following outputs are available:
 
 | Output | Description |
 | -------- | ----------- |
-| AppServiceName | Name of the App Service |
-| AppServiceResourceId | ARM resource ID of the App Service |
-| AppServiceDefaultHostName | Default hostname (for example `atlas-dev-app.azurewebsites.net`) |
-| AppServicePlanName | Name of the App Service Plan |
+| resourceGroupName | Name of the Resource Group |
+| apiAppServiceName | Name of the API App Service |
+| apiAppServiceResourceId | ARM resource ID of the API App Service |
+| apiHostname | Default hostname of the API App Service |
+| apiPrincipalId | Principal ID of the API App Service managed identity |
+| blazorAppServiceName | Name of the Blazor App Service |
+| blazorAppServiceResourceId | ARM resource ID of the Blazor App Service |
+| blazorHostname | Default hostname of the Blazor App Service |
+| blazorPrincipalId | Principal ID of the Blazor App Service managed identity |
+| containerRegistryName | Name of the Azure Container Registry |
+| containerRegistryLoginServer | Login server of the Azure Container Registry |
+| containerRegistryResourceId | ARM resource ID of the Azure Container Registry |
+| appServicePlanName | Name of the App Service Plan |
 | sqlServerName | Name of the SQL Server |
 | sqlServerFqdn | Fully qualified domain name of the SQL Server |
 | sqlDatabaseName | Name of the SQL Database |
@@ -309,18 +391,17 @@ After deployment, the following outputs are available:
 | keyVaultTenantId | Microsoft Entra tenant identifier |
 | applicationInsightsName | Name of the Application Insights resource |
 | applicationInsightsConnectionString | Application Insights connection string |
-| applicationInsightsConnectionString | Application Insights connection string |
 | logAnalyticsWorkspaceName | Name of the Log Analytics Workspace |
-| emailServiceName | Name of the ACS Email Service |
-| emailServiceResourceId | ARM resource ID of the ACS Email Service |
+| logAnalyticsWorkspaceId | ARM resource ID of the Log Analytics Workspace |
+| grafanaName | Name of the Azure Managed Grafana instance |
+| grafanaEndpoint | Endpoint URL of the Azure Managed Grafana instance |
+| grafanaPrincipalId | Principal ID of the Grafana managed identity |
+| communicationServiceName | Name of the ACS Communication Service |
+| communicationServicesEndpoint | ACS endpoint URL |
+| communicationEmailServiceName | Name of the ACS Email Service |
 
-These outputs are intended to be consumed by later milestones and deployment automation, including:
-
-- application configuration
-- GitHub Actions deployment pipelines
-- Key Vault access configuration
-- health checks
-- operational validation
+These outputs are consumed by `infra/bootstrap.ps1` for post-deployment
+verification and are available for deployment automation.
 
 ## Troubleshooting
 
@@ -419,17 +500,16 @@ This makes repeated deployments safe during development and forms the basis for 
 
 ## Next Steps
 
-The Azure Foundation established during **Milestone 9 – Phase 1** provides the platform for the remaining cloud enablement work.
+The Azure Foundation established during **Milestone 9 – Phase 1**, together with
+the O2 Azure Monitor integration, provides the platform for the remaining
+infrastructure work.
 
-Future milestones will build upon this foundation by integrating:
+Genuinely remaining infrastructure evolution includes:
 
-- Azure SQL connectivity
-- Managed Identity
-- Azure Key Vault
-- Application configuration
-- Health checks
-- GitHub Actions deployment pipeline
-- Monitoring and alerting
+- Azure SQL authentication using Microsoft Entra ID
+- Deployment Slots
+- Production networking (Private Endpoints / VNet integration)
 - Production hardening
+- Monitoring alerts and action groups (Milestone 11 – O7)
 
 The modular Bicep architecture established during this milestone is intended to support future enhancements without requiring significant restructuring of the infrastructure code.

@@ -200,6 +200,10 @@ function Get-DeploymentOutputs {
         applicationInsightsName    = $outputs.applicationInsightsName.value
         applicationInsightsConnectionString = $outputs.applicationInsightsConnectionString.value
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
+        logAnalyticsWorkspaceId    = $outputs.logAnalyticsWorkspaceId.value
+        grafanaName                = $outputs.grafanaName.value
+        grafanaEndpoint            = $outputs.grafanaEndpoint.value
+        grafanaPrincipalId         = $outputs.grafanaPrincipalId.value
         communicationServiceName = $outputs.communicationServiceName.value
         communicationEmailServiceName = $outputs.communicationEmailServiceName.value    
         communicationServiceResourceId = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Communication/communicationServices/$($outputs.communicationServiceName.value)"
@@ -1075,12 +1079,175 @@ function Verify-InfrastructureResources {
 }
 
 # --------------------------------------------------------------------------
-# Phase 11 – Write Summary
+# Phase 11 – Verify Azure Monitor Integration (O2)
+# --------------------------------------------------------------------------
+function Verify-AzureMonitorIntegration {
+    param(
+        [string]$ResourceGroup,
+        [string]$LogAnalyticsWorkspaceName,
+        [string]$LogAnalyticsWorkspaceId,
+        [string]$ApplicationInsightsName,
+        [string]$ApplicationInsightsConnectionString,
+        [string]$GrafanaName,
+        [string]$GrafanaPrincipalId,
+        [string]$ApiAppServiceName,
+        [string]$BlazorAppServiceName,
+        [string]$SqlServerName,
+        [string]$SqlDatabaseName,
+        [string]$StorageAccountName,
+        [string]$KeyVaultName,
+        [string]$CommunicationServiceName
+    )
+
+    Write-Step "Phase 11 – Verifying Azure Monitor integration (O2)"
+
+    $subscriptionId = az account show --query id --output tsv
+    $results = @()
+
+    # --- Log Analytics workspace exists and is enabled ---
+    $la = az monitor log-analytics workspace show `
+        --workspace-name $LogAnalyticsWorkspaceName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    $results += [PSCustomObject]@{
+        Name   = "Log Analytics workspace"
+        Status = ($null -ne $la -and $la.provisioningState -eq "Succeeded")
+        Detail = $LogAnalyticsWorkspaceName
+    }
+
+    # --- Application Insights: exists, workspace-backed ---
+    $ai = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Insights/components" `
+        --name $ApplicationInsightsName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $aiWorkspaceLinked = $false
+    if ($null -ne $ai) {
+        $expectedWorkspaceId = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup" +
+            "/providers/Microsoft.OperationalInsights/workspaces/$LogAnalyticsWorkspaceName"
+        $aiWorkspaceLinked = $ai.properties.WorkspaceResourceId -eq $expectedWorkspaceId
+    }
+
+    $results += [PSCustomObject]@{
+        Name   = "Application Insights workspace linkage"
+        Status = $aiWorkspaceLinked
+        Detail = if ($aiWorkspaceLinked) { "-> $LogAnalyticsWorkspaceName" } else { "not linked to expected workspace" }
+    }
+
+    $results += [PSCustomObject]@{
+        Name   = "Application Insights connection string"
+        Status = (-not [string]::IsNullOrWhiteSpace($ApplicationInsightsConnectionString) -and
+                  $ApplicationInsightsConnectionString -like "InstrumentationKey=*;IngestionEndpoint=*")
+        Detail = "configured (connection-string based, no instrumentation-key-only config)"
+    }
+
+    # --- Diagnostic settings per resource ---
+    function Test-DiagnosticSetting {
+        param([string]$TargetResourceId, [string]$SettingName)
+
+        $ds = az monitor diagnostic-settings show `
+            --resource $TargetResourceId `
+            --name $SettingName `
+            --output json 2>$null | ConvertFrom-Json
+
+        return ($null -ne $ds -and $ds.workspaceId -eq $LogAnalyticsWorkspaceId)
+    }
+
+    $rgPath = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup"
+
+    $diagChecks = @(
+        @{ Name = "Diagnostics: API App Service";      Resource = "$rgPath/providers/Microsoft.Web/sites/$ApiAppServiceName";                Setting = "atlas-api-diagnostics" },
+        @{ Name = "Diagnostics: Blazor App Service";   Resource = "$rgPath/providers/Microsoft.Web/sites/$BlazorAppServiceName";             Setting = "atlas-blazor-diagnostics" },
+        @{ Name = "Diagnostics: SQL Database";         Resource = "$rgPath/providers/Microsoft.Sql/servers/$SqlServerName/databases/$SqlDatabaseName"; Setting = "atlas-sql-diagnostics" },
+        @{ Name = "Diagnostics: Storage Account (Blob)"; Resource = "$rgPath/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/blobServices/default"; Setting = "atlas-storage-diagnostics" },
+        @{ Name = "Diagnostics: Key Vault";            Resource = "$rgPath/providers/Microsoft.KeyVault/vaults/$KeyVaultName";               Setting = "atlas-keyvault-diagnostics" },
+        @{ Name = "Diagnostics: Communication Services"; Resource = "$rgPath/providers/Microsoft.Communication/communicationServices/$CommunicationServiceName"; Setting = "atlas-acs-diagnostics" }
+    )
+
+    foreach ($check in $diagChecks) {
+        $ok = Test-DiagnosticSetting -TargetResourceId $check.Resource -SettingName $check.Setting
+        $results += [PSCustomObject]@{
+            Name   = $check.Name
+            Status = $ok
+            Detail = if ($ok) { "$($check.Setting) -> $LogAnalyticsWorkspaceName" } else { "$($check.Setting) missing or wrong destination" }
+        }
+    }
+
+    # --- Managed Grafana ---
+    $grafana = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Dashboard/grafana" `
+        --name $GrafanaName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $grafanaExists = $null -ne $grafana -and $grafana.properties.provisioningState -eq "Succeeded"
+
+    $results += [PSCustomObject]@{
+        Name   = "Managed Grafana provisioned"
+        Status = $grafanaExists
+        Detail = if ($grafanaExists) { $GrafanaName } else { "$GrafanaName not Succeeded" }
+    }
+
+    # --- Grafana managed identity + RBAC ---
+    $grafanaIdentityOk = $false
+    if ($grafanaExists -and -not [string]::IsNullOrWhiteSpace($GrafanaPrincipalId)) {
+        # Monitoring Reader on the resource group grants metric/list access.
+        $monitoringReaderDefId = "43d0d8ad-25c7-4714-9337-8ba259a9fe05"
+        $assignments = az role assignment list `
+            --assignee $GrafanaPrincipalId `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        $grafanaIdentityOk = ($assignments | Where-Object {
+            $_.roleDefinitionId -like "*$monitoringReaderDefId"
+        }) -ne $null
+
+        # Log Analytics Reader on the workspace grants KQL query access.
+        $laReaderDefId = "73c42c96-036c-4bb8-9d1a-6a5e0d4b0f7c"
+        $laAssignments = az role assignment list `
+            --assignee $GrafanaPrincipalId `
+            --scope $LogAnalyticsWorkspaceId `
+            --output json 2>$null | ConvertFrom-Json
+
+        $grafanaIdentityOk = $grafanaIdentityOk -and (($laAssignments | Where-Object {
+            $_.roleDefinitionId -like "*$laReaderDefId"
+        }) -ne $null)
+    }
+
+    $results += [PSCustomObject]@{
+        Name   = "Managed Grafana RBAC"
+        Status = $grafanaIdentityOk
+        Detail = if ($grafanaIdentityOk) { "Monitoring Reader + Log Analytics Reader assigned" } else { "expected role assignments missing" }
+    }
+
+    # Report failures immediately (consistent with Phase 10 behavior).
+    $allPassed = $true
+    foreach ($r in $results) {
+        if (-not $r.Status) {
+            Write-Fail "$($r.Name) – $($r.Detail)"
+            $allPassed = $false
+        } else {
+            Write-Pass "$($r.Name) – $($r.Detail)"
+        }
+    }
+
+    if (-not $allPassed) {
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $results
+}
+
+# --------------------------------------------------------------------------
+# Phase 12 – Write Summary
 # --------------------------------------------------------------------------
 function Write-Summary {
     param(
         [PSCustomObject]$DeploymentOutputs,
-        [array]$InfrastructureResults
+        [array]$InfrastructureResults,
+        [array]$MonitorResults
     )
 
     Write-Host "`n"
@@ -1112,6 +1279,17 @@ function Write-Summary {
         $color = if ($r.Status) { "Green" } else { "Red" }
         $name = $r.Name.PadRight(22)
         Write-Host "  $status $name $($r.Detail)" -ForegroundColor $color
+    }
+
+    if ($MonitorResults) {
+        Write-Host ""
+        Write-Host "Azure Monitor (O2)" -ForegroundColor Yellow
+        foreach ($r in $MonitorResults) {
+            $status = if ($r.Status) { "PASS" } else { "FAIL" }
+            $color = if ($r.Status) { "Green" } else { "Red" }
+            $name = $r.Name.PadRight(22)
+            Write-Host "  $status $name $($r.Detail)" -ForegroundColor $color
+        }
     }
 
     Write-Host ""
@@ -1219,7 +1397,24 @@ $infraResults = Verify-InfrastructureResources `
     -CommunicationServiceName $outputs.communicationServiceName `
     -CommunicationEmailServiceName $outputs.communicationEmailServiceName
 
-# Phase 11
-Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults
+# Phase 11 (O2 – Azure Monitor Integration)
+$monitorResults = Verify-AzureMonitorIntegration `
+    -ResourceGroup $ResourceGroup `
+    -LogAnalyticsWorkspaceName $outputs.logAnalyticsWorkspaceName `
+    -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
+    -ApplicationInsightsName $outputs.applicationInsightsName `
+    -ApplicationInsightsConnectionString $outputs.applicationInsightsConnectionString `
+    -GrafanaName $outputs.grafanaName `
+    -GrafanaPrincipalId $outputs.grafanaPrincipalId `
+    -ApiAppServiceName $outputs.apiAppServiceName `
+    -BlazorAppServiceName $outputs.blazorAppServiceName `
+    -SqlServerName $outputs.sqlServerName `
+    -SqlDatabaseName $outputs.sqlDatabaseName `
+    -StorageAccountName $outputs.storageAccountName `
+    -KeyVaultName $outputs.keyVaultName `
+    -CommunicationServiceName $outputs.communicationServiceName
+
+# Phase 12
+Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults -MonitorResults $monitorResults
 
 exit $EXIT_SUCCESS

@@ -41,6 +41,7 @@ var keyVaultName = 'atlas${environment}kv${effectiveSuffix}'
 // -- Observability ----------------------------------------------------------
 var logAnalyticsWorkspaceName = 'atlas-${environment}-logs'
 var applicationInsightsName   = 'atlas${environment}appi'
+var grafanaName               = 'atlas-${environment}-grafana'
 
 // ---------------------------------------------------------------------------
 // Exports
@@ -57,3 +58,4 @@ output communicationServicesName  string = communicationServicesName
 output keyVaultName               string = keyVaultName
 output logAnalyticsWorkspaceName  string = logAnalyticsWorkspaceName
 output applicationInsightsName    string = applicationInsightsName
+output grafanaName                string = grafanaName
