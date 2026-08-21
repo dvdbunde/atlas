@@ -39,25 +39,19 @@ namespace ATLAS.Infrastructure.Services
 
         public async Task SendAsync(string to, string subject, string body, bool isHtml = false, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                await _emailClient.SendAsync(
-                    _senderAddress,
-                    to,
-                    subject,
-                    body,
-                    isHtml,
-                    cancellationToken);
+            // No try/catch here: AcsEmailClient (the dependency boundary) logs ACS
+            // failures with service-specific context, and callers (email handlers)
+            // log failures with application context. Logging here as well would
+            // duplicate the same exception at multiple layers.
+            await _emailClient.SendAsync(
+                _senderAddress,
+                to,
+                subject,
+                body,
+                isHtml,
+                cancellationToken);
 
-                _logger.LogInformation("Email sent successfully to {To}, subject: {Subject}", to, subject);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send email to {To}, subject: {Subject}", to, subject);
-                // Rethrow so the caller (email handler) can log and decide how to handle the
-                // failure. A failed send must not be reported as successful.
-                throw;
-            }
+            _logger.LogInformation("Email sent successfully to {EmailRecipient}, subject: {Subject}", to, subject);
         }
     }
 }

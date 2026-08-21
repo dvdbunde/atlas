@@ -150,7 +150,8 @@ namespace ATLAS.Infrastructure
             {
                 var options = sp.GetRequiredService<IOptions<StorageOptions>>();
                 var blobServiceClient = sp.GetService<BlobServiceClient>();
-                return new BlobStorageService(options, blobServiceClient);
+                var logger = sp.GetService<ILogger<BlobStorageService>>();
+                return new BlobStorageService(options, blobServiceClient, logger);
             });
 
             // Blob-backed email template store. The blob client is optional: it is only

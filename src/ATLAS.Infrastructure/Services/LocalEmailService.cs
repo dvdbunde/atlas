@@ -28,9 +28,11 @@ namespace ATLAS.Infrastructure.Services
         {
             // Deterministic local capture: log the email so it can be inspected during
             // development. No real delivery is attempted.
+            // Note: the body is intentionally NOT logged — it may contain permit
+            // application content (PII). Recipient and subject are sufficient here.
             _logger.LogInformation(
-                "[LOCAL EMAIL] To: {To} | Subject: {Subject} | Body: {Body}",
-                to, subject, body);
+                "[LOCAL EMAIL] To: {EmailRecipient} | Subject: {Subject}",
+                to, subject);
 
             return Task.CompletedTask;
         }

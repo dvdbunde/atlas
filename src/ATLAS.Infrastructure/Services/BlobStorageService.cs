@@ -11,9 +11,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Interfaces;
 using ATLAS.Infrastructure.Options;
+using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Sas;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ATLAS.Infrastructure.Services
@@ -26,12 +28,14 @@ namespace ATLAS.Infrastructure.Services
     {
         private readonly BlobContainerClient _containerClient;
         private readonly TimeSpan _sasTokenExpiry;
+        private readonly ILogger<BlobStorageService>? _logger;
 
         /// <summary>
         /// Constructor using connection string (local development with Azurite).
         /// </summary>
-        public BlobStorageService(IOptions<StorageOptions> options)
+        public BlobStorageService(IOptions<StorageOptions> options, ILogger<BlobStorageService>? logger = null)
         {
+            _logger = logger;
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
@@ -55,8 +59,9 @@ namespace ATLAS.Infrastructure.Services
         /// <summary>
         /// Constructor using BlobServiceClient (production with Managed Identity).
         /// </summary>
-        public BlobStorageService(IOptions<StorageOptions> options, BlobServiceClient? blobServiceClient)
+        public BlobStorageService(IOptions<StorageOptions> options, BlobServiceClient? blobServiceClient, ILogger<BlobStorageService>? logger = null)
         {
+            _logger = logger;
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
 
@@ -109,7 +114,20 @@ namespace ATLAS.Infrastructure.Services
                 ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType
             };
 
-            await blobClient.UploadAsync(fileStream, blobHttpHeaders, cancellationToken: ct);
+            try
+            {
+                await blobClient.UploadAsync(fileStream, blobHttpHeaders, cancellationToken: ct);
+            }
+            catch (RequestFailedException ex)
+            {
+                // Dependency boundary: log the Blob Storage failure with service-specific
+                // context, then rethrow so callers can add application context.
+                _logger?.LogError(
+                    ex,
+                    "Failed to upload blob {BlobName} to container {ContainerName}",
+                    blobPath, _containerClient.Name);
+                throw;
+            }
 
             return new FileUploadResult(blobClient.Uri.ToString(), fileSize);
         }
@@ -133,7 +151,18 @@ namespace ATLAS.Infrastructure.Services
             var fileName = GetFileNameFromBlobUrl(blobUrl);
 
             var memoryStream = new MemoryStream();
-            await blobClient.DownloadToAsync(memoryStream, ct);
+            try
+            {
+                await blobClient.DownloadToAsync(memoryStream, ct);
+            }
+            catch (RequestFailedException ex)
+            {
+                _logger?.LogError(
+                    ex,
+                    "Failed to download blob {BlobName} from container {ContainerName}",
+                    blobClient.Name, _containerClient.Name);
+                throw;
+            }
             memoryStream.Position = 0;
 
             return new FileDownloadResult(memoryStream, contentType, fileName);
@@ -183,7 +212,18 @@ namespace ATLAS.Infrastructure.Services
             if (!await blobClient.ExistsAsync(ct))
                 return false;
 
-            await blobClient.DeleteIfExistsAsync(cancellationToken: ct);
+            try
+            {
+                await blobClient.DeleteIfExistsAsync(cancellationToken: ct);
+            }
+            catch (RequestFailedException ex)
+            {
+                _logger?.LogError(
+                    ex,
+                    "Failed to delete blob {BlobName} from container {ContainerName}",
+                    blobClient.Name, _containerClient.Name);
+                throw;
+            }
             return true;
         }
 

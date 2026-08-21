@@ -60,14 +60,28 @@ namespace ATLAS.Infrastructure.Services
                 recipientAddress,
                 emailContent);
 
-            var operation = await _emailClient.SendAsync(
-                WaitUntil.Completed,
-                message,
-                cancellationToken);
+            try
+            {
+                var operation = await _emailClient.SendAsync(
+                    WaitUntil.Completed,
+                    message,
+                    cancellationToken);
 
-            _logger.LogInformation(
-                "ACS email send completed with status {Status} for recipient {Recipient}",
-                operation.Value.Status, recipientAddress);
+                _logger.LogInformation(
+                    "ACS email send completed with status {Status} for recipient {EmailRecipient}",
+                    operation.Value.Status, recipientAddress);
+            }
+            catch (RequestFailedException ex)
+            {
+                // Dependency boundary: log the Azure Communication Services failure with
+                // service-specific context, then rethrow so callers can add application
+                // context (e.g. ApplicationId) without duplicating this log entry.
+                _logger.LogError(
+                    ex,
+                    "ACS email send failed with status code {StatusCode} for recipient {EmailRecipient}",
+                    ex.Status, recipientAddress);
+                throw;
+            }
         }
     }
 }
