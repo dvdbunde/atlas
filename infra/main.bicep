@@ -635,6 +635,47 @@ resource communicationServicesDiagnostics 'Microsoft.Insights/diagnosticSettings
     logs: [{ category: 'RequestLogs', enabled: true }]
   }
 }
+// ==========================================================================
+// O6 - Azure Workbooks & Grafana Dashboards
+// ==========================================================================
+
+// -- ATLAS Operations Workbook ------------------------------------------------
+// ARM-provisioned Azure Monitor Workbook scoped to the resource group.
+// Definition lives in infra/telemetry/atlas-operations.workbook.json and is
+// loaded at deployment time. Name must be a GUID (provider requirement);
+// derived deterministically so re-deployments update in place.
+var operationsWorkbookName = guid(resourceGroup().id, 'atlas-operations-workbook')
+var operationsWorkbookData = loadTextContent('telemetry/atlas-operations.workbook.json')
+
+module operationsWorkbook 'modules/workbook.bicep' = {
+  name: '${deployment().name}-operations-workbook'
+  params: {
+    name: operationsWorkbookName
+    location: location
+    tags: tags.outputs.tags
+    serializedData: operationsWorkbookData
+    displayName: 'ATLAS Operations'
+  }
+}
+
+// -- ATLAS Operations Grafana Dashboard ---------------------------------------
+// Provisioned declaratively as a Microsoft.Dashboard/grafana/dashboards
+// sub-resource of the existing Managed Grafana instance. Definition lives in
+// infra/telemetry/atlas-operations.grafana-dashboard.json.
+var operationsGrafanaDashboardData = loadTextContent('telemetry/atlas-operations.grafana-dashboard.json')
+
+module operationsGrafanaDashboard 'modules/grafanadashboard.bicep' = {
+  name: '${deployment().name}-operations-grafana-dashboard'
+  params: {
+    environment: environment
+    title: 'ATLAS Operations Overview'
+    serializedData: operationsGrafanaDashboardData
+    resourceGroupName: resourceGroup().name
+    applicationInsightsName: names.outputs.applicationInsightsName
+    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+  }
+}
+
 
 output containerRegistryName        string = names.outputs.containerRegistryName
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
@@ -658,3 +699,6 @@ output grafanaPrincipalId           string = grafana.outputs.principalId
 output communicationServiceName     string = communicationServices.outputs.communicationServiceName
 output communicationServicesEndpoint string = communicationServices.outputs.endpoint
 output communicationEmailServiceName string = communicationServices.outputs.emailServiceName
+output operationsWorkbookName        string = operationsWorkbook.outputs.name
+output operationsWorkbookId          string = operationsWorkbook.outputs.id
+output operationsGrafanaDashboardName string = operationsGrafanaDashboard.outputs.name

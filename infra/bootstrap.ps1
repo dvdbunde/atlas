@@ -201,6 +201,8 @@ function Get-DeploymentOutputs {
         applicationInsightsConnectionString = $outputs.applicationInsightsConnectionString.value
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
         logAnalyticsWorkspaceId    = $outputs.logAnalyticsWorkspaceId.value
+        operationsWorkbookName     = $outputs.operationsWorkbookName.value
+        operationsGrafanaDashboardName = $outputs.operationsGrafanaDashboardName.value
         grafanaName                = $outputs.grafanaName.value
         grafanaEndpoint            = $outputs.grafanaEndpoint.value
         grafanaPrincipalId         = $outputs.grafanaPrincipalId.value
@@ -1241,6 +1243,69 @@ function Verify-AzureMonitorIntegration {
 }
 
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Phase 11b - Verify O6 Visualization Resources (Workbook + Grafana dashboard)
+# --------------------------------------------------------------------------
+function Verify-O6Visualization {
+    param(
+        [string]$ResourceGroup,
+        [string]$OperationsWorkbookName,
+        [string]$GrafanaName,
+        [string]$GrafanaDashboardName
+    )
+
+    Write-Step "Phase 11b - Verifying O6 visualization resources (Workbook + Grafana dashboard)"
+
+    $results = @()
+
+    # --- ATLAS Operations Workbook exists with expected display name ---
+    $workbook = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Insights/workbooks" `
+        --name $OperationsWorkbookName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $workbookOk = $null -ne $workbook -and $workbook.properties.displayName -eq "ATLAS Operations"
+
+    $results += [PSCustomObject]@{
+        Name   = "Operations Workbook"
+        Status = $workbookOk
+        Detail = if ($workbookOk) { "ATLAS Operations" } else { "$OperationsWorkbookName missing or wrong display name" }
+    }
+
+    # --- Grafana dashboard provisioned inside the Managed Grafana instance ---
+    $dashboard = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Dashboard/grafana/dashboards" `
+        --namespace "Microsoft.Dashboard" `
+        --parent "grafana/$GrafanaName" `
+        --name $GrafanaDashboardName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $dashboardOk = $null -ne $dashboard
+
+    $results += [PSCustomObject]@{
+        Name   = "Grafana Operations Dashboard"
+        Status = $dashboardOk
+        Detail = if ($dashboardOk) { "$GrafanaDashboardName in $GrafanaName" } else { "$GrafanaDashboardName missing in $GrafanaName" }
+    }
+
+    $allPassed = $true
+    foreach ($r in $results) {
+        if (-not $r.Status) {
+            Write-Fail "$($r.Name) - $($r.Detail)"
+            $allPassed = $false
+        } else {
+            Write-Pass "$($r.Name) - $($r.Detail)"
+        }
+    }
+
+    if (-not $allPassed) {
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $results
+}
 # Phase 12 – Write Summary
 # --------------------------------------------------------------------------
 function Write-Summary {
@@ -1413,6 +1478,13 @@ $monitorResults = Verify-AzureMonitorIntegration `
     -StorageAccountName $outputs.storageAccountName `
     -KeyVaultName $outputs.keyVaultName `
     -CommunicationServiceName $outputs.communicationServiceName
+
+# Phase 11b - Verify O6 visualization resources (Workbook + Grafana dashboard)
+$monitorResults += Verify-O6Visualization `
+    -ResourceGroup $ResourceGroup `
+    -OperationsWorkbookName $outputs.operationsWorkbookName `
+    -GrafanaName $outputs.grafanaName `
+    -GrafanaDashboardName $outputs.operationsGrafanaDashboardName
 
 # Phase 12
 Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults -MonitorResults $monitorResults

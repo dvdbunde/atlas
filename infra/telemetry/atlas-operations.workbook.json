@@ -1,0 +1,137 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "timerange",
+            "version": "KqlParameterItem/1.0",
+            "name": "Time range",
+            "type": 4,
+            "isRequired": true,
+            "value": { "durationMs": 86400000 }
+          },
+          {
+            "id": "appi",
+            "version": "KqlParameterItem/1.0",
+            "name": "Application Insights resource",
+            "type": 5,
+            "isRequired": true
+          },
+          {
+            "id": "commandtype",
+            "version": "KqlParameterItem/1.0",
+            "name": "Command type",
+            "type": 2,
+            "query": "customMetrics | where name == \"atlas.command.duration\" | extend c = tostring(customDimensions.command) | distinct c | order by c asc",
+            "crossComponentResources": ["{appi}"]
+          }
+        ],
+        "style": "pills",
+        "queryType": 0
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "1. Overview — application transitions and email outcomes",
+        "showPin": false,
+        "query": "customMetrics\n| where timestamp > {timerange} and name in (\"atlas.applications.transitions\", \"atlas.email.sends\")\n| extend Metric = case(\n    name == \"atlas.applications.transitions\", strcat(\"Transition: \", tostring(customDimensions.transition)),\n    strcat(\"Email: \", tostring(customDimensions.outcome)))\n| summarize Total = sum(Value) by Metric\n| order by Total desc",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "crossComponentResources": ["{appi}"]
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "2. Application errors — exceptions over time",
+        "showPin": false,
+        "query": "exceptions\n| where timestamp > {timerange}\n| summarize ExceptionCount = count() by problemId, bin(timestamp, 1h)\n| order by timestamp asc",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "crossComponentResources": ["{appi}"],
+        "chartSettings": { "yAxis": "ExceptionCount" }
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "3. Command performance — duration percentiles by command type",
+        "showPin": false,
+        "query": "customMetrics\n| where name == \"atlas.command.duration\" and timestamp > {timerange}\n| extend Command = tostring(customDimensions.command)\n| where isempty('{commandtype}') or Command == '{commandtype}'\n| summarize p50=percentile(Value, 50), p95=percentile(Value, 95), p99=percentile(Value, 99), Samples=count() by Command\n| order by p95 desc",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "crossComponentResources": ["{appi}"]
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "4. Dependency failures — SQL / Blob / HTTP",
+        "showPin": false,
+        "query": "dependencies\n| where success == false and timestamp > {timerange}\n| summarize Failures = count() by dependencyType, name\n| order by Failures desc",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "crossComponentResources": ["{appi}"]
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "5. Email delivery — sends by outcome (custom metric)",
+        "showPin": false,
+        "query": "customMetrics\n| where name == \"atlas.email.sends\" and timestamp > {timerange}\n| extend Outcome = tostring(customDimensions.outcome)\n| summarize Total = sum(Value) by Outcome\n| project Outcome, Total",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "crossComponentResources": ["{appi}"],
+        "chartSettings": { "yAxis": "Total" }
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "6. Email delivery duration percentiles",
+        "showPin": false,
+        "query": "customMetrics\n| where name == \"atlas.email.duration\" and timestamp > {timerange}\n| extend Outcome = tostring(customDimensions.outcome)\n| summarize p50=percentile(Value, 50), p95=percentile(Value, 95), Samples=count() by Outcome",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "crossComponentResources": ["{appi}"]
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "title": "7. Azure resource diagnostics — platform logs from Log Analytics",
+        "showPin": false,
+        "query": "AzureDiagnostics\n| where TimeGenerated > {timerange}\n| summarize Events = count() by Category, ResourceProvider\n| order by Events desc",
+        "size": 0,
+        "timeContext": { "durationMs": 86400000 },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      }
+    }
+  ]
+}

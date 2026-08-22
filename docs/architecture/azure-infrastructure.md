@@ -113,7 +113,7 @@ or stored credentials. Two built-in role assignments grant read access to
 monitoring data:
 
 | Role | Role definition ID | Scope | Purpose |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Monitoring Reader | `43d0d8ad-25c7-4714-9337-8ba259a9fe05` | ATLAS resource group | Metric/list access across all ATLAS resources |
 | Log Analytics Reader | `73c42c96-874c-492b-b04d-ab87d138a893` | Log Analytics workspace | KQL queries against workspace tables |
 
@@ -525,11 +525,11 @@ the instruments simply have no listener.
 ### Instruments
 
 | Metric | Type | Dimensions | Emission boundary |
-|---|---|---|---|
-| `atlas.applications.transitions` | Counter<long> | `transition` (created, submitted, approved, rejected, info_requested, resubmitted — fixed set of 6) | Application command handlers, once per successful business transition |
-| `atlas.email.sends` | Counter<long> | `outcome` (success, failure) | `AcsEmailService.SendAsync`, exactly once per send attempt |
-| `atlas.email.duration` | Histogram<double> (ms) | `outcome` (success, failure) | Same boundary as above |
-| `atlas.command.duration` | Histogram<double> (ms) | `command` (MediatR command type name — bounded by the number of command types) | `TracingBehavior`, around every command execution |
+| --- | --- | --- | --- |
+| `atlas.applications.transitions` | `Counter<long>` | `transition` (created, submitted, approved, rejected, info_requested, resubmitted — fixed set of 6) | Application command handlers, once per successful business transition |
+| `atlas.email.sends` | `Counter<long>` | `outcome` (success, failure) | `AcsEmailService.SendAsync`, exactly once per send attempt |
+| `atlas.email.duration` | `Histogram<double>` (ms) | `outcome` (success, failure) | Same boundary as above |
+| `atlas.command.duration` | `Histogram<double>` (ms) | `command` (MediatR command type name — bounded by the number of command types) | `TracingBehavior`, around every command execution |
 
 ### Conventions
 
@@ -576,3 +576,65 @@ Managed Grafana remain the authoritative technical telemetry sources.
 Implementation: `GetOperationsOverviewQuery` (Application layer) aggregates
 `HealthCheckService` and `IOperationsMetricsSnapshot` (a `MeterListener`-based
 read-only observer of the existing O4 instruments — no new telemetry).
+
+## Dashboards & Workbooks (Milestone 11 – O6)
+
+O6 turns the O2–O4 telemetry foundation into operational visualizations using
+two Azure-native mechanisms. Azure Monitor remains the technical source of
+truth; the ATLAS Operations Portal (O5) remains a lightweight curated overview.
+
+### ATLAS Operations Workbook
+
+Provisioned as an ARM resource (`Microsoft.Insights/workbooks`) in
+`infra/modules/workbook.bicep`, with its definition in
+`infra/telemetry/atlas-operations.workbook.json`. Deployed idempotently with
+the infrastructure — no manual portal creation.
+
+**Authentication model**: unlike Grafana (which queries via its managed
+identity), a Workbook executes its queries under the permissions of the user
+viewing it. Viewers therefore need their own read access to the Application
+Insights / Log Analytics data the workbook queries.
+
+Sections:
+
+1. Overview — command activity and failures
+2. Application errors — exceptions over time
+3. Command performance — duration percentiles by command type (parameterized)
+4. Dependency failures — SQL / Blob / HTTP
+5. Email delivery — sends by outcome (`atlas.email.sends`)
+6. Email delivery duration percentiles (`atlas.email.duration`)
+7. Azure resource diagnostics — platform logs from Log Analytics
+
+Parameters: time range, Application Insights resource, command type.
+
+### ATLAS Operations Grafana Dashboard
+
+Provisioned declaratively as a `Microsoft.Dashboard/grafana/dashboards`
+sub-resource of the existing Managed Grafana instance
+(`infra/modules/grafanadashboard.bicep`, definition in
+`infra/telemetry/atlas-operations.grafana-dashboard.json`). No API keys, no
+post-deployment scripting; access follows the Grafana instance's Azure AD
+authorization and the managed identity's Monitoring Reader / Log Analytics
+Reader roles from O2.
+
+Panels:
+
+- Command execution duration (p95) by command type
+- Email sends by outcome
+- Application transitions volume
+- Exceptions over time
+
+Note: Bicep emits a BCP081 warning for this sub-resource because Bicep type
+definitions do not yet exist for it; this is expected and does not block
+deployment.
+
+### Bootstrap verification (2)
+
+`infra/bootstrap.ps1` Phase 11b verifies both resources exist post-deployment:
+the workbook with its expected "ATLAS Operations" display name, and the Grafana
+dashboard inside the Managed Grafana instance.
+
+### Boundary
+
+The O5 Operations Portal remains the curated in-app overview; O6 provides the
+deeper Azure-native investigation surfaces. Neither replaces the other.
