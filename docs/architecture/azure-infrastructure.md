@@ -13,6 +13,7 @@ Since Milestone 9 – Phase 1, the following capabilities have been implemented 
 - Key Vault secrets (SQL connection string stored in Key Vault; App Services use Key Vault references)
 - Continuous Deployment (GitHub Actions workflows build and deploy both App Services)
 - Monitoring & Diagnostics (Milestone 11 – O2: Log Analytics, Application Insights, diagnostic settings, Azure Managed Grafana — see [Observability & Monitoring](#observability--monitoring-milestone-11--o2))
+- Alerts & Operational Readiness (Milestone 11 – O7: Action Group, alert rules, operational runbook — see [Alerts & Operational Readiness](#alerts--operational-readiness-milestone-11--o7))
 - Managed Identity via **system-assigned** identities on the App Services (used for Azure Communication Services, Blob Storage, ACR pull, and Key Vault access)
 
 Remaining future infrastructure work:
@@ -21,7 +22,6 @@ Remaining future infrastructure work:
 - Deployment Slots
 - Production networking (Private Endpoints / VNet integration)
 - Production hardening
-- Monitoring alerts and action groups (O7)
 
 ## Overview
 
@@ -53,6 +53,10 @@ All deployments are intentionally **idempotent**. Re-running the deployment reco
 infra/
 ├── main.bicep                    # Entry point — orchestrates all modules
 ├── main.parameters.dev.json      # Development environment parameters
+├── bootstrap.ps1                 # Post-deployment configuration & verification
+├── telemetry/
+│   ├── atlas-operations.workbook.json         # O6 Workbook definition
+│   └── atlas-operations.grafana-dashboard.json # O6 Grafana dashboard definition
 └── modules/
     ├── names.bicep               # Central naming convention
     ├── tags.bicep                # Central resource tagging
@@ -67,7 +71,12 @@ infra/
     ├── loganalytics.bicep        # Log Analytics Workspace
     ├── appinsights.bicep         # Application Insights
     ├── grafana.bicep             # Azure Managed Grafana (O2)
-    └── diagnosticsettings.bicep  # Reusable diagnostic settings module (O2)
+    ├── workbook.bicep            # Azure Monitor Workbook (O6)
+    ├── grafanadashboard.bicep    # Managed Grafana dashboard sub-resource (O6)
+    ├── actiongroup.bicep         # Azure Monitor Action Group (O7)
+    ├── metricalert.bicep         # Generic metric alert rule (O7)
+    ├── scheduledqueryalert.bicep # Generic scheduled-query alert rule (O7)
+    └── servicehealthalert.bicep  # Service Health activity-log alert (O7)
 ```
 
 ## Observability & Monitoring (Milestone 11 – O2)
@@ -271,6 +280,20 @@ Tags are defined centrally in `modules/tags.bicep` and applied consistently to e
 }
 ```
 
+> **Secure parameter — `alertNotificationEmail` (O7)**
+>
+> The O7 Action Group requires an email address for alert notifications. It is
+> declared as a `@secure()` parameter and is deliberately **not** stored in
+> `main.parameters.dev.json` (or any committed file). Supply it at deployment
+> time via the command line:
+>
+> ```powershell
+> --parameters alertNotificationEmail="ops@example.com"
+> ```
+>
+> All deployment commands below include this parameter. Because it is secure,
+> the value is never echoed in deployment output or logs.
+
 ### Future Environments
 
 To add a new environment (test, staging or production):
@@ -326,7 +349,8 @@ Validation performs template validation without deploying any resources.
 az deployment group validate `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com"
 ```
 
 ### Review Planned Changes (What-If)
@@ -337,7 +361,8 @@ Always run **What-If** before deploying infrastructure changes.
 az deployment group what-if `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com"
 ```
 
 ### Deploy Infrastructure
@@ -346,7 +371,8 @@ az deployment group what-if `
 az deployment group create `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com"
 ```
 
 Because the deployment is **idempotent**, this command can safely be executed multiple times. Existing resources are updated only when configuration changes are detected.
@@ -399,6 +425,17 @@ After deployment, the following outputs are available:
 | communicationServiceName | Name of the ACS Communication Service |
 | communicationServicesEndpoint | ACS endpoint URL |
 | communicationEmailServiceName | Name of the ACS Email Service |
+| operationsWorkbookName | ARM name (GUID) of the ATLAS Operations Workbook (O6) |
+| operationsWorkbookId | ARM resource ID of the ATLAS Operations Workbook (O6) |
+| operationsGrafanaDashboardName | Name of the ATLAS Operations Grafana dashboard (O6) |
+| actionGroupName | Name of the O7 Action Group |
+| actionGroupId | ARM resource ID of the O7 Action Group |
+| apiAvailabilityAlertName | Name of the API availability metric alert (O7) |
+| blazorAvailabilityAlertName | Name of the Blazor availability metric alert (O7) |
+| exceptionSpikeAlertName | Name of the exception spike scheduled-query alert (O7) |
+| emailFailureAlertName | Name of the email failure scheduled-query alert (O7) |
+| commandLatencyAlertName | Name of the command latency scheduled-query alert (O7) |
+| serviceHealthAlertName | Name of the Service Health activity-log alert (O7) |
 
 These outputs are consumed by `infra/bootstrap.ps1` for post-deployment
 verification and are available for deployment automation.
@@ -455,7 +492,8 @@ Always review the output of:
 az deployment group what-if `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com"
 ```
 
 Unexpected changes generally indicate one of the following:
@@ -510,7 +548,6 @@ Genuinely remaining infrastructure evolution includes:
 - Deployment Slots
 - Production networking (Private Endpoints / VNet integration)
 - Production hardening
-- Monitoring alerts and action groups (Milestone 11 – O7)
 
 The modular Bicep architecture established during this milestone is intended to support future enhancements without requiring significant restructuring of the infrastructure code.
 
@@ -638,3 +675,75 @@ dashboard inside the Managed Grafana instance.
 
 The O5 Operations Portal remains the curated in-app overview; O6 provides the
 deeper Azure-native investigation surfaces. Neither replaces the other.
+
+
+## Alerts & Operational Readiness (Milestone 11 – O7)
+
+O7 turns the O1–O6 observability foundation into an operational alerting layer:
+a small set of high-value Azure Monitor alerts, one notification route, and a
+concise runbook. Azure Monitor is the authoritative alerting platform; the
+Operations Portal remains a curated overview (no alert management); Grafana and
+the Workbook remain the deeper investigation tools.
+
+### Action Group
+
+`atlas-{env}-ops-ag` (`infra/modules/actiongroup.bicep`) — a single email
+notification route shared by all alert rules. The email address is supplied as
+a **secure deployment parameter** (`alertNotificationEmail`), never hard-coded
+in source control. Uses the common alert schema. Additional channels (SMS,
+webhook) can be added to the module later without changing any alert rule.
+
+### Alert rules
+
+| Alert | Type | Signal | Threshold | Window | Sev |
+| --- | --- | --- | --- | --- | --- |
+| `atlas-{env}-api-availability` | Metric | App Service `HealthCheckStatus` < 1 | 3 consecutive violations | 5m eval / 15m window | 1 |
+| `atlas-{env}-blazor-availability` | Metric | App Service `HealthCheckStatus` < 1 | 3 consecutive violations | 5m eval / 15m window | 1 |
+| `atlas-{env}-exception-spike` | Scheduled query | `exceptions` count > 50/hr | 2 consecutive violations | 15m eval / 1h window | 2 |
+| `atlas-{env}-email-failures` | Scheduled query | `atlas.email.sends` outcome=failure > 4/hr | 2 consecutive violations | 15m eval / 1h window | 2 |
+| `atlas-{env}-command-latency` | Scheduled query | p95 `atlas.command.duration` > 10s | 2 consecutive violations | 15m eval / 1h window | 3 |
+| `atlas-{env}-service-health` | Activity log | Azure ServiceHealth incidents | any Incident/Maintenance/Security | near-real-time | 2 |
+
+Design notes:
+
+- **Thresholds are conservative dev defaults** — tune per environment as real
+  traffic patterns become known. All are sustained-condition thresholds: a
+  single failed email or a single exception never fires an alert.
+- **Scheduled-query aggregation**: the KQL queries end in `summarize` and
+  return one row containing the measured value; the rules use
+  `timeAggregation: Maximum` so the threshold compares that numeric value (not
+  the returned row count). See `scheduledqueryalert.bicep` for details.
+- **Email failures** reuse the existing O4 metric (`atlas.email.sends` with its
+  `outcome` dimension) — no new instruments were introduced. The exact
+  `customMetrics` materialization (`value`, `valueCount`, `customDimensions`
+  casing) requires live Azure verification.
+- **Availability** uses the App Service native health-check metric
+  (`HealthCheckStatus`), which already probes `/health/ready` (configured in
+  O2-era App Service settings). No new availability tests were created.
+- **Service health** distinguishes Azure platform problems from application
+  failures: if it fires, do not debug application code first. The incident-type
+  alternatives (Incident / Maintenance / Security) are combined with `anyOf`.
+- Every alert description names the signal, why it matters, and where to
+  investigate next (Portal → App Insights → Workbook/Grafana).
+
+### Operational runbook
+
+`docs/runbooks/operations-runbook.md` documents per-alert meaning, likely
+causes, investigation steps, recovery confirmation, and the escalation flow.
+
+### Bootstrap verification (3)
+
+`infra/bootstrap.ps1` Phase 11c (`Verify-O7Alerting`) verifies, using
+structured Azure CLI JSON output:
+
+- the Action Group exists and is enabled;
+- each expected alert rule exists and is enabled;
+- metric/log alert rules reference the expected Action Group;
+- alert rule scopes match the expected resources;
+- failures clearly identify missing / disabled / wrong-scope / wrong-action-group.
+
+### Boundaries
+
+- The business Audit Log is never used as an alert source.
+- No alert-management UI, incident management, or automatic remediation.
+- No new metrics, dashboards, or workbooks were introduced by O7.

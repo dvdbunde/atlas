@@ -60,6 +60,10 @@ param blazorImageTag string = 'latest'
 @description('ASP.NET Core environment name applied to App Services (e.g. Development, Production). Defaults to Development.') 
 param environmentName string = 'Development'
 
+@description('Email address for O7 alert notifications (Action Group receiver). Supplied per environment; never hard-coded in source control.')
+@secure()
+param alertNotificationEmail string
+
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
   params: {
@@ -470,6 +474,13 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
   name: logAnalyticsWorkspaceNameConst
 }
 
+// Reference the existing Application Insights resource for O7 alert scopes.
+// Name mirrors names.bicep (deploy-time constant required for scope resolution).
+var applicationInsightsNameConst = 'atlas${environment}appi'
+resource appInsightsRef 'Microsoft.Insights/components@2020-02-02' existing = {
+  name: applicationInsightsNameConst
+}
+
 resource grafanaLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(logAnalyticsWorkspaceNameConst, grafanaResourceName, 'la-reader', subscription().subscriptionId)
   scope: logAnalyticsWorkspace
@@ -677,6 +688,176 @@ module operationsGrafanaDashboard 'modules/grafanadashboard.bicep' = {
 }
 
 
+// ==========================================================================
+// O7 - Alerts & Operational Readiness
+// ==========================================================================
+
+// -- Action Group ------------------------------------------------------------
+// Single notification route for all ATLAS alert rules. The email receiver is
+// supplied as a secure deployment parameter - never hard-coded in source.
+module actionGroup 'modules/actiongroup.bicep' = {
+  name: '${deployment().name}-actiongroup'
+  params: {
+    name: names.outputs.actionGroupName
+    tags: tags.outputs.tags
+    emailReceiver: alertNotificationEmail
+  }
+}
+
+// -- Application unavailable (metric alert, Sev 1) ----------------------------
+// App Service health check (/health/ready) failing on BOTH app services for a
+// sustained period means the application is genuinely unavailable. Each app
+// gets its own rule so a single-app failure is still visible without paging.
+// HealthCheckStatus: 0 = unhealthy, 1 = healthy.
+module apiAvailabilityAlert 'modules/metricalert.bicep' = {
+  name: '${deployment().name}-api-availability-alert'
+  params: {
+    name: 'atlas-${environment}-api-availability'
+    tags: tags.outputs.tags
+    targetResourceId: apiAppServiceRef.id
+    alertDescription: 'ATLAS API health check (/health/ready) has been failing for 15+ minutes. The API is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results.'
+    severity: 1
+    metricNamespace: 'Microsoft.Web/sites'
+    metricName: 'HealthCheckStatus'
+    aggregation: 'Average'
+    operator: 'LessThan'
+    threshold: 1
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+module blazorAvailabilityAlert 'modules/metricalert.bicep' = {
+  name: '${deployment().name}-blazor-availability-alert'
+  params: {
+    name: 'atlas-${environment}-blazor-availability'
+    tags: tags.outputs.tags
+    targetResourceId: blazorAppServiceRef.id
+    alertDescription: 'ATLAS Blazor app health check (/health/ready) has been failing for 15+ minutes. The application is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results.'
+    severity: 1
+    metricNamespace: 'Microsoft.Web/sites'
+    metricName: 'HealthCheckStatus'
+    aggregation: 'Average'
+    operator: 'LessThan'
+    threshold: 1
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT15M'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Exception spike (scheduled query, Sev 2) ---------------------------------
+// Sustained elevated exception volume in the application. Thresholds are
+// conservative dev defaults - tune per environment as real traffic patterns
+// become known.
+var exceptionAlertQuery = '''
+exceptions
+| where timestamp > ago(1h)
+| summarize Exceptions = count()
+'''
+
+module exceptionSpikeAlert 'modules/scheduledqueryalert.bicep' = {
+  name: '${deployment().name}-exception-spike-alert'
+  params: {
+    name: 'atlas-${environment}-exception-spike'
+    tags: tags.outputs.tags
+    alertDescription: 'Elevated exception count in the ATLAS application over the last hour (two consecutive evaluations above threshold). Inspect exceptions in Application Insights, then the ATLAS Operations Workbook / Grafana dashboard for trends by problemId.'
+    severity: 2
+    query: exceptionAlertQuery
+    // Scoped to App Insights only. This is a workspace-based App Insights
+    // deployment: the same exceptions are visible through both the workspace
+    // and the component, so including both scopes would double-count against
+    // the threshold. Consistent with the other App Insights log alerts.
+    resourceIds: [
+      appInsightsRef.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    operator: 'GreaterThan'
+    threshold: 50
+    failureCount: 2
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Email delivery failures (scheduled query, Sev 2) -------------------------
+// Uses the existing O4 custom metric atlas.email.sends with dimension
+// outcome=failure. A single failed email does NOT fire this alert: the query
+// requires >= 5 failures within one hour, sustained across two consecutive
+// evaluations, indicating an ACS or configuration problem rather than noise.
+var emailFailureAlertQuery = '''
+let emails = customMetrics
+| where name == "atlas.email.sends";
+emails
+| where customDimensions["outcome"] == "failure"
+| where timestamp > ago(1h)
+| summarize Failures = sum(todouble(valueCount))
+'''
+
+module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
+  name: '${deployment().name}-email-failure-alert'
+  params: {
+    name: 'atlas-${environment}-email-failures'
+    tags: tags.outputs.tags
+    alertDescription: 'Sustained email delivery failures detected (atlas.email.sends outcome=failure). Likely ACS outage or sender configuration problem. Check ACS RequestLogs in Log Analytics and the Email panel on the ATLAS Operations Grafana dashboard.'
+    severity: 2
+    query: emailFailureAlertQuery
+    resourceIds: [
+      appInsightsRef.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    operator: 'GreaterThan'
+    threshold: 4
+    failureCount: 2
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Sustained command latency (scheduled query, Sev 3) -----------------------
+// p95 of atlas.command.duration exceeding 10 seconds over an hour indicates
+// performance degradation (slow SQL, storage, or downstream dependency).
+var commandLatencyAlertQuery = '''
+customMetrics
+| where name == "atlas.command.duration"
+| summarize percentile(todouble(value), 95)
+'''
+
+module commandLatencyAlert 'modules/scheduledqueryalert.bicep' = {
+  name: '${deployment().name}-command-latency-alert'
+  params: {
+    name: 'atlas-${environment}-command-latency'
+    tags: tags.outputs.tags
+    alertDescription: 'Sustained high p95 command execution duration (atlas.command.duration). Performance degradation likely caused by a slow dependency. Use the Command duration panel on the ATLAS Operations Grafana dashboard to identify which command type is slow, then inspect the corresponding dependency.'
+    severity: 3
+    query: commandLatencyAlertQuery
+    resourceIds: [
+      appInsightsRef.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    operator: 'GreaterThan'
+    threshold: 10000
+    failureCount: 2
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Azure platform/service health (activity log alert, Sev 2) -----------------
+// Fires on Azure-side service incidents/maintenance affecting resources in the
+// resource group. Distinguishes platform problems from application failures:
+// if this fires, do NOT debug application code first.
+module serviceHealthAlert 'modules/servicehealthalert.bicep' = {
+  name: '${deployment().name}-service-health-alert'
+  params: {
+    name: 'atlas-${environment}-service-health'
+    tags: tags.outputs.tags
+    alertDescription: 'Azure Service Health incident, maintenance, or security advisory affecting the ATLAS resource group. This is an Azure platform event, not an application failure. Check Azure Service Health for scope and remediation guidance.'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
 output containerRegistryName        string = names.outputs.containerRegistryName
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output containerRegistryResourceId  string = containerRegistry.outputs.id
@@ -702,3 +883,11 @@ output communicationEmailServiceName string = communicationServices.outputs.emai
 output operationsWorkbookName        string = operationsWorkbook.outputs.name
 output operationsWorkbookId          string = operationsWorkbook.outputs.id
 output operationsGrafanaDashboardName string = operationsGrafanaDashboard.outputs.name
+output actionGroupName               string = actionGroup.outputs.name
+output actionGroupId                 string = actionGroup.outputs.id
+output apiAvailabilityAlertName      string = apiAvailabilityAlert.outputs.name
+output blazorAvailabilityAlertName   string = blazorAvailabilityAlert.outputs.name
+output exceptionSpikeAlertName       string = exceptionSpikeAlert.outputs.name
+output emailFailureAlertName         string = emailFailureAlert.outputs.name
+output commandLatencyAlertName       string = commandLatencyAlert.outputs.name
+output serviceHealthAlertName        string = serviceHealthAlert.outputs.name

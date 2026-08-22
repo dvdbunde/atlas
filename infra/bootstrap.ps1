@@ -202,6 +202,13 @@ function Get-DeploymentOutputs {
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
         logAnalyticsWorkspaceId    = $outputs.logAnalyticsWorkspaceId.value
         operationsWorkbookName     = $outputs.operationsWorkbookName.value
+        actionGroupName            = $outputs.actionGroupName.value
+        apiAvailabilityAlertName   = $outputs.apiAvailabilityAlertName.value
+        blazorAvailabilityAlertName = $outputs.blazorAvailabilityAlertName.value
+        exceptionSpikeAlertName    = $outputs.exceptionSpikeAlertName.value
+        emailFailureAlertName      = $outputs.emailFailureAlertName.value
+        commandLatencyAlertName    = $outputs.commandLatencyAlertName.value
+        serviceHealthAlertName     = $outputs.serviceHealthAlertName.value
         operationsGrafanaDashboardName = $outputs.operationsGrafanaDashboardName.value
         grafanaName                = $outputs.grafanaName.value
         grafanaEndpoint            = $outputs.grafanaEndpoint.value
@@ -1306,6 +1313,131 @@ function Verify-O6Visualization {
 
     return $results
 }
+
+# --------------------------------------------------------------------------
+# Phase 11c - Verify O7 Alerting (Action Group + alert rules)
+# --------------------------------------------------------------------------
+function Verify-O7Alerting {
+    param(
+        [string]$ResourceGroup,
+        [string]$ActionGroupName,
+        [array]$ExpectedAlerts
+    )
+
+    Write-Step "Phase 11c - Verifying O7 alerting resources"
+
+    $results = @()
+
+    # --- Action Group exists and is enabled ---
+    $ag = az monitor action-group show `
+        --name $ActionGroupName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    $agOk = $null -ne $ag -and $ag.enabled -eq $true
+
+    $results += [PSCustomObject]@{
+        Name   = "Action Group"
+        Status = $agOk
+        Detail = if ($agOk) { "$ActionGroupName enabled" } else { "$ActionGroupName missing or disabled" }
+    }
+
+    # --- Alert rules: exist, enabled, reference the Action Group, correct scope ---
+    # Scope expectation model (applied consistently across alert types):
+    #   ScopeExact       - rule scope must contain this exact resource ID
+    #                      (used for metric alerts targeting a specific App Service)
+    #   ScopeContains    - at least one rule scope must contain this substring
+    #                      (used for log alerts scoped to App Insights / workspace)
+    #   ScopeStartsWith  - every rule scope must start with this prefix
+    #                      (used for subscription-scoped activity log alerts)
+    foreach ($expected in $ExpectedAlerts) {
+        $exists = $false
+        $enabled = $false
+        $agLinked = $false
+        $scopeOk = $false
+        $scopeDetail = ""
+        $actualScopes = @()
+
+        switch ($expected.Type) {
+            "metric" {
+                $rule = az monitor metrics alert show `
+                    --name $expected.Name `
+                    --resource-group $ResourceGroup `
+                    --output json 2>$null | ConvertFrom-Json
+                if ($null -ne $rule) {
+                    $exists = $true
+                    $enabled = $rule.enabled -eq $true
+                    $agLinked = @($rule.actions | Where-Object { $_.actionGroupId -like "*$ActionGroupName" }).Count -gt 0
+                    $actualScopes = @($rule.scopes)
+                    $scopeOk = $actualScopes -contains $expected.ScopeExact
+                }
+            }
+            "log" {
+                $rule = az monitor scheduled-query show `
+                    --name $expected.Name `
+                    --resource-group $ResourceGroup `
+                    --output json 2>$null | ConvertFrom-Json
+                if ($null -ne $rule) {
+                    $exists = $true
+                    $enabled = $rule.enabled -eq $true
+                    $agLinked = @($rule.actions.actionGroups | Where-Object { $_ -like "*$ActionGroupName" }).Count -gt 0
+                    $actualScopes = @($rule.scopes)
+                    # Substring test (not -like): -like without a trailing
+                    # wildcard would require the scope to END with the pattern,
+                    # but real scopes end with the resource name.
+                    $scopeOk = @($actualScopes | Where-Object { $_.Contains($expected.ScopeContains) }).Count -gt 0
+                }
+            }
+            "activitylog" {
+                $rule = az monitor activity-log alert show `
+                    --name $expected.Name `
+                    --resource-group $ResourceGroup `
+                    --output json 2>$null | ConvertFrom-Json
+                if ($null -ne $rule) {
+                    $exists = $true
+                    $enabled = $rule.enabled -eq $true
+                    $agLinked = @($rule.actions.actionGroups | Where-Object { $_.actionGroupId -like "*$ActionGroupName" }).Count -gt 0
+                    $actualScopes = @($rule.scope)
+                    $scopeOk = ($actualScopes.Count -gt 0) -and ($actualScopes | Where-Object { $_.StartsWith($expected.ScopeStartsWith) }).Count -eq $actualScopes.Count
+                }
+            }
+        }
+
+        if (-not $exists) {
+            $detail = "missing"
+        } elseif (-not $enabled) {
+            $detail = "disabled"
+        } elseif (-not $agLinked) {
+            $detail = "does not reference Action Group $ActionGroupName"
+        } elseif (-not $scopeOk) {
+            $detail = "wrong scope (expected: $($expected.ScopeExact)$($expected.ScopeContains)$($expected.ScopeStartsWith); actual: $($actualScopes -join ', '))"
+        } else {
+            $detail = "enabled, scoped correctly, linked to $ActionGroupName"
+        }
+
+        $results += [PSCustomObject]@{
+            Name   = $expected.Name
+            Status = ($exists -and $enabled -and $agLinked -and $scopeOk)
+            Detail = $detail
+        }
+    }
+
+    $allPassed = $true
+    foreach ($r in $results) {
+        if (-not $r.Status) {
+            Write-Fail "$($r.Name) - $($r.Detail)"
+            $allPassed = $false
+        } else {
+            Write-Pass "$($r.Name) - $($r.Detail)"
+        }
+    }
+
+    if (-not $allPassed) {
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $results
+}
 # Phase 12 – Write Summary
 # --------------------------------------------------------------------------
 function Write-Summary {
@@ -1486,7 +1618,23 @@ $monitorResults += Verify-O6Visualization `
     -GrafanaName $outputs.grafanaName `
     -GrafanaDashboardName $outputs.operationsGrafanaDashboardName
 
+# Phase 11c - Verify O7 alerting resources (Action Group + alert rules)
+# Scope expectations use the exact deployment outputs where available so a
+# rule targeting the wrong App Service / App Insights is detected precisely.
+$o7ExpectedAlerts = @(
+    @{ Name = $outputs.apiAvailabilityAlertName;    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
+    @{ Name = $outputs.blazorAvailabilityAlertName; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
+    @{ Name = $outputs.exceptionSpikeAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.emailFailureAlertName;       Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.commandLatencyAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.serviceHealthAlertName;      Type = "activitylog"; ScopeExact = "/subscriptions/$((az account show --query id --output tsv))" }
+)
+$alertResults = Verify-O7Alerting `
+    -ResourceGroup $ResourceGroup `
+    -ActionGroupName $outputs.actionGroupName `
+    -ExpectedAlerts $o7ExpectedAlerts
+
 # Phase 12
-Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults -MonitorResults $monitorResults
+Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults -MonitorResults ($monitorResults + $alertResults)
 
 exit $EXIT_SUCCESS
