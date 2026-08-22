@@ -544,3 +544,35 @@ the instruments simply have no listener.
 - **No duplication of Azure-native telemetry**: Blob Storage operations are not
   custom-instrumented because Azure Monitor already provides storage metrics;
   HTTP request metrics remain with classic Application Insights.
+
+## Operations Portal (Milestone 11 – O5)
+
+The Administration Portal includes an **Operations** page (`/admin/operations`,
+Admin role only) providing a curated, read-only operational summary. It is
+intentionally limited: Azure Monitor, Application Insights, Log Analytics and
+Managed Grafana remain the authoritative technical telemetry sources.
+
+### What it shows
+
+- **System Health** — reuses the existing ASP.NET Core health-check
+  infrastructure (`HealthCheckService`); no duplicate health logic. Shows
+  overall status plus per-dependency status (database, storage, key vault).
+- **Application Activity** — cumulative O4 business transition counters
+  (`atlas.applications.transitions`) since process start.
+- **Email Delivery** — cumulative `atlas.email.sends` success/failure counts.
+- **Deeper Telemetry** — pointer to Azure Monitor / Grafana for technical
+  investigation (environment-specific portal links are not hard-coded).
+
+### Key semantics
+
+- **Unavailable ≠ zero**: if health retrieval fails the page shows an explicit
+  "Health data unavailable" state; if no metrics have been recorded since
+  process start it shows "No activity recorded yet" rather than zeros.
+- Metrics are process-lifetime aggregates; time-windowed analysis is an
+  Azure Monitor/Grafana concern (O6). No telemetry is persisted in the ATLAS
+  database.
+- The business Audit Log remains completely separate from this technical view.
+
+Implementation: `GetOperationsOverviewQuery` (Application layer) aggregates
+`HealthCheckService` and `IOperationsMetricsSnapshot` (a `MeterListener`-based
+read-only observer of the existing O4 instruments — no new telemetry).

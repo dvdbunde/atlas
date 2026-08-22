@@ -139,6 +139,22 @@ namespace ATLAS.Application.Tests.Telemetry
             Assert.Equal(AtlasTelemetry.ActivitySourceName, AtlasMetrics.MeterName);
         }
 
+        [Fact]
+        public void OperationsSnapshot_IgnoresSameNamedInstrument_FromDifferentMeter()
+        {
+            // The snapshot's InstrumentPublished filter must require BOTH the ATLAS
+            // meter name AND the instrument name — an instrument named
+            // atlas.email.sends from another meter must not be observed.
+            using var snapshot = new OperationsMetricsSnapshot();
+
+            using var foreignMeter = new Meter("SomeOther.Meter");
+            var foreignCounter = foreignMeter.CreateCounter<long>(
+                AtlasMetrics.EmailSends.Name, unit: "{email}");
+            foreignCounter.Add(100, new KeyValuePair<string, object?>("outcome", "failure"));
+
+            Assert.Empty(snapshot.EmailSends);
+        }
+
         private static Task<Unit> NextOk(CancellationToken _) => Task.FromResult(Unit.Value);
     }
 }

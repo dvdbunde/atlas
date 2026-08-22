@@ -112,6 +112,10 @@ namespace ATLAS.Infrastructure
             services.AddScoped<SeedDataLoader>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            // O5: process-lifetime snapshot of O4 metrics for the Operations Portal.
+            services.AddSingleton<ATLAS.Application.Telemetry.IOperationsMetricsSnapshot,
+                ATLAS.Application.Telemetry.OperationsMetricsSnapshot>();
+
             // Bind Storage configuration to strongly-typed options
             services.AddOptions<StorageOptions>()
                 .Bind(configuration.GetSection(StorageOptions.SectionName))

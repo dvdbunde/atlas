@@ -1,0 +1,171 @@
+@page "/admin/operations"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using ATLAS.Application.Queries.Admin
+@using ATLAS.Blazor.ViewModels
+@using ATLAS.Blazor.Components.Shared.Admin
+
+<PageTitle>Operations Overview</PageTitle>
+
+<div class="container mt-4">
+    <nav aria-label="Breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/admin">Administration</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Operations</li>
+        </ol>
+    </nav>
+
+    <PageHeader Title="Operations"
+                Description="Current operational state of ATLAS. Detailed technical telemetry is available in Azure Monitor and Grafana." />
+
+    @if (_viewModel.IsLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center py-5" role="status">
+            <div class="spinner-border text-primary" aria-hidden="true"></div>
+            <span class="ms-3">Loading operations overview...</span>
+        </div>
+    }
+    else if (_viewModel.HasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Something went wrong</h4>
+            <p>@_viewModel.ErrorMessage</p>
+            <hr />
+            <button class="btn btn-outline-danger" @onclick="LoadOverview">Try Again</button>
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-lg-2 g-4">
+            <!-- System Health -->
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">System Health</h5>
+                        @if (_viewModel.Overview!.HealthUnavailable)
+                        {
+                            <p class="text-muted fst-italic mb-2">Health data unavailable.</p>
+                        }
+                        else
+                        {
+                            <p class="card-text fs-4 mb-3">
+                                <span class="@HealthBadgeClass(_viewModel.OverallStatus) badge">@_viewModel.OverallStatus</span>
+                            </p>
+                            @if (_viewModel.Overview.HealthEntries.Count == 0)
+                            {
+                                <p class="text-muted fst-italic mb-0">No health checks registered.</p>
+                            }
+                            else
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var entry in _viewModel.Overview.HealthEntries)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                            <div>
+                                                <strong>@entry.Name</strong>
+                                                @if (!string.IsNullOrWhiteSpace(entry.Description))
+                                                {
+                                                    <div class="small text-muted">@entry.Description</div>
+                                                }
+                                            </div>
+                                            <span class="@HealthBadgeClass(entry.Status) badge">@entry.Status</span>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Application Activity -->
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Application Activity</h5>
+                        @if (_viewModel.Overview!.ApplicationTransitions is null)
+                        {
+                            <p class="text-muted fst-italic mb-0">No activity recorded yet since application start.</p>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var transition in _viewModel.TransitionsOrdered)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                        @transition.Key
+                                        <span class="badge bg-primary rounded-pill">@transition.Value</span>
+                                    </li>
+                                }
+                            </ul>
+                            <p class="small text-muted mt-2 mb-0">Counts since the application last started — not all-time history. All-time business history is in the Audit Log.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Delivery -->
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Email Delivery</h5>
+                        @if (_viewModel.Overview!.EmailSends is null)
+                        {
+                            <p class="text-muted fst-italic mb-0">No email activity recorded yet since application start.</p>
+                        }
+                        else
+                        {
+                            var success = _viewModel.EmailSuccessCount;
+                            var failure = _viewModel.EmailFailureCount;
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Successful sends
+                                    <span class="badge bg-success rounded-pill">@success</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    Failed sends
+                                    <span class="badge @(failure > 0 ? "bg-danger" : "bg-secondary") rounded-pill">@failure</span>
+                                </li>
+                            </ul>
+                            <p class="small text-muted mt-2 mb-0">Counts since the application last started — not all-time history. A value of 0 failures means none have occurred since restart.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deeper telemetry link-outs -->
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted text-uppercase small">Deeper Telemetry</h5>
+                        <p class="card-text small text-muted">
+                            Technical logs, traces, metrics and dashboards are available in the
+                            authoritative monitoring platforms:
+                        </p>
+                        <ul class="mb-2">
+                            <li>Azure Monitor / Application Insights — traces, exceptions, dependencies</li>
+                            <li>Azure Managed Grafana — operational dashboards</li>
+                            <li>Log Analytics — platform diagnostic logs</li>
+                        </ul>
+                        <p class="small text-muted mb-0">Links to the environment-specific portals are available via the Azure Portal for this resource group.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="small text-muted mt-3">
+            Snapshot taken @_viewModel.CapturedAtLocal.ToString("yyyy-MM-dd HH:mm:ss 'UTC'zzz") — refresh the page for current values.
+        </p>
+    }
+</div>
+
+@code {
+    private string HealthBadgeClass(string status) => status switch
+    {
+        "Healthy" => "bg-success",
+        "Degraded" => "bg-warning text-dark",
+        "Unhealthy" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

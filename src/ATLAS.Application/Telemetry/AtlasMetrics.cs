@@ -26,6 +26,14 @@ namespace ATLAS.Application.Telemetry
         /// <summary>Meter name — registered by host OpenTelemetry configuration.</summary>
         public const string MeterName = ATLAS.Application.Telemetry.AtlasTelemetry.ActivitySourceName;
 
+        // Instrument names as compile-time constants so listeners (e.g.
+        // OperationsMetricsSnapshot) can reference them safely from callbacks
+        // that may fire while this class's static constructor is still running.
+        public const string ApplicationTransitionsName = "atlas.applications.transitions";
+        public const string EmailSendsName = "atlas.email.sends";
+        public const string CommandDurationName = "atlas.command.duration";
+        public const string EmailDurationName = "atlas.email.duration";
+
         private static readonly Meter Meter = new(MeterName);
 
         // ------------------------------------------------------------------
@@ -41,7 +49,7 @@ namespace ATLAS.Application.Telemetry
         /// </summary>
         public static readonly Counter<long> ApplicationTransitions =
             Meter.CreateCounter<long>(
-                "atlas.applications.transitions",
+                ApplicationTransitionsName,
                 unit: "{application}",
                 description: "Permit application lifecycle transitions");
 
@@ -57,7 +65,7 @@ namespace ATLAS.Application.Telemetry
         /// </summary>
         public static readonly Counter<long> EmailSends =
             Meter.CreateCounter<long>(
-                "atlas.email.sends",
+                EmailSendsName,
                 unit: "{email}",
                 description: "Email delivery attempts by outcome");
 
@@ -71,7 +79,7 @@ namespace ATLAS.Application.Telemetry
         /// </summary>
         public static readonly Histogram<double> CommandDuration =
             Meter.CreateHistogram<double>(
-                "atlas.command.duration",
+                CommandDurationName,
                 unit: "ms",
                 description: "MediatR command execution duration");
 
@@ -82,7 +90,7 @@ namespace ATLAS.Application.Telemetry
         /// </summary>
         public static readonly Histogram<double> EmailDuration =
             Meter.CreateHistogram<double>(
-                "atlas.email.duration",
+                EmailDurationName,
                 unit: "ms",
                 description: "Email delivery duration by outcome");
     }
