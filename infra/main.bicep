@@ -792,7 +792,7 @@ let emails = customMetrics
 emails
 | where customDimensions["outcome"] == "failure"
 | where timestamp > ago(1h)
-| summarize Failures = sum(todouble(valueCount))
+| summarize Failures = sum(todouble(ValueCount))
 '''
 
 module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
@@ -821,7 +821,7 @@ module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
 var commandLatencyAlertQuery = '''
 customMetrics
 | where name == "atlas.command.duration"
-| summarize percentile(todouble(value), 95)
+| summarize percentile(todouble(Value), 95)
 '''
 
 module commandLatencyAlert 'modules/scheduledqueryalert.bicep' = {

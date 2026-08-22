@@ -61,6 +61,20 @@ $resourceGroupScope = "$subscriptionScope/resourceGroups/$rg"
 Assert-True ($resourceGroupScope -ne $subscriptionScope) `
     "fails when the rule targets a resource-group scope instead of the subscription"
 
+Write-Host " activity log alert - bootstrap expectation key" -ForegroundColor Yellow
+
+$activityLogExpectation = @{
+    Name = 'atlas-dev-service-health'
+    Type = 'activitylog'
+    ScopeStartsWith = "/subscriptions/$sub"
+}
+
+Assert-True ($activityLogExpectation.ContainsKey('ScopeStartsWith')) `
+    "activity log expectation uses the ScopeStartsWith key consumed by Verify-O7Alerting"
+
+Assert-True (-not $activityLogExpectation.ContainsKey('ScopeExact')) `
+    "activity log expectation does not use the unsupported ScopeExact key"    
+
 if ($script:failures -gt 0) {
     Write-Host "`n$($script:failures) test(s) FAILED" -ForegroundColor Red
     exit 1

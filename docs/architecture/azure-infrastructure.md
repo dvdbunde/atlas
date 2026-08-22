@@ -715,7 +715,7 @@ Design notes:
   the returned row count). See `scheduledqueryalert.bicep` for details.
 - **Email failures** reuse the existing O4 metric (`atlas.email.sends` with its
   `outcome` dimension) — no new instruments were introduced. The exact
-  `customMetrics` materialization (`value`, `valueCount`, `customDimensions`
+  `customMetrics` materialization (`Value`, `ValueCount`, `customDimensions`
   casing) requires live Azure verification.
 - **Availability** uses the App Service native health-check metric
   (`HealthCheckStatus`), which already probes `/health/ready` (configured in

@@ -1627,7 +1627,7 @@ $o7ExpectedAlerts = @(
     @{ Name = $outputs.exceptionSpikeAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
     @{ Name = $outputs.emailFailureAlertName;       Type = "log";         ScopeContains = "Microsoft.Insights/components" },
     @{ Name = $outputs.commandLatencyAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
-    @{ Name = $outputs.serviceHealthAlertName;      Type = "activitylog"; ScopeExact = "/subscriptions/$((az account show --query id --output tsv))" }
+    @{ Name = $outputs.serviceHealthAlertName;      Type = "activitylog"; ScopeStartsWith = "/subscriptions/$((az account show --query id --output tsv))" }
 )
 $alertResults = Verify-O7Alerting `
     -ResourceGroup $ResourceGroup `
