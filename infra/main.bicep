@@ -64,6 +64,9 @@ param environmentName string = 'Development'
 @secure()
 param alertNotificationEmail string
 
+@description('Microsoft Entra object ID of the identity that runs infra/bootstrap.ps1. Bootstrap provisions the ATLAS Operations Grafana dashboard via the Managed Grafana data-plane API, so this identity needs Grafana Editor on the Managed Grafana resource. Not secret; supplied per environment - never hard-coded in source control.')
+param grafanaBootstrapPrincipalId string
+
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
   params: {
@@ -491,6 +494,32 @@ resource grafanaLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022
   }
 }
 
+// -- Grafana Editor: manual bootstrap identity (O6) ---------------------------
+// The dashboard is provisioned by bootstrap.ps1 through the Managed Grafana
+// data-plane API using the signed-in Azure CLI user's identity. That identity
+// needs Grafana Editor on the Managed Grafana RESOURCE itself (not RG/subscription
+// scope). Role definition verified against Azure CLI:
+//   az role definition list --name "Grafana Editor"
+//   -> a79a5197-3a5c-4973-a920-486035ffd60f
+// Grafana's managed identity roles above are for data access and remain unchanged.
+var grafanaEditorRoleDefinitionId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+
+// Reference the deployed Grafana instance so the role assignment is scoped to
+// exactly that resource. Name mirrors names.bicep (deploy-time constant).
+resource grafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' existing = {
+  name: grafanaResourceName
+}
+
+resource grafanaBootstrapEditor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(grafanaResourceName, 'bootstrap-grafana-editor', subscription().subscriptionId)
+  scope: grafanaInstance
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', grafanaEditorRoleDefinitionId)
+    principalId: grafanaBootstrapPrincipalId
+    principalType: 'User'
+  }
+}
+
 // -- Diagnostic Settings (O2) -------------------------------------------------
 // Each diagnostic setting targets its Azure resource through the Bicep `scope`
 // mechanism (extension resources), NOT via properties.targetResourceId — the
@@ -670,22 +699,10 @@ module operationsWorkbook 'modules/workbook.bicep' = {
 }
 
 // -- ATLAS Operations Grafana Dashboard ---------------------------------------
-// Provisioned declaratively as a Microsoft.Dashboard/grafana/dashboards
-// sub-resource of the existing Managed Grafana instance. Definition lives in
-// infra/telemetry/atlas-operations.grafana-dashboard.json.
-var operationsGrafanaDashboardData = loadTextContent('telemetry/atlas-operations.grafana-dashboard.json')
-
-module operationsGrafanaDashboard 'modules/grafanadashboard.bicep' = {
-  name: '${deployment().name}-operations-grafana-dashboard'
-  params: {
-    environment: environment
-    title: 'ATLAS Operations Overview'
-    serializedData: operationsGrafanaDashboardData
-    resourceGroupName: resourceGroup().name
-    applicationInsightsName: names.outputs.applicationInsightsName
-    logAnalyticsWorkspaceId: logAnalytics.outputs.id
-  }
-}
+// Provisioned by Phase 11b of infra/bootstrap.ps1 via the Managed Grafana
+// dashboard API (the Microsoft.Dashboard/grafana/dashboards ARM sub-resource
+// is not a registered resource type and fails preflight validation).
+// Definition lives in infra/telemetry/atlas-operations.grafana-dashboard.json.
 
 
 // ==========================================================================
@@ -877,12 +894,12 @@ output logAnalyticsWorkspaceId      string = logAnalytics.outputs.id
 output grafanaName                  string = names.outputs.grafanaName
 output grafanaEndpoint              string = grafana.outputs.endpoint
 output grafanaPrincipalId           string = grafana.outputs.principalId
+output grafanaResourceId            string = grafana.outputs.id
 output communicationServiceName     string = communicationServices.outputs.communicationServiceName
 output communicationServicesEndpoint string = communicationServices.outputs.endpoint
 output communicationEmailServiceName string = communicationServices.outputs.emailServiceName
 output operationsWorkbookName        string = operationsWorkbook.outputs.name
 output operationsWorkbookId          string = operationsWorkbook.outputs.id
-output operationsGrafanaDashboardName string = operationsGrafanaDashboard.outputs.name
 output actionGroupName               string = actionGroup.outputs.name
 output actionGroupId                 string = actionGroup.outputs.id
 output apiAvailabilityAlertName      string = apiAvailabilityAlert.outputs.name

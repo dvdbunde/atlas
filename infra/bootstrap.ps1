@@ -209,10 +209,10 @@ function Get-DeploymentOutputs {
         emailFailureAlertName      = $outputs.emailFailureAlertName.value
         commandLatencyAlertName    = $outputs.commandLatencyAlertName.value
         serviceHealthAlertName     = $outputs.serviceHealthAlertName.value
-        operationsGrafanaDashboardName = $outputs.operationsGrafanaDashboardName.value
         grafanaName                = $outputs.grafanaName.value
         grafanaEndpoint            = $outputs.grafanaEndpoint.value
         grafanaPrincipalId         = $outputs.grafanaPrincipalId.value
+        grafanaResourceId          = $outputs.grafanaResourceId.value
         communicationServiceName = $outputs.communicationServiceName.value
         communicationEmailServiceName = $outputs.communicationEmailServiceName.value    
         communicationServiceResourceId = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Communication/communicationServices/$($outputs.communicationServiceName.value)"
@@ -1251,14 +1251,105 @@ function Verify-AzureMonitorIntegration {
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Phase 11b - Verify O6 Visualization Resources (Workbook + Grafana dashboard)
+# Phase 11b - Provision & Verify O6 Visualization Resources
+#              (Workbook verified via ARM; Grafana dashboard provisioned and
+#               verified via the Managed Grafana dashboard API)
+#
+# The Microsoft.Dashboard/grafana/dashboards ARM sub-resource is NOT a valid
+# registered resource type (preflight fails with ResourceTypeRegistrationNotFound),
+# so the dashboard is provisioned here instead of in Bicep. Authentication uses
+# an Azure AD access token obtained dynamically from the authenticated Azure CLI
+# session - no Grafana API keys, service accounts, or static credentials.
+# The operation is an idempotent create/update: re-running bootstrap updates
+# the same dashboard rather than creating duplicates.
 # --------------------------------------------------------------------------
+function Invoke-GrafanaDashboardProvisioning {
+    param(
+        [string]$GrafanaEndpoint,
+        [string]$WorkspaceId,
+        [string]$DashboardJsonPath
+    )
+
+    # --- Grafana instance must be reachable ---
+    if ([string]::IsNullOrWhiteSpace($GrafanaEndpoint)) {
+        Write-Fail "Grafana instance not found (no endpoint output from deployment)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $baseUrl = $GrafanaEndpoint.TrimEnd('/')
+
+    # --- Obtain Azure AD token for the Managed Grafana data-plane API ---
+    # Token is held only in memory; never printed or persisted.
+    $token = az account get-access-token `
+        --resource https://dashboard.azure.com `
+        --query accessToken --output tsv
+
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        Write-Fail "Grafana authentication failed (could not obtain Azure AD access token)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    # --- Build payload from the canonical dashboard JSON ---
+    Assert-True (Test-Path $DashboardJsonPath) `
+        "Dashboard definition not found at '$DashboardJsonPath'."
+
+    $raw = Get-Content $DashboardJsonPath -Raw
+
+    # Resolve deployment placeholders (same tokens previously replaced by Bicep).
+    $resolved = $raw.Replace('__WORKSPACE_ID__', $WorkspaceId)
+
+    # Fail fast on any unresolved deployment placeholder rather than
+    # provisioning a broken dashboard.
+    if ($resolved -match '__[A-Z_]+__') {
+        Write-Fail "Unresolved deployment placeholder(s) remain in dashboard definition: $($Matches[0])."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $dashboardModel = $resolved | ConvertFrom-Json
+
+    # Grafana's dashboard API wraps the model with metadata. UID comes from the
+    # JSON so re-running updates the same dashboard (idempotent upsert).
+    $payload = @{
+        dashboard = $dashboardModel
+        message   = 'Provisioned by ATLAS bootstrap.ps1'
+        overwrite = $true
+    } | ConvertTo-Json -Depth 100
+
+    # --- Idempotent create/update via the Grafana HTTP API ---
+    try {
+        $response = Invoke-RestMethod `
+            -Method Post `
+            -Uri "$baseUrl/api/dashboards/db" `
+            -Headers @{ Authorization = "Bearer $token" } `
+            -ContentType 'application/json' `
+            -Body $payload `
+            -ErrorAction Stop
+    }
+    catch {
+        $status = $null
+        if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode }
+        Write-Fail "Grafana dashboard provisioning failed (HTTP status: $status)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    if (-not $response -or $response.status -ne 'success' -or [string]::IsNullOrWhiteSpace($response.uid)) {
+        Write-Fail "Grafana dashboard provisioning failed (unexpected API response)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $response.uid
+}
+
 function Verify-O6Visualization {
     param(
         [string]$ResourceGroup,
         [string]$OperationsWorkbookName,
         [string]$GrafanaName,
-        [string]$GrafanaDashboardName
+        [string]$GrafanaEndpoint,
+        [string]$GrafanaResourceId,
+        [string]$LogAnalyticsWorkspaceId,
+        [string]$DashboardJsonPath,
+        [string]$ExpectedDashboardUid = 'atlas-operations'
     )
 
     Write-Step "Phase 11b - Verifying O6 visualization resources (Workbook + Grafana dashboard)"
@@ -1280,21 +1371,86 @@ function Verify-O6Visualization {
         Detail = if ($workbookOk) { "ATLAS Operations" } else { "$OperationsWorkbookName missing or wrong display name" }
     }
 
-    # --- Grafana dashboard provisioned inside the Managed Grafana instance ---
-    $dashboard = az resource show `
-        --resource-group $ResourceGroup `
-        --resource-type "Microsoft.Dashboard/grafana/dashboards" `
-        --namespace "Microsoft.Dashboard" `
-        --parent "grafana/$GrafanaName" `
-        --name $GrafanaDashboardName `
+    # ----------------------------------------------------------------------
+    # Grafana RBAC preflight: the dashboard is provisioned via the Managed
+    # Grafana data-plane API using the signed-in Azure CLI user's identity,
+    # which must have Grafana Editor on the Grafana resource. Verify BEFORE
+    # attempting the API call so a missing prerequisite fails clearly instead
+    # of surfacing as an opaque HTTP 403.
+    # ----------------------------------------------------------------------
+    $grafanaEditorRoleId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+
+    # 1. Current signed-in identity's Microsoft Entra object ID.
+    $currentUser = az ad signed-in-user show --output json 2>$null | ConvertFrom-Json
+    if ($null -eq $currentUser -or [string]::IsNullOrWhiteSpace($currentUser.id)) {
+        Write-Fail "Grafana bootstrap identity RBAC: could not determine the current Azure CLI identity."
+        exit $EXIT_INFRASTRUCTURE
+    }
+    $currentPrincipalId = $currentUser.id
+
+    # 2. The principal must have Grafana Editor scoped to the exact Grafana resource.
+    # (The deployment assigns Grafana Editor to the signed-in user automatically;
+    # this check confirms it is present before provisioning.)
+    $editorAssignments = az role assignment list `
+        --assignee-object-id $currentPrincipalId `
+        --scope $GrafanaResourceId `
+        --role $grafanaEditorRoleId `
         --output json 2>$null | ConvertFrom-Json
 
-    $dashboardOk = $null -ne $dashboard
+    $rbacOk = @($editorAssignments).Count -gt 0
+
+    $results += [PSCustomObject]@{
+        Name   = "Grafana bootstrap identity RBAC"
+        Status = $rbacOk
+        Detail = if ($rbacOk) { "current Azure CLI user has Grafana Editor on $GrafanaName" } else { "current Azure CLI user does not have Grafana Editor on $GrafanaName" }
+    }
+
+    if (-not $rbacOk) {
+        Write-Fail "$($results[-1].Name) - $($results[-1].Detail)"
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    Write-Pass "$($results[-1].Name) - $($results[-1].Detail)"
+
+    # --- Grafana dashboard: provision (idempotent create/update), then verify ---
+    $uid = Invoke-GrafanaDashboardProvisioning `
+        -GrafanaEndpoint $GrafanaEndpoint `
+        -WorkspaceId $LogAnalyticsWorkspaceId `
+        -DashboardJsonPath $DashboardJsonPath
+
+    # Verification: fetch the dashboard back through the API and confirm it is
+    # present, has the expected identity, and contains a non-empty definition.
+    $token = az account get-access-token `
+        --resource https://dashboard.azure.com `
+        --query accessToken --output tsv
+
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        Write-Fail "Grafana authentication failed during verification."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    try {
+        $fetched = Invoke-RestMethod `
+            -Method Get `
+            -Uri "$($GrafanaEndpoint.TrimEnd('/'))/api/dashboards/uid/$uid" `
+            -Headers @{ Authorization = "Bearer $token" } `
+            -ErrorAction Stop
+    }
+    catch {
+        Write-Fail "Grafana dashboard verification failed (dashboard could not be retrieved)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $dashboardOk =
+        ($null -ne $fetched) -and
+        ($fetched.dashboard.uid -eq $ExpectedDashboardUid) -and
+        (-not [string]::IsNullOrWhiteSpace(($fetched.dashboard | ConvertTo-Json -Depth 10))) -and
+        (@($fetched.dashboard.panels).Count -gt 0)
 
     $results += [PSCustomObject]@{
         Name   = "Grafana Operations Dashboard"
         Status = $dashboardOk
-        Detail = if ($dashboardOk) { "$GrafanaDashboardName in $GrafanaName" } else { "$GrafanaDashboardName missing in $GrafanaName" }
+        Detail = if ($dashboardOk) { "$ExpectedDashboardUid provisioned and verified at $($GrafanaEndpoint.TrimEnd('/'))" } else { "verification failed after provisioning" }
     }
 
     $allPassed = $true
@@ -1611,12 +1767,15 @@ $monitorResults = Verify-AzureMonitorIntegration `
     -KeyVaultName $outputs.keyVaultName `
     -CommunicationServiceName $outputs.communicationServiceName
 
-# Phase 11b - Verify O6 visualization resources (Workbook + Grafana dashboard)
+# Phase 11b - Provision & verify O6 visualization resources (Workbook + Grafana dashboard)
 $monitorResults += Verify-O6Visualization `
     -ResourceGroup $ResourceGroup `
     -OperationsWorkbookName $outputs.operationsWorkbookName `
     -GrafanaName $outputs.grafanaName `
-    -GrafanaDashboardName $outputs.operationsGrafanaDashboardName
+    -GrafanaEndpoint $outputs.grafanaEndpoint `
+    -GrafanaResourceId $outputs.grafanaResourceId `
+    -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
+    -DashboardJsonPath (Join-Path $PSScriptRoot 'telemetry/atlas-operations.grafana-dashboard.json')
 
 # Phase 11c - Verify O7 alerting resources (Action Group + alert rules)
 # Scope expectations use the exact deployment outputs where available so a

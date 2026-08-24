@@ -71,8 +71,7 @@ infra/
     ├── loganalytics.bicep        # Log Analytics Workspace
     ├── appinsights.bicep         # Application Insights
     ├── grafana.bicep             # Azure Managed Grafana (O2)
-    ├── workbook.bicep            # Azure Monitor Workbook (O6)
-    ├── grafanadashboard.bicep    # Managed Grafana dashboard sub-resource (O6)
+    ├── workbook.bicep            # Azure Monitor Workbook (O6)    
     ├── actiongroup.bicep         # Azure Monitor Action Group (O7)
     ├── metricalert.bicep         # Generic metric alert rule (O7)
     ├── scheduledqueryalert.bicep # Generic scheduled-query alert rule (O7)
@@ -291,8 +290,12 @@ Tags are defined centrally in `modules/tags.bicep` and applied consistently to e
 > --parameters alertNotificationEmail="ops@example.com"
 > ```
 >
-> All deployment commands below include this parameter. Because it is secure,
-> the value is never echoed in deployment output or logs.
+> Because it is secure, the value is never echoed in deployment output or logs.
+>
+> **Grafana bootstrap identity (O6)**: the deployment commands below also pass
+> `grafanaBootstrapPrincipalId`, which is resolved automatically from the
+> currently signed-in Azure CLI user — no manual object-ID lookup required.
+> The same signed-in user should subsequently run `infra/bootstrap.ps1`.
 
 ### Future Environments
 
@@ -350,7 +353,8 @@ az deployment group validate `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
     --parameters .\infra\main.parameters.dev.json `
-        alertNotificationEmail="ops@example.com"
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 ### Review Planned Changes (What-If)
@@ -362,7 +366,8 @@ az deployment group what-if `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
     --parameters .\infra\main.parameters.dev.json `
-        alertNotificationEmail="ops@example.com"
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 ### Deploy Infrastructure
@@ -372,7 +377,8 @@ az deployment group create `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
     --parameters .\infra\main.parameters.dev.json `
-        alertNotificationEmail="ops@example.com"
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 Because the deployment is **idempotent**, this command can safely be executed multiple times. Existing resources are updated only when configuration changes are detected.
@@ -427,7 +433,6 @@ After deployment, the following outputs are available:
 | communicationEmailServiceName | Name of the ACS Email Service |
 | operationsWorkbookName | ARM name (GUID) of the ATLAS Operations Workbook (O6) |
 | operationsWorkbookId | ARM resource ID of the ATLAS Operations Workbook (O6) |
-| operationsGrafanaDashboardName | Name of the ATLAS Operations Grafana dashboard (O6) |
 | actionGroupName | Name of the O7 Action Group |
 | actionGroupId | ARM resource ID of the O7 Action Group |
 | apiAvailabilityAlertName | Name of the API availability metric alert (O7) |
@@ -493,7 +498,8 @@ az deployment group what-if `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
     --parameters .\infra\main.parameters.dev.json `
-        alertNotificationEmail="ops@example.com"
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 Unexpected changes generally indicate one of the following:
@@ -646,13 +652,27 @@ Parameters: time range, Application Insights resource, command type.
 
 ### ATLAS Operations Grafana Dashboard
 
-Provisioned declaratively as a `Microsoft.Dashboard/grafana/dashboards`
-sub-resource of the existing Managed Grafana instance
-(`infra/modules/grafanadashboard.bicep`, definition in
-`infra/telemetry/atlas-operations.grafana-dashboard.json`). No API keys, no
-post-deployment scripting; access follows the Grafana instance's Azure AD
-authorization and the managed identity's Monitoring Reader / Log Analytics
-Reader roles from O2.
+Azure Managed Grafana itself is provisioned through Bicep
+(`infra/modules/grafana.bicep`). The ATLAS Operations dashboard inside it is
+provisioned by **Phase 11b of `infra/bootstrap.ps1`** via the Managed Grafana
+dashboard API — the `Microsoft.Dashboard/grafana/dashboards` ARM sub-resource
+is not a registered resource type and fails preflight validation, so Bicep
+cannot manage the dashboard directly.
+
+- The dashboard definition is stored in
+  `infra/telemetry/atlas-operations.grafana-dashboard.json` (single source of
+  truth); bootstrap resolves the `__WORKSPACE_ID__` placeholder with the
+  deployed Log Analytics workspace ID before sending it to Grafana.
+- Provisioning is an **idempotent create/update**: re-running bootstrap updates
+  the same `atlas-operations` dashboard rather than creating duplicates.
+- Authentication uses an Azure AD access token obtained dynamically from the
+  authenticated Azure CLI session. **No Grafana API key or static credential
+  is stored**; the token is held only in memory.
+- **RBAC prerequisite**: the signed-in Azure CLI user running bootstrap needs
+  the `Grafana Editor` role on the Managed Grafana resource (see below).
+  Bootstrap verifies this before attempting the API call.
+- Bootstrap verifies the dashboard after provisioning (exists, correct UID,
+  non-empty definition).
 
 Panels:
 
@@ -661,15 +681,27 @@ Panels:
 - Application transitions volume
 - Exceptions over time
 
-Note: Bicep emits a BCP081 warning for this sub-resource because Bicep type
-definitions do not yet exist for it; this is expected and does not block
-deployment.
-
 ### Bootstrap verification (2)
 
-`infra/bootstrap.ps1` Phase 11b verifies both resources exist post-deployment:
-the workbook with its expected "ATLAS Operations" display name, and the Grafana
-dashboard inside the Managed Grafana instance.
+`infra/bootstrap.ps1` Phase 11b covers both O6 resources post-deployment: it
+verifies the workbook exists with its expected "ATLAS Operations" display name,
+and provisions then verifies the Grafana dashboard via the Managed Grafana API
+(see above). Live rendering of dashboard panels against real Azure Monitor data
+remains a post-deployment functional verification step.
+
+### Two Grafana identities (do not confuse them)
+
+| Identity | Role(s) | Purpose | Provisioned by |
+|---|---|---|---|
+| Managed Grafana system-assigned managed identity (`grafanaPrincipalId`) | Monitoring Reader (resource group) + Log Analytics Reader (workspace) | Grafana's own access to Azure Monitor / Log Analytics data for dashboards | Bicep (O2) — unchanged |
+| Manual bootstrap identity (the Azure CLI signed-in user) | **Grafana Editor** scoped to the exact Managed Grafana resource | Create/update the ATLAS Operations dashboard via the data-plane API | Bicep (O6) via the `grafanaBootstrapPrincipalId` parameter, resolved automatically from the signed-in user |
+
+The deployment resolves `grafanaBootstrapPrincipalId` automatically from the
+currently signed-in Azure CLI user (`az ad signed-in-user show`), so there is
+no manual object-ID lookup. The same signed-in user must run
+`infra/bootstrap.ps1`; bootstrap verifies that user holds Grafana Editor on the
+Grafana resource before provisioning the dashboard, failing with a clear
+diagnostic if the role is missing.
 
 ### Boundary
 

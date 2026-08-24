@@ -1,6 +1,29 @@
 # ATLAS - Useful Commands
 # Deduplicated and organized reference of terminal commands used during development.
 
+$id = az ad signed-in-user show --query id -o tsv
+
+az deployment group validate `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json `
+    alertNotificationEmail="dvdbunde@gmail.com" `
+    grafanaBootstrapPrincipalId="$id"
+
+az deployment group what-if `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json `
+    alertNotificationEmail="dvdbunde@gmail.com" `
+    grafanaBootstrapPrincipalId="$id"
+
+az deployment group create `
+    --resource-group atlas-dev-rg `
+    --template-file .\infra\main.bicep `
+    --parameters .\infra\main.parameters.dev.json `
+    alertNotificationEmail="dvdbunde@gmail.com" `
+    grafanaBootstrapPrincipalId="$id"
+
 ## .NET Build / Run
 dotnet build --property Warninglevel=0
 dotnet clean

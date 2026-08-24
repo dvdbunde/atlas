@@ -24,7 +24,7 @@ param sku string = 'Standard'
 param zoneRedundancy string = 'Disabled'
 
 @description('Grafana major version')
-param grafanaMajorVersion int = 10
+param grafanaMajorVersion int = 12
 
 resource grafana 'Microsoft.Dashboard/grafana@2023-09-01' = {
   name: name

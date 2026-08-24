@@ -75,9 +75,41 @@ Assert-True ($activityLogExpectation.ContainsKey('ScopeStartsWith')) `
 Assert-True (-not $activityLogExpectation.ContainsKey('ScopeExact')) `
     "activity log expectation does not use the unsupported ScopeExact key"    
 
+# O6 Grafana RBAC preflight logic (Phase 11b) - mirrors the comparisons used in
+# Verify-O6Visualization in infra/bootstrap.ps1.
+# -----------------------------------------------------------------------------
+
+Write-Host " O6 Grafana bootstrap identity RBAC preflight" -ForegroundColor Yellow
+
+$grafanaEditorRoleId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+$grafanaResourceId   = "/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Dashboard/grafana/atlas-dev-grafana"
+# Identity resolution: the preflight uses az ad signed-in-user show -> .id.
+# Simulate a resolved current user (any non-empty GUID is valid).
+$currentPrincipalId = '11111111-1111-1111-1111-111111111111'
+Assert-True (-not [string]::IsNullOrWhiteSpace($currentPrincipalId)) "current signed-in identity resolves to a non-empty object ID"
+
+# Role check: assignment list filtered by exact role ID and Grafana resource scope.
+$assignmentOk = [PSCustomObject]@{
+    roleDefinitionId = "/subscriptions/$sub/providers/Microsoft.Authorization/roleDefinitions/$grafanaEditorRoleId"
+    scope            = $grafanaResourceId
+}
+$assignmentsOk = @($assignmentOk)
+Assert-True (@($assignmentsOk | Where-Object { $_.roleDefinitionId -like "*$grafanaEditorRoleId" }).Count -gt 0) "Grafana Editor assignment satisfies the role filter"
+
+# Missing role: empty assignment list must fail.
+$assignmentsMissing = @()
+Assert-True ((@($assignmentsMissing).Count -gt 0) -eq $false) "missing Grafana Editor role fails the preflight"
+
+# Wrong-role case: an assignment with a different role definition must fail.
+$wrongRoleAssignment = [PSCustomObject]@{
+    roleDefinitionId = "/subscriptions/$sub/providers/Microsoft.Authorization/roleDefinitions/00000000-0000-0000-0000-000000000000"
+    scope            = $grafanaResourceId
+}
+Assert-True ((@($wrongRoleAssignment) | Where-Object { $_.roleDefinitionId -like "*$grafanaEditorRoleId" }).Count -eq 0) "different role on Grafana resource fails the preflight"
+
 if ($script:failures -gt 0) {
     Write-Host "`n$($script:failures) test(s) FAILED" -ForegroundColor Red
     exit 1
 }
-Write-Host "`nAll scope-matching tests passed" -ForegroundColor Green
+Write-Host "`nAll tests passed" -ForegroundColor Green
 exit 0

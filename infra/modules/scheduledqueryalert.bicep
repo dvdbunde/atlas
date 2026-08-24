@@ -18,12 +18,6 @@
 // summarized value against the threshold. With one row per evaluation this
 // is simply the summarized value itself.
 //
-// BCP081 note: az bicep build emits a warning that
-// Microsoft.Insights/scheduledQueryRules@2022-08-01 has no Bicep type
-// definitions. This is expected — Bicep cannot validate the resource
-// properties at compile time; the resource type is intentionally still used.
-// Runtime validation by Azure during deployment remains required.
-//
 // Idempotency: rules are named deterministically and updated in place.
 // --------------------------------------------------------------------------
 
@@ -63,7 +57,7 @@ param failureCount int = 2
 @description('Resource ID of the Action Group notified when the alert fires')
 param actionGroupId string
 
-resource scheduledQueryAlert 'Microsoft.Insights/scheduledQueryRules@2022-08-01' = {
+resource scheduledQueryAlert 'Microsoft.Insights/scheduledQueryRules@2023-12-01' = {
   name: name
   location: resourceGroup().location
   tags: tags
@@ -78,16 +72,20 @@ resource scheduledQueryAlert 'Microsoft.Insights/scheduledQueryRules@2022-08-01'
     autoMitigate: true
     targetResourceTypes: []
     criteria: {
-      query: query
-      // 'Maximum' (not 'Count'): the query returns one summarized row; the
-      // threshold must compare that numeric value, not the row count.
-      timeAggregation: 'Maximum'
-      operator: operator
-      threshold: threshold
-      failingPeriods: {
-        numberOfEvaluationPeriods: failureCount
-        minFailingPeriodsToAlert: failureCount
-      }
+      allOf: [
+        {
+          query: query
+          // 'Maximum' (not 'Count'): the query returns one summarized row; the
+          // threshold must compare that numeric value, not the row count.
+          timeAggregation: 'Maximum'
+          operator: operator
+          threshold: threshold
+          failingPeriods: {
+            numberOfEvaluationPeriods: failureCount
+            minFailingPeriodsToAlert: failureCount
+          }
+        }
+      ]
     }
     actions: {
       actionGroups: [
