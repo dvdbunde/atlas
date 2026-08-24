@@ -33,7 +33,7 @@ az deployment group list --resource-group atlas-dev-rg --query "[].{Name:name,St
 az deployment group show --resource-group atlas-dev-rg --name main --query properties.outputs.keyVaultName.value --output tsv
 az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json
 az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json *> validation-output.txt
-az deployment group what-if --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json
+az deployment group what-if --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json *> what-if-output.txt
 az deployment group create --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json
 az deployment operation group list --resource-group atlas-dev-rg --name main-acr --output json
 az resource list --resource-group atlas-dev-rg --output table
