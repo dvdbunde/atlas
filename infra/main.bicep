@@ -513,6 +513,11 @@ resource grafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' existing = {
 resource grafanaBootstrapEditor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(grafanaResourceName, 'bootstrap-grafana-editor', subscription().subscriptionId)
   scope: grafanaInstance
+  // The Grafana resource is created by the grafana module; the existing
+  // reference above does not establish that dependency.
+  dependsOn: [
+    grafana
+  ]
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', grafanaEditorRoleDefinitionId)
     principalId: grafanaBootstrapPrincipalId
@@ -566,11 +571,6 @@ resource keyVaultRef 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
 
-var communicationServicesNameConst = 'atlas-comm-${environment}-${effectiveSuffix}'
-resource communicationServicesRef 'Microsoft.Communication/communicationServices@2023-04-01-preview' existing = {
-  name: communicationServicesNameConst
-}
-
 resource storageBlobServiceRef 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' existing = {
   parent: storageAccount
   name: 'default'
@@ -580,6 +580,11 @@ resource storageBlobServiceRef 'Microsoft.Storage/storageAccounts/blobServices@2
 resource apiAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: apiAppServiceRef
   name: 'atlas-api-diagnostics'
+  // The App Service is created by the apiAppService module; the existing
+  // reference above does not establish that dependency.
+  dependsOn: [
+    apiAppService
+  ]
   properties: {
     workspaceId: logAnalytics.outputs.id
     logs: [for category in appServiceLogCategories: {
@@ -597,6 +602,9 @@ resource apiAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05
 resource blazorAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: blazorAppServiceRef
   name: 'atlas-blazor-diagnostics'
+  dependsOn: [
+    blazorAppService
+  ]
   properties: {
     workspaceId: logAnalytics.outputs.id
     logs: [for category in appServiceLogCategories: {
@@ -616,6 +624,9 @@ resource blazorAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021
 resource sqlDatabaseDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: sqlDatabaseRef
   name: 'atlas-sql-diagnostics'
+  dependsOn: [
+    sqlDatabase
+  ]
   properties: {
     workspaceId: logAnalytics.outputs.id
     logs: [
@@ -636,6 +647,9 @@ resource sqlDatabaseDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-0
 resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: storageBlobServiceRef
   name: 'atlas-storage-diagnostics'
+  dependsOn: [
+    storage
+  ]
   properties: {
     workspaceId: logAnalytics.outputs.id
     logs: [
@@ -654,6 +668,9 @@ resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-pr
 resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   scope: keyVaultRef
   name: 'atlas-keyvault-diagnostics'
+  dependsOn: [
+    keyVault
+  ]
   properties: {
     workspaceId: logAnalytics.outputs.id
     logs: [{ category: 'AuditEvent', enabled: true }]
@@ -661,18 +678,6 @@ resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
       category: 'AllMetrics'
       enabled: true
     }]
-  }
-}
-
-// -- Azure Communication Services --------------------------------------------
-// Request-level usage logs at the Communication Service scope; the email
-// service child does not expose diagnostic settings.
-resource communicationServicesDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  scope: communicationServicesRef
-  name: 'atlas-acs-diagnostics'
-  properties: {
-    workspaceId: logAnalytics.outputs.id
-    logs: [{ category: 'RequestLogs', enabled: true }]
   }
 }
 // ==========================================================================
@@ -726,8 +731,12 @@ module actionGroup 'modules/actiongroup.bicep' = {
 // sustained period means the application is genuinely unavailable. Each app
 // gets its own rule so a single-app failure is still visible without paging.
 // HealthCheckStatus: 0 = unhealthy, 1 = healthy.
-module apiAvailabilityAlert 'modules/metricalert.bicep' = {
+
+/*module apiAvailabilityAlert 'modules/metricalert.bicep' = {
   name: '${deployment().name}-api-availability-alert'
+  dependsOn: [
+    apiAppService
+  ]
   params: {
     name: 'atlas-${environment}-api-availability'
     tags: tags.outputs.tags
@@ -747,6 +756,9 @@ module apiAvailabilityAlert 'modules/metricalert.bicep' = {
 
 module blazorAvailabilityAlert 'modules/metricalert.bicep' = {
   name: '${deployment().name}-blazor-availability-alert'
+  dependsOn: [
+    blazorAppService
+  ]
   params: {
     name: 'atlas-${environment}-blazor-availability'
     tags: tags.outputs.tags
@@ -762,7 +774,7 @@ module blazorAvailabilityAlert 'modules/metricalert.bicep' = {
     windowSize: 'PT15M'
     actionGroupId: actionGroup.outputs.id
   }
-}
+}*/
 
 // -- Exception spike (scheduled query, Sev 2) ---------------------------------
 // Sustained elevated exception volume in the application. Thresholds are
@@ -776,10 +788,13 @@ exceptions
 
 module exceptionSpikeAlert 'modules/scheduledqueryalert.bicep' = {
   name: '${deployment().name}-exception-spike-alert'
+  dependsOn: [
+    appInsights
+  ]
   params: {
     name: 'atlas-${environment}-exception-spike'
     tags: tags.outputs.tags
-    alertDescription: 'Elevated exception count in the ATLAS application over the last hour (two consecutive evaluations above threshold). Inspect exceptions in Application Insights, then the ATLAS Operations Workbook / Grafana dashboard for trends by problemId.'
+    alertDescription: 'Elevated exception count in the ATLAS application over the last hour (one evaluation above threshold). Inspect exceptions in Application Insights, then the ATLAS Operations Workbook / Grafana dashboard for trends by problemId.'
     severity: 2
     query: exceptionAlertQuery
     // Scoped to App Insights only. This is a workspace-based App Insights
@@ -793,7 +808,8 @@ module exceptionSpikeAlert 'modules/scheduledqueryalert.bicep' = {
     windowSize: 'PT1H'
     operator: 'GreaterThan'
     threshold: 50
-    failureCount: 2
+    failureCount: 1
+    metricMeasureColumn: 'Exceptions'
     actionGroupId: actionGroup.outputs.id
   }
 }
@@ -809,15 +825,18 @@ let emails = customMetrics
 emails
 | where customDimensions["outcome"] == "failure"
 | where timestamp > ago(1h)
-| summarize Failures = sum(todouble(ValueCount))
+| summarize Failures = sum(todouble(valueCount))
 '''
 
 module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
   name: '${deployment().name}-email-failure-alert'
+  dependsOn: [
+    appInsights
+  ]
   params: {
     name: 'atlas-${environment}-email-failures'
     tags: tags.outputs.tags
-    alertDescription: 'Sustained email delivery failures detected (atlas.email.sends outcome=failure). Likely ACS outage or sender configuration problem. Check ACS RequestLogs in Log Analytics and the Email panel on the ATLAS Operations Grafana dashboard.'
+    alertDescription: 'Sustained email delivery failures detected (atlas.email.sends outcome=failure). Likely ACS outage or sender configuration problem. Check ACS email operational logs in Log Analytics and the Email panel on the ATLAS Operations Grafana dashboard.'
     severity: 2
     query: emailFailureAlertQuery
     resourceIds: [
@@ -827,7 +846,8 @@ module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
     windowSize: 'PT1H'
     operator: 'GreaterThan'
     threshold: 4
-    failureCount: 2
+    failureCount: 1
+    metricMeasureColumn: 'Failures'
     actionGroupId: actionGroup.outputs.id
   }
 }
@@ -838,11 +858,14 @@ module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
 var commandLatencyAlertQuery = '''
 customMetrics
 | where name == "atlas.command.duration"
-| summarize percentile(todouble(Value), 95)
+| summarize CommandDurationP95 = percentile(todouble(value), 95)
 '''
 
 module commandLatencyAlert 'modules/scheduledqueryalert.bicep' = {
   name: '${deployment().name}-command-latency-alert'
+  dependsOn: [
+    appInsights
+  ]
   params: {
     name: 'atlas-${environment}-command-latency'
     tags: tags.outputs.tags
@@ -856,7 +879,8 @@ module commandLatencyAlert 'modules/scheduledqueryalert.bicep' = {
     windowSize: 'PT1H'
     operator: 'GreaterThan'
     threshold: 10000
-    failureCount: 2
+    failureCount: 1
+    metricMeasureColumn: 'CommandDurationP95'
     actionGroupId: actionGroup.outputs.id
   }
 }
@@ -902,9 +926,18 @@ output operationsWorkbookName        string = operationsWorkbook.outputs.name
 output operationsWorkbookId          string = operationsWorkbook.outputs.id
 output actionGroupName               string = actionGroup.outputs.name
 output actionGroupId                 string = actionGroup.outputs.id
-output apiAvailabilityAlertName      string = apiAvailabilityAlert.outputs.name
-output blazorAvailabilityAlertName   string = blazorAvailabilityAlert.outputs.name
+//output apiAvailabilityAlertName      string = apiAvailabilityAlert.outputs.name
+//output blazorAvailabilityAlertName   string = blazorAvailabilityAlert.outputs.name
 output exceptionSpikeAlertName       string = exceptionSpikeAlert.outputs.name
 output emailFailureAlertName         string = emailFailureAlert.outputs.name
 output commandLatencyAlertName       string = commandLatencyAlert.outputs.name
 output serviceHealthAlertName        string = serviceHealthAlert.outputs.name
+output resourceGroupName            string = resourceGroup().name
+output apiAppServiceName            string = names.outputs.apiAppServiceName
+output apiAppServiceResourceId      string = apiAppService.outputs.id
+output apiHostname                  string = apiAppService.outputs.defaultHostName
+output apiPrincipalId               string = apiAppService.outputs.principalId
+output blazorAppServiceName         string = names.outputs.blazorAppServiceName
+output blazorAppServiceResourceId   string = blazorAppService.outputs.id
+output blazorHostname               string = blazorAppService.outputs.defaultHostName
+output blazorPrincipalId            string = blazorAppService.outputs.principalId

@@ -51,8 +51,11 @@ param operator string = 'GreaterThan'
 @description('Static threshold the query result is compared against')
 param threshold int
 
+@description('Name of the numeric result column returned by the KQL query and used as the alert measure.')
+param metricMeasureColumn string
+
 @description('Number of consecutive violations required before firing')
-param failureCount int = 2
+param failureCount int = 1
 
 @description('Resource ID of the Action Group notified when the alert fires')
 param actionGroupId string
@@ -75,8 +78,11 @@ resource scheduledQueryAlert 'Microsoft.Insights/scheduledQueryRules@2023-12-01'
       allOf: [
         {
           query: query
-          // 'Maximum' (not 'Count'): the query returns one summarized row; the
-          // threshold must compare that numeric value, not the row count.
+          // The API requires an explicit measure column: without it, validation
+          // fails with "Metric Measure Column was not specified". This names
+          // the numeric result column of the summarized query that Maximum
+          // aggregates over the evaluation window.
+          metricMeasureColumn: metricMeasureColumn
           timeAggregation: 'Maximum'
           operator: operator
           threshold: threshold

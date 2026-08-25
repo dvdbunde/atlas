@@ -15,7 +15,7 @@ az deployment group what-if `
     --template-file .\infra\main.bicep `
     --parameters .\infra\main.parameters.dev.json `
     alertNotificationEmail="dvdbunde@gmail.com" `
-    grafanaBootstrapPrincipalId="$id"
+    grafanaBootstrapPrincipalId="$id" *> what-if-output.txt
 
 az deployment group create `
     --resource-group atlas-dev-rg `

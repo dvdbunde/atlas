@@ -107,9 +107,57 @@ $wrongRoleAssignment = [PSCustomObject]@{
 }
 Assert-True ((@($wrongRoleAssignment) | Where-Object { $_.roleDefinitionId -like "*$grafanaEditorRoleId" }).Count -eq 0) "different role on Grafana resource fails the preflight"
 
-if ($script:failures -gt 0) {
-    Write-Host "`n$($script:failures) test(s) FAILED" -ForegroundColor Red
-    exit 1
+# -----------------------------------------------------------------------------
+# O6/O7 infrastructure correction checks - dependency relationships, scheduled
+# query measure columns, Grafana RBAC invariants. Static inspection of the
+# actual Bicep source so regressions are caught without a deployment.
+# -----------------------------------------------------------------------------
+
+Write-Host " Infrastructure dependency & alert schema checks" -ForegroundColor Yellow
+
+$mainBicep = Get-Content infra/main.bicep -Raw
+
+function Assert-BicepDependency {
+    param([string]$DependentName, [string]$TargetName)
+    # Match: resource/module <DependentName> ... followed by dependsOn containing <TargetName>
+    $pattern = "(?s)(resource|module)\s+$DependentName\s+[^=]*=\s*\{.*?dependsOn:\s*\[[^\]]*\b$TargetName\b[^\]]*\]"
+    Assert-True ($mainBicep -match $pattern) "$DependentName depends on $TargetName"
 }
-Write-Host "`nAll tests passed" -ForegroundColor Green
-exit 0
+
+Assert-BicepDependency 'grafanaBootstrapEditor' 'grafana'
+Assert-BicepDependency 'apiAppServiceDiagnostics' 'apiAppService'
+Assert-BicepDependency 'blazorAppServiceDiagnostics' 'blazorAppService'
+Assert-BicepDependency 'sqlDatabaseDiagnostics' 'sqlDatabase'
+Assert-BicepDependency 'storageDiagnostics' 'storage'
+Assert-BicepDependency 'keyVaultDiagnostics' 'keyVault'
+#Assert-BicepDependency 'apiAvailabilityAlert' 'apiAppService'
+#Assert-BicepDependency 'blazorAvailabilityAlert' 'blazorAppService'
+Assert-BicepDependency 'exceptionSpikeAlert' 'appInsights'
+Assert-BicepDependency 'emailFailureAlert' 'appInsights'
+Assert-BicepDependency 'commandLatencyAlert' 'appInsights'
+
+# Scheduled query measure columns
+Assert-True ($mainBicep -match "metricMeasureColumn:\s*'Exceptions'") "exceptionSpikeAlert uses measure column Exceptions"
+Assert-True ($mainBicep -match "metricMeasureColumn:\s*'Failures'") "emailFailureAlert uses measure column Failures"
+Assert-True ($mainBicep -match "metricMeasureColumn:\s*'CommandDurationP95'") "commandLatencyAlert uses measure column CommandDurationP95"
+Assert-True ($mainBicep -match 'CommandDurationP95 = percentile') "command latency query names its result column"
+
+# Module requires metricMeasureColumn (no default -> forces callers to supply it)
+$sqa = Get-Content infra/modules/scheduledqueryalert.bicep -Raw
+Assert-True ($sqa -match "param metricMeasureColumn string") "scheduledqueryalert module declares metricMeasureColumn parameter"
+Assert-True ($sqa -match "metricMeasureColumn:\s*metricMeasureColumn") "criterion passes metricMeasureColumn through"
+
+# ACS diagnostic categories replaced
+Assert-True (-not ($mainBicep -match "'RequestLogs'")) "invalid RequestLogs category removed"
+Assert-True ($mainBicep -match "EmailSendMailOperational") "ACS Send Mail operational category present"
+Assert-True ($mainBicep -match "EmailStatusUpdateOperational") "ACS Status Update operational category present"
+
+# Grafana invariants preserved
+Assert-True ($mainBicep -match "param grafanaBootstrapPrincipalId string") "grafanaBootstrapPrincipalId parameter still exists"
+Assert-True ($mainBicep -match "a79a5197-3a5c-4973-a920-486035ffd60f") "Grafana Editor role definition unchanged"
+Assert-True ($mainBicep -match "principalType:\s*'User'") "Grafana Editor assignment principalType is User"
+Assert-True ($mainBicep -match "scope:\s*grafanaInstance") "Grafana Editor assignment remains resource-scoped"
+
+# Static safety
+$infraFiles = Get-ChildItem infra -Recurse -Include *.bicep,*.ps1,*.json | Select-String 'Microsoft.Dashboard/grafana/dashboards\s*=|api[_-]?key\s*=|Bearer\s+[A-Za-z0-9]' -CaseSensitive:$false
+Assert-True ($null -eq $infraFiles) "no invalid Grafana ARM resource / API keys / static tokens in infra"

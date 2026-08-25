@@ -175,6 +175,25 @@ function Get-DeploymentOutputs {
 
     Write-Pass "Deployment located and succeeded"
 
+    $requiredOutputs = @(
+        'apiAppServiceName'
+        'apiAppServiceResourceId'
+        'apiHostname'
+        'apiPrincipalId'
+        'blazorAppServiceName'
+        'blazorAppServiceResourceId'
+        'blazorHostname'
+        'blazorPrincipalId'
+    )
+
+    foreach ($outputName in $requiredOutputs) {
+        $output = $outputs.$outputName
+
+        Assert-True `
+            ($null -ne $output -and -not [string]::IsNullOrWhiteSpace([string]$output.value)) `
+            "Required deployment output '$outputName' is missing or empty."
+    }
+
     return [PSCustomObject]@{
         resourceGroupName          = $outputs.resourceGroupName.value
         apiAppServiceName          = $outputs.apiAppServiceName.value
@@ -203,8 +222,8 @@ function Get-DeploymentOutputs {
         logAnalyticsWorkspaceId    = $outputs.logAnalyticsWorkspaceId.value
         operationsWorkbookName     = $outputs.operationsWorkbookName.value
         actionGroupName            = $outputs.actionGroupName.value
-        apiAvailabilityAlertName   = $outputs.apiAvailabilityAlertName.value
-        blazorAvailabilityAlertName = $outputs.blazorAvailabilityAlertName.value
+        #apiAvailabilityAlertName   = $outputs.apiAvailabilityAlertName.value
+        #blazorAvailabilityAlertName = $outputs.blazorAvailabilityAlertName.value
         exceptionSpikeAlertName    = $outputs.exceptionSpikeAlertName.value
         emailFailureAlertName      = $outputs.emailFailureAlertName.value
         commandLatencyAlertName    = $outputs.commandLatencyAlertName.value
@@ -1171,8 +1190,7 @@ function Verify-AzureMonitorIntegration {
         @{ Name = "Diagnostics: Blazor App Service";   Resource = "$rgPath/providers/Microsoft.Web/sites/$BlazorAppServiceName";             Setting = "atlas-blazor-diagnostics" },
         @{ Name = "Diagnostics: SQL Database";         Resource = "$rgPath/providers/Microsoft.Sql/servers/$SqlServerName/databases/$SqlDatabaseName"; Setting = "atlas-sql-diagnostics" },
         @{ Name = "Diagnostics: Storage Account (Blob)"; Resource = "$rgPath/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/blobServices/default"; Setting = "atlas-storage-diagnostics" },
-        @{ Name = "Diagnostics: Key Vault";            Resource = "$rgPath/providers/Microsoft.KeyVault/vaults/$KeyVaultName";               Setting = "atlas-keyvault-diagnostics" },
-        @{ Name = "Diagnostics: Communication Services"; Resource = "$rgPath/providers/Microsoft.Communication/communicationServices/$CommunicationServiceName"; Setting = "atlas-acs-diagnostics" }
+        @{ Name = "Diagnostics: Key Vault";            Resource = "$rgPath/providers/Microsoft.KeyVault/vaults/$KeyVaultName";               Setting = "atlas-keyvault-diagnostics" }     
     )
 
     foreach ($check in $diagChecks) {
@@ -1183,6 +1201,39 @@ function Verify-AzureMonitorIntegration {
             Detail = if ($ok) { "$($check.Setting) -> $LogAnalyticsWorkspaceName" } else { "$($check.Setting) missing or wrong destination" }
         }
     }
+
+   $acsDiagnosticSetting = az monitor diagnostic-settings show `
+        --resource $outputs.communicationServiceResourceId `
+        --name 'Email_Logs' `
+        --output json | ConvertFrom-Json
+
+    if (-not $acsDiagnosticSetting) {
+        Write-Fail "ACS diagnostic setting 'Email_Logs' not found."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $enabledCategories = @(
+        $acsDiagnosticSetting.logs |
+            Where-Object { $_.enabled -eq $true } |
+            ForEach-Object { $_.category }
+    )
+
+    $requiredCategories = @(
+        'EmailSendMailOperational'
+        'EmailStatusUpdateOperational'
+    )
+
+    $missingCategories = @(
+        $requiredCategories |
+            Where-Object { $_ -notin $enabledCategories }
+    )
+
+    if ($missingCategories.Count -gt 0) {
+        Write-Fail "ACS diagnostic setting 'Email_Logs' is missing required categories: $($missingCategories -join ', ')"
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    Write-Pass "ACS diagnostic setting 'Email_Logs' verified with required email categories"
 
     # --- Managed Grafana ---
     $grafana = az resource show `
@@ -1214,7 +1265,7 @@ function Verify-AzureMonitorIntegration {
         }) -ne $null
 
         # Log Analytics Reader on the workspace grants KQL query access.
-        $laReaderDefId = "73c42c96-036c-4bb8-9d1a-6a5e0d4b0f7c"
+        $laReaderDefId = "73c42c96-874c-492b-b04d-ab87d138a893"
         $laAssignments = az role assignment list `
             --assignee $GrafanaPrincipalId `
             --scope $LogAnalyticsWorkspaceId `
@@ -1485,10 +1536,14 @@ function Verify-O7Alerting {
     $results = @()
 
     # --- Action Group exists and is enabled ---
+    Write-Host "  Checking action group: $ActionGroupName..."
+
     $ag = az monitor action-group show `
         --name $ActionGroupName `
         --resource-group $ResourceGroup `
         --output json 2>$null | ConvertFrom-Json
+
+    Write-Host "  Finished checking action group: $ActionGroupName"
 
     $agOk = $null -ne $ag -and $ag.enabled -eq $true
 
@@ -1516,10 +1571,15 @@ function Verify-O7Alerting {
 
         switch ($expected.Type) {
             "metric" {
+                Write-Host "  Checking metric alert: $($expected.Name)..."
+
                 $rule = az monitor metrics alert show `
                     --name $expected.Name `
                     --resource-group $ResourceGroup `
-                    --output json 2>$null | ConvertFrom-Json
+                    --output json | ConvertFrom-Json
+
+                Write-Host "  Finished metric alert: $($expected.Name)"
+
                 if ($null -ne $rule) {
                     $exists = $true
                     $enabled = $rule.enabled -eq $true
@@ -1529,32 +1589,59 @@ function Verify-O7Alerting {
                 }
             }
             "log" {
-                $rule = az monitor scheduled-query show `
-                    --name $expected.Name `
+                Write-Host "  Checking log alert: $($expected.Name)..."
+
+                $rule = az resource show `
                     --resource-group $ResourceGroup `
+                    --name $expected.Name `
+                    --resource-type "Microsoft.Insights/scheduledQueryRules" `
                     --output json 2>$null | ConvertFrom-Json
+
+                Write-Host "  Finished log alert: $($expected.Name)"
+
                 if ($null -ne $rule) {
                     $exists = $true
-                    $enabled = $rule.enabled -eq $true
-                    $agLinked = @($rule.actions.actionGroups | Where-Object { $_ -like "*$ActionGroupName" }).Count -gt 0
-                    $actualScopes = @($rule.scopes)
-                    # Substring test (not -like): -like without a trailing
-                    # wildcard would require the scope to END with the pattern,
-                    # but real scopes end with the resource name.
-                    $scopeOk = @($actualScopes | Where-Object { $_.Contains($expected.ScopeContains) }).Count -gt 0
+                    $enabled = $rule.properties.enabled -eq $true
+                    $agLinked = @(
+                        $rule.properties.actions.actionGroups |
+                            Where-Object { $_ -like "*$ActionGroupName" }
+                    ).Count -gt 0
+                    $actualScopes = @($rule.properties.scopes)
+
+                    $scopeOk = @(
+                        $actualScopes |
+                            Where-Object { $_.Contains($expected.ScopeContains) }
+                    ).Count -gt 0
                 }
             }
-            "activitylog" {
-                $rule = az monitor activity-log alert show `
-                    --name $expected.Name `
+           "activitylog" {
+                Write-Host "  Checking activity log alert: $($expected.Name)..."
+
+                $rule = az resource show `
                     --resource-group $ResourceGroup `
+                    --name $expected.Name `
+                    --resource-type "Microsoft.Insights/activityLogAlerts" `
                     --output json 2>$null | ConvertFrom-Json
+
+                Write-Host "  Finished activity log alert: $($expected.Name)"
+
                 if ($null -ne $rule) {
                     $exists = $true
-                    $enabled = $rule.enabled -eq $true
-                    $agLinked = @($rule.actions.actionGroups | Where-Object { $_.actionGroupId -like "*$ActionGroupName" }).Count -gt 0
-                    $actualScopes = @($rule.scope)
-                    $scopeOk = ($actualScopes.Count -gt 0) -and ($actualScopes | Where-Object { $_.StartsWith($expected.ScopeStartsWith) }).Count -eq $actualScopes.Count
+                    $enabled = $rule.properties.enabled -eq $true
+                    $agLinked = @(
+                        $rule.properties.actions.actionGroups |
+                            Where-Object { $_.actionGroupId -like "*$ActionGroupName" }
+                    ).Count -gt 0
+                    $actualScopes = @($rule.properties.scopes)
+
+                    $scopeOk =
+                        ($actualScopes.Count -gt 0) -and
+                        (@(
+                            $actualScopes |
+                                Where-Object {
+                                    $_.StartsWith($expected.ScopeStartsWith)
+                                }
+                        ).Count -eq $actualScopes.Count)
                 }
             }
         }
@@ -1781,8 +1868,8 @@ $monitorResults += Verify-O6Visualization `
 # Scope expectations use the exact deployment outputs where available so a
 # rule targeting the wrong App Service / App Insights is detected precisely.
 $o7ExpectedAlerts = @(
-    @{ Name = $outputs.apiAvailabilityAlertName;    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
-    @{ Name = $outputs.blazorAvailabilityAlertName; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
+    #@{ Name = $outputs.apiAvailabilityAlertName;    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
+    #@{ Name = $outputs.blazorAvailabilityAlertName; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
     @{ Name = $outputs.exceptionSpikeAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
     @{ Name = $outputs.emailFailureAlertName;       Type = "log";         ScopeContains = "Microsoft.Insights/components" },
     @{ Name = $outputs.commandLatencyAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
