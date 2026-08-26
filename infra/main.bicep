@@ -726,56 +726,6 @@ module actionGroup 'modules/actiongroup.bicep' = {
   }
 }
 
-// -- Application unavailable (metric alert, Sev 1) ----------------------------
-// App Service health check (/health/ready) failing on BOTH app services for a
-// sustained period means the application is genuinely unavailable. Each app
-// gets its own rule so a single-app failure is still visible without paging.
-// HealthCheckStatus: 0 = unhealthy, 1 = healthy.
-
-/*module apiAvailabilityAlert 'modules/metricalert.bicep' = {
-  name: '${deployment().name}-api-availability-alert'
-  dependsOn: [
-    apiAppService
-  ]
-  params: {
-    name: 'atlas-${environment}-api-availability'
-    tags: tags.outputs.tags
-    targetResourceId: apiAppServiceRef.id
-    alertDescription: 'ATLAS API health check (/health/ready) has been failing for 15+ minutes. The API is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results.'
-    severity: 1
-    metricNamespace: 'Microsoft.Web/sites'
-    metricName: 'HealthCheckStatus'
-    aggregation: 'Average'
-    operator: 'LessThan'
-    threshold: 1
-    evaluationFrequency: 'PT5M'
-    windowSize: 'PT15M'
-    actionGroupId: actionGroup.outputs.id
-  }
-}
-
-module blazorAvailabilityAlert 'modules/metricalert.bicep' = {
-  name: '${deployment().name}-blazor-availability-alert'
-  dependsOn: [
-    blazorAppService
-  ]
-  params: {
-    name: 'atlas-${environment}-blazor-availability'
-    tags: tags.outputs.tags
-    targetResourceId: blazorAppServiceRef.id
-    alertDescription: 'ATLAS Blazor app health check (/health/ready) has been failing for 15+ minutes. The application is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results.'
-    severity: 1
-    metricNamespace: 'Microsoft.Web/sites'
-    metricName: 'HealthCheckStatus'
-    aggregation: 'Average'
-    operator: 'LessThan'
-    threshold: 1
-    evaluationFrequency: 'PT5M'
-    windowSize: 'PT15M'
-    actionGroupId: actionGroup.outputs.id
-  }
-}*/
-
 // -- Exception spike (scheduled query, Sev 2) ---------------------------------
 // Sustained elevated exception volume in the application. Thresholds are
 // conservative dev defaults - tune per environment as real traffic patterns
@@ -926,8 +876,6 @@ output operationsWorkbookName        string = operationsWorkbook.outputs.name
 output operationsWorkbookId          string = operationsWorkbook.outputs.id
 output actionGroupName               string = actionGroup.outputs.name
 output actionGroupId                 string = actionGroup.outputs.id
-//output apiAvailabilityAlertName      string = apiAvailabilityAlert.outputs.name
-//output blazorAvailabilityAlertName   string = blazorAvailabilityAlert.outputs.name
 output exceptionSpikeAlertName       string = exceptionSpikeAlert.outputs.name
 output emailFailureAlertName         string = emailFailureAlert.outputs.name
 output commandLatencyAlertName       string = commandLatencyAlert.outputs.name

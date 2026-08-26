@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-    Bootstraps and validates the ATLAS development Azure environment.
+    Bootstraps and validates the supplied ATLAS Azure environment.
 
 .DESCRIPTION
-    Performs post-deployment configuration and validation for the ATLAS
-    development environment defined by the Bicep infrastructure.
+    Performs post-deployment configuration and validation for the supplied ATLAS
+    environment defined by the Bicep infrastructure.
 
     The script:
       - Reads deployment outputs from the completed Bicep deployment.
@@ -23,11 +23,10 @@
     This script does not deploy the Azure infrastructure itself.
     Run main.bicep first with the appropriate environment parameters.
 
-    The script is intended for the ATLAS development environment.
+    The script is intended for the supplied ATLAS environment.
 
 .PARAMETER ResourceGroupName
-    Name of the Azure Resource Group containing the ATLAS development
-    environment.
+    Name of the Azure Resource Group containing the supplied ATLAS environment.
 
 .PARAMETER DeploymentName
     Name of the ARM/Bicep deployment whose outputs are used by this script.
@@ -58,7 +57,11 @@ param (
     [string]$DeploymentName,
 
     [Parameter(Mandatory)]
-    [string]$GitHubClientId
+    [string]$GitHubClientId,
+
+    [Parameter(Mandatory)]
+    [ValidateSet('dev', 'test', 'prod')]
+    [string]$Environment
 )
 
 $ErrorActionPreference = 'Stop'
@@ -221,9 +224,7 @@ function Get-DeploymentOutputs {
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
         logAnalyticsWorkspaceId    = $outputs.logAnalyticsWorkspaceId.value
         operationsWorkbookName     = $outputs.operationsWorkbookName.value
-        actionGroupName            = $outputs.actionGroupName.value
-        #apiAvailabilityAlertName   = $outputs.apiAvailabilityAlertName.value
-        #blazorAvailabilityAlertName = $outputs.blazorAvailabilityAlertName.value
+        actionGroupName            = $outputs.actionGroupName.value        
         exceptionSpikeAlertName    = $outputs.exceptionSpikeAlertName.value
         emailFailureAlertName      = $outputs.emailFailureAlertName.value
         commandLatencyAlertName    = $outputs.commandLatencyAlertName.value
@@ -1522,6 +1523,115 @@ function Verify-O6Visualization {
 }
 
 # --------------------------------------------------------------------------
+# Phase 11c - Provision availability metric alerts
+# --------------------------------------------------------------------------
+function Ensure-AvailabilityMetricAlerts {
+    param(
+        [string]$ResourceGroup,
+        [string]$Environment,
+        [string]$ActionGroupName,
+        [string]$ApiAppServiceName,
+        [string]$BlazorAppServiceName
+    )
+
+    Write-Step "Phase 11c - Provisioning availability metric alerts"
+
+    $subscriptionId = az account show --query id --output tsv 2>$null
+
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($subscriptionId)) {
+        Write-Fail "Unable to resolve Azure subscription ID."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $actionGroup = az monitor action-group show `
+        --name $ActionGroupName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -eq $actionGroup) {
+        Write-Fail "Action Group '$ActionGroupName' not found."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $actionGroupId = $actionGroup.id
+
+    $alerts = @(
+        @{
+            Name        = "atlas-$Environment-api-availability"
+            AppService  = $ApiAppServiceName
+            Description = "ATLAS API health check (/health/ready) has been failing for 15+ minutes. The API is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results."
+        },
+        @{
+            Name        = "atlas-$Environment-blazor-availability"
+            AppService  = $BlazorAppServiceName
+            Description = "ATLAS Blazor app health check (/health/ready) has been failing for 15+ minutes. The application is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results."
+        }
+    )
+
+    foreach ($alert in $alerts) {
+        $scope = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($alert.AppService)"
+
+        Write-Host "  Checking availability alert: $($alert.Name)..."
+
+        $existing = az monitor metrics alert show `
+            --name $alert.Name `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        if ($null -ne $existing) {
+            Write-Pass "$($alert.Name) already exists"
+            continue
+        }
+
+        Write-Host "  Creating availability alert: $($alert.Name)..."
+
+        $created = $false
+
+        # HealthCheckStatus can take a short time to become available
+        # to the Azure Monitor metric-alert service after App Service
+        # provisioning. Retry only that specific transient condition.
+        for ($attempt = 1; $attempt -le 12; $attempt++) {
+            $errorOutput = & az monitor metrics alert create `
+                --name $alert.Name `
+                --resource-group $ResourceGroup `
+                --scopes $scope `
+                --condition "avg HealthCheckStatus < 1" `
+                --window-size 15m `
+                --evaluation-frequency 5m `
+                --severity 1 `
+                --auto-mitigate true `
+                --action $actionGroupId `
+                --description $alert.Description `
+                --output none 2>&1
+
+            if ($LASTEXITCODE -eq 0) {
+                $created = $true
+                break
+            }
+
+            $errorText = ($errorOutput -join "`n")
+
+            if ($errorText -notmatch "Couldn't find a metric named HealthCheckStatus") {
+                Write-Fail "Failed to create $($alert.Name): $errorText"
+                exit $EXIT_INFRASTRUCTURE
+            }
+
+            if ($attempt -lt 12) {
+                Write-Host "  HealthCheckStatus not yet available; retrying in 10 seconds (attempt $attempt/12)..."
+                Start-Sleep -Seconds 10
+            }
+        }
+
+        if (-not $created) {
+            Write-Fail "Timed out waiting for HealthCheckStatus for $($alert.Name)."
+            exit $EXIT_INFRASTRUCTURE
+        }
+
+        Write-Pass "$($alert.Name) created"
+    }
+}
+
+# --------------------------------------------------------------------------
 # Phase 11c - Verify O7 Alerting (Action Group + alert rules)
 # --------------------------------------------------------------------------
 function Verify-O7Alerting {
@@ -1864,12 +1974,20 @@ $monitorResults += Verify-O6Visualization `
     -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
     -DashboardJsonPath (Join-Path $PSScriptRoot 'telemetry/atlas-operations.grafana-dashboard.json')
 
+# Phase 11c - Provision availability metric alerts
+Ensure-AvailabilityMetricAlerts `
+    -ResourceGroup $ResourceGroup `
+    -Environment $Environment `
+    -ActionGroupName $outputs.actionGroupName `
+    -ApiAppServiceName $outputs.apiAppServiceName `
+    -BlazorAppServiceName $outputs.blazorAppServiceName
+
 # Phase 11c - Verify O7 alerting resources (Action Group + alert rules)
 # Scope expectations use the exact deployment outputs where available so a
 # rule targeting the wrong App Service / App Insights is detected precisely.
 $o7ExpectedAlerts = @(
-    #@{ Name = $outputs.apiAvailabilityAlertName;    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
-    #@{ Name = $outputs.blazorAvailabilityAlertName; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
+    @{ Name = "atlas-$Environment-api-availability";    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
+    @{ Name = "atlas-$Environment-blazor-availability"; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
     @{ Name = $outputs.exceptionSpikeAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
     @{ Name = $outputs.emailFailureAlertName;       Type = "log";         ScopeContains = "Microsoft.Insights/components" },
     @{ Name = $outputs.commandLatencyAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
