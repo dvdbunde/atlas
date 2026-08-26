@@ -58,7 +58,7 @@ param apiImageTag string = 'latest'
 param blazorImageTag string = 'latest'
 
 @description('ASP.NET Core environment name applied to App Services (e.g. Development, Production). Defaults to Development.') 
-param environmentName string = 'Development'
+param environmentName string
 
 @description('Email address for O7 alert notifications (Action Group receiver). Supplied per environment; never hard-coded in source control.')
 @secure()

@@ -119,6 +119,7 @@ az webapp log tail --name atlas-api-dev-de96db --resource-group atlas-dev-rg
 az webapp log tail --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg
 az webapp restart --name atlas-api-dev-de96db --resource-group atlas-dev-rg
 az webapp restart --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg
+az webapp log startup show --name atlas-blazor-dev-de96db --resource-group atlas-dev-rg *> validation-output.txt
 
 ## Azure - Extensions
 az extension add --name application-insights

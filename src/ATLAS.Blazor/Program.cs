@@ -15,45 +15,44 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Azure.Monitor.OpenTelemetry.Exporter;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Azure Application Insights telemetry (skip in Testing)
-if (builder.Environment.EnvironmentName != "Testing" && !builder.Environment.IsDevelopment())
-{
-    builder.Services.AddApplicationInsightsTelemetry();
-}
-
 // O3: OpenTelemetry tracing for Blazor-initiated operations.
 // Registers the ATLAS application ActivitySource so command Activities from
-// TracingBehavior are collected. ASP.NET Core request telemetry remains with
-// the classic Application Insights registration above — no duplicate request
-// instrumentation here. The Azure Monitor exporter is only registered when an
-// Application Insights connection string is configured; locally (no connection
-// string) tracing is a no-op and development is unaffected.
-var appInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService("ATLAS.Blazor"))
+// TracingBehavior are collected.
+//
+// O4: OpenTelemetry metrics for ATLAS business metrics.
+//
+// Azure Monitor export is only enabled when an Application Insights
+// connection string is configured. Locally (no connection string),
+// telemetry remains local/no-op and does not require Azure Monitor.
+var appInsightsConnectionString =
+    builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+
+var openTelemetry = builder.Services
+    .AddOpenTelemetry()
+    .ConfigureResource(resource =>
+        resource.AddService("ATLAS.Blazor"))
     .WithTracing(tracing =>
     {
-        tracing.AddSource(ATLAS.Application.Telemetry.AtlasTelemetry.ActivitySourceName);
-
-        if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
-        {
-            tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = appInsightsConnectionString);
-        }
+        tracing.AddSource(
+            ATLAS.Application.Telemetry.AtlasTelemetry.ActivitySourceName);
     })
-    // O4: export ATLAS metrics (business transitions, email outcomes, command
-    // durations) through the same Azure Monitor pipeline as traces.
     .WithMetrics(metrics =>
     {
-        metrics.AddMeter(ATLAS.Application.Telemetry.AtlasMetrics.MeterName);
-
-        if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
-        {
-            metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = appInsightsConnectionString);
-        }
+        metrics.AddMeter(
+            ATLAS.Application.Telemetry.AtlasMetrics.MeterName);
     });
+
+if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+{
+    openTelemetry.UseAzureMonitor(options =>
+    {
+        options.ConnectionString = appInsightsConnectionString;
+    });
+}
 
 // Azure Key Vault configuration provider (production only)
 var keyVaultName = builder.Configuration["KeyVault:VaultName"];

@@ -20,12 +20,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Azure Application Insights telemetry (skip in Testing — test factory uses its own config)
-if (builder.Environment.EnvironmentName != "Testing" && !builder.Environment.IsDevelopment())
-{
-    builder.Services.AddApplicationInsightsTelemetry();
-}
-
 // Azure Key Vault configuration provider (production only)
 var keyVaultName = builder.Configuration["KeyVault:VaultName"];
 Uri? keyVaultUri = null;
