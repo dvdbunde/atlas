@@ -64,6 +64,7 @@ az resource list --resource-group atlas-dev-rg --output table
 ## Azure - Bootstrap / Role Assignments (PowerShell)
 $GitHubClientId = "4226094a-bba0-4cf2-9464-25e22391c158"
 .\infra\bootstrap.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId -Environment dev
+.\infra\bootstrap-revised.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId -Environment dev
 
 ## Azure - Bicep
 az bicep build --file infra\main.bicep

@@ -67,6 +67,10 @@ param alertNotificationEmail string
 @description('Microsoft Entra object ID of the identity that runs infra/bootstrap.ps1. Bootstrap provisions the ATLAS Operations Grafana dashboard via the Managed Grafana data-plane API, so this identity needs Grafana Editor on the Managed Grafana resource. Not secret; supplied per environment - never hard-coded in source control.')
 param grafanaBootstrapPrincipalId string
 
+// Managed Grafana is intentionally disabled in the development environment
+// to avoid its dedicated hosting cost. Keep the IaC so test/prod can use it.
+var deployManagedGrafana = environment != 'dev'
+
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
   params: {
@@ -108,7 +112,7 @@ module appInsights 'modules/appinsights.bicep' = {
 // SystemAssigned identity; Azure Monitor RBAC role assignments are granted
 // after this module below. No dependency on App Services / SQL etc., so no
 // circular references.
-module grafana 'modules/grafana.bicep' = {
+module grafana 'modules/grafana.bicep' = if (deployManagedGrafana) {
   name: '${deployment().name}-grafana'
   params: {
     name: names.outputs.grafanaName
@@ -453,12 +457,12 @@ var monitoringReaderRoleDefinitionId = '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
 // which require values computable at deployment start.
 var grafanaResourceName = 'atlas-${environment}-grafana'
 
-resource grafanaMonitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource grafanaMonitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployManagedGrafana) {
   name: guid(resourceGroup().name, grafanaResourceName, 'monitoring-reader', subscription().subscriptionId)
   scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', monitoringReaderRoleDefinitionId)
-    principalId: grafana.outputs.principalId
+    principalId: grafana!.outputs.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -484,12 +488,12 @@ resource appInsightsRef 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsNameConst
 }
 
-resource grafanaLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource grafanaLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployManagedGrafana) {
   name: guid(logAnalyticsWorkspaceNameConst, grafanaResourceName, 'la-reader', subscription().subscriptionId)
   scope: logAnalyticsWorkspace
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', logAnalyticsReaderRoleDefinitionId)
-    principalId: grafana.outputs.principalId
+    principalId: grafana!.outputs.principalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -510,7 +514,7 @@ resource grafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' existing = {
   name: grafanaResourceName
 }
 
-resource grafanaBootstrapEditor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource grafanaBootstrapEditor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployManagedGrafana) {
   name: guid(grafanaResourceName, 'bootstrap-grafana-editor', subscription().subscriptionId)
   scope: grafanaInstance
   // The Grafana resource is created by the grafana module; the existing
@@ -866,9 +870,9 @@ output applicationInsightsConnectionString string = appInsights.outputs.connecti
 output logAnalyticsWorkspaceName    string = names.outputs.logAnalyticsWorkspaceName
 output logAnalyticsWorkspaceId      string = logAnalytics.outputs.id
 output grafanaName                  string = names.outputs.grafanaName
-output grafanaEndpoint              string = grafana.outputs.endpoint
-output grafanaPrincipalId           string = grafana.outputs.principalId
-output grafanaResourceId            string = grafana.outputs.id
+output grafanaEndpoint              string = deployManagedGrafana ? grafana!.outputs.endpoint : ''
+output grafanaPrincipalId           string = deployManagedGrafana ? grafana!.outputs.principalId : ''
+output grafanaResourceId            string = deployManagedGrafana ? grafana!.outputs.id : ''
 output communicationServiceName     string = communicationServices.outputs.communicationServiceName
 output communicationServicesEndpoint string = communicationServices.outputs.endpoint
 output communicationEmailServiceName string = communicationServices.outputs.emailServiceName
