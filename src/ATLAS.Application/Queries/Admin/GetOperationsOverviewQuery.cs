@@ -106,6 +106,12 @@ namespace ATLAS.Application.Queries.Admin
             IReadOnlyDictionary<string, long>? emailSends =
                 _metricsSnapshot.HasData ? _metricsSnapshot.EmailSends : null;
 
+            _logger.LogInformation(
+                "Operations metrics: HasData={HasData}, Transitions={Transitions}, EmailSends={EmailSends}",
+                _metricsSnapshot.HasData,
+                _metricsSnapshot.ApplicationTransitions,
+                _metricsSnapshot.EmailSends);                
+
             return new OperationsOverviewDto
             {
                 OverallHealth = overall,

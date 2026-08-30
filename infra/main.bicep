@@ -67,6 +67,12 @@ param alertNotificationEmail string
 @description('Microsoft Entra object ID of the identity that runs infra/bootstrap.ps1. Bootstrap provisions the ATLAS Operations Grafana dashboard via the Managed Grafana data-plane API, so this identity needs Grafana Editor on the Managed Grafana resource. Not secret; supplied per environment - never hard-coded in source control.')
 param grafanaBootstrapPrincipalId string
 
+@description('Use the Azure SQL Database Free offer')
+param sqlDatabaseUseFreeLimit bool = false
+
+@description('Behavior when the monthly Azure SQL Free allowance is exhausted')
+param sqlDatabaseFreeLimitExhaustionBehavior string = 'AutoPause'
+
 // Managed Grafana is intentionally disabled in the development environment
 // to avoid its dedicated hosting cost. Keep the IaC so test/prod can use it.
 var deployManagedGrafana = environment != 'dev'
@@ -274,6 +280,8 @@ module sqlDatabase 'modules/sqldatabase.bicep' = {
     capacity: sqlDatabaseCapacity
     autoPauseDelay: sqlDatabaseAutoPauseDelay
     maxSizeBytes: sqlDatabaseMaxSizeBytes
+    useFreeLimit: sqlDatabaseUseFreeLimit
+    freeLimitExhaustionBehavior: sqlDatabaseFreeLimitExhaustionBehavior
   }
   dependsOn: [
     sqlServer
@@ -685,7 +693,7 @@ resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
   }
 }
 // ==========================================================================
-// O6 - Azure Workbooks & Grafana Dashboards
+// O6 - Azure Workbooks
 // ==========================================================================
 
 // -- ATLAS Operations Workbook ------------------------------------------------
@@ -693,6 +701,7 @@ resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-p
 // Definition lives in infra/telemetry/atlas-operations.workbook.json and is
 // loaded at deployment time. Name must be a GUID (provider requirement);
 // derived deterministically so re-deployments update in place.
+
 var operationsWorkbookName = guid(resourceGroup().id, 'atlas-operations-workbook')
 var operationsWorkbookData = loadTextContent('telemetry/atlas-operations.workbook.json')
 
@@ -704,15 +713,9 @@ module operationsWorkbook 'modules/workbook.bicep' = {
     tags: tags.outputs.tags
     serializedData: operationsWorkbookData
     displayName: 'ATLAS Operations'
+    sourceId: appInsightsRef.id
   }
 }
-
-// -- ATLAS Operations Grafana Dashboard ---------------------------------------
-// Provisioned by Phase 11b of infra/bootstrap.ps1 via the Managed Grafana
-// dashboard API (the Microsoft.Dashboard/grafana/dashboards ARM sub-resource
-// is not a registered resource type and fails preflight validation).
-// Definition lives in infra/telemetry/atlas-operations.grafana-dashboard.json.
-
 
 // ==========================================================================
 // O7 - Alerts & Operational Readiness

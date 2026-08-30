@@ -31,6 +31,9 @@ param serializedData string
 @description('Display name shown in Azure Monitor > Workbooks')
 param displayName string
 
+@description('ARM resource ID of the resource this workbook is associated with')
+param sourceId string
+
 resource workbook 'Microsoft.Insights/workbooks@2023-06-01' = {
   name: name
   location: location
@@ -41,6 +44,7 @@ resource workbook 'Microsoft.Insights/workbooks@2023-06-01' = {
     serializedData: serializedData
     category: 'workbook'
     version: '1.0'
+    sourceId: sourceId
   }
 }
 

@@ -46,6 +46,12 @@
     },
     "enableResourceLock": {
       "value": false
+    },
+    "sqlDatabaseUseFreeLimit": {
+      "value": true
+    },
+    "sqlDatabaseFreeLimitExhaustionBehavior": {
+      "value": "AutoPause"
     }
   }
 }

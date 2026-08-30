@@ -28,6 +28,9 @@ resource communicationService 'Microsoft.Communication/communicationServices@202
 
   properties: {
     dataLocation: dataLocation
+    linkedDomains: [
+      emailDomain.id
+    ]
   }
 }
 

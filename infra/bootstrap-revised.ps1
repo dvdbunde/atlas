@@ -1499,7 +1499,8 @@ function Provision-O6GrafanaDashboard {
 function Verify-O6Visualization {
     param(
         [string]$ResourceGroup,
-        [string]$OperationsWorkbookName,        
+        [string]$OperationsWorkbookName,     
+        [string]$ApplicationInsightsName,   
         [string]$GrafanaName,
         [string]$GrafanaEndpoint,
         [string]$GrafanaResourceId,
@@ -1518,13 +1519,34 @@ function Verify-O6Visualization {
         --name $OperationsWorkbookName `
         --output json 2>$null | ConvertFrom-Json
 
-    $workbookOk = $null -ne $workbook -and $workbook.properties.displayName -eq "ATLAS Operations"
+    $subscriptionId = az account show --query id --output tsv 2>$null
+
+    $expectedApplicationInsightsResourceId =
+        "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Insights/components/$ApplicationInsightsName"
+
+    $workbookOk =
+        $null -ne $workbook -and
+        $workbook.properties.displayName -eq "ATLAS Operations" -and
+        $workbook.properties.sourceId -eq $expectedApplicationInsightsResourceId
 
     $results += [PSCustomObject]@{
         Name   = "Operations Workbook"
         Status = $workbookOk
-        Detail = if ($workbookOk) { "ATLAS Operations" } else { "$OperationsWorkbookName missing or wrong display name" }
-    }
+        Detail = if ($workbookOk) {
+            "ATLAS Operations -> $expectedApplicationInsightsResourceId"
+        }
+        else {
+            if ($null -eq $workbook) {
+                "$OperationsWorkbookName missing"
+            }
+            elseif ($workbook.properties.displayName -ne "ATLAS Operations") {
+                "wrong display name"
+            }
+            else {
+                "wrong or missing sourceId: '$($workbook.properties.sourceId)'"
+            }
+        }
+    }    
 
     # --- Managed Grafana: test/prod only ---
     if ($Environment -ne 'dev') {
@@ -2035,6 +2057,7 @@ if ($Environment -ne 'dev') {
 $monitorResults += Verify-O6Visualization `
     -ResourceGroup $ResourceGroup `
     -OperationsWorkbookName $outputs.operationsWorkbookName `
+    -ApplicationInsightsName $outputs.applicationInsightsName `
     -GrafanaName $outputs.grafanaName `
     -GrafanaEndpoint $outputs.grafanaEndpoint `
     -GrafanaResourceId $outputs.grafanaResourceId `

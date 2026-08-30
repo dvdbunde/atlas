@@ -1,102 +1,657 @@
-# ATLAS Operational Runbook (Milestone 11 – O7)
+# ATLAS Operational Runbook — Milestone 11
 
-Concise operator guide for responding to ATLAS Azure Monitor alerts. Azure
-Monitor is the authoritative alerting platform; the ATLAS Operations Portal is
-a curated overview; the Operations Workbook and Grafana dashboard are the
-deeper investigation tools.
+Practical operator guide for troubleshooting the ATLAS application in a live Azure environment.
 
-## Investigation flow
+This runbook is based on the M11 observability/operations work and the live Azure verification performed against the deployed ATLAS environment.
 
-1. **Read the alert** — its description names the signal and likely cause.
-2. **ATLAS Operations Portal** — check overall health and current metrics.
-3. **Application Insights / Azure Monitor** — inspect the raw signal named in
-   the alert description.
-4. **Operations Workbook / Grafana dashboard** — trend analysis over time,
-   breakdown by command type / outcome / problemId.
-5. **Inspect the relevant Azure dependency** — SQL, Storage, Key Vault, ACS
-   (see per-alert guidance below).
-6. **Confirm recovery** — alerts auto-mitigate when the condition clears;
-   verify the signal returned to normal on the Grafana dashboard before
-   closing out.
+## 1. Observability map
 
-## Alerts
+| Signal | Where to inspect | What it tells you |
+| --- | --- | --- |
+| Application health | App Service health / `/health/ready` | Whether API/Blazor instances are healthy |
+| Application exceptions | Application Insights → Logs → `exceptions` | Application errors and `problemId` |
+| Application requests | Application Insights → Logs → `requests` | Incoming HTTP operations and duration |
+| Dependencies | Application Insights → Logs → `dependencies` | SQL/HTTP/Storage/etc. calls, duration and success |
+| Custom application metrics | Application Insights → Logs → `customMetrics` | ATLAS transitions, commands and email telemetry |
+| Command execution | `dependencies` / command-filtered query | Command duration and success |
+| Email delivery | `customMetrics` + ACS logs | Send outcome and delivery timing |
+| Azure platform diagnostics | Log Analytics → `AzureDiagnostics` | Platform/resource diagnostic activity |
+| Alerts | Azure Monitor → Alerts | Detection and notification state |
+| Alert notification | Action Group | Whether an alert notification was actually delivered |
 
-### atlas-{env}-api-availability / atlas-{env}-blazor-availability (Sev 1)
+The Operations Workbook is **not** part of the live operational path. It was removed from the deployment after repeated Azure Workbook resource-parameter issues. Grafana is likewise not currently part of the deployed monitoring path.
 
-- **Meaning**: App Service health check (`/health/ready`) failing for 15+
-  minutes on the API or Blazor app. The application is not serving healthy
-  responses.
-- **Likely causes**: dependency outage (SQL paused, Key Vault inaccessible,
-  blob container missing), crashed container, bad deployment.
-- **Investigate**: Portal → health status; Application Insights → availability
-  and exceptions; `az webapp log tail` for startup failures. Check whether the
-  SQL database auto-paused (serverless tier) — first request resumes it.
-- **First checks**: Is one app or both affected? Both → shared dependency
-  (SQL/Key Vault). One → app-specific deployment/container issue.
-- **Recovery**: `/health/ready` returns healthy; HealthCheckStatus metric = 1.
+Azure Monitor/Application Insights and Log Analytics are the authoritative operational data sources.
 
-### atlas-{env}-exception-spike (Sev 2)
+---
 
-- **Meaning**: Sustained elevated exception volume (>50/hour, two consecutive
-  evaluations).
-- **Likely causes**: regression after deployment, dependency failure manifesting
-  as exceptions, invalid input handling.
-- **Investigate**: Application Insights → Exceptions by problemId; Workbook →
-  "Exceptions over time" panel; correlate with recent deployments.
-- **Recovery**: exception rate back under threshold.
+## 2. Standard investigation flow
 
-### atlas-{env}-email-failures (Sev 2)
+When an alert or operational problem is reported:
 
-- **Meaning**: More than 4 failed email sends (`atlas.email.sends`, outcome=failure)
-  within an hour, sustained across two evaluations. A single failure does not
-  fire this alert.
-- **Likely causes**: ACS outage/quota, sender address misconfiguration,
-  invalid recipient data.
-- **Investigate**: ACS RequestLogs in Log Analytics; Email panel on the Grafana
-  dashboard; verify ACS sender configuration in bootstrap output.
-- **Recovery**: outcome=success counter resuming; failures stop accumulating.
+1. **Identify the affected application**
+   - API only
+   - Blazor only
+   - Both
+2. **Check application health**
+   - App Service health
+   - `/health/ready`
+3. **Check Application Insights**
+   - Exceptions
+   - Requests
+   - Dependencies
+   - Custom metrics
+4. **Check the relevant Azure dependency**
+   - SQL
+   - Storage/Blob
+   - Key Vault
+   - Azure Communication Services (ACS)
+5. **Check Azure Monitor Alerts**
+   - Fired/Resolved state
+   - Condition
+   - Evaluation time
+   - Action Group notification
+6. **Confirm recovery**
+   - Health returns to healthy
+   - Failed operations stop
+   - Relevant metric returns to normal
+   - Alert resolves
 
-### atlas-{env}-command-latency (Sev 3)
+---
 
-- **Meaning**: p95 of `atlas.command.duration` above 10 seconds for an hour —
-  sustained performance degradation.
-- **Likely causes**: slow SQL query, storage throttling, downstream dependency
-  slowness, resource contention on the App Service plan.
-- **Investigate**: Grafana dashboard → Command duration p95 panel to identify
-  which command type; Application Insights → dependencies for that operation;
-  SQL insights diagnostic logs.
-- **Recovery**: p95 back below threshold.
+## 3. Application health and availability
 
-### atlas-{env}-service-health (Sev 2)
+### What availability means
 
-- **Meaning**: Azure platform incident/maintenance/security advisory affecting
-  resources in the ATLAS resource group. **This is not an application bug — do
-  not debug application code first.**
-- **Investigate**: Azure Service Health blade for scope, updates, and ETA.
-- **Recovery**: Azure marks the incident resolved; confirm application metrics
-  normalized afterwards.
+ATLAS availability alerts are based on the application readiness endpoint:
 
-## Common scenarios
+`/health/ready`
 
-| Scenario | Start here |
+A failure indicates that the application is not currently considered ready to serve traffic.
+
+### First question: one app or both?
+
+- **Both API and Blazor affected:** investigate shared infrastructure first:
+  - SQL
+  - Key Vault
+  - Storage
+- **Only one affected:** investigate that App Service/container and its recent deployment/configuration.
+
+### SQL serverless consideration
+
+The ATLAS development SQL database uses a serverless tier. A paused database can make the first health/application request slow or fail while the database resumes.
+
+Do not immediately interpret a transient first-request failure as a permanent SQL outage.
+
+---
+
+## 4. Application Insights — exceptions
+
+Open:
+
+>**Application Insights → Logs**
+
+Run:
+
+```kusto
+exceptions
+| where timestamp > ago(1h)
+| project
+    timestamp,
+    type,
+    outerMessage,
+    innermostMessage,
+    operation_name,
+    operation_Id,
+    problemId
+| order by timestamp desc
+```
+
+### What to look for
+
+- Repeated `problemId`
+- Same exception appearing across many requests
+- Correlation with a recent deployment
+- Dependency-related exceptions
+- A sudden increase in volume
+
+For a broader exception count over time:
+
+```kusto
+exceptions
+| where timestamp > ago(1h)
+| summarize Count = count() by problemId, bin(timestamp, 5m)
+| order by timestamp asc
+```
+
+---
+
+## 5. Application Insights — ATLAS custom metrics
+
+The live deployment was verified to emit these ATLAS metrics:
+
+- `atlas.applications.transitions`
+- `atlas.command.duration`
+- `atlas.email.sends`
+- `atlas.email.duration`
+
+The verified custom dimensions include:
+
+- `transition`
+- `command`
+- `outcome`
+
+Run:
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name startswith "atlas."
+| project
+    timestamp,
+    name,
+    value,
+    valueCount,
+    customDimensions
+| order by timestamp desc
+```
+
+### Expected ATLAS command names observed during live testing
+
+- `CreateDraftApplicationCommand`
+- `SubmitDraftCommand`
+- `ApproveDraftCommand`
+- `AssignApplicationToMeCommand`
+- `UploadDocumentCommand`
+
+---
+
+## 6. Application transitions
+
+Use:
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name == "atlas.applications.transitions"
+| extend Transition = tostring(customDimensions.transition)
+| summarize Count = sum(todouble(value)) by Transition
+| order by Count desc
+```
+
+During the live M11 scenario, the application lifecycle was successfully exercised:
+
+- Created: `1`
+- Submitted: `1`
+- Approved: `1`
+
+This confirms the transition telemetry was being emitted by the deployed application.
+
+---
+
+## 7. Command duration and performance
+
+The live deployment was verified to emit `atlas.command.duration`.
+
+Basic command performance query:
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name == "atlas.command.duration"
+| extend command = tostring(customDimensions.command)
+| summarize
+    Count = sum(todouble(value)),
+    p50 = percentile(todouble(value), 50),
+    p95 = percentile(todouble(value), 95),
+    p99 = percentile(todouble(value), 99),
+    MaxDuration = max(todouble(value))
+    by command
+| order by p95 desc
+```
+
+### Command span verification
+
+Command executions were also verified in Application Insights `dependencies`.
+
+Use:
+
+```kusto
+union requests, dependencies
+| where timestamp > ago(1h)
+| where name in (
+    "CreateDraftApplicationCommand",
+    "SubmitDraftCommand",
+    "ApproveDraftApplicationCommand",
+    "AssignApplicationToMeCommand"
+)
+| project
+    timestamp,
+    itemType,
+    name,
+    duration,
+    success,
+    resultCode,
+    operation_Name,
+    operation_Id,
+    customDimensions
+| order by timestamp desc
+```
+
+Live verification observed successful command spans including:
+
+- `AssignApplicationToMeCommand` — 29 ms
+- `SubmitDraftCommand` — 4,439 ms
+- `ApproveDraftCommand` — 349 ms
+
+The command-latency alert is based on the p95 duration of `atlas.command.duration`.
+
+---
+
+## 8. Dependency investigation
+
+Use this query to see recent dependency activity:
+
+```kusto
+dependencies
+| where timestamp > ago(1h)
+| project
+    timestamp,
+    name,
+    type,
+    target,
+    duration,
+    success,
+    resultCode,
+    operation_Name,
+    operation_Id
+| order by timestamp desc
+```
+
+To find failures:
+
+```kusto
+dependencies
+| where timestamp > ago(1h)
+| where success == false
+| project
+    timestamp,
+    name,
+    type,
+    target,
+    duration,
+    resultCode,
+    operation_Name,
+    operation_Id
+| order by timestamp desc
+```
+
+To summarize failures:
+
+```kusto
+dependencies
+| where timestamp > ago(1h)
+| summarize
+    Count = count(),
+    Failed = countif(success == false),
+    AvgDurationMs = avg(duration),
+    MaxDurationMs = max(duration)
+    by name, type, target
+| order by Failed desc, Count desc
+```
+
+### Dependency interpretation
+
+| Observation | Likely direction |
 | --- | --- |
-| Application errors | Exception-spike alert → App Insights exceptions by problemId |
-| Email delivery failures | Email-failures alert → ACS RequestLogs + Grafana email panel |
-| Slow commands/requests | Command-latency alert → Grafana p95 panel → dependency traces |
-| Failed dependency | Availability alert + Portal health tiles → specific dependency health check |
-| Application unavailable | Sev 1 availability alert → both apps? shared dependency vs. single-app issue |
-| Azure platform problem | Service-health alert → Azure Service Health blade |
+| SQL dependency failures | SQL/database availability or query problem |
+| SQL duration suddenly high | Database resume, slow query, contention |
+| Storage dependency failures | Blob/storage configuration or availability |
+| Key Vault-related failures | Identity/access/configuration |
+| HTTP dependency failures | Downstream service |
+| Dependencies healthy but command slow | Application processing/resource contention |
 
-## Notification routing
+---
 
-All alerts route to a single Action Group (`atlas-{env}-ops-ag`) with an email
-receiver supplied as a deployment parameter (never hard-coded in source
-control). To change recipients, update the parameter and redeploy — no manual
-portal edits required.
+## 9. Email telemetry
 
-## Boundaries
+The live deployment was verified to emit:
 
-- The business Audit Log is permanent business history and is never used as an
-  alert source.
-- The Operations Portal does not manage alerts (no acknowledge/suppress).
-- O7 is detection only: no automatic restart, scaling, or remediation exists.
+- `atlas.email.sends`
+- `atlas.email.duration`
+
+with the `outcome` dimension.
+
+Query send outcomes:
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name == "atlas.email.sends"
+| extend outcome = tostring(customDimensions.outcome)
+| summarize Total = sum(todouble(value)) by outcome
+| order by Total desc
+```
+
+Query email duration:
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name == "atlas.email.duration"
+| extend outcome = tostring(customDimensions.outcome)
+| summarize
+    p50 = percentile(todouble(value), 50),
+    p95 = percentile(todouble(value), 95),
+    Samples = count()
+    by outcome
+```
+
+### Live M11 verification
+
+The end-to-end application scenario generated email telemetry. At the time of the live test the observed state included:
+
+- Email successes: `0`
+- Email failures: `2`
+- Observed email durations: `199 ms` and `3916 ms`
+
+This was useful because it demonstrated that email outcomes and durations were being recorded even when the send operation failed.
+
+For an email failure, investigate Azure Communication Services (ACS), sender configuration, recipient data, quotas, and ACS request logs.
+
+---
+
+## 10. Traces
+
+Command-specific trace queries were tested during M11 verification.
+
+Example:
+
+```kusto
+traces
+| where timestamp > ago(1h)
+| where customDimensions["command"] != ""
+| project
+    timestamp,
+    message,
+    severityLevel,
+    customDimensions
+| order by timestamp desc
+```
+
+If no command traces are returned, do not assume the application has no command activity. The live verification showed that command execution can be observed through `dependencies` and `customMetrics`.
+
+Use the signal that actually contains the required information.
+
+---
+
+## 11. Azure resource diagnostics / Log Analytics
+
+The ATLAS Log Analytics workspace was verified with Azure CLI.
+
+To list the workspace:
+
+```powershell
+az monitor log-analytics workspace list `
+  --resource-group atlas-dev-rg `
+  --query "[].id" `
+  -o tsv
+```
+
+The verified development workspace was:
+
+`atlas-dev-logs`
+
+For diagnostic records:
+
+```kusto
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| summarize Events = count() by Category, ResourceProvider
+| order by Events desc
+```
+
+Use this when the problem appears to be at the Azure resource/platform level rather than inside application code.
+
+---
+
+## 12. Alert verification
+
+The M11 alerting setup includes the following alert classes:
+
+### Availability — Sev 1
+
+`atlas-{env}-api-availability`
+
+`atlas-{env}-blazor-availability`
+
+Investigate:
+
+1. `/health/ready`
+2. App Service health
+3. Application Insights exceptions
+4. Application Insights dependencies
+5. Shared dependencies if both applications fail
+
+### Exception spike — Sev 2
+
+`atlas-{env}-exception-spike`
+
+Condition:
+
+- More than 50 exceptions/hour
+- Sustained across two evaluations
+
+Investigate `exceptions` grouped by `problemId`.
+
+### Email failures — Sev 2
+
+`atlas-{env}-email-failures`
+
+Condition:
+
+- More than 4 failed email sends/hour
+- Sustained across two evaluations
+
+Investigate:
+
+- `atlas.email.sends`
+- ACS RequestLogs
+- ACS sender configuration
+- Recipient data
+
+A single failed email does not fire this alert.
+
+### Command latency — Sev 3
+
+`atlas-{env}-command-latency`
+
+Condition:
+
+- p95 of `atlas.command.duration`
+- Above 10 seconds
+- Sustained for an hour
+
+Investigate:
+
+1. Which command has the highest p95
+2. Its Application Insights dependency spans
+3. SQL/storage/downstream dependency duration
+4. App Service resource contention
+
+### Azure Service Health — Sev 2
+
+`atlas-{env}-service-health`
+
+This indicates an Azure platform incident, maintenance event, or security advisory affecting the relevant scope.
+
+Start with **Azure Service Health**, not application debugging.
+
+---
+
+## 13. Alert notification routing
+
+All ATLAS alerts use the environment-specific Action Group:
+
+`atlas-{env}-ops-ag`
+
+The email receiver is supplied as a deployment parameter and is not hard-coded in source control.
+
+To change the notification recipient, change the deployment parameter and redeploy the infrastructure.
+
+Do not manually edit the production Action Group as the normal configuration path.
+
+---
+
+## 14. How to verify an alert end-to-end
+
+For an alert test, verify all of these separately:
+
+### 1. Signal exists
+
+Run the relevant Application Insights/Log Analytics query and confirm the metric/event exists.
+
+### 2. Alert condition is reached
+
+Confirm the Azure Monitor alert changes to **Fired**.
+
+### 3. Notification is generated
+
+Check the alert's Action Group execution/history.
+
+### 4. Email is received
+
+Confirm the configured notification receiver actually receives the alert.
+
+### 5. Recovery occurs
+
+Return the application/metric to normal and confirm the alert changes back to **Resolved**.
+
+The M11 live testing successfully demonstrated the command-latency alert firing and the notification email being received.
+
+---
+
+## 15. Quick troubleshooting matrix
+
+| Problem | First query/check | Then inspect |
+| --- | --- | --- |
+| API unavailable | `/health/ready` | Exceptions → dependencies → SQL/Key Vault/Storage |
+| Blazor unavailable | `/health/ready` | Exceptions → dependencies |
+| Both apps unavailable | Health of both apps | SQL / Key Vault / Storage |
+| Exceptions increasing | `exceptions` by `problemId` | Recent deployment + dependency failures |
+| Commands slow | `atlas.command.duration` p95 | Command dependency spans |
+| SQL slow | `dependencies` filtered to SQL | Database state/query performance |
+| Email failures | `atlas.email.sends` by outcome | ACS RequestLogs + sender config |
+| Email slow | `atlas.email.duration` | ACS/downstream dependency |
+| Azure resource problem | `AzureDiagnostics` | Azure Service Health |
+| Alert fired but no email | Alert + Action Group history | Receiver/configuration |
+| No telemetry visible | Check App Insights resource/time range | Application deployment/configuration |
+
+---
+
+# 16. Useful live-query set
+
+These are the core queries to keep ready during an incident.
+
+## All ATLAS telemetry
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name startswith "atlas."
+| project timestamp, name, value, customDimensions
+| order by timestamp desc
+```
+
+## Exceptions
+
+```kusto
+exceptions
+| where timestamp > ago(1h)
+| project timestamp, type, outerMessage, innermostMessage, problemId, operation_name, operation_Id
+| order by timestamp desc
+```
+
+## Dependency failures
+
+```kusto
+dependencies
+| where timestamp > ago(1h)
+| where success == false
+| project timestamp, name, type, target, duration, resultCode, operation_Name, operation_Id
+| order by timestamp desc
+```
+
+## Command latency
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name == "atlas.command.duration"
+| extend command = tostring(customDimensions.command)
+| summarize
+    p50 = percentile(todouble(value), 50),
+    p95 = percentile(todouble(value), 95),
+    p99 = percentile(todouble(value), 99),
+    Samples = count()
+    by command
+| order by p95 desc
+```
+
+## Email outcomes
+
+```kusto
+customMetrics
+| where timestamp > ago(1h)
+| where name == "atlas.email.sends"
+| extend outcome = tostring(customDimensions.outcome)
+| summarize Total = sum(todouble(value)) by outcome
+| order by Total desc
+```
+
+## Azure diagnostics
+
+```kusto
+AzureDiagnostics
+| where TimeGenerated > ago(1h)
+| summarize Events = count() by Category, ResourceProvider
+| order by Events desc
+```
+
+---
+
+## 17. Operational boundaries
+
+- **Application Insights / Azure Monitor** is the authoritative source for application telemetry and alerting.
+- The **business Audit Log** is permanent business history and is not an alert source.
+- Do not use business audit records as a substitute for operational telemetry.
+- The ATLAS Operations Portal is a convenience/overview surface; investigate raw telemetry when diagnosing incidents.
+- The Operations Portal does not manage or suppress alerts.
+- Alerting is detection/notification only.
+- There is no automatic restart, scaling, or incident remediation performed by the M11 alerting system.
+- The Azure Workbook was abandoned and is not required for live troubleshooting.
+- Managed Grafana is not deployed and is not required for the current operational path.
+
+---
+
+## 18. Live M11 verification baseline
+
+The following was confirmed against the live deployment during M11 verification:
+
+- ATLAS application lifecycle telemetry was emitted.
+- `atlas.applications.transitions` was observed.
+- `atlas.command.duration` was observed.
+- `atlas.email.sends` was observed.
+- `atlas.email.duration` was observed.
+- Command dimensions were observed.
+- Email outcome dimensions were observed.
+- Application Insights `dependencies` contained command execution spans.
+- Application Insights exceptions were queryable.
+- Dependency records were queryable.
+- Log Analytics workspace access was verified.
+- The live application scenario successfully exercised create → submit → approve.
+- The command-latency Azure Monitor alert was triggered successfully.
+- The alert notification email was received successfully.
+- The Azure Monitor alerting path therefore has been tested end-to-end in the live environment.
+
+When a new deployment changes telemetry names, dimensions, alert thresholds, or resource wiring, repeat the relevant live verification rather than assuming the existing baseline still applies.
