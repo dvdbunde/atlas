@@ -112,6 +112,10 @@ namespace ATLAS.Infrastructure
             services.AddScoped<SeedDataLoader>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+            // O5: process-lifetime snapshot of O4 metrics for the Operations Portal.
+            services.AddSingleton<ATLAS.Application.Telemetry.IOperationsMetricsSnapshot,
+                ATLAS.Application.Telemetry.OperationsMetricsSnapshot>();
+
             // Bind Storage configuration to strongly-typed options
             services.AddOptions<StorageOptions>()
                 .Bind(configuration.GetSection(StorageOptions.SectionName))
@@ -150,7 +154,8 @@ namespace ATLAS.Infrastructure
             {
                 var options = sp.GetRequiredService<IOptions<StorageOptions>>();
                 var blobServiceClient = sp.GetService<BlobServiceClient>();
-                return new BlobStorageService(options, blobServiceClient);
+                var logger = sp.GetService<ILogger<BlobStorageService>>();
+                return new BlobStorageService(options, blobServiceClient, logger);
             });
 
             // Blob-backed email template store. The blob client is optional: it is only

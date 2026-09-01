@@ -42,6 +42,18 @@ public class AdminAuthorizationTests : BunitContext
         Assert.Equal("Admin", attribute.Roles);
     }
 
+    [Fact]
+    public void Operations_ShouldDeclareAdminRoleAuthorization()
+    {
+        var attribute = typeof(Operations)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+            .Cast<AuthorizeAttribute>()
+            .SingleOrDefault();
+
+        Assert.NotNull(attribute);
+        Assert.Equal("Admin", attribute.Roles);
+    }
+
     [Theory]
     [InlineData(typeof(PermitTypes))]
     [InlineData(typeof(DynamicForms))]

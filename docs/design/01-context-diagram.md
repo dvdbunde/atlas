@@ -4,7 +4,7 @@
 
 This diagram shows ATLAS (Automated Tracking & Licensing Application System) in the context of its users and external systems. It follows the C4 Model Context diagram convention.
 
-> **Implementation Note**: This diagram shows the target Azure-hosted architecture. As of the Email Integration milestone, ATLAS runs locally: LocalDB replaces Azure SQL Database, Azurite replaces Azure Blob Storage, and a deterministic local email sink replaces the production email service (Azure Communication Services). The application runs on Kestrel (not Azure App Service). The structure and interfaces are identical — only the hosting platform differs. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
+> **Implementation Note**: This diagram describes the Azure-hosted production architecture. LocalDB, Azurite, and Kestrel remain supported for local development. The current Azure deployment uses Azure SQL Database, Azure Blob Storage, Azure Communication Services, and App Service; M11 observability uses Application Insights, Log Analytics, Azure Monitor, and Grafana Cloud. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
 
 ## Context Diagram
 

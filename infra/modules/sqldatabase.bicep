@@ -20,11 +20,21 @@ param skuName string = 'GP_S_Gen5'
 @description('vCores (serverless: 1-4, provisioned: 2-80)')
 param capacity int = 1
 
-@description('Serverless auto-pause delay in minutes (-1 = never pause)')
-param autoPauseDelay int = 60
-
 @description('Max data size in bytes (default 32GB)')
 param maxSizeBytes int = 34359738368
+
+@description('Use the Azure SQL Database Free offer')
+param useFreeLimit bool = false
+
+@description('Behavior when the monthly Azure SQL Free allowance is exhausted')
+@allowed([
+  'AutoPause'
+  'BillOverUsage'
+])
+param freeLimitExhaustionBehavior string = 'AutoPause'
+
+@description('Serverless auto-pause delay in minutes (-1 = never pause)')
+param autoPauseDelay int = 60
 
 @description('Minimum capacity for serverless (0.5-4)')
 param minCapacity int = 1
@@ -39,10 +49,14 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2025-01-01' = {
     name: skuName
     capacity: capacity
   }
-  properties: {
-    maxSizeBytes: maxSizeBytes
-    autoPauseDelay: autoPauseDelay
-    minCapacity: minCapacity
+  properties: {    
+    useFreeLimit: useFreeLimit
+    freeLimitExhaustionBehavior: freeLimitExhaustionBehavior
+    ...(useFreeLimit ? {} : {
+      maxSizeBytes: maxSizeBytes
+      autoPauseDelay: autoPauseDelay
+      minCapacity: minCapacity
+    })
   }
 }
 

@@ -1,0 +1,93 @@
+{
+  "title": "ATLAS Operations Overview",
+  "uid": "atlas-operations",
+  "tags": ["atlas"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "AzureMonitor",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "grafana-azure-monitor-data-source"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Command execution duration (p95) by command type",
+      "type": "timeseries",
+      "datasource": { "type": "grafana-azure-monitor-data-source", "uid": "${AzureMonitor}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "queryType": "Azure Log Analytics",
+          "azureLogAnalytics": {
+            "resource": "__WORKSPACE_ID__",
+            "query": "customMetrics\n| where name == \"atlas.command.duration\"\n| extend Command = tostring(customDimensions.command)\n| summarize p95 = percentile(Value, 95) by bin(timestamp, 5m), Command\n| order by timestamp asc",
+            "resultFormat": "time_series",
+            "dashboardTime": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Email sends by outcome (success / failure)",
+      "type": "timeseries",
+      "datasource": { "type": "grafana-azure-monitor-data-source", "uid": "${AzureMonitor}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "queryType": "Azure Log Analytics",
+          "azureLogAnalytics": {
+            "resource": "__WORKSPACE_ID__",
+            "query": "customMetrics\n| where name == \"atlas.email.sends\"\n| extend Outcome = tostring(customDimensions.outcome)\n| summarize Total = sum(Value) by bin(timestamp, 5m), Outcome\n| order by timestamp asc",
+            "resultFormat": "time_series",
+            "dashboardTime": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Application transitions volume by transition type",
+      "type": "timeseries",
+      "datasource": { "type": "grafana-azure-monitor-data-source", "uid": "${AzureMonitor}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "queryType": "Azure Log Analytics",
+          "azureLogAnalytics": {
+            "resource": "__WORKSPACE_ID__",
+            "query": "customMetrics\n| where name == \"atlas.applications.transitions\"\n| extend Transition = tostring(customDimensions.transition)\n| summarize Total = sum(Value) by bin(timestamp, 5m), Transition\n| order by timestamp asc",
+            "resultFormat": "time_series",
+            "dashboardTime": true
+          }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Exceptions over time (dashboard time range)",
+      "type": "timeseries",
+      "datasource": { "type": "grafana-azure-monitor-data-source", "uid": "${AzureMonitor}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "queryType": "Azure Log Analytics",
+          "azureLogAnalytics": {
+            "resource": "__WORKSPACE_ID__",
+            "query": "exceptions | summarize count() by bin(timestamp, 15m), problemId | order by timestamp asc",
+            "resultFormat": "time_series",
+            "dashboardTime": true
+          }
+        }
+      ]
+    }
+  ]
+}

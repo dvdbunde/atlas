@@ -11,13 +11,47 @@ using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Azure.Monitor.OpenTelemetry.Exporter;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Azure Application Insights telemetry (skip in Testing)
-if (builder.Environment.EnvironmentName != "Testing" && !builder.Environment.IsDevelopment())
+// O3: OpenTelemetry tracing for Blazor-initiated operations.
+// Registers the ATLAS application ActivitySource so command Activities from
+// TracingBehavior are collected.
+//
+// O4: OpenTelemetry metrics for ATLAS business metrics.
+//
+// Azure Monitor export is only enabled when an Application Insights
+// connection string is configured. Locally (no connection string),
+// telemetry remains local/no-op and does not require Azure Monitor.
+var appInsightsConnectionString =
+    builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+
+var openTelemetry = builder.Services
+    .AddOpenTelemetry()
+    .ConfigureResource(resource =>
+        resource.AddService("ATLAS.Blazor"))
+    .WithTracing(tracing =>
+    {
+        tracing.AddSource(
+            ATLAS.Application.Telemetry.AtlasTelemetry.ActivitySourceName);
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics.AddMeter(
+            ATLAS.Application.Telemetry.AtlasMetrics.MeterName);
+    });
+
+if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
 {
-    builder.Services.AddApplicationInsightsTelemetry();
+    openTelemetry.UseAzureMonitor(options =>
+    {
+        options.ConnectionString = appInsightsConnectionString;
+    });
 }
 
 // Azure Key Vault configuration provider (production only)
@@ -110,6 +144,8 @@ builder.Services.AddMediatR(cfg =>
     cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.ValidationBehavior<,>));
     cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.UserSynchronizationBehavior<,>));
     cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.TransactionBehavior<,>));
+    // O3: opens a W3C Activity per command (Blazor operation boundary).
+    cfg.AddOpenBehavior(typeof(ATLAS.Application.Behaviors.TracingBehavior<,>));
 });
 
 // Register UI pages for Microsoft.Identity.Web login/logout

@@ -3,7 +3,7 @@ title: "ADR-023: Production Observability Strategy"
 status: "Accepted"
 date: "2026-07-28"
 authors: "Engineering Team"
-tags: ["architecture", "observability", "monitoring", "logging", "azure", "milestone-9"]
+tags: ["architecture", "observability", "monitoring", "logging", "azure", "milestone-11"]
 supersedes: ""
 superseded_by: ""
 ---
@@ -49,7 +49,7 @@ Production deployments shall provide sufficient telemetry to diagnose applicatio
 
 ### Application Insights
 
-- Application Insights is the telemetry backend for production. It ingests logs, metrics, and distributed traces into a single queryable workspace.
+- Application Insights is the telemetry backend for production. It ingests logs, metrics, and distributed traces into a single queryable workspace. Grafana Cloud is a separate visualization surface and does not replace Application Insights as the telemetry backend.
 - Application Insights SDK integration is configured at the application level, not sprinkled across individual handlers. The MediatR pipeline behaviors and ASP.NET Core middleware are the instrumentation boundaries.
 
 ### Exception Telemetry

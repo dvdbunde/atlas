@@ -25,9 +25,9 @@ ATLAS is built with modern Microsoft technologies, targeting Azure for productio
 
 ## Project Status
 
-**Current Milestone**: Email Integration — Azure Communication Services Email + Blob Storage email templates ✅ IMPLEMENTED
+**Current Milestone**: M11 — Observability & Operations (Workbook validation remaining)
 
-**Next Milestone**: Milestone 9 — Cloud Infrastructure & Azure Enablement (see [ROADMAP.md](plans/ROADMAP.md))
+**Next Milestone**: Complete M11 Workbook validation (see [ROADMAP.md](plans/ROADMAP.md))
 
 **Completed Features**:
 
@@ -41,6 +41,7 @@ ATLAS is built with modern Microsoft technologies, targeting Azure for productio
 - ✅ **M8: Administration Portal** — Admin dashboard, permit type designer, User Directory (read-only), Audit Log viewer, Email Template administration, Application Explorer
 - ✅ **M9: Azure Infrastructure & Deployment** — Production-ready Azure infrastructure using Bicep (App Services, Azure SQL, Key Vault, Blob Storage, Container Registry, Application Insights, Log Analytics, Azure Communication Services); GitHub Actions CI/CD with workload identity federation; fully automated, idempotent deployment and bootstrap using Managed Identity and RBAC
 - ✅ **M10: Azure Communication Services Email Integration** — Azure Communication Services email delivery with Managed Identity; email templates persisted in Azure Blob Storage (customized templates override source-code defaults, with Reset-to-default); local development uses a deterministic local email sink
+- 🚧 **M11: Observability & Operations** — Application Insights + Log Analytics, distributed tracing and custom metrics, Azure Monitor diagnostics and alerts, Grafana Cloud operational dashboard, Operations Portal observability, and Operations Workbook deployment; final Workbook functional validation remains
 
 ## Who this is for
 

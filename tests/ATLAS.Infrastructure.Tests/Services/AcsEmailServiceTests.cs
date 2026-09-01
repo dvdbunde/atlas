@@ -7,6 +7,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.Metrics;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.Interfaces;
@@ -102,6 +103,113 @@ namespace ATLAS.Infrastructure.Tests.Services
                 new AcsEmailService(client, options, NullLogger<AcsEmailService>.Instance));
         }
 
+        // ------------------------------------------------------------------
+        // O4 metrics: atlas.email.sends / atlas.email.duration
+        // ------------------------------------------------------------------
+
+        [Fact]
+        public async Task SendAsync_Success_RecordsSendsAndDurationWithOutcomeSuccess()
+        {
+            using var listener = new MetricsListener();
+            var client = new FakeEmailClient();
+            var service = new AcsEmailService(client, CreateOptions(), NullLogger<AcsEmailService>.Instance);
+
+            await service.SendAsync("citizen@example.com", "Subject", "Body");
+
+            var sends = listener.GetMeasurement("atlas.email.sends");
+            Assert.NotNull(sends);
+            Assert.Equal(1, sends!.Value.Value);
+            Assert.Single(sends.Value.Tags);
+            AssertOutcomeTag(sends.Value.Tags, "success");
+
+            var duration = listener.GetMeasurement("atlas.email.duration");
+            Assert.NotNull(duration);
+            Assert.True(duration!.Value.Value >= 0);
+            Assert.Single(duration.Value.Tags);
+            AssertOutcomeTag(duration.Value.Tags, "success");
+        }
+
+        [Fact]
+        public async Task SendAsync_Failure_RecordsSendsAndDurationWithOutcomeFailure()
+        {
+            using var listener = new MetricsListener();
+            var service = new AcsEmailService(new ThrowingEmailClient(), CreateOptions(), NullLogger<AcsEmailService>.Instance);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.SendAsync("citizen@example.com", "Subject", "Body"));
+
+            var sends = listener.GetMeasurement("atlas.email.sends");
+            Assert.NotNull(sends);
+            Assert.Equal(1, sends!.Value.Value);
+            AssertOutcomeTag(sends.Value.Tags, "failure");
+
+            var duration = listener.GetMeasurement("atlas.email.duration");
+            Assert.NotNull(duration);
+            AssertOutcomeTag(duration!.Value.Tags, "failure");
+        }
+
+        [Fact]
+        public async Task SendAsync_Cancellation_DoesNotIncrementFailureCounter()
+        {
+            using var listener = new MetricsListener();
+            var service = new AcsEmailService(new CancellingEmailClient(), CreateOptions(), NullLogger<AcsEmailService>.Instance);
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                service.SendAsync("citizen@example.com", "Subject", "Body"));
+
+            // Cancellation is neither a success nor a delivery failure:
+            // no sends counter measurement at all.
+            Assert.False(listener.GetMeasurement("atlas.email.sends").HasValue);
+
+            // Duration is still recorded (without an outcome tag).
+            var duration = listener.GetMeasurement("atlas.email.duration");
+            Assert.NotNull(duration);
+            Assert.Empty(duration!.Value.Tags);
+        }
+
+        private static void AssertOutcomeTag(KeyValuePair<string, object?>[] tags, string expected)
+        {
+            var tag = Assert.Single(tags);
+            Assert.Equal("outcome", tag.Key);
+            Assert.Equal(expected, tag.Value);
+        }
+
+        /// <summary>
+        /// Lightweight MeterListener that captures ATLAS metric measurements
+        /// in memory — no Azure dependency.
+        /// </summary>
+        private sealed class MetricsListener : IDisposable
+        {
+            private readonly MeterListener _listener = new();
+            private readonly Dictionary<string, (double Value, KeyValuePair<string, object?>[] Tags)> _measurements = new();
+
+            public MetricsListener()
+            {
+                _listener.InstrumentPublished = (instrument, enable) =>
+                {
+                    if (instrument.Meter.Name == "ATLAS.Application")
+                    {
+                        enable.EnableMeasurementEvents(instrument);
+                    }
+                };
+                _listener.SetMeasurementEventCallback<long>((inst, measurement, tags, _) =>
+                    Capture(inst.Name, measurement, tags));
+                _listener.SetMeasurementEventCallback<double>((inst, measurement, tags, _) =>
+                    Capture(inst.Name, measurement, tags));
+                _listener.Start();
+            }
+
+            private void Capture(string name, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
+            {
+                _measurements[name] = (value, tags.ToArray());
+            }
+
+            public (double Value, KeyValuePair<string, object?>[] Tags)? GetMeasurement(string instrumentName)
+                => _measurements.TryGetValue(instrumentName, out var m) ? m : null;
+
+            public void Dispose() => _listener.Dispose();
+        }
+
         private sealed class FakeEmailClient : IEmailClient
         {
             public string? SenderAddress { get; private set; }
@@ -121,6 +229,12 @@ namespace ATLAS.Infrastructure.Tests.Services
                 WasCalled = true;
                 return Task.CompletedTask;
             }
+        }
+
+        private sealed class CancellingEmailClient : IEmailClient
+        {
+            public Task SendAsync(string senderAddress, string recipientAddress, string subject, string content, bool isHtml = false, CancellationToken cancellationToken = default)
+                => throw new OperationCanceledException();
         }
 
         private sealed class ThrowingEmailClient : IEmailClient

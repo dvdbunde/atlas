@@ -1,6 +1,6 @@
 # ATLAS Azure Foundation
 
-This document describes the Azure Foundation established in **Milestone 9 – Phase 1**.
+This document describes the current Azure foundation established in M9 and extended by M10 and M11.
 
 ## Phase Scope
 
@@ -8,17 +8,20 @@ Milestone 9 – Phase 1 establishes the core Azure infrastructure required to ho
 
 The implemented infrastructure is intentionally focused on the minimum set of Azure resources required to support application development, testing, and future deployment automation.
 
-Subsequent phases will introduce:
+Since Milestone 9 – Phase 1, the following capabilities have been implemented and are documented in this file:
 
-- Key Vault secrets (partially implemented — SQL connection string stored in Key Vault)
-- Azure SQL authentication using Microsoft Entra ID
-- Continuous Deployment
-- Monitoring & Diagnostics
+- Key Vault secrets (SQL connection string stored in Key Vault; App Services use Key Vault references)
+- Continuous Deployment (GitHub Actions workflows build and deploy both App Services)
+- Monitoring & Diagnostics (Milestone 11 – O2: Log Analytics, Application Insights, diagnostic settings, Azure Monitor alerts, and Grafana Cloud — see [Observability & Monitoring](#observability--monitoring-milestone-11--o2))
+- Alerts & Operational Readiness (Milestone 11 – O7: Action Group, alert rules, operational runbook — see [Alerts & Operational Readiness](#alerts--operational-readiness-milestone-11--o7))
+- Managed Identity via **system-assigned** identities on the App Services (used for Azure Communication Services, Blob Storage, ACR pull, and Key Vault access)
+
+Remaining future infrastructure work:
+
+- Azure SQL authentication using Microsoft Entra ID (current implementation uses SQL administrator authentication)
 - Deployment Slots
 - Production networking (Private Endpoints / VNet integration)
 - Production hardening
-
-> **Note:** Managed Identity is already implemented via **system-assigned** identities on the App Services (used for Azure Communication Services and Blob Storage access).
 
 ## Overview
 
@@ -50,6 +53,10 @@ All deployments are intentionally **idempotent**. Re-running the deployment reco
 infra/
 ├── main.bicep                    # Entry point — orchestrates all modules
 ├── main.parameters.dev.json      # Development environment parameters
+├── bootstrap-revised.ps1         # Post-deployment configuration & verification
+├── telemetry/
+│   ├── atlas-operations.workbook.json         # O6 Workbook definition
+│   └── atlas-operations.grafana-dashboard.json # O6 Grafana dashboard definition
 └── modules/
     ├── names.bicep               # Central naming convention
     ├── tags.bicep                # Central resource tagging
@@ -62,8 +69,85 @@ infra/
     ├── communicationservices.bicep # Azure Communication Services (email)
     ├── keyvault.bicep            # Azure Key Vault
     ├── loganalytics.bicep        # Log Analytics Workspace
-    └── appinsights.bicep         # Application Insights
+    ├── appinsights.bicep         # Application Insights
+    ├── grafana.bicep             # Legacy Azure Managed Grafana module (not used by the current Grafana Cloud integration)
+    ├── workbook.bicep            # Azure Monitor Workbook (O6)    
+    ├── actiongroup.bicep         # Azure Monitor Action Group (O7)
+    ├── metricalert.bicep         # Generic metric alert rule (O7)
+    ├── scheduledqueryalert.bicep # Generic scheduled-query alert rule (O7)
+    └── servicehealthalert.bicep  # Service Health activity-log alert (O7)
 ```
+
+## Observability & Monitoring (Milestone 11 – O2)
+
+The O2 phase establishes the Azure telemetry foundation. All monitoring
+infrastructure is deployed through Bicep; no manual portal configuration is
+required.
+
+### Telemetry topology
+
+```text
+API App Service ──────┐
+Blazor App Service ───┤
+SQL Database ─────────┤  diagnostic settings   ┌─────────────────────┐
+Storage (Blob) ───────┼───────────────────────►│ Log Analytics       │◄── Application
+Key Vault ────────────┤                        │ (atlas-{env}-logs)  │    Insights
+ACS ──────────────────┘                        └──────────▲──────────┘    (workspace-backed)
+                                                          │ KQL + metrics (RBAC)
+                                              ┌───────────┴───────────┐
+                                              │ Managed Grafana       │
+                                              │ (atlas-{env}-grafana) │
+                                              └───────────────────────┘
+```
+
+- **Application Insights** (`atlas{env}appi`) is workspace-based and linked to
+  the central Log Analytics workspace. Both App Services receive the
+  connection string via `APPLICATIONINSIGHTS_CONNECTION_STRING`. No
+  instrumentation-key configuration is used.
+- **Diagnostic settings** route curated platform log and metric categories from
+  each resource to the Log Analytics workspace. Categories are deliberately
+  curated for operational value versus ingestion cost — e.g. App Service HTTP
+  logs are excluded because Application Insights already captures request
+  telemetry, and Blob Storage diagnostics are configured on the account's
+  `blobServices/default` child resource where those categories are exposed.
+- **Azure Managed Grafana** is the primary operational dashboard platform.
+  Dashboards themselves are a later phase (O5/O6); O2 delivers the provisioned,
+  authorized instance only.
+
+### Grafana Cloud identity and RBAC
+
+ATLAS uses **Grafana Cloud** for operational visualization. Grafana Cloud is external to Azure; it is not an Azure Managed Grafana resource.
+
+The Azure-side identity is the environment-specific Microsoft Entra application `atlas-grafana-{env}`. Its service principal receives the built-in **Reader** role at the corresponding ATLAS resource-group scope. The environment-aware bootstrap resolves the application using `-Environment` and ensures this assignment idempotently.
+
+No Grafana API key or static Azure credential is stored in the repository.
+
+#### Historical Azure Managed Grafana design
+
+The following legacy section documents the earlier Azure Managed Grafana design retained for architectural history. It is not the current M11 deployment path.
+
+### Grafana identity and RBAC
+
+Grafana uses a **system-assigned managed identity** — no API keys, passwords,
+or stored credentials. Two built-in role assignments grant read access to
+monitoring data:
+
+| Role | Role definition ID | Scope | Purpose |
+| --- | --- | --- | --- |
+| Monitoring Reader | `43d0d8ad-25c7-4714-9337-8ba259a9fe05` | ATLAS resource group | Metric/list access across all ATLAS resources |
+| Log Analytics Reader | `73c42c96-874c-492b-b04d-ab87d138a893` | Log Analytics workspace | KQL queries against workspace tables |
+
+Role assignment names use deterministic `guid()` seeds so re-deployments are
+idempotent. After deployment, Grafana's Azure Monitor data source authenticates
+via this managed identity automatically; no post-deployment credential setup is
+required to query data (building dashboards on top remains O5/O6 work).
+
+### Bootstrap verification
+
+`infra/bootstrap.ps1` Phase 11 verifies the O2 foundation against live Azure:
+workspace health, Application Insights workspace linkage and connection-string
+configuration, existence and destination of every diagnostic setting, Grafana
+provisioning state, and both Grafana role assignments at their expected scopes.
 
 ## Bootstrap
 
@@ -117,8 +201,9 @@ az account set `
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
 | App Service Plan | atlas-{env}-plan | atlas-dev-plan |
-| App Service (API) | atlas-{env}-api | atlas-dev-api |
-| App Service (Blazor) | atlas-{env}-app | atlas-dev-app |
+| App Service (API) | atlas-api-{env}-{suffix} | atlas-api-dev-{suffix} |
+| App Service (Blazor) | atlas-blazor-{env}-{suffix} | atlas-blazor-dev-{suffix} |
+| Container Registry | atlasacr{suffix} | atlasacr{suffix} |
 
 ### Database
 
@@ -145,15 +230,15 @@ az account set `
 
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
-| Communication Services | atlas-{env}-acs | atlas-dev-acs |
-| Email Service | atlas-{env}-email | atlas-dev-email |
+| Communication Services | atlas-comm-{env}-{suffix} | atlas-comm-dev-{suffix} |
+| Email Service | atlas-comm-{env}-{suffix}-email | atlas-comm-dev-{suffix}-email |
 | Email Domain | AzureManagedDomain | AzureManagedDomain |
 
 ### Identity
 
 | Resource | Name Pattern | Dev Value |
 | ---------- | ------------- | ----------- |
-| Managed Identity | System-assigned on each App Service | System-assigned |
+| Managed Identity | System-assigned on each App Service and on Managed Grafana | System-assigned |
 
 ### Observability
 
@@ -161,6 +246,7 @@ az account set `
 | ---------- | ------------- | ----------- |
 | Log Analytics Workspace | atlas-{env}-logs | atlas-dev-logs |
 | Application Insights | atlas{env}appi | atlasdevappi |
+| Azure Managed Grafana | atlas-{env}-grafana | atlas-dev-grafana |
 
 ## Naming Convention
 
@@ -190,13 +276,38 @@ Tags are defined centrally in `modules/tags.bicep` and applied consistently to e
 {
   "environment": "dev",
   "location": "westeurope",
+  "uniqueSuffix": "",
   "sqlAdminLogin": "atlasadmin",
-  "appServicePlanSkuTier": "Standard",
-  "appServicePlanSkuSize": "S1",
+  "appServicePlanSkuTier": "Basic",
+  "appServicePlanSkuSize": "B1",
+  "appServicePlanCapacity": 1,
   "sqlDatabaseSkuName": "GP_S_Gen5",
-  "storageSku": "Standard_LRS"
+  "sqlDatabaseCapacity": 1,
+  "sqlDatabaseAutoPauseDelay": 15,
+  "sqlDatabaseMaxSizeBytes": 34359738368,
+  "storageSku": "Standard_LRS",
+  "logAnalyticsRetentionInDays": 30,
+  "enableResourceLock": false
 }
 ```
+
+> **Secure parameter — `alertNotificationEmail` (O7)**
+>
+> The O7 Action Group requires an email address for alert notifications. It is
+> declared as a `@secure()` parameter and is deliberately **not** stored in
+> `main.parameters.dev.json` (or any committed file). Supply it at deployment
+> time via the command line:
+>
+> ```powershell
+> --parameters alertNotificationEmail="ops@example.com"
+> ```
+>
+> Because it is secure, the value is never echoed in deployment output or logs.
+>
+> **Grafana bootstrap identity (O6)**: the deployment commands below also pass
+> `grafanaBootstrapPrincipalId`, which is resolved automatically from the
+> currently signed-in Azure CLI user — no manual object-ID lookup required.
+> The same signed-in user should subsequently run `infra/bootstrap.ps1`.
 
 ### Future Environments
 
@@ -253,7 +364,9 @@ Validation performs template validation without deploying any resources.
 az deployment group validate `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 ### Review Planned Changes (What-If)
@@ -264,7 +377,9 @@ Always run **What-If** before deploying infrastructure changes.
 az deployment group what-if `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 ### Deploy Infrastructure
@@ -273,7 +388,9 @@ az deployment group what-if `
 az deployment group create `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 Because the deployment is **idempotent**, this command can safely be executed multiple times. Existing resources are updated only when configuration changes are detected.
@@ -295,10 +412,19 @@ After deployment, the following outputs are available:
 
 | Output | Description |
 | -------- | ----------- |
-| AppServiceName | Name of the App Service |
-| AppServiceResourceId | ARM resource ID of the App Service |
-| AppServiceDefaultHostName | Default hostname (for example `atlas-dev-app.azurewebsites.net`) |
-| AppServicePlanName | Name of the App Service Plan |
+| resourceGroupName | Name of the Resource Group |
+| apiAppServiceName | Name of the API App Service |
+| apiAppServiceResourceId | ARM resource ID of the API App Service |
+| apiHostname | Default hostname of the API App Service |
+| apiPrincipalId | Principal ID of the API App Service managed identity |
+| blazorAppServiceName | Name of the Blazor App Service |
+| blazorAppServiceResourceId | ARM resource ID of the Blazor App Service |
+| blazorHostname | Default hostname of the Blazor App Service |
+| blazorPrincipalId | Principal ID of the Blazor App Service managed identity |
+| containerRegistryName | Name of the Azure Container Registry |
+| containerRegistryLoginServer | Login server of the Azure Container Registry |
+| containerRegistryResourceId | ARM resource ID of the Azure Container Registry |
+| appServicePlanName | Name of the App Service Plan |
 | sqlServerName | Name of the SQL Server |
 | sqlServerFqdn | Fully qualified domain name of the SQL Server |
 | sqlDatabaseName | Name of the SQL Database |
@@ -309,18 +435,27 @@ After deployment, the following outputs are available:
 | keyVaultTenantId | Microsoft Entra tenant identifier |
 | applicationInsightsName | Name of the Application Insights resource |
 | applicationInsightsConnectionString | Application Insights connection string |
-| applicationInsightsConnectionString | Application Insights connection string |
 | logAnalyticsWorkspaceName | Name of the Log Analytics Workspace |
-| emailServiceName | Name of the ACS Email Service |
-| emailServiceResourceId | ARM resource ID of the ACS Email Service |
+| logAnalyticsWorkspaceId | ARM resource ID of the Log Analytics Workspace |
+| grafanaName | Name of the Azure Managed Grafana instance |
+| grafanaEndpoint | Endpoint URL of the Azure Managed Grafana instance |
+| grafanaPrincipalId | Principal ID of the Grafana managed identity |
+| communicationServiceName | Name of the ACS Communication Service |
+| communicationServicesEndpoint | ACS endpoint URL |
+| communicationEmailServiceName | Name of the ACS Email Service |
+| operationsWorkbookName | ARM name (GUID) of the ATLAS Operations Workbook (O6) |
+| operationsWorkbookId | ARM resource ID of the ATLAS Operations Workbook (O6) |
+| actionGroupName | Name of the O7 Action Group |
+| actionGroupId | ARM resource ID of the O7 Action Group |
+| apiAvailabilityAlertName | Name of the API availability metric alert (O7) |
+| blazorAvailabilityAlertName | Name of the Blazor availability metric alert (O7) |
+| exceptionSpikeAlertName | Name of the exception spike scheduled-query alert (O7) |
+| emailFailureAlertName | Name of the email failure scheduled-query alert (O7) |
+| commandLatencyAlertName | Name of the command latency scheduled-query alert (O7) |
+| serviceHealthAlertName | Name of the Service Health activity-log alert (O7) |
 
-These outputs are intended to be consumed by later milestones and deployment automation, including:
-
-- application configuration
-- GitHub Actions deployment pipelines
-- Key Vault access configuration
-- health checks
-- operational validation
+These outputs are consumed by `infra/bootstrap.ps1` for post-deployment
+verification and are available for deployment automation.
 
 ## Troubleshooting
 
@@ -374,7 +509,9 @@ Always review the output of:
 az deployment group what-if `
     --resource-group atlas-dev-rg `
     --template-file .\infra\main.bicep `
-    --parameters .\infra\main.parameters.dev.json
+    --parameters .\infra\main.parameters.dev.json `
+        alertNotificationEmail="ops@example.com" `
+        grafanaBootstrapPrincipalId=(az ad signed-in-user show --query id -o tsv)
 ```
 
 Unexpected changes generally indicate one of the following:
@@ -419,17 +556,237 @@ This makes repeated deployments safe during development and forms the basis for 
 
 ## Next Steps
 
-The Azure Foundation established during **Milestone 9 – Phase 1** provides the platform for the remaining cloud enablement work.
+The Azure Foundation established during **Milestone 9 – Phase 1**, together with
+the O2 Azure Monitor integration, provides the platform for the remaining
+infrastructure work.
 
-Future milestones will build upon this foundation by integrating:
+Genuinely remaining infrastructure evolution includes:
 
-- Azure SQL connectivity
-- Managed Identity
-- Azure Key Vault
-- Application configuration
-- Health checks
-- GitHub Actions deployment pipeline
-- Monitoring and alerting
+- Azure SQL authentication using Microsoft Entra ID
+- Deployment Slots
+- Production networking (Private Endpoints / VNet integration)
 - Production hardening
 
 The modular Bicep architecture established during this milestone is intended to support future enhancements without requiring significant restructuring of the infrastructure code.
+
+## Metrics (Milestone 11 – O4)
+
+ATLAS emits application metrics via `System.Diagnostics.Metrics` under the
+meter name `ATLAS.Application` (same identity as the O3 ActivitySource). They
+are exported through the same OpenTelemetry → Azure Monitor pipeline as traces,
+and only when an Application Insights connection string is configured — locally
+the instruments simply have no listener.
+
+### Instruments
+
+| Metric | Type | Dimensions | Emission boundary |
+| --- | --- | --- | --- |
+| `atlas.applications.transitions` | `Counter<long>` | `transition` (created, submitted, approved, rejected, info_requested, resubmitted — fixed set of 6) | Application command handlers, once per successful business transition |
+| `atlas.email.sends` | `Counter<long>` | `outcome` (success, failure) | `AcsEmailService.SendAsync`, exactly once per send attempt |
+| `atlas.email.duration` | `Histogram<double>` (ms) | `outcome` (success, failure) | Same boundary as above |
+| `atlas.command.duration` | `Histogram<double>` (ms) | `command` (MediatR command type name — bounded by the number of command types) | `TracingBehavior`, around every command execution |
+
+### Conventions
+
+- **Cardinality**: dimensions are strictly low-cardinality. ApplicationId,
+  UserId, DocumentId, email addresses and blob names are never used as
+  dimensions; those values live in logs/traces where per-event analysis is
+  possible without unbounded time series.
+- **Separation of concerns**: metrics answer "what is happening repeatedly?",
+  logs answer "what happened in this event?", traces answer "what happened in
+  this operation?", and the business Audit Log remains the permanent business
+  history. None replace another.
+- **No duplication of Azure-native telemetry**: Blob Storage operations are not
+  custom-instrumented because Azure Monitor already provides storage metrics;
+  HTTP request metrics remain with classic Application Insights.
+
+## Operations Portal (Milestone 11 – O5)
+
+The Administration Portal includes an **Operations** page (`/admin/operations`,
+Admin role only) providing a curated, read-only operational summary. It is
+intentionally limited: Azure Monitor, Application Insights, Log Analytics and
+Managed Grafana remain the authoritative technical telemetry sources.
+
+### What it shows
+
+- **System Health** — reuses the existing ASP.NET Core health-check
+  infrastructure (`HealthCheckService`); no duplicate health logic. Shows
+  overall status plus per-dependency status (database, storage, key vault).
+- **Application Activity** — cumulative O4 business transition counters
+  (`atlas.applications.transitions`) since process start.
+- **Email Delivery** — cumulative `atlas.email.sends` success/failure counts.
+- **Deeper Telemetry** — pointer to Azure Monitor / Grafana for technical
+  investigation (environment-specific portal links are not hard-coded).
+
+### Key semantics
+
+- **Unavailable ≠ zero**: if health retrieval fails the page shows an explicit
+  "Health data unavailable" state; if no metrics have been recorded since
+  process start it shows "No activity recorded yet" rather than zeros.
+- Metrics are process-lifetime aggregates; time-windowed analysis is an
+  Azure Monitor/Grafana concern (O6). No telemetry is persisted in the ATLAS
+  database.
+- The business Audit Log remains completely separate from this technical view.
+
+Implementation: `GetOperationsOverviewQuery` (Application layer) aggregates
+`HealthCheckService` and `IOperationsMetricsSnapshot` (a `MeterListener`-based
+read-only observer of the existing O4 instruments — no new telemetry).
+
+## Dashboards & Workbooks (Milestone 11 – O6)
+
+O6 turns the O2–O4 telemetry foundation into operational visualizations using
+two Azure-native mechanisms. Azure Monitor remains the technical source of
+truth; the ATLAS Operations Portal (O5) remains a lightweight curated overview.
+
+### ATLAS Operations Workbook
+
+Provisioned as an ARM resource (`Microsoft.Insights/workbooks`) in
+`infra/modules/workbook.bicep`, with its definition in
+`infra/telemetry/atlas-operations.workbook.json`. Deployed idempotently with
+the infrastructure — no manual portal creation.
+
+**Authentication model**: unlike Grafana (which queries via its managed
+identity), a Workbook executes its queries under the permissions of the user
+viewing it. Viewers therefore need their own read access to the Application
+Insights / Log Analytics data the workbook queries.
+
+Sections:
+
+1. Overview — command activity and failures
+2. Application errors — exceptions over time
+3. Command performance — duration percentiles by command type (parameterized)
+4. Dependency failures — SQL / Blob / HTTP
+5. Email delivery — sends by outcome (`atlas.email.sends`)
+6. Email delivery duration percentiles (`atlas.email.duration`)
+7. Azure resource diagnostics — platform logs from Log Analytics
+
+Parameters: time range, Application Insights resource, command type.
+
+### ATLAS Operations Grafana Dashboard
+
+Azure Managed Grafana itself is provisioned through Bicep
+(`infra/modules/grafana.bicep`). The ATLAS Operations dashboard inside it is
+provisioned by **Phase 11b of `infra/bootstrap.ps1`** via the Managed Grafana
+dashboard API — the `Microsoft.Dashboard/grafana/dashboards` ARM sub-resource
+is not a registered resource type and fails preflight validation, so Bicep
+cannot manage the dashboard directly.
+
+- The dashboard definition is stored in
+  `infra/telemetry/atlas-operations.grafana-dashboard.json` (single source of
+  truth); bootstrap resolves the `__WORKSPACE_ID__` placeholder with the
+  deployed Log Analytics workspace ID before sending it to Grafana.
+- Provisioning is an **idempotent create/update**: re-running bootstrap updates
+  the same `atlas-operations` dashboard rather than creating duplicates.
+- Authentication uses an Azure AD access token obtained dynamically from the
+  authenticated Azure CLI session. **No Grafana API key or static credential
+  is stored**; the token is held only in memory.
+- **RBAC prerequisite**: the signed-in Azure CLI user running bootstrap needs
+  the `Grafana Editor` role on the Managed Grafana resource (see below).
+  Bootstrap verifies this before attempting the API call.
+- Bootstrap verifies the dashboard after provisioning (exists, correct UID,
+  non-empty definition).
+
+Panels:
+
+- Command execution duration (p95) by command type
+- Email sends by outcome
+- Application transitions volume
+- Exceptions over time
+
+### Bootstrap verification (2)
+
+`infra/bootstrap.ps1` Phase 11b covers both O6 resources post-deployment: it
+verifies the workbook exists with its expected "ATLAS Operations" display name,
+and provisions then verifies the Grafana dashboard via the Managed Grafana API
+(see above). Live rendering of dashboard panels against real Azure Monitor data
+remains a post-deployment functional verification step.
+
+### Two Grafana identities (do not confuse them)
+
+| Identity | Role(s) | Purpose | Provisioned by |
+| --- | --- | --- | --- |
+| Managed Grafana system-assigned managed identity (`grafanaPrincipalId`) | Monitoring Reader (resource group) + Log Analytics Reader (workspace) | Grafana's own access to Azure Monitor / Log Analytics data for dashboards | Bicep (O2) — unchanged |
+| Manual bootstrap identity (the Azure CLI signed-in user) | **Grafana Editor** scoped to the exact Managed Grafana resource | Create/update the ATLAS Operations dashboard via the data-plane API | Bicep (O6) via the `grafanaBootstrapPrincipalId` parameter, resolved automatically from the signed-in user |
+
+The deployment resolves `grafanaBootstrapPrincipalId` automatically from the
+currently signed-in Azure CLI user (`az ad signed-in-user show`), so there is
+no manual object-ID lookup. The same signed-in user must run
+`infra/bootstrap.ps1`; bootstrap verifies that user holds Grafana Editor on the
+Grafana resource before provisioning the dashboard, failing with a clear
+diagnostic if the role is missing.
+
+### Boundary
+
+The O5 Operations Portal remains the curated in-app overview; O6 provides the
+deeper Azure-native investigation surfaces. Neither replaces the other.
+
+## Alerts & Operational Readiness (Milestone 11 – O7)
+
+O7 turns the O1–O6 observability foundation into an operational alerting layer:
+a small set of high-value Azure Monitor alerts, one notification route, and a
+concise runbook. Azure Monitor is the authoritative alerting platform; the
+Operations Portal remains a curated overview (no alert management); Grafana and
+the Workbook remain the deeper investigation tools.
+
+### Action Group
+
+`atlas-{env}-ops-ag` (`infra/modules/actiongroup.bicep`) — a single email
+notification route shared by all alert rules. The email address is supplied as
+a **secure deployment parameter** (`alertNotificationEmail`), never hard-coded
+in source control. Uses the common alert schema. Additional channels (SMS,
+webhook) can be added to the module later without changing any alert rule.
+
+### Alert rules
+
+| Alert | Type | Signal | Threshold | Window | Sev |
+| --- | --- | --- | --- | --- | --- |
+| `atlas-{env}-api-availability` | Metric | App Service `HealthCheckStatus` < 1 | 3 consecutive violations | 5m eval / 15m window | 1 |
+| `atlas-{env}-blazor-availability` | Metric | App Service `HealthCheckStatus` < 1 | 3 consecutive violations | 5m eval / 15m window | 1 |
+| `atlas-{env}-exception-spike` | Scheduled query | `exceptions` count > 50/hr | 2 consecutive violations | 15m eval / 1h window | 2 |
+| `atlas-{env}-email-failures` | Scheduled query | `atlas.email.sends` outcome=failure > 4/hr | 2 consecutive violations | 15m eval / 1h window | 2 |
+| `atlas-{env}-command-latency` | Scheduled query | p95 `atlas.command.duration` > 10s | 2 consecutive violations | 15m eval / 1h window | 3 |
+| `atlas-{env}-service-health` | Activity log | Azure ServiceHealth incidents | any Incident/Maintenance/Security | near-real-time | 2 |
+
+Design notes:
+
+- **Thresholds are conservative dev defaults** — tune per environment as real
+  traffic patterns become known. All are sustained-condition thresholds: a
+  single failed email or a single exception never fires an alert.
+- **Scheduled-query aggregation**: the KQL queries end in `summarize` and
+  return one row containing the measured value; the rules use
+  `timeAggregation: Maximum` so the threshold compares that numeric value (not
+  the returned row count). See `scheduledqueryalert.bicep` for details.
+- **Email failures** reuse the existing O4 metric (`atlas.email.sends` with its
+  `outcome` dimension) — no new instruments were introduced. The exact
+  `customMetrics` materialization (`Value`, `ValueCount`, `customDimensions`
+  casing) requires live Azure verification.
+- **Availability** uses the App Service native health-check metric
+  (`HealthCheckStatus`), which already probes `/health/ready` (configured in
+  O2-era App Service settings). No new availability tests were created.
+- **Service health** distinguishes Azure platform problems from application
+  failures: if it fires, do not debug application code first. The incident-type
+  alternatives (Incident / Maintenance / Security) are combined with `anyOf`.
+- Every alert description names the signal, why it matters, and where to
+  investigate next (Portal → App Insights → Workbook/Grafana).
+
+### Operational runbook
+
+`docs/runbooks/operations-runbook.md` documents per-alert meaning, likely
+causes, investigation steps, recovery confirmation, and the escalation flow.
+
+### Bootstrap verification (3)
+
+`infra/bootstrap.ps1` Phase 11c (`Verify-O7Alerting`) verifies, using
+structured Azure CLI JSON output:
+
+- the Action Group exists and is enabled;
+- each expected alert rule exists and is enabled;
+- metric/log alert rules reference the expected Action Group;
+- alert rule scopes match the expected resources;
+- failures clearly identify missing / disabled / wrong-scope / wrong-action-group.
+
+### Boundaries
+
+- The business Audit Log is never used as an alert source.
+- No alert-management UI, incident management, or automatic remediation.
+- No new metrics, dashboards, or workbooks were introduced by O7.

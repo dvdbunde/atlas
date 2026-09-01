@@ -6,18 +6,14 @@ namespace ATLAS.Infrastructure.Services
 {
     /// <summary>
     /// Infrastructure implementation of <see cref="IExecutionContext"/> that wraps
-    /// <see cref="ICurrentUserService"/> for user identity and generates a
-    /// <see cref="CorrelationId"/> once per HTTP request.
+    /// <see cref="ICurrentUserService"/> for user identity.
     ///
     /// Design decisions:
-    /// - Registered as Scoped — CorrelationId is generated once per request
-    ///   and reused for all operations within that scope.
+    /// - Registered as Scoped — identity is resolved once per request/scope.
     /// - Delegates to ICurrentUserService for identity rather than reading
     ///   HttpContext directly (Clean Architecture rule enforcement).
-    /// - CorrelationId is generated eagerly in the constructor (not lazily),
-    ///   ensuring it is stable across all consumers within the same scope.
-    /// - IP address resolution is delegated to a future enhancement
-    ///   (requires IHttpContextAccessor for HttpContext.Connection.RemoteIpAddress).
+    /// - CorrelationId was removed in O3: it was generated but never consumed.
+    ///   W3C Activity trace context is the single technical correlation mechanism.
     /// </summary>
     public class ExecutionContext : IExecutionContext
     {
@@ -26,9 +22,6 @@ namespace ATLAS.Infrastructure.Services
         public ExecutionContext(ICurrentUserService currentUserService)
         {
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-
-            // Generate CorrelationId once per scope (HTTP request)
-            CorrelationId = Guid.NewGuid();
         }
 
         /// <inheritdoc />
@@ -42,9 +35,6 @@ namespace ATLAS.Infrastructure.Services
 
         /// <inheritdoc />
         public IReadOnlyCollection<Claim> Claims => _currentUserService.Claims;
-
-        /// <inheritdoc />
-        public Guid CorrelationId { get; }
 
         /// <inheritdoc />
         public bool IsAuthenticated => _currentUserService.IsAuthenticated;

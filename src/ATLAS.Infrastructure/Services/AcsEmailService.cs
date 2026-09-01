@@ -39,6 +39,18 @@ namespace ATLAS.Infrastructure.Services
 
         public async Task SendAsync(string to, string subject, string body, bool isHtml = false, CancellationToken cancellationToken = default)
         {
+            // No try/catch here: AcsEmailClient (the dependency boundary) logs ACS
+            // failures with service-specific context, and callers (email handlers)
+            // log failures with application context. Logging here as well would
+            // duplicate the same exception at multiple layers.
+            //
+            // O4 metrics: this is the single logical email-send boundary — the
+            // outcome counter increments exactly once per attempt here, never in
+            // AcsEmailClient or the event handlers. No recipient/PII dimensions.
+            // Cancellation is neither a success nor a delivery failure: duration
+            // is recorded without an outcome tag and the failure counter is not
+            // incremented; the cancellation propagates unchanged.
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 await _emailClient.SendAsync(
@@ -49,15 +61,26 @@ namespace ATLAS.Infrastructure.Services
                     isHtml,
                     cancellationToken);
 
-                _logger.LogInformation("Email sent successfully to {To}, subject: {Subject}", to, subject);
+                RecordOutcome("success", stopwatch.ElapsedMilliseconds);
+                _logger.LogInformation("Email sent successfully to {EmailRecipient}, subject: {Subject}", to, subject);
             }
-            catch (Exception ex)
+            catch (OperationCanceledException)
             {
-                _logger.LogError(ex, "Failed to send email to {To}, subject: {Subject}", to, subject);
-                // Rethrow so the caller (email handler) can log and decide how to handle the
-                // failure. A failed send must not be reported as successful.
+                ATLAS.Application.Telemetry.AtlasMetrics.EmailDuration.Record(stopwatch.ElapsedMilliseconds);
                 throw;
             }
+            catch (Exception)
+            {
+                RecordOutcome("failure", stopwatch.ElapsedMilliseconds);
+                throw;
+            }
+        }
+
+        private static void RecordOutcome(string outcome, double durationMs)
+        {
+            var tags = new KeyValuePair<string, object?>("outcome", outcome);
+            ATLAS.Application.Telemetry.AtlasMetrics.EmailSends.Add(1, tags);
+            ATLAS.Application.Telemetry.AtlasMetrics.EmailDuration.Record(durationMs, tags);
         }
     }
 }

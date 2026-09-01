@@ -97,7 +97,7 @@ public partial class EmailTemplates : ComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load email template {Name}", name);
+            Logger.LogError(ex, "Failed to load email template {TemplateName}", name);
             _saveError = "We were unable to load this template. Please try again later.";
         }
 
@@ -128,7 +128,7 @@ public partial class EmailTemplates : ComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to save email template {Name}", _selectedName);
+            Logger.LogError(ex, "Failed to save email template {TemplateName}", _selectedName);
             _saveError = "We were unable to save the template. Please check the placeholders and try again.";
         }
         finally
@@ -153,7 +153,7 @@ public partial class EmailTemplates : ComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to preview email template {Name}", _selectedName);
+            Logger.LogError(ex, "Failed to preview email template {TemplateName}", _selectedName);
             _previewError = "We were unable to render the preview. Please try again later.";
         }
         finally
@@ -192,7 +192,7 @@ public partial class EmailTemplates : ComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to reset email template {Name}", _selectedName);
+            Logger.LogError(ex, "Failed to reset email template {TemplateName}", _selectedName);
             _resetError = "We were unable to reset the template. Please try again later.";
         }
         finally

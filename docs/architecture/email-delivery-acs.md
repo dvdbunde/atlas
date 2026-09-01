@@ -39,11 +39,12 @@ string or access key is stored or used in production.
 
 ## Managed Identity & RBAC
 
-- The **Blazor App Service** identity is granted the built-in **"Azure Communication
-  Services Email Sender"** role (`c273bd1b-3068-4be7-9e8e-a081e4d5f5f4`) scoped to the ACS
-  resource.
-- The **API App Service** does **not** receive ACS email-sending permission (it does not
-  send email).
+- The **API App Service** and **Blazor App Service** system-assigned identities are granted the
+  built-in **"Communication and Email Service Owner"** role (`09976791-48a7-449e-bb21-39d1a415f350`)
+  scoped to the ACS Email Service.
+- The bootstrap applies this RBAC configuration idempotently. The Blazor application performs
+  the actual email send; the API identity retains the configured ACS service role as part of
+  the environment bootstrap.
 - No client secrets or connection strings are introduced for production authentication.
 
 ## App Service settings

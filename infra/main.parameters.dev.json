@@ -5,6 +5,9 @@
     "environment": {
       "value": "dev"
     },
+      "environmentName": {
+      "value": "Production"
+    },
     "location": {
       "value": "westeurope"
     },
@@ -43,6 +46,12 @@
     },
     "enableResourceLock": {
       "value": false
+    },
+    "sqlDatabaseUseFreeLimit": {
+      "value": true
+    },
+    "sqlDatabaseFreeLimitExhaustionBehavior": {
+      "value": "AutoPause"
     }
   }
 }

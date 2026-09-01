@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-    Bootstraps and validates the ATLAS development Azure environment.
+    Bootstraps and validates the supplied ATLAS Azure environment.
 
 .DESCRIPTION
-    Performs post-deployment configuration and validation for the ATLAS
-    development environment defined by the Bicep infrastructure.
+    Performs post-deployment configuration and validation for the supplied ATLAS
+    environment defined by the Bicep infrastructure.
 
     The script:
       - Reads deployment outputs from the completed Bicep deployment.
@@ -23,11 +23,10 @@
     This script does not deploy the Azure infrastructure itself.
     Run main.bicep first with the appropriate environment parameters.
 
-    The script is intended for the ATLAS development environment.
+    The script is intended for the supplied ATLAS environment.
 
 .PARAMETER ResourceGroupName
-    Name of the Azure Resource Group containing the ATLAS development
-    environment.
+    Name of the Azure Resource Group containing the supplied ATLAS environment.
 
 .PARAMETER DeploymentName
     Name of the ARM/Bicep deployment whose outputs are used by this script.
@@ -58,7 +57,11 @@ param (
     [string]$DeploymentName,
 
     [Parameter(Mandatory)]
-    [string]$GitHubClientId
+    [string]$GitHubClientId,
+
+    [Parameter(Mandatory)]
+    [ValidateSet('dev', 'test', 'prod')]
+    [string]$Environment
 )
 
 $ErrorActionPreference = 'Stop'
@@ -175,6 +178,25 @@ function Get-DeploymentOutputs {
 
     Write-Pass "Deployment located and succeeded"
 
+    $requiredOutputs = @(
+        'apiAppServiceName'
+        'apiAppServiceResourceId'
+        'apiHostname'
+        'apiPrincipalId'
+        'blazorAppServiceName'
+        'blazorAppServiceResourceId'
+        'blazorHostname'
+        'blazorPrincipalId'
+    )
+
+    foreach ($outputName in $requiredOutputs) {
+        $output = $outputs.$outputName
+
+        Assert-True `
+            ($null -ne $output -and -not [string]::IsNullOrWhiteSpace([string]$output.value)) `
+            "Required deployment output '$outputName' is missing or empty."
+    }
+
     return [PSCustomObject]@{
         resourceGroupName          = $outputs.resourceGroupName.value
         apiAppServiceName          = $outputs.apiAppServiceName.value
@@ -200,6 +222,17 @@ function Get-DeploymentOutputs {
         applicationInsightsName    = $outputs.applicationInsightsName.value
         applicationInsightsConnectionString = $outputs.applicationInsightsConnectionString.value
         logAnalyticsWorkspaceName  = $outputs.logAnalyticsWorkspaceName.value
+        logAnalyticsWorkspaceId    = $outputs.logAnalyticsWorkspaceId.value
+        operationsWorkbookName     = $outputs.operationsWorkbookName.value
+        actionGroupName            = $outputs.actionGroupName.value        
+        exceptionSpikeAlertName    = $outputs.exceptionSpikeAlertName.value
+        emailFailureAlertName      = $outputs.emailFailureAlertName.value
+        commandLatencyAlertName    = $outputs.commandLatencyAlertName.value
+        serviceHealthAlertName     = $outputs.serviceHealthAlertName.value
+        grafanaName                = $outputs.grafanaName.value
+        grafanaEndpoint            = $outputs.grafanaEndpoint.value
+        grafanaPrincipalId         = $outputs.grafanaPrincipalId.value
+        grafanaResourceId          = $outputs.grafanaResourceId.value
         communicationServiceName = $outputs.communicationServiceName.value
         communicationEmailServiceName = $outputs.communicationEmailServiceName.value    
         communicationServiceResourceId = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Communication/communicationServices/$($outputs.communicationServiceName.value)"
@@ -1075,12 +1108,696 @@ function Verify-InfrastructureResources {
 }
 
 # --------------------------------------------------------------------------
-# Phase 11 – Write Summary
+# Phase 11 – Verify Azure Monitor Integration (O2)
+# --------------------------------------------------------------------------
+function Verify-AzureMonitorIntegration {
+    param(
+        [string]$ResourceGroup,
+        [string]$LogAnalyticsWorkspaceName,
+        [string]$LogAnalyticsWorkspaceId,
+        [string]$ApplicationInsightsName,
+        [string]$ApplicationInsightsConnectionString,
+        [string]$GrafanaName,
+        [string]$GrafanaPrincipalId,
+        [string]$ApiAppServiceName,
+        [string]$BlazorAppServiceName,
+        [string]$SqlServerName,
+        [string]$SqlDatabaseName,
+        [string]$StorageAccountName,
+        [string]$KeyVaultName,
+        [string]$CommunicationServiceName
+    )
+
+    Write-Step "Phase 11 – Verifying Azure Monitor integration (O2)"
+
+    $subscriptionId = az account show --query id --output tsv
+    $results = @()
+
+    # --- Log Analytics workspace exists and is enabled ---
+    $la = az monitor log-analytics workspace show `
+        --workspace-name $LogAnalyticsWorkspaceName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    $results += [PSCustomObject]@{
+        Name   = "Log Analytics workspace"
+        Status = ($null -ne $la -and $la.provisioningState -eq "Succeeded")
+        Detail = $LogAnalyticsWorkspaceName
+    }
+
+    # --- Application Insights: exists, workspace-backed ---
+    $ai = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Insights/components" `
+        --name $ApplicationInsightsName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $aiWorkspaceLinked = $false
+    if ($null -ne $ai) {
+        $expectedWorkspaceId = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup" +
+            "/providers/Microsoft.OperationalInsights/workspaces/$LogAnalyticsWorkspaceName"
+        $aiWorkspaceLinked = $ai.properties.WorkspaceResourceId -eq $expectedWorkspaceId
+    }
+
+    $results += [PSCustomObject]@{
+        Name   = "Application Insights workspace linkage"
+        Status = $aiWorkspaceLinked
+        Detail = if ($aiWorkspaceLinked) { "-> $LogAnalyticsWorkspaceName" } else { "not linked to expected workspace" }
+    }
+
+    $results += [PSCustomObject]@{
+        Name   = "Application Insights connection string"
+        Status = (-not [string]::IsNullOrWhiteSpace($ApplicationInsightsConnectionString) -and
+                  $ApplicationInsightsConnectionString -like "InstrumentationKey=*;IngestionEndpoint=*")
+        Detail = "configured (connection-string based, no instrumentation-key-only config)"
+    }
+
+    # --- Diagnostic settings per resource ---
+    function Test-DiagnosticSetting {
+        param([string]$TargetResourceId, [string]$SettingName)
+
+        $ds = az monitor diagnostic-settings show `
+            --resource $TargetResourceId `
+            --name $SettingName `
+            --output json 2>$null | ConvertFrom-Json
+
+        return ($null -ne $ds -and $ds.workspaceId -eq $LogAnalyticsWorkspaceId)
+    }
+
+    $rgPath = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup"
+
+    $diagChecks = @(
+        @{ Name = "Diagnostics: API App Service";      Resource = "$rgPath/providers/Microsoft.Web/sites/$ApiAppServiceName";                Setting = "atlas-api-diagnostics" },
+        @{ Name = "Diagnostics: Blazor App Service";   Resource = "$rgPath/providers/Microsoft.Web/sites/$BlazorAppServiceName";             Setting = "atlas-blazor-diagnostics" },
+        @{ Name = "Diagnostics: SQL Database";         Resource = "$rgPath/providers/Microsoft.Sql/servers/$SqlServerName/databases/$SqlDatabaseName"; Setting = "atlas-sql-diagnostics" },
+        @{ Name = "Diagnostics: Storage Account (Blob)"; Resource = "$rgPath/providers/Microsoft.Storage/storageAccounts/$StorageAccountName/blobServices/default"; Setting = "atlas-storage-diagnostics" },
+        @{ Name = "Diagnostics: Key Vault";            Resource = "$rgPath/providers/Microsoft.KeyVault/vaults/$KeyVaultName";               Setting = "atlas-keyvault-diagnostics" }     
+    )
+
+    foreach ($check in $diagChecks) {
+        $ok = Test-DiagnosticSetting -TargetResourceId $check.Resource -SettingName $check.Setting
+        $results += [PSCustomObject]@{
+            Name   = $check.Name
+            Status = $ok
+            Detail = if ($ok) { "$($check.Setting) -> $LogAnalyticsWorkspaceName" } else { "$($check.Setting) missing or wrong destination" }
+        }
+    }
+
+   $acsDiagnosticSetting = az monitor diagnostic-settings show `
+        --resource $outputs.communicationServiceResourceId `
+        --name 'Email_Logs' `
+        --output json | ConvertFrom-Json
+
+    if (-not $acsDiagnosticSetting) {
+        Write-Fail "ACS diagnostic setting 'Email_Logs' not found."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $enabledCategories = @(
+        $acsDiagnosticSetting.logs |
+            Where-Object { $_.enabled -eq $true } |
+            ForEach-Object { $_.category }
+    )
+
+    $requiredCategories = @(
+        'EmailSendMailOperational'
+        'EmailStatusUpdateOperational'
+    )
+
+    $missingCategories = @(
+        $requiredCategories |
+            Where-Object { $_ -notin $enabledCategories }
+    )
+
+    if ($missingCategories.Count -gt 0) {
+        Write-Fail "ACS diagnostic setting 'Email_Logs' is missing required categories: $($missingCategories -join ', ')"
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    Write-Pass "ACS diagnostic setting 'Email_Logs' verified with required email categories"
+
+    # --- Managed Grafana ---
+    $grafana = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Dashboard/grafana" `
+        --name $GrafanaName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $grafanaExists = $null -ne $grafana -and $grafana.properties.provisioningState -eq "Succeeded"
+
+    $results += [PSCustomObject]@{
+        Name   = "Managed Grafana provisioned"
+        Status = $grafanaExists
+        Detail = if ($grafanaExists) { $GrafanaName } else { "$GrafanaName not Succeeded" }
+    }
+
+    # --- Grafana managed identity + RBAC ---
+    $grafanaIdentityOk = $false
+    if ($grafanaExists -and -not [string]::IsNullOrWhiteSpace($GrafanaPrincipalId)) {
+        # Monitoring Reader on the resource group grants metric/list access.
+        $monitoringReaderDefId = "43d0d8ad-25c7-4714-9337-8ba259a9fe05"
+        $assignments = az role assignment list `
+            --assignee $GrafanaPrincipalId `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        $grafanaIdentityOk = ($assignments | Where-Object {
+            $_.roleDefinitionId -like "*$monitoringReaderDefId"
+        }) -ne $null
+
+        # Log Analytics Reader on the workspace grants KQL query access.
+        $laReaderDefId = "73c42c96-874c-492b-b04d-ab87d138a893"
+        $laAssignments = az role assignment list `
+            --assignee $GrafanaPrincipalId `
+            --scope $LogAnalyticsWorkspaceId `
+            --output json 2>$null | ConvertFrom-Json
+
+        $grafanaIdentityOk = $grafanaIdentityOk -and (($laAssignments | Where-Object {
+            $_.roleDefinitionId -like "*$laReaderDefId"
+        }) -ne $null)
+    }
+
+    $results += [PSCustomObject]@{
+        Name   = "Managed Grafana RBAC"
+        Status = $grafanaIdentityOk
+        Detail = if ($grafanaIdentityOk) { "Monitoring Reader + Log Analytics Reader assigned" } else { "expected role assignments missing" }
+    }
+
+    # Report failures immediately (consistent with Phase 10 behavior).
+    $allPassed = $true
+    foreach ($r in $results) {
+        if (-not $r.Status) {
+            Write-Fail "$($r.Name) – $($r.Detail)"
+            $allPassed = $false
+        } else {
+            Write-Pass "$($r.Name) – $($r.Detail)"
+        }
+    }
+
+    if (-not $allPassed) {
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $results
+}
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Phase 11b - Provision & Verify O6 Visualization Resources
+#              (Workbook verified via ARM; Grafana dashboard provisioned and
+#               verified via the Managed Grafana dashboard API)
+#
+# The Microsoft.Dashboard/grafana/dashboards ARM sub-resource is NOT a valid
+# registered resource type (preflight fails with ResourceTypeRegistrationNotFound),
+# so the dashboard is provisioned here instead of in Bicep. Authentication uses
+# an Azure AD access token obtained dynamically from the authenticated Azure CLI
+# session - no Grafana API keys, service accounts, or static credentials.
+# The operation is an idempotent create/update: re-running bootstrap updates
+# the same dashboard rather than creating duplicates.
+# --------------------------------------------------------------------------
+function Invoke-GrafanaDashboardProvisioning {
+    param(
+        [string]$GrafanaEndpoint,
+        [string]$WorkspaceId,
+        [string]$DashboardJsonPath
+    )
+
+    # --- Grafana instance must be reachable ---
+    if ([string]::IsNullOrWhiteSpace($GrafanaEndpoint)) {
+        Write-Fail "Grafana instance not found (no endpoint output from deployment)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $baseUrl = $GrafanaEndpoint.TrimEnd('/')
+
+    # --- Obtain Azure AD token for the Managed Grafana data-plane API ---
+    # Token is held only in memory; never printed or persisted.
+    $token = az account get-access-token `
+        --resource https://dashboard.azure.com `
+        --query accessToken --output tsv
+
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        Write-Fail "Grafana authentication failed (could not obtain Azure AD access token)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    # --- Build payload from the canonical dashboard JSON ---
+    Assert-True (Test-Path $DashboardJsonPath) `
+        "Dashboard definition not found at '$DashboardJsonPath'."
+
+    $raw = Get-Content $DashboardJsonPath -Raw
+
+    # Resolve deployment placeholders (same tokens previously replaced by Bicep).
+    $resolved = $raw.Replace('__WORKSPACE_ID__', $WorkspaceId)
+
+    # Fail fast on any unresolved deployment placeholder rather than
+    # provisioning a broken dashboard.
+    if ($resolved -match '__[A-Z_]+__') {
+        Write-Fail "Unresolved deployment placeholder(s) remain in dashboard definition: $($Matches[0])."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $dashboardModel = $resolved | ConvertFrom-Json
+
+    # Grafana's dashboard API wraps the model with metadata. UID comes from the
+    # JSON so re-running updates the same dashboard (idempotent upsert).
+    $payload = @{
+        dashboard = $dashboardModel
+        message   = 'Provisioned by ATLAS bootstrap.ps1'
+        overwrite = $true
+    } | ConvertTo-Json -Depth 100
+
+    # --- Idempotent create/update via the Grafana HTTP API ---
+    try {
+        $response = Invoke-RestMethod `
+            -Method Post `
+            -Uri "$baseUrl/api/dashboards/db" `
+            -Headers @{ Authorization = "Bearer $token" } `
+            -ContentType 'application/json' `
+            -Body $payload `
+            -ErrorAction Stop
+    }
+    catch {
+        $status = $null
+        if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode }
+        Write-Fail "Grafana dashboard provisioning failed (HTTP status: $status)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    if (-not $response -or $response.status -ne 'success' -or [string]::IsNullOrWhiteSpace($response.uid)) {
+        Write-Fail "Grafana dashboard provisioning failed (unexpected API response)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $response.uid
+}
+
+function Verify-O6Visualization {
+    param(
+        [string]$ResourceGroup,
+        [string]$OperationsWorkbookName,
+        [string]$GrafanaName,
+        [string]$GrafanaEndpoint,
+        [string]$GrafanaResourceId,
+        [string]$LogAnalyticsWorkspaceId,
+        [string]$DashboardJsonPath,
+        [string]$ExpectedDashboardUid = 'atlas-operations'
+    )
+
+    Write-Step "Phase 11b - Verifying O6 visualization resources (Workbook + Grafana dashboard)"
+
+    $results = @()
+
+    # --- ATLAS Operations Workbook exists with expected display name ---
+    $workbook = az resource show `
+        --resource-group $ResourceGroup `
+        --resource-type "Microsoft.Insights/workbooks" `
+        --name $OperationsWorkbookName `
+        --output json 2>$null | ConvertFrom-Json
+
+    $workbookOk = $null -ne $workbook -and $workbook.properties.displayName -eq "ATLAS Operations"
+
+    $results += [PSCustomObject]@{
+        Name   = "Operations Workbook"
+        Status = $workbookOk
+        Detail = if ($workbookOk) { "ATLAS Operations" } else { "$OperationsWorkbookName missing or wrong display name" }
+    }
+
+    # ----------------------------------------------------------------------
+    # Grafana RBAC preflight: the dashboard is provisioned via the Managed
+    # Grafana data-plane API using the signed-in Azure CLI user's identity,
+    # which must have Grafana Editor on the Grafana resource. Verify BEFORE
+    # attempting the API call so a missing prerequisite fails clearly instead
+    # of surfacing as an opaque HTTP 403.
+    # ----------------------------------------------------------------------
+    $grafanaEditorRoleId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+
+    # 1. Current signed-in identity's Microsoft Entra object ID.
+    $currentUser = az ad signed-in-user show --output json 2>$null | ConvertFrom-Json
+    if ($null -eq $currentUser -or [string]::IsNullOrWhiteSpace($currentUser.id)) {
+        Write-Fail "Grafana bootstrap identity RBAC: could not determine the current Azure CLI identity."
+        exit $EXIT_INFRASTRUCTURE
+    }
+    $currentPrincipalId = $currentUser.id
+
+    # 2. The principal must have Grafana Editor scoped to the exact Grafana resource.
+    # (The deployment assigns Grafana Editor to the signed-in user automatically;
+    # this check confirms it is present before provisioning.)
+    $editorAssignments = az role assignment list `
+        --assignee-object-id $currentPrincipalId `
+        --scope $GrafanaResourceId `
+        --role $grafanaEditorRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    $rbacOk = @($editorAssignments).Count -gt 0
+
+    $results += [PSCustomObject]@{
+        Name   = "Grafana bootstrap identity RBAC"
+        Status = $rbacOk
+        Detail = if ($rbacOk) { "current Azure CLI user has Grafana Editor on $GrafanaName" } else { "current Azure CLI user does not have Grafana Editor on $GrafanaName" }
+    }
+
+    if (-not $rbacOk) {
+        Write-Fail "$($results[-1].Name) - $($results[-1].Detail)"
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    Write-Pass "$($results[-1].Name) - $($results[-1].Detail)"
+
+    # --- Grafana dashboard: provision (idempotent create/update), then verify ---
+    $uid = Invoke-GrafanaDashboardProvisioning `
+        -GrafanaEndpoint $GrafanaEndpoint `
+        -WorkspaceId $LogAnalyticsWorkspaceId `
+        -DashboardJsonPath $DashboardJsonPath
+
+    # Verification: fetch the dashboard back through the API and confirm it is
+    # present, has the expected identity, and contains a non-empty definition.
+    $token = az account get-access-token `
+        --resource https://dashboard.azure.com `
+        --query accessToken --output tsv
+
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        Write-Fail "Grafana authentication failed during verification."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    try {
+        $fetched = Invoke-RestMethod `
+            -Method Get `
+            -Uri "$($GrafanaEndpoint.TrimEnd('/'))/api/dashboards/uid/$uid" `
+            -Headers @{ Authorization = "Bearer $token" } `
+            -ErrorAction Stop
+    }
+    catch {
+        Write-Fail "Grafana dashboard verification failed (dashboard could not be retrieved)."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $dashboardOk =
+        ($null -ne $fetched) -and
+        ($fetched.dashboard.uid -eq $ExpectedDashboardUid) -and
+        (-not [string]::IsNullOrWhiteSpace(($fetched.dashboard | ConvertTo-Json -Depth 10))) -and
+        (@($fetched.dashboard.panels).Count -gt 0)
+
+    $results += [PSCustomObject]@{
+        Name   = "Grafana Operations Dashboard"
+        Status = $dashboardOk
+        Detail = if ($dashboardOk) { "$ExpectedDashboardUid provisioned and verified at $($GrafanaEndpoint.TrimEnd('/'))" } else { "verification failed after provisioning" }
+    }
+
+    $allPassed = $true
+    foreach ($r in $results) {
+        if (-not $r.Status) {
+            Write-Fail "$($r.Name) - $($r.Detail)"
+            $allPassed = $false
+        } else {
+            Write-Pass "$($r.Name) - $($r.Detail)"
+        }
+    }
+
+    if (-not $allPassed) {
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $results
+}
+
+# --------------------------------------------------------------------------
+# Phase 11c - Provision availability metric alerts
+# --------------------------------------------------------------------------
+function Ensure-AvailabilityMetricAlerts {
+    param(
+        [string]$ResourceGroup,
+        [string]$Environment,
+        [string]$ActionGroupName,
+        [string]$ApiAppServiceName,
+        [string]$BlazorAppServiceName
+    )
+
+    Write-Step "Phase 11c - Provisioning availability metric alerts"
+
+    $subscriptionId = az account show --query id --output tsv 2>$null
+
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($subscriptionId)) {
+        Write-Fail "Unable to resolve Azure subscription ID."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $actionGroup = az monitor action-group show `
+        --name $ActionGroupName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -eq $actionGroup) {
+        Write-Fail "Action Group '$ActionGroupName' not found."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $actionGroupId = $actionGroup.id
+
+    $alerts = @(
+        @{
+            Name        = "atlas-$Environment-api-availability"
+            AppService  = $ApiAppServiceName
+            Description = "ATLAS API health check (/health/ready) has been failing for 15+ minutes. The API is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results."
+        },
+        @{
+            Name        = "atlas-$Environment-blazor-availability"
+            AppService  = $BlazorAppServiceName
+            Description = "ATLAS Blazor app health check (/health/ready) has been failing for 15+ minutes. The application is not serving healthy responses. Investigate via ATLAS Operations Portal and Application Insights availability/results."
+        }
+    )
+
+    foreach ($alert in $alerts) {
+        $scope = "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($alert.AppService)"
+
+        Write-Host "  Checking availability alert: $($alert.Name)..."
+
+        $existing = az monitor metrics alert show `
+            --name $alert.Name `
+            --resource-group $ResourceGroup `
+            --output json 2>$null | ConvertFrom-Json
+
+        if ($null -ne $existing) {
+            Write-Pass "$($alert.Name) already exists"
+            continue
+        }
+
+        Write-Host "  Creating availability alert: $($alert.Name)..."
+
+        $created = $false
+
+        # HealthCheckStatus can take a short time to become available
+        # to the Azure Monitor metric-alert service after App Service
+        # provisioning. Retry only that specific transient condition.
+        for ($attempt = 1; $attempt -le 12; $attempt++) {
+            $errorOutput = & az monitor metrics alert create `
+                --name $alert.Name `
+                --resource-group $ResourceGroup `
+                --scopes $scope `
+                --condition "avg HealthCheckStatus < 1" `
+                --window-size 15m `
+                --evaluation-frequency 5m `
+                --severity 1 `
+                --auto-mitigate true `
+                --action $actionGroupId `
+                --description $alert.Description `
+                --output none 2>&1
+
+            if ($LASTEXITCODE -eq 0) {
+                $created = $true
+                break
+            }
+
+            $errorText = ($errorOutput -join "`n")
+
+            if ($errorText -notmatch "Couldn't find a metric named HealthCheckStatus") {
+                Write-Fail "Failed to create $($alert.Name): $errorText"
+                exit $EXIT_INFRASTRUCTURE
+            }
+
+            if ($attempt -lt 12) {
+                Write-Host "  HealthCheckStatus not yet available; retrying in 10 seconds (attempt $attempt/12)..."
+                Start-Sleep -Seconds 10
+            }
+        }
+
+        if (-not $created) {
+            Write-Fail "Timed out waiting for HealthCheckStatus for $($alert.Name)."
+            exit $EXIT_INFRASTRUCTURE
+        }
+
+        Write-Pass "$($alert.Name) created"
+    }
+}
+
+# --------------------------------------------------------------------------
+# Phase 11c - Verify O7 Alerting (Action Group + alert rules)
+# --------------------------------------------------------------------------
+function Verify-O7Alerting {
+    param(
+        [string]$ResourceGroup,
+        [string]$ActionGroupName,
+        [array]$ExpectedAlerts
+    )
+
+    Write-Step "Phase 11c - Verifying O7 alerting resources"
+
+    $results = @()
+
+    # --- Action Group exists and is enabled ---
+    Write-Host "  Checking action group: $ActionGroupName..."
+
+    $ag = az monitor action-group show `
+        --name $ActionGroupName `
+        --resource-group $ResourceGroup `
+        --output json 2>$null | ConvertFrom-Json
+
+    Write-Host "  Finished checking action group: $ActionGroupName"
+
+    $agOk = $null -ne $ag -and $ag.enabled -eq $true
+
+    $results += [PSCustomObject]@{
+        Name   = "Action Group"
+        Status = $agOk
+        Detail = if ($agOk) { "$ActionGroupName enabled" } else { "$ActionGroupName missing or disabled" }
+    }
+
+    # --- Alert rules: exist, enabled, reference the Action Group, correct scope ---
+    # Scope expectation model (applied consistently across alert types):
+    #   ScopeExact       - rule scope must contain this exact resource ID
+    #                      (used for metric alerts targeting a specific App Service)
+    #   ScopeContains    - at least one rule scope must contain this substring
+    #                      (used for log alerts scoped to App Insights / workspace)
+    #   ScopeStartsWith  - every rule scope must start with this prefix
+    #                      (used for subscription-scoped activity log alerts)
+    foreach ($expected in $ExpectedAlerts) {
+        $exists = $false
+        $enabled = $false
+        $agLinked = $false
+        $scopeOk = $false
+        $scopeDetail = ""
+        $actualScopes = @()
+
+        switch ($expected.Type) {
+            "metric" {
+                Write-Host "  Checking metric alert: $($expected.Name)..."
+
+                $rule = az monitor metrics alert show `
+                    --name $expected.Name `
+                    --resource-group $ResourceGroup `
+                    --output json | ConvertFrom-Json
+
+                Write-Host "  Finished metric alert: $($expected.Name)"
+
+                if ($null -ne $rule) {
+                    $exists = $true
+                    $enabled = $rule.enabled -eq $true
+                    $agLinked = @($rule.actions | Where-Object { $_.actionGroupId -like "*$ActionGroupName" }).Count -gt 0
+                    $actualScopes = @($rule.scopes)
+                    $scopeOk = $actualScopes -contains $expected.ScopeExact
+                }
+            }
+            "log" {
+                Write-Host "  Checking log alert: $($expected.Name)..."
+
+                $rule = az resource show `
+                    --resource-group $ResourceGroup `
+                    --name $expected.Name `
+                    --resource-type "Microsoft.Insights/scheduledQueryRules" `
+                    --output json 2>$null | ConvertFrom-Json
+
+                Write-Host "  Finished log alert: $($expected.Name)"
+
+                if ($null -ne $rule) {
+                    $exists = $true
+                    $enabled = $rule.properties.enabled -eq $true
+                    $agLinked = @(
+                        $rule.properties.actions.actionGroups |
+                            Where-Object { $_ -like "*$ActionGroupName" }
+                    ).Count -gt 0
+                    $actualScopes = @($rule.properties.scopes)
+
+                    $scopeOk = @(
+                        $actualScopes |
+                            Where-Object { $_.Contains($expected.ScopeContains) }
+                    ).Count -gt 0
+                }
+            }
+           "activitylog" {
+                Write-Host "  Checking activity log alert: $($expected.Name)..."
+
+                $rule = az resource show `
+                    --resource-group $ResourceGroup `
+                    --name $expected.Name `
+                    --resource-type "Microsoft.Insights/activityLogAlerts" `
+                    --output json 2>$null | ConvertFrom-Json
+
+                Write-Host "  Finished activity log alert: $($expected.Name)"
+
+                if ($null -ne $rule) {
+                    $exists = $true
+                    $enabled = $rule.properties.enabled -eq $true
+                    $agLinked = @(
+                        $rule.properties.actions.actionGroups |
+                            Where-Object { $_.actionGroupId -like "*$ActionGroupName" }
+                    ).Count -gt 0
+                    $actualScopes = @($rule.properties.scopes)
+
+                    $scopeOk =
+                        ($actualScopes.Count -gt 0) -and
+                        (@(
+                            $actualScopes |
+                                Where-Object {
+                                    $_.StartsWith($expected.ScopeStartsWith)
+                                }
+                        ).Count -eq $actualScopes.Count)
+                }
+            }
+        }
+
+        if (-not $exists) {
+            $detail = "missing"
+        } elseif (-not $enabled) {
+            $detail = "disabled"
+        } elseif (-not $agLinked) {
+            $detail = "does not reference Action Group $ActionGroupName"
+        } elseif (-not $scopeOk) {
+            $detail = "wrong scope (expected: $($expected.ScopeExact)$($expected.ScopeContains)$($expected.ScopeStartsWith); actual: $($actualScopes -join ', '))"
+        } else {
+            $detail = "enabled, scoped correctly, linked to $ActionGroupName"
+        }
+
+        $results += [PSCustomObject]@{
+            Name   = $expected.Name
+            Status = ($exists -and $enabled -and $agLinked -and $scopeOk)
+            Detail = $detail
+        }
+    }
+
+    $allPassed = $true
+    foreach ($r in $results) {
+        if (-not $r.Status) {
+            Write-Fail "$($r.Name) - $($r.Detail)"
+            $allPassed = $false
+        } else {
+            Write-Pass "$($r.Name) - $($r.Detail)"
+        }
+    }
+
+    if (-not $allPassed) {
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    return $results
+}
+# Phase 12 – Write Summary
 # --------------------------------------------------------------------------
 function Write-Summary {
     param(
         [PSCustomObject]$DeploymentOutputs,
-        [array]$InfrastructureResults
+        [array]$InfrastructureResults,
+        [array]$MonitorResults
     )
 
     Write-Host "`n"
@@ -1112,6 +1829,17 @@ function Write-Summary {
         $color = if ($r.Status) { "Green" } else { "Red" }
         $name = $r.Name.PadRight(22)
         Write-Host "  $status $name $($r.Detail)" -ForegroundColor $color
+    }
+
+    if ($MonitorResults) {
+        Write-Host ""
+        Write-Host "Azure Monitor (O2)" -ForegroundColor Yellow
+        foreach ($r in $MonitorResults) {
+            $status = if ($r.Status) { "PASS" } else { "FAIL" }
+            $color = if ($r.Status) { "Green" } else { "Red" }
+            $name = $r.Name.PadRight(22)
+            Write-Host "  $status $name $($r.Detail)" -ForegroundColor $color
+        }
     }
 
     Write-Host ""
@@ -1219,7 +1947,58 @@ $infraResults = Verify-InfrastructureResources `
     -CommunicationServiceName $outputs.communicationServiceName `
     -CommunicationEmailServiceName $outputs.communicationEmailServiceName
 
-# Phase 11
-Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults
+# Phase 11 (O2 – Azure Monitor Integration)
+$monitorResults = Verify-AzureMonitorIntegration `
+    -ResourceGroup $ResourceGroup `
+    -LogAnalyticsWorkspaceName $outputs.logAnalyticsWorkspaceName `
+    -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
+    -ApplicationInsightsName $outputs.applicationInsightsName `
+    -ApplicationInsightsConnectionString $outputs.applicationInsightsConnectionString `
+    -GrafanaName $outputs.grafanaName `
+    -GrafanaPrincipalId $outputs.grafanaPrincipalId `
+    -ApiAppServiceName $outputs.apiAppServiceName `
+    -BlazorAppServiceName $outputs.blazorAppServiceName `
+    -SqlServerName $outputs.sqlServerName `
+    -SqlDatabaseName $outputs.sqlDatabaseName `
+    -StorageAccountName $outputs.storageAccountName `
+    -KeyVaultName $outputs.keyVaultName `
+    -CommunicationServiceName $outputs.communicationServiceName
+
+# Phase 11b - Provision & verify O6 visualization resources (Workbook + Grafana dashboard)
+$monitorResults += Verify-O6Visualization `
+    -ResourceGroup $ResourceGroup `
+    -OperationsWorkbookName $outputs.operationsWorkbookName `
+    -GrafanaName $outputs.grafanaName `
+    -GrafanaEndpoint $outputs.grafanaEndpoint `
+    -GrafanaResourceId $outputs.grafanaResourceId `
+    -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
+    -DashboardJsonPath (Join-Path $PSScriptRoot 'telemetry/atlas-operations.grafana-dashboard.json')
+
+# Phase 11c - Provision availability metric alerts
+Ensure-AvailabilityMetricAlerts `
+    -ResourceGroup $ResourceGroup `
+    -Environment $Environment `
+    -ActionGroupName $outputs.actionGroupName `
+    -ApiAppServiceName $outputs.apiAppServiceName `
+    -BlazorAppServiceName $outputs.blazorAppServiceName
+
+# Phase 11c - Verify O7 alerting resources (Action Group + alert rules)
+# Scope expectations use the exact deployment outputs where available so a
+# rule targeting the wrong App Service / App Insights is detected precisely.
+$o7ExpectedAlerts = @(
+    @{ Name = "atlas-$Environment-api-availability";    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
+    @{ Name = "atlas-$Environment-blazor-availability"; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
+    @{ Name = $outputs.exceptionSpikeAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.emailFailureAlertName;       Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.commandLatencyAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.serviceHealthAlertName;      Type = "activitylog"; ScopeStartsWith = "/subscriptions/$((az account show --query id --output tsv))" }
+)
+$alertResults = Verify-O7Alerting `
+    -ResourceGroup $ResourceGroup `
+    -ActionGroupName $outputs.actionGroupName `
+    -ExpectedAlerts $o7ExpectedAlerts
+
+# Phase 12
+Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults -MonitorResults ($monitorResults + $alertResults)
 
 exit $EXIT_SUCCESS

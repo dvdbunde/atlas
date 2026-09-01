@@ -395,10 +395,11 @@ Run:
 ```powershell
 $GitHubClientId = "<ATLAS GitHub Actions Application (Client) ID>"
 
-.\infra\bootstrap.ps1 `
+.\infra\bootstrap-revised.ps1 `
     -ResourceGroup atlas-dev-rg `
     -DeploymentName main `
-    -GitHubClientId $GitHubClientId
+    -GitHubClientId $GitHubClientId `
+    -Environment dev
 ```
 
 The bootstrap script automatically performs the following tasks:

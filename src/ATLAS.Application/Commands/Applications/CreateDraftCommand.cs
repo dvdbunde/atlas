@@ -52,7 +52,9 @@ namespace ATLAS.Application.Commands.Applications
             }
 
             await _repository.AddAsync(application, cancellationToken);
-            _logger.LogInformation("Draft application {ApplicationId} created for citizen {CitizenId}", 
+
+            ATLAS.Application.Telemetry.AtlasMetrics.ApplicationTransitions.Add(1, new KeyValuePair<string, object?>("transition", "created"));
+            _logger.LogInformation("Draft application {ApplicationId} created for citizen {CitizenId}",
                 application.Id, citizenId);
 
             return application.Id;

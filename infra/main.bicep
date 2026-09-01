@@ -58,7 +58,24 @@ param apiImageTag string = 'latest'
 param blazorImageTag string = 'latest'
 
 @description('ASP.NET Core environment name applied to App Services (e.g. Development, Production). Defaults to Development.') 
-param environmentName string = 'Development'
+param environmentName string
+
+@description('Email address for O7 alert notifications (Action Group receiver). Supplied per environment; never hard-coded in source control.')
+@secure()
+param alertNotificationEmail string
+
+@description('Microsoft Entra object ID of the identity that runs infra/bootstrap.ps1. Bootstrap provisions the ATLAS Operations Grafana dashboard via the Managed Grafana data-plane API, so this identity needs Grafana Editor on the Managed Grafana resource. Not secret; supplied per environment - never hard-coded in source control.')
+param grafanaBootstrapPrincipalId string
+
+@description('Use the Azure SQL Database Free offer')
+param sqlDatabaseUseFreeLimit bool = false
+
+@description('Behavior when the monthly Azure SQL Free allowance is exhausted')
+param sqlDatabaseFreeLimitExhaustionBehavior string = 'AutoPause'
+
+// Managed Grafana is intentionally disabled in the development environment
+// to avoid its dedicated hosting cost. Keep the IaC so test/prod can use it.
+var deployManagedGrafana = environment != 'dev'
 
 module names 'modules/names.bicep' = {
   name: '${deployment().name}-names'
@@ -94,6 +111,19 @@ module appInsights 'modules/appinsights.bicep' = {
     location: location
     tags: tags.outputs.tags
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
+  }
+}
+
+// -- Azure Managed Grafana (O2 – primary dashboard platform) -----------------
+// SystemAssigned identity; Azure Monitor RBAC role assignments are granted
+// after this module below. No dependency on App Services / SQL etc., so no
+// circular references.
+module grafana 'modules/grafana.bicep' = if (deployManagedGrafana) {
+  name: '${deployment().name}-grafana'
+  params: {
+    name: names.outputs.grafanaName
+    location: location
+    tags: tags.outputs.tags
   }
 }
 
@@ -250,6 +280,8 @@ module sqlDatabase 'modules/sqldatabase.bicep' = {
     capacity: sqlDatabaseCapacity
     autoPauseDelay: sqlDatabaseAutoPauseDelay
     maxSizeBytes: sqlDatabaseMaxSizeBytes
+    useFreeLimit: sqlDatabaseUseFreeLimit
+    freeLimitExhaustionBehavior: sqlDatabaseFreeLimitExhaustionBehavior
   }
   dependsOn: [
     sqlServer
@@ -416,16 +448,414 @@ resource blazorStorageBlobDataContributor 'Microsoft.Authorization/roleAssignmen
   }
 }
 
-// -- Outputs -----------------------------------------------------------------
-output resourceGroupName            string = names.outputs.resourceGroupName
-output apiAppServiceName            string = names.outputs.apiAppServiceName
-output apiAppServiceResourceId      string = apiAppService.outputs.id
-output apiHostname                  string = apiAppService.outputs.defaultHostName
-output apiPrincipalId               string = apiAppService.outputs.principalId
-output blazorAppServiceName         string = names.outputs.blazorAppServiceName
-output blazorAppServiceResourceId   string = blazorAppService.outputs.id
-output blazorHostname               string = blazorAppService.outputs.defaultHostName
-output blazorPrincipalId            string = blazorAppService.outputs.principalId
+// ==========================================================================
+// O2 – Azure Monitor Integration
+// ==========================================================================
+
+// -- Grafana RBAC -------------------------------------------------------------
+// Managed Grafana's managed identity needs read access to Azure Monitor data
+// (Log Analytics workspace queries + resource metrics) so Grafana's Azure
+// Monitor data sources can query ATLAS telemetry. No secrets are used.
+
+// Monitoring Reader on the resource group: covers metric/list access for all
+// ATLAS resources in one assignment (least privilege at the required scope).
+var monitoringReaderRoleDefinitionId = '43d0d8ad-25c7-4714-9337-8ba259a9fe05'
+
+// Deploy-time constant name (must mirror names.bicep) for role assignment IDs,
+// which require values computable at deployment start.
+var grafanaResourceName = 'atlas-${environment}-grafana'
+
+resource grafanaMonitoringReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployManagedGrafana) {
+  name: guid(resourceGroup().name, grafanaResourceName, 'monitoring-reader', subscription().subscriptionId)
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', monitoringReaderRoleDefinitionId)
+    principalId: grafana!.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Log Analytics Reader on the workspace: allows Grafana to run KQL queries
+// against the workspace (Application Insights tables + resource diagnostic logs).
+// Role definition verified against Azure CLI: az role definition list --name "Log Analytics Reader"
+var logAnalyticsReaderRoleDefinitionId = '73c42c96-874c-492b-b04d-ab87d138a893'
+
+// Reference the existing Log Analytics workspace so the role assignment is
+// scoped to the workspace itself (not the resource group), matching the
+// bootstrap verification. Name mirrors names.bicep (deploy-time constant
+// required for scope resolution).
+var logAnalyticsWorkspaceNameConst = 'atlas-${environment}-logs'
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: logAnalyticsWorkspaceNameConst
+}
+
+// Reference the existing Application Insights resource for O7 alert scopes.
+// Name mirrors names.bicep (deploy-time constant required for scope resolution).
+var applicationInsightsNameConst = 'atlas${environment}appi'
+resource appInsightsRef 'Microsoft.Insights/components@2020-02-02' existing = {
+  name: applicationInsightsNameConst
+}
+
+resource grafanaLogAnalyticsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployManagedGrafana) {
+  name: guid(logAnalyticsWorkspaceNameConst, grafanaResourceName, 'la-reader', subscription().subscriptionId)
+  scope: logAnalyticsWorkspace
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', logAnalyticsReaderRoleDefinitionId)
+    principalId: grafana!.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// -- Grafana Editor: manual bootstrap identity (O6) ---------------------------
+// The dashboard is provisioned by bootstrap.ps1 through the Managed Grafana
+// data-plane API using the signed-in Azure CLI user's identity. That identity
+// needs Grafana Editor on the Managed Grafana RESOURCE itself (not RG/subscription
+// scope). Role definition verified against Azure CLI:
+//   az role definition list --name "Grafana Editor"
+//   -> a79a5197-3a5c-4973-a920-486035ffd60f
+// Grafana's managed identity roles above are for data access and remain unchanged.
+var grafanaEditorRoleDefinitionId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+
+// Reference the deployed Grafana instance so the role assignment is scoped to
+// exactly that resource. Name mirrors names.bicep (deploy-time constant).
+resource grafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' existing = {
+  name: grafanaResourceName
+}
+
+resource grafanaBootstrapEditor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (deployManagedGrafana) {
+  name: guid(grafanaResourceName, 'bootstrap-grafana-editor', subscription().subscriptionId)
+  scope: grafanaInstance
+  // The Grafana resource is created by the grafana module; the existing
+  // reference above does not establish that dependency.
+  dependsOn: [
+    grafana
+  ]
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', grafanaEditorRoleDefinitionId)
+    principalId: grafanaBootstrapPrincipalId
+    principalType: 'User'
+  }
+}
+
+// -- Diagnostic Settings (O2) -------------------------------------------------
+// Each diagnostic setting targets its Azure resource through the Bicep `scope`
+// mechanism (extension resources), NOT via properties.targetResourceId — the
+// latter is rejected by the Azure provider during What-If/deployment.
+//
+// The generic string-based module was removed because Bicep scopes require
+// actual resource references; the six settings are therefore defined directly
+// where those references are available.
+//
+// Category names are curated for operational value vs. cost: high-volume/noisy
+// categories (e.g. App Service HTTP logs, which duplicate App Insights request
+// telemetry) are intentionally excluded.
+
+var appServiceLogCategories = [
+  'AppServiceAuditLogs'
+  'AppServiceIPSecAuditLogs'
+  'AppServicePlatformLogs'
+]
+
+// Extension-resource scope requires actual resource references. Resources that
+// live inside modules are referenced as existing resources (names come from
+// the names module / module-level vars).
+var apiAppServiceNameConst = 'atlas-api-${environment}-${effectiveSuffix}'
+resource apiAppServiceRef 'Microsoft.Web/sites@2023-12-01' existing = {
+  name: apiAppServiceNameConst
+}
+
+var blazorAppServiceNameConst = 'atlas-blazor-${environment}-${effectiveSuffix}'
+resource blazorAppServiceRef 'Microsoft.Web/sites@2023-12-01' existing = {
+  name: blazorAppServiceNameConst
+}
+
+var sqlServerNameConst = 'atlas${environment}sql${effectiveSuffix}'
+resource sqlServerResource 'Microsoft.Sql/servers@2021-11-01' existing = {
+  name: sqlServerNameConst
+}
+
+resource sqlDatabaseRef 'Microsoft.Sql/servers/databases@2021-11-01' existing = {
+  parent: sqlServerResource
+  name: 'atlas-${environment}-db'
+}
+
+resource keyVaultRef 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
+
+resource storageBlobServiceRef 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' existing = {
+  parent: storageAccount
+  name: 'default'
+}
+
+// -- API App Service ----------------------------------------------------------
+resource apiAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: apiAppServiceRef
+  name: 'atlas-api-diagnostics'
+  // The App Service is created by the apiAppService module; the existing
+  // reference above does not establish that dependency.
+  dependsOn: [
+    apiAppService
+  ]
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [for category in appServiceLogCategories: {
+      category: category
+      enabled: true
+    }]
+    metrics: [{
+      category: 'AllMetrics'
+      enabled: true
+    }]
+  }
+}
+
+// -- Blazor App Service -------------------------------------------------------
+resource blazorAppServiceDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: blazorAppServiceRef
+  name: 'atlas-blazor-diagnostics'
+  dependsOn: [
+    blazorAppService
+  ]
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [for category in appServiceLogCategories: {
+      category: category
+      enabled: true
+    }]
+    metrics: [{
+      category: 'AllMetrics'
+      enabled: true
+    }]
+  }
+}
+
+// -- SQL Database -------------------------------------------------------------
+// SQLSecurityAuditEvents (audit trail, compliance-relevant) plus insights and
+// automatic tuning recommendations.
+resource sqlDatabaseDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: sqlDatabaseRef
+  name: 'atlas-sql-diagnostics'
+  dependsOn: [
+    sqlDatabase
+  ]
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [
+      { category: 'SQLSecurityAuditEvents', enabled: true }
+      { category: 'SQLInsights', enabled: true }
+      { category: 'AutomaticTuning', enabled: true }
+    ]
+    metrics: [{
+      category: 'Basic'
+      enabled: true
+    }]
+  }
+}
+
+// -- Storage Blob Service -----------------------------------------------------
+// Blob log categories are exposed by the blobServices/default child resource,
+// not the account root.
+resource storageDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: storageBlobServiceRef
+  name: 'atlas-storage-diagnostics'
+  dependsOn: [
+    storage
+  ]
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [
+      { category: 'StorageRead', enabled: true }
+      { category: 'StorageWrite', enabled: true }
+      { category: 'StorageDelete', enabled: true }
+    ]
+    metrics: [{
+      category: 'Transaction'
+      enabled: true
+    }]
+  }
+}
+
+// -- Key Vault ----------------------------------------------------------------
+resource keyVaultDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: keyVaultRef
+  name: 'atlas-keyvault-diagnostics'
+  dependsOn: [
+    keyVault
+  ]
+  properties: {
+    workspaceId: logAnalytics.outputs.id
+    logs: [{ category: 'AuditEvent', enabled: true }]
+    metrics: [{
+      category: 'AllMetrics'
+      enabled: true
+    }]
+  }
+}
+// ==========================================================================
+// O6 - Azure Workbooks
+// ==========================================================================
+
+// -- ATLAS Operations Workbook ------------------------------------------------
+// ARM-provisioned Azure Monitor Workbook scoped to the resource group.
+// Definition lives in infra/telemetry/atlas-operations.workbook.json and is
+// loaded at deployment time. Name must be a GUID (provider requirement);
+// derived deterministically so re-deployments update in place.
+
+var operationsWorkbookName = guid(resourceGroup().id, 'atlas-operations-workbook')
+var operationsWorkbookData = loadTextContent('telemetry/atlas-operations.workbook.json')
+
+module operationsWorkbook 'modules/workbook.bicep' = {
+  name: '${deployment().name}-operations-workbook'
+  params: {
+    name: operationsWorkbookName
+    location: location
+    tags: tags.outputs.tags
+    serializedData: operationsWorkbookData
+    displayName: 'ATLAS Operations'
+    sourceId: appInsightsRef.id
+  }
+}
+
+// ==========================================================================
+// O7 - Alerts & Operational Readiness
+// ==========================================================================
+
+// -- Action Group ------------------------------------------------------------
+// Single notification route for all ATLAS alert rules. The email receiver is
+// supplied as a secure deployment parameter - never hard-coded in source.
+module actionGroup 'modules/actiongroup.bicep' = {
+  name: '${deployment().name}-actiongroup'
+  params: {
+    name: names.outputs.actionGroupName
+    tags: tags.outputs.tags
+    emailReceiver: alertNotificationEmail
+  }
+}
+
+// -- Exception spike (scheduled query, Sev 2) ---------------------------------
+// Sustained elevated exception volume in the application. Thresholds are
+// conservative dev defaults - tune per environment as real traffic patterns
+// become known.
+var exceptionAlertQuery = '''
+exceptions
+| where timestamp > ago(1h)
+| summarize Exceptions = count()
+'''
+
+module exceptionSpikeAlert 'modules/scheduledqueryalert.bicep' = {
+  name: '${deployment().name}-exception-spike-alert'
+  dependsOn: [
+    appInsights
+  ]
+  params: {
+    name: 'atlas-${environment}-exception-spike'
+    tags: tags.outputs.tags
+    alertDescription: 'Elevated exception count in the ATLAS application over the last hour (one evaluation above threshold). Inspect exceptions in Application Insights, then the ATLAS Operations Workbook / Grafana dashboard for trends by problemId.'
+    severity: 2
+    query: exceptionAlertQuery
+    // Scoped to App Insights only. This is a workspace-based App Insights
+    // deployment: the same exceptions are visible through both the workspace
+    // and the component, so including both scopes would double-count against
+    // the threshold. Consistent with the other App Insights log alerts.
+    resourceIds: [
+      appInsightsRef.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    operator: 'GreaterThan'
+    threshold: 50
+    failureCount: 1
+    metricMeasureColumn: 'Exceptions'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Email delivery failures (scheduled query, Sev 2) -------------------------
+// Uses the existing O4 custom metric atlas.email.sends with dimension
+// outcome=failure. A single failed email does NOT fire this alert: the query
+// requires >= 5 failures within one hour, sustained across two consecutive
+// evaluations, indicating an ACS or configuration problem rather than noise.
+var emailFailureAlertQuery = '''
+let emails = customMetrics
+| where name == "atlas.email.sends";
+emails
+| where customDimensions["outcome"] == "failure"
+| where timestamp > ago(1h)
+| summarize Failures = sum(todouble(valueCount))
+'''
+
+module emailFailureAlert 'modules/scheduledqueryalert.bicep' = {
+  name: '${deployment().name}-email-failure-alert'
+  dependsOn: [
+    appInsights
+  ]
+  params: {
+    name: 'atlas-${environment}-email-failures'
+    tags: tags.outputs.tags
+    alertDescription: 'Sustained email delivery failures detected (atlas.email.sends outcome=failure). Likely ACS outage or sender configuration problem. Check ACS email operational logs in Log Analytics and the Email panel on the ATLAS Operations Grafana dashboard.'
+    severity: 2
+    query: emailFailureAlertQuery
+    resourceIds: [
+      appInsightsRef.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    operator: 'GreaterThan'
+    threshold: 4
+    failureCount: 1
+    metricMeasureColumn: 'Failures'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Sustained command latency (scheduled query, Sev 3) -----------------------
+// p95 of atlas.command.duration exceeding 10 seconds over an hour indicates
+// performance degradation (slow SQL, storage, or downstream dependency).
+var commandLatencyAlertQuery = '''
+customMetrics
+| where name == "atlas.command.duration"
+| summarize CommandDurationP95 = percentile(todouble(value), 95)
+'''
+
+module commandLatencyAlert 'modules/scheduledqueryalert.bicep' = {
+  name: '${deployment().name}-command-latency-alert'
+  dependsOn: [
+    appInsights
+  ]
+  params: {
+    name: 'atlas-${environment}-command-latency'
+    tags: tags.outputs.tags
+    alertDescription: 'Sustained high p95 command execution duration (atlas.command.duration). Performance degradation likely caused by a slow dependency. Use the Command duration panel on the ATLAS Operations Grafana dashboard to identify which command type is slow, then inspect the corresponding dependency.'
+    severity: 3
+    query: commandLatencyAlertQuery
+    resourceIds: [
+      appInsightsRef.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    operator: 'GreaterThan'
+    threshold: 10000
+    failureCount: 1
+    metricMeasureColumn: 'CommandDurationP95'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
+// -- Azure platform/service health (activity log alert, Sev 2) -----------------
+// Fires on Azure-side service incidents/maintenance affecting resources in the
+// resource group. Distinguishes platform problems from application failures:
+// if this fires, do NOT debug application code first.
+module serviceHealthAlert 'modules/servicehealthalert.bicep' = {
+  name: '${deployment().name}-service-health-alert'
+  params: {
+    name: 'atlas-${environment}-service-health'
+    tags: tags.outputs.tags
+    alertDescription: 'Azure Service Health incident, maintenance, or security advisory affecting the ATLAS resource group. This is an Azure platform event, not an application failure. Check Azure Service Health for scope and remediation guidance.'
+    actionGroupId: actionGroup.outputs.id
+  }
+}
+
 output containerRegistryName        string = names.outputs.containerRegistryName
 output containerRegistryLoginServer string = containerRegistry.outputs.loginServer
 output containerRegistryResourceId  string = containerRegistry.outputs.id
@@ -441,6 +871,28 @@ output keyVaultTenantId             string = subscription().tenantId
 output applicationInsightsName      string = names.outputs.applicationInsightsName
 output applicationInsightsConnectionString string = appInsights.outputs.connectionString
 output logAnalyticsWorkspaceName    string = names.outputs.logAnalyticsWorkspaceName
+output logAnalyticsWorkspaceId      string = logAnalytics.outputs.id
+output grafanaName                  string = names.outputs.grafanaName
+output grafanaEndpoint              string = deployManagedGrafana ? grafana!.outputs.endpoint : ''
+output grafanaPrincipalId           string = deployManagedGrafana ? grafana!.outputs.principalId : ''
+output grafanaResourceId            string = deployManagedGrafana ? grafana!.outputs.id : ''
 output communicationServiceName     string = communicationServices.outputs.communicationServiceName
 output communicationServicesEndpoint string = communicationServices.outputs.endpoint
 output communicationEmailServiceName string = communicationServices.outputs.emailServiceName
+output operationsWorkbookName        string = operationsWorkbook.outputs.name
+output operationsWorkbookId          string = operationsWorkbook.outputs.id
+output actionGroupName               string = actionGroup.outputs.name
+output actionGroupId                 string = actionGroup.outputs.id
+output exceptionSpikeAlertName       string = exceptionSpikeAlert.outputs.name
+output emailFailureAlertName         string = emailFailureAlert.outputs.name
+output commandLatencyAlertName       string = commandLatencyAlert.outputs.name
+output serviceHealthAlertName        string = serviceHealthAlert.outputs.name
+output resourceGroupName            string = resourceGroup().name
+output apiAppServiceName            string = names.outputs.apiAppServiceName
+output apiAppServiceResourceId      string = apiAppService.outputs.id
+output apiHostname                  string = apiAppService.outputs.defaultHostName
+output apiPrincipalId               string = apiAppService.outputs.principalId
+output blazorAppServiceName         string = names.outputs.blazorAppServiceName
+output blazorAppServiceResourceId   string = blazorAppService.outputs.id
+output blazorHostname               string = blazorAppService.outputs.defaultHostName
+output blazorPrincipalId            string = blazorAppService.outputs.principalId

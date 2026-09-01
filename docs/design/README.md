@@ -14,7 +14,7 @@ ATLAS is built using:
 - **EF Core** - ORM for SQL Server (LocalDB development, Azure SQL target)
 - **Azure Blob Storage** - Document storage (Azurite emulator for local development)
 
-> **Note on Deployment**: The diagrams in this directory show Azure infrastructure (Azure SQL, Blob Storage, App Service, etc.) as the intended production target. As of Milestone 8.1, ATLAS runs locally using LocalDB (SQL Server), Azurite (Blob Storage emulator), and Kestrel (ASP.NET Core). Azure deployment is planned for Milestone 9. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
+> **Note on Deployment**: The diagrams in this directory describe the Azure-hosted production architecture. LocalDB, Azurite, and Kestrel remain supported for local development. The current Azure deployment uses App Service, Azure SQL Database, Azure Blob Storage, Azure Key Vault, Azure Communication Services, Application Insights, and Log Analytics. M11 adds Azure Monitor alerting and Grafana Cloud operational visualization. See [current-state.md](../architecture/current-state.md) for the implemented architecture snapshot.
 
 ## Document Index
 

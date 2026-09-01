@@ -94,6 +94,7 @@ namespace ATLAS.Application.Commands.Applications
             await _repository.UpdateAsync(application, cancellationToken);
             await _mediator.Publish(new ApplicationResubmittedEvent(application.Id), cancellationToken);
             
+            ATLAS.Application.Telemetry.AtlasMetrics.ApplicationTransitions.Add(1, new KeyValuePair<string, object?>("transition", "resubmitted"));
             _logger.LogInformation("Application {ApplicationId} resubmitted", request.ApplicationId);
 
             return Unit.Value;

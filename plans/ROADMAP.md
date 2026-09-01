@@ -60,13 +60,13 @@ All milestones M1 through M8 have been implemented and merged as of July 2026.
 
 ---
 
-## Milestone 9 — Cloud Infrastructure & Azure Enablement (Next)
+## Milestone 9 — Cloud Infrastructure & Azure Enablement
 
-**Status**: ![Planned](https://img.shields.io/badge/status-Planned-lightgrey)
+**Status**: ![Done](https://img.shields.io/badge/status-Done-brightgreen)
 
 **Goal**: Deploy ATLAS to Azure infrastructure, enabling production hosting, managed services, and secure operations.
 
-**Key Deliverables (planned):**
+**Key Deliverables:**
 
 - Azure App Service hosting for Blazor and API
 - Azure SQL Database (migrate from LocalDB)
@@ -78,6 +78,47 @@ All milestones M1 through M8 have been implemented and merged as of July 2026.
 - Infrastructure documentation and runbook
 
 **Dependencies**: Milestones 1–8 (application implementation complete)
+
+---
+
+## Milestone 10 — Email Integration
+
+**Status**: ![Done](https://img.shields.io/badge/status-Done-brightgreen)
+
+**Goal**: Provide production email delivery through Azure Communication Services with managed-identity authentication and administrable email templates.
+
+**Implemented:**
+
+- Azure Communication Services Email
+- Azure-managed sender domain and `DoNotReply` sender
+- Managed-identity authentication
+- Blob-backed email template administration
+- Email delivery telemetry
+- Deployment/bootstrap configuration and verification
+
+---
+
+## Milestone 11 — Observability & Operations
+
+**Status**: ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+
+**Goal**: Provide production observability, operational dashboards, health monitoring, and actionable Azure Monitor alerting.
+
+**Implemented:**
+
+- Application Insights and Log Analytics integration
+- Application health/readiness checks
+- Distributed tracing and ATLAS custom metrics
+- Azure resource diagnostic settings
+- Grafana Cloud operational dashboard
+- Environment-specific `atlas-grafana-{env}` Entra application with Reader access to the corresponding ATLAS resource group
+- Azure Monitor availability and operational alerts
+- Operations Portal observability views
+- Operations Workbook definition and deployment
+
+**Remaining:**
+
+- Final functional validation of the Azure Monitor Operations Workbook
 
 ---
 
