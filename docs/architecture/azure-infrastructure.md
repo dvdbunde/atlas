@@ -704,7 +704,7 @@ remains a post-deployment functional verification step.
 ### Two Grafana identities (do not confuse them)
 
 | Identity | Role(s) | Purpose | Provisioned by |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Managed Grafana system-assigned managed identity (`grafanaPrincipalId`) | Monitoring Reader (resource group) + Log Analytics Reader (workspace) | Grafana's own access to Azure Monitor / Log Analytics data for dashboards | Bicep (O2) — unchanged |
 | Manual bootstrap identity (the Azure CLI signed-in user) | **Grafana Editor** scoped to the exact Managed Grafana resource | Create/update the ATLAS Operations dashboard via the data-plane API | Bicep (O6) via the `grafanaBootstrapPrincipalId` parameter, resolved automatically from the signed-in user |
 
@@ -719,7 +719,6 @@ diagnostic if the role is missing.
 
 The O5 Operations Portal remains the curated in-app overview; O6 provides the
 deeper Azure-native investigation surfaces. Neither replaces the other.
-
 
 ## Alerts & Operational Readiness (Milestone 11 – O7)
 

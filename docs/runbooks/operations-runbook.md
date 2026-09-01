@@ -549,9 +549,9 @@ The M11 live testing successfully demonstrated the command-latency alert firing 
 
 ---
 
-# 16. Useful live-query set
+## 16. Useful live-query set
 
-These are the core queries to keep ready during an incident.
+ These are the core queries to keep ready during an incident.
 
 ## All ATLAS telemetry
 
