@@ -1,18 +1,18 @@
-# ATLAS Current State Architecture — Post Email Integration
+# ATLAS Current State Architecture — Post M11
 
-**Date**: August 20, 2026
-**Purpose**: Establish an authoritative architectural baseline for the current implementation, including Azure Communication Services email delivery and Blob Storage email-template persistence.
+**Date**: September 1, 2026
+**Purpose**: Establish an authoritative architectural baseline for the current implementation after M9, M10, and M11 observability/operations work.
 
 ---
 
 ## 1. Overview
 
-ATLAS (Automated Tracking & Licensing Application System) is a permit processing platform for local government. After completing Milestones 1–8 plus the Email Integration milestone, the application is fully functional in local development and prepared for Azure deployment. All core business logic, UI, and infrastructure abstractions are implemented, including Azure Communication Services email delivery and Blob Storage email-template persistence.
+ATLAS (Automated Tracking & Licensing Application System) is a permit processing platform for local government. The current implementation includes the M9 Azure foundation, M10 Azure Communication Services email integration, and the M11 observability/operations foundation.
 
 **Key facts:**
 
-- **Status**: All MVP features implemented and tested locally
-- **Deployment**: Local development environment (Kestrel, LocalDB, Azurite); Azure-ready via Bicep IaC
+- **Status**: MVP application implemented; M9 and M10 complete; M11 implemented with final Operations Workbook validation remaining
+- **Deployment**: Azure App Service for API and Blazor, Azure SQL Database, Azure Blob Storage, Azure Key Vault, and Azure Container Registry; LocalDB/Azurite/Kestrel remain supported for local development
 - **Authentication**: Microsoft Entra ID (all user types)
 - **Storage**: LocalDB (SQL Server), Azurite (Blob Storage), Azure Communication Services (email)
 
@@ -29,8 +29,8 @@ ATLAS (Automated Tracking & Licensing Application System) is a permit processing
 | **CQRS/Mediator** | MediatR | 14.1.0 | Commands, Queries, Pipeline Behaviors |
 | **Validation** | FluentValidation | 11.11.0 | Command/Query validation |
 | **ORM** | Entity Framework Core | 9.0 | Code-first, migrations |
-| **Database** | SQL Server (LocalDB) | Local | Production target: Azure SQL |
-| **Blob Storage** | Azure.Storage.Blobs + Azurite | 12.24 | Documents + email templates; production target: Azure Blob Storage |
+| **Database** | Azure SQL Database | — | SQL Server-compatible production database; LocalDB remains the local-development option |
+| **Blob Storage** | Azure.Storage.Blobs + Azure Blob Storage | 12.24 | Documents + email templates; Azurite remains the local-development emulator |
 | **Email Delivery** | Azure.Communication.Email | 1.1.0 | ACS Email via Managed Identity; local dev uses a deterministic local sink |
 | **Identity for Azure** | Azure.Identity | — | DefaultAzureCredential (Managed Identity) for ACS + Blob |
 | **Authentication** | Microsoft Entra ID | — | JWT Bearer, OAuth 2.0 |

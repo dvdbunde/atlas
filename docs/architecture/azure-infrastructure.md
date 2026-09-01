@@ -1,6 +1,6 @@
 # ATLAS Azure Foundation
 
-This document describes the Azure Foundation established in **Milestone 9 – Phase 1**.
+This document describes the current Azure foundation established in M9 and extended by M10 and M11.
 
 ## Phase Scope
 
@@ -12,7 +12,7 @@ Since Milestone 9 – Phase 1, the following capabilities have been implemented 
 
 - Key Vault secrets (SQL connection string stored in Key Vault; App Services use Key Vault references)
 - Continuous Deployment (GitHub Actions workflows build and deploy both App Services)
-- Monitoring & Diagnostics (Milestone 11 – O2: Log Analytics, Application Insights, diagnostic settings, Azure Managed Grafana — see [Observability & Monitoring](#observability--monitoring-milestone-11--o2))
+- Monitoring & Diagnostics (Milestone 11 – O2: Log Analytics, Application Insights, diagnostic settings, Azure Monitor alerts, and Grafana Cloud — see [Observability & Monitoring](#observability--monitoring-milestone-11--o2))
 - Alerts & Operational Readiness (Milestone 11 – O7: Action Group, alert rules, operational runbook — see [Alerts & Operational Readiness](#alerts--operational-readiness-milestone-11--o7))
 - Managed Identity via **system-assigned** identities on the App Services (used for Azure Communication Services, Blob Storage, ACR pull, and Key Vault access)
 
@@ -53,7 +53,7 @@ All deployments are intentionally **idempotent**. Re-running the deployment reco
 infra/
 ├── main.bicep                    # Entry point — orchestrates all modules
 ├── main.parameters.dev.json      # Development environment parameters
-├── bootstrap.ps1                 # Post-deployment configuration & verification
+├── bootstrap-revised.ps1         # Post-deployment configuration & verification
 ├── telemetry/
 │   ├── atlas-operations.workbook.json         # O6 Workbook definition
 │   └── atlas-operations.grafana-dashboard.json # O6 Grafana dashboard definition
@@ -70,7 +70,7 @@ infra/
     ├── keyvault.bicep            # Azure Key Vault
     ├── loganalytics.bicep        # Log Analytics Workspace
     ├── appinsights.bicep         # Application Insights
-    ├── grafana.bicep             # Azure Managed Grafana (O2)
+    ├── grafana.bicep             # Legacy Azure Managed Grafana module (not used by the current Grafana Cloud integration)
     ├── workbook.bicep            # Azure Monitor Workbook (O6)    
     ├── actiongroup.bicep         # Azure Monitor Action Group (O7)
     ├── metricalert.bicep         # Generic metric alert rule (O7)
@@ -113,6 +113,18 @@ ACS ──────────────────┘                   
 - **Azure Managed Grafana** is the primary operational dashboard platform.
   Dashboards themselves are a later phase (O5/O6); O2 delivers the provisioned,
   authorized instance only.
+
+### Grafana Cloud identity and RBAC
+
+ATLAS uses **Grafana Cloud** for operational visualization. Grafana Cloud is external to Azure; it is not an Azure Managed Grafana resource.
+
+The Azure-side identity is the environment-specific Microsoft Entra application `atlas-grafana-{env}`. Its service principal receives the built-in **Reader** role at the corresponding ATLAS resource-group scope. The environment-aware bootstrap resolves the application using `-Environment` and ensures this assignment idempotently.
+
+No Grafana API key or static Azure credential is stored in the repository.
+
+#### Historical Azure Managed Grafana design
+
+The following legacy section documents the earlier Azure Managed Grafana design retained for architectural history. It is not the current M11 deployment path.
 
 ### Grafana identity and RBAC
 

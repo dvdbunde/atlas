@@ -1,7 +1,6 @@
 # Phase C — Azure Deployment & Configuration Checklist
 
-This document captures the Phase C verification for the email milestone (Phases A and B)
-before Phase D performs the actual Azure deployment and end-to-end testing.
+This document captures the M10 email deployment/configuration checklist and the verification baseline retained for reference.
 
 ## What was verified as already correct (left unchanged)
 
@@ -17,16 +16,14 @@ before Phase D performs the actual Azure deployment and end-to-end testing.
 - **ACS resource**: `atlas-comm-<env>-<suffix>` via `infra/modules/communicationservices.bicep`.
   Includes the email service and an `AzureManaged` email domain.
 - **ACS sender**: `DoNotReply@<domain>`. Emitted as `Email__Acs__SenderAddress`.
-- **ACS RBAC**: the **Blazor App Service** (which performs the send) receives the Azure
-  Communication Services Email Sender role (`c273bd1b-3068-4be7-9e8e-a081e4d5f5f4`), scoped
-  to the ACS resource. The API App Service does **not** receive it.
+- **ACS RBAC (current)**: the API and Blazor App Service system-assigned identities receive the **Communication and Email Service Owner** role (`09976791-48a7-449e-bb21-39d1a415f350`) scoped to the ACS Email Service. The bootstrap applies this configuration idempotently.
 - **App Service settings** (both App Services): `Storage__AccountName`,
   `Storage__EmailTemplatesContainer`, `Email__Acs__Endpoint`, `Email__Acs__SenderAddress`.
 - **Managed Identity**: both App Services use a system-assigned identity.
 - **No secrets**: no ACS/storage connection strings, access keys, or passwords are committed.
 - **Bicep compiles**: `az bicep build` passes for `main.bicep` and all modules.
 
-## Phase D deployment prerequisites
+## Historical Phase D deployment prerequisites
 
 Before Phase D can consider ACS email fully verified, the following manual step must be
 complete:

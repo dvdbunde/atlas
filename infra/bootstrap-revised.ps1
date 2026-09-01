@@ -84,6 +84,8 @@ $AcrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 $StorageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 $KeyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 $CommunicationEmailServiceOwnerRoleId = '09976791-48a7-449e-bb21-39d1a415f350'
+$ReaderRoleId = 'acdd72a7-3385-48ef-bd42-f606fba81ae7'
+$GrafanaAppRegistrationPrefix = 'atlas-grafana'
 
 # --------------------------------------------------------------------------
 # Helper functions
@@ -450,6 +452,117 @@ function Ensure-AcsPermissions {
         Assert-True ($null -ne $verify -and @($verify).Count -gt 0) `
             "$($app.Name) Communication and Email Service Owner role could not be verified."
     }
+}
+
+# --------------------------------------------------------------------------
+# Phase 2 – Configure Grafana Entra Application Reader access
+# --------------------------------------------------------------------------
+
+function Ensure-GrafanaReaderAccess {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('dev', 'test', 'prod')]
+        [string]$Environment
+    )
+
+    Write-Step "Phase 2 – Configuring Grafana Reader access"
+
+    $appRegistrationName = "$GrafanaAppRegistrationPrefix-$Environment"
+
+    # ----------------------------------------------------------------------
+    # Resolve the Entra application registration
+    # ----------------------------------------------------------------------
+
+    $apps = az ad app list `
+        --display-name $appRegistrationName `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True `
+        ($null -ne $apps -and @($apps).Count -eq 1) `
+        "Expected exactly one Entra application registration named '$appRegistrationName'."
+
+    $app = @($apps)[0]
+
+    Assert-True `
+        (-not [string]::IsNullOrWhiteSpace($app.appId)) `
+        "Entra application '$appRegistrationName' has no Application (client) ID."
+
+    Write-Pass "Grafana Entra application resolved: $appRegistrationName"
+
+    # ----------------------------------------------------------------------
+    # Resolve the corresponding service principal
+    # ----------------------------------------------------------------------
+
+    $grafanaSp = az ad sp show `
+        --id $app.appId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True `
+        ($null -ne $grafanaSp -and -not [string]::IsNullOrWhiteSpace($grafanaSp.id)) `
+        "Service principal for Entra application '$appRegistrationName' could not be resolved."
+
+    Write-Pass "Grafana service principal resolved (Object ID: $($grafanaSp.id))"
+
+    # ----------------------------------------------------------------------
+    # Resolve the actual resource-group scope
+    # ----------------------------------------------------------------------
+
+    $resourceGroupId = az group show `
+        --name $ResourceGroup `
+        --query id `
+        --output tsv 2>$null
+
+    Assert-True `
+        (-not [string]::IsNullOrWhiteSpace($resourceGroupId)) `
+        "Resource group '$ResourceGroup' could not be resolved."
+
+    # ----------------------------------------------------------------------
+    # Check existing Reader assignment
+    # ----------------------------------------------------------------------
+
+    $existing = az role assignment list `
+        --assignee-object-id $grafanaSp.id `
+        --scope $resourceGroupId `
+        --role $ReaderRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -ne $existing -and @($existing).Count -gt 0) {
+        Write-Pass "$appRegistrationName already has Reader on $ResourceGroup"
+        return
+    }
+
+    # ----------------------------------------------------------------------
+    # Create Reader assignment
+    # ----------------------------------------------------------------------
+
+    az role assignment create `
+        --assignee-object-id $grafanaSp.id `
+        --assignee-principal-type ServicePrincipal `
+        --role $ReaderRoleId `
+        --scope $resourceGroupId `
+        --output none
+
+    Assert-True ($LASTEXITCODE -eq 0) `
+        "Failed to assign Reader to $appRegistrationName on $ResourceGroup."
+
+    # ----------------------------------------------------------------------
+    # Immediate verification
+    # ----------------------------------------------------------------------
+
+    $verify = az role assignment list `
+        --assignee-object-id $grafanaSp.id `
+        --scope $resourceGroupId `
+        --role $ReaderRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True `
+        ($null -ne $verify -and @($verify).Count -gt 0) `
+        "Reader role assignment for $appRegistrationName could not be verified."
+
+    Write-Pass "$appRegistrationName granted Reader on $ResourceGroup"
 }
 
 # --------------------------------------------------------------------------
@@ -1973,6 +2086,9 @@ Ensure-AcsPermissions `
     -CommunicationServiceResourceId $outputs.communicationServiceResourceId `
     -ApiPrincipalId $outputs.apiPrincipalId `
     -BlazorPrincipalId $outputs.blazorPrincipalId
+Ensure-GrafanaReaderAccess `
+    -ResourceGroup $ResourceGroup `
+    -Environment $Environment    
 
 # Phase 3 – App Services
 Verify-ManagedIdentities `

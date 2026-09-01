@@ -33,6 +33,7 @@ Add links to ADRs in sequential order using the naming convention `adr-NNNN-titl
 - [ADR-0021: Environment-Based Configuration and Secret Management](adr-021-environment-based-configuration-secrets.md) ✅ Implemented
 - [ADR-0022: Managed Azure Services over Self-Hosted Infrastructure](adr-022-managed-azure-services-preference.md) ✅ Implemented
 - [ADR-0023: Production Observability Strategy](adr-023-production-observability-strategy.md) ✅ Implemented
+- [ADR-0024: Grafana Cloud for Operational Visualization](adr-024-grafana-cloud-operational-visualization.md) ✅ Accepted
 
 ## ADR Template
 

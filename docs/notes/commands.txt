@@ -10,9 +10,9 @@ az group create --name atlas-dev-rg --location westeurope
 
 $id = az ad signed-in-user show --query id -o tsv
 
-az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" grafanaBootstrapPrincipalId="$id" *> validate-output.txt
-az deployment group what-if  --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" grafanaBootstrapPrincipalId="$id" *> what-if-output.txt
-az deployment group create   --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" grafanaBootstrapPrincipalId="$id"
+az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" *> validate-output.txt
+az deployment group what-if  --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" *> what-if-output.txt
+az deployment group create   --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com"
 
 ## Azure - Bootstrap / Role Assignments (PowerShell)
 $GitHubClientId = "4226094a-bba0-4cf2-9464-25e22391c158"
@@ -70,9 +70,9 @@ az bicep install
 ## Azure - Resource Group / Deployment
 az deployment group list --resource-group atlas-dev-rg --output table
 az deployment group list --resource-group atlas-dev-rg --query "[].{Name:name,State:properties.provisioningState,Timestamp:properties.timestamp}" --output table
-az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" grafanaBootstrapPrincipalId="$id" *> validate-output.txt
-az deployment group what-if  --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" grafanaBootstrapPrincipalId="$id" *> what-if-output.txt
-az deployment group create   --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" grafanaBootstrapPrincipalId="$id"
+az deployment group validate --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" *> validate-output.txt
+az deployment group what-if  --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com" *> what-if-output.txt
+az deployment group create   --resource-group atlas-dev-rg --template-file .\infra\main.bicep --parameters .\infra\main.parameters.dev.json alertNotificationEmail="dvdbunde@gmail.com"
 az deployment operation group list --resource-group atlas-dev-rg --name main-acr --output json
 az resource list --resource-group atlas-dev-rg --output table
 
@@ -83,12 +83,7 @@ az role assignment create --assignee-object-id 8efd7b92-e8c4-45d4-9efe-389f2dd5f
 az role assignment list --assignee 8efd7b92-e8c4-45d4-9efe-389f2dd5f7f6 --all
 
 ## Azure - ACR (Container Registry)
-az acr check-name --name atlasacrpxto
 az provider show --namespace Microsoft.ContainerRegistry --expand "resourceTypes/aliases" --output table
-az acr create --resource-group atlas-dev-rg --name atlasacrpxto --sku Standard
-az acr create --resource-group atlas-dev-rg --name atlasacrpxto --sku Basic --admin-enabled false
-az acr config retention update --resource-group atlas-dev-rg --registry atlasacrpxto --status enabled --days 7
-az acr config retention update --registry atlasacrpxto --status enabled --days 7 --type UntaggedManifests
 az acr show --resource-group atlas-dev-rg --name atlasacrde96db --output table
 az acr repository show-tags --name atlasacrde96db --repository atlas-api --output table
 az acr repository show-tags --name atlasacrde96db --repository atlas-blazor --output table

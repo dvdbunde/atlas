@@ -19,7 +19,7 @@ This runbook is based on the M11 observability/operations work and the live Azur
 | Alerts | Azure Monitor → Alerts | Detection and notification state |
 | Alert notification | Action Group | Whether an alert notification was actually delivered |
 
-The Operations Workbook is **not** part of the live operational path. It was removed from the deployment after repeated Azure Workbook resource-parameter issues. Grafana is likewise not currently part of the deployed monitoring path.
+The Operations Workbook is provisioned as part of M11 and remains pending final functional validation. Grafana Cloud is the deployed operational dashboard surface.
 
 Azure Monitor/Application Insights and Log Analytics are the authoritative operational data sources.
 
@@ -175,7 +175,7 @@ customMetrics
 | where timestamp > ago(1h)
 | where name == "atlas.applications.transitions"
 | extend Transition = tostring(customDimensions.transition)
-| summarize Count = sum(todouble(value)) by Transition
+| summarize Count = sum(todouble(Value)) by Transition
 | order by Count desc
 ```
 
@@ -201,11 +201,11 @@ customMetrics
 | where name == "atlas.command.duration"
 | extend command = tostring(customDimensions.command)
 | summarize
-    Count = sum(todouble(value)),
-    p50 = percentile(todouble(value), 50),
-    p95 = percentile(todouble(value), 95),
-    p99 = percentile(todouble(value), 99),
-    MaxDuration = max(todouble(value))
+    Count = sum(todouble(Value)),
+    p50 = percentile(todouble(Value), 50),
+    p95 = percentile(todouble(Value), 95),
+    p99 = percentile(todouble(Value), 99),
+    MaxDuration = max(todouble(Value))
     by command
 | order by p95 desc
 ```
@@ -329,7 +329,7 @@ customMetrics
 | where timestamp > ago(1h)
 | where name == "atlas.email.sends"
 | extend outcome = tostring(customDimensions.outcome)
-| summarize Total = sum(todouble(value)) by outcome
+| summarize Total = sum(todouble(Value)) by outcome
 | order by Total desc
 ```
 
@@ -341,8 +341,8 @@ customMetrics
 | where name == "atlas.email.duration"
 | extend outcome = tostring(customDimensions.outcome)
 | summarize
-    p50 = percentile(todouble(value), 50),
-    p95 = percentile(todouble(value), 95),
+    p50 = percentile(todouble(Value), 50),
+    p95 = percentile(todouble(Value), 95),
     Samples = count()
     by outcome
 ```
@@ -456,7 +456,7 @@ Condition:
 Investigate:
 
 - `atlas.email.sends`
-- ACS RequestLogs
+- Log Analytics ACS email operational logs
 - ACS sender configuration
 - Recipient data
 
@@ -559,7 +559,7 @@ These are the core queries to keep ready during an incident.
 customMetrics
 | where timestamp > ago(1h)
 | where name startswith "atlas."
-| project timestamp, name, value, customDimensions
+| project timestamp, name, Value, ValueCount, customDimensions
 | order by timestamp desc
 ```
 
@@ -590,9 +590,9 @@ customMetrics
 | where name == "atlas.command.duration"
 | extend command = tostring(customDimensions.command)
 | summarize
-    p50 = percentile(todouble(value), 50),
-    p95 = percentile(todouble(value), 95),
-    p99 = percentile(todouble(value), 99),
+    p50 = percentile(todouble(Value), 50),
+    p95 = percentile(todouble(Value), 95),
+    p99 = percentile(todouble(Value), 99),
     Samples = count()
     by command
 | order by p95 desc
@@ -605,7 +605,7 @@ customMetrics
 | where timestamp > ago(1h)
 | where name == "atlas.email.sends"
 | extend outcome = tostring(customDimensions.outcome)
-| summarize Total = sum(todouble(value)) by outcome
+| summarize Total = sum(todouble(Value)) by outcome
 | order by Total desc
 ```
 
@@ -629,8 +629,8 @@ AzureDiagnostics
 - The Operations Portal does not manage or suppress alerts.
 - Alerting is detection/notification only.
 - There is no automatic restart, scaling, or incident remediation performed by the M11 alerting system.
-- The Azure Workbook was abandoned and is not required for live troubleshooting.
-- Managed Grafana is not deployed and is not required for the current operational path.
+- The Azure Monitor Workbook is provisioned but remains pending final functional validation.
+- Grafana Cloud is deployed as the operational dashboard surface; Azure Managed Grafana is not required.
 
 ---
 
