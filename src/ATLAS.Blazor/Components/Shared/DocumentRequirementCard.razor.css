@@ -1,0 +1,18 @@
+:deep(.card) {
+    border-radius: 0.5rem;
+}
+
+.card-title {
+    color: var(--atlas-neutral-900, #212529);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.file-row {
+    background-color: var(--atlas-neutral-50, #f7f9fc);
+    border-color: var(--atlas-border-color, #dee2e6);
+}
+
+.file-row:hover {
+    background-color: var(--atlas-neutral-100, #f8f9fa);
+}

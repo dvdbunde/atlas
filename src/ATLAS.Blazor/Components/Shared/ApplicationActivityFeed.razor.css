@@ -1,0 +1,57 @@
+.application-activity-feed {
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-icon {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    background-color: var(--atlas-neutral-100, #f8f9fa);
+}
+
+.activity-icon-created {
+    background-color: var(--atlas-blue-100, #d8e8f7);
+    color: var(--atlas-blue-700, #165ca8);
+}
+
+.activity-icon-submitted,
+.activity-icon-resubmitted {
+    background-color: var(--bs-success-bg-subtle, #d1e7dd);
+    color: var(--bs-success-text-emphasis, #0a3622);
+}
+
+.activity-icon-assigned {
+    background-color: var(--bs-warning-bg-subtle, #fff3cd);
+    color: var(--bs-warning-text-emphasis, #664d03);
+}
+
+.activity-icon-approved {
+    background-color: var(--bs-success-bg-subtle, #d1e7dd);
+    color: var(--bs-success-text-emphasis, #0a3622);
+}
+
+.activity-icon-rejected {
+    background-color: var(--bs-danger-bg-subtle, #f8d7da);
+    color: var(--bs-danger-text-emphasis, #58151c);
+}
+
+.activity-icon-inforequested {
+    background-color: var(--bs-info-bg-subtle, #cff4fc);
+    color: var(--bs-info-text-emphasis, #055160);
+}
+
+.activity-icon-documentuploaded {
+    background-color: var(--bs-info-bg-subtle, #cff4fc);
+    color: var(--bs-info-text-emphasis, #055160);
+}
+
+.activity-icon-default {
+    background-color: var(--atlas-neutral-100, #f8f9fa);
+    color: var(--atlas-neutral-600, #6c757d);
+}
