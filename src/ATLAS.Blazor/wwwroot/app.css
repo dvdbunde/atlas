@@ -255,11 +255,24 @@ a:focus-visible {
 .form-control,
 .form-select {
     border-color: var(--atlas-border-color);
+    background-color: var(--atlas-surface);
+}
+
+/* Editable form controls use the ATLAS white surface so they do not look
+   disabled against the light page background. Genuinely disabled or
+   read-only controls remain visually muted. */
+.form-control:disabled,
+.form-control[readonly],
+.form-select:disabled,
+.form-select[readonly] {
+    background-color: var(--atlas-surface-muted);
+    opacity: 1;
 }
 
 .form-control:focus,
 .form-select:focus {
     border-color: var(--atlas-blue-500);
+    background-color: var(--atlas-surface);
 }
 
 .form-check-input:checked {

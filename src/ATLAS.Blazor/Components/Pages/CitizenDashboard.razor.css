@@ -1,0 +1,38 @@
+.container {
+    max-width: 1140px;
+}
+
+.breadcrumb {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+    color: var(--atlas-blue-700, #165ca8);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--atlas-neutral-900, #212529);
+}
+
+.table {
+    --bs-table-hover-bg: var(--atlas-neutral-50, #f7f9fc);
+    border-color: var(--atlas-border-color, #dee2e6);
+}
+
+.table thead th {
+    font-weight: 600;
+    color: var(--atlas-neutral-700, #495057);
+    border-bottom-width: 1px;
+}
+
+.table tbody td {
+    vertical-align: middle;
+}

@@ -1,0 +1,39 @@
+.container {
+    max-width: 1140px;
+}
+
+.breadcrumb {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+    color: var(--atlas-blue-700, #165ca8);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--atlas-neutral-900, #212529);
+}
+
+.card {
+    border-color: var(--atlas-border-color, #dee2e6);
+    border-radius: 0.5rem;
+    transition: box-shadow 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.card:hover {
+    border-color: var(--atlas-blue-500, #2b86d6);
+    box-shadow: var(--bs-box-shadow-sm, 0 0.125rem 0.375rem rgba(16, 36, 63, 0.08));
+}
+
+.card-title {
+    font-weight: 600;
+    color: var(--atlas-neutral-900, #212529);
+}
