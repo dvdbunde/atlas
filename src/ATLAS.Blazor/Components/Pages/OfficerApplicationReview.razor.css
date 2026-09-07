@@ -1,0 +1,56 @@
+.container {
+    max-width: 1100px;
+}
+
+.breadcrumb {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+    color: var(--atlas-blue-700, #165ca8);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+/* Denser review surface */
+::deep .card {
+    border-radius: 0.5rem;
+}
+
+::deep .card.shadow-sm {
+    box-shadow: var(--bs-box-shadow-sm, 0 0.125rem 0.375rem rgba(16, 36, 63, 0.08));
+}
+
+/* Decision card emphasis using the primary accent border */
+::deep .card.border-primary {
+    border-color: var(--atlas-blue-500, #2b86d6) !important;
+}
+
+::deep .card-title {
+    color: var(--atlas-neutral-900, #212529);
+    font-weight: 600;
+}
+
+::deep .form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--atlas-neutral-700, #495057);
+}
+
+::deep .form-control {
+    background-color: var(--atlas-surface, #ffffff);
+    border-color: var(--atlas-border-color, #dee2e6);
+}
+
+/* Denser document requirement cards */
+::deep .card .card.mb-3 {
+    border-radius: 0.5rem;
+}
+
+::deep .card .card-body > div.bg-light {
+    background-color: var(--atlas-surface-muted, #f8f9fa) !important;
+}
