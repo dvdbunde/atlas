@@ -1,0 +1,33 @@
+.container {
+    max-width: 1280px;
+}
+
+.breadcrumb {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+    color: var(--atlas-blue-700, #165ca8);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+/* Operational summary cards */
+.card {
+    border-color: var(--atlas-border-color, #dee2e6);
+    border-radius: 0.5rem;
+}
+
+.card-title {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.card-text.display-6 {
+    color: var(--atlas-neutral-900, #212529);
+    font-weight: 600;
+}

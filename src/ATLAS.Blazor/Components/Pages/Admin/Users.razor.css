@@ -1,0 +1,47 @@
+.container {
+    max-width: 1280px;
+}
+
+.breadcrumb {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+    color: var(--atlas-blue-700, #165ca8);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--atlas-neutral-700, #495057);
+    margin-bottom: 0.25rem;
+}
+
+.form-control,
+.form-select {
+    background-color: var(--atlas-surface, #ffffff);
+    border-color: var(--atlas-border-color, #dee2e6);
+    font-size: 0.875rem;
+}
+
+.table {
+    --bs-table-hover-bg: var(--atlas-neutral-50, #f7f9fc);
+    border-color: var(--atlas-border-color, #dee2e6);
+}
+
+.table thead th {
+    font-weight: 600;
+    color: var(--atlas-neutral-700, #495057);
+    border-bottom-width: 1px;
+    white-space: nowrap;
+}
+
+.table tbody td {
+    vertical-align: middle;
+}
