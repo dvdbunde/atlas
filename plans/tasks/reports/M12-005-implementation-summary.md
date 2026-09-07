@@ -18,6 +18,7 @@ CSS reinforces this: wider operational container, tighter filter row,
 denser application cards, and a coherent review surface.
 
 Pages restyled (both in src/ATLAS.Blazor/Components/Pages/):
+
 - OfficerDashboard.razor.css - consistent wider container (1280px),
   breadcrumb styling, heading hierarchy, denser filter row (tighter labels
   and form-selects), consistent card radius, and pagination styling.
@@ -35,6 +36,7 @@ pagination, and all application information remain unchanged.
 ## Files changed
 
 New scoped CSS (2):
+
 - src/ATLAS.Blazor/Components/Pages/OfficerDashboard.razor.css
 - src/ATLAS.Blazor/Components/Pages/OfficerApplicationReview.razor.css
 

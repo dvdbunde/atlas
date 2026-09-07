@@ -33,6 +33,10 @@
 .table {
     --bs-table-hover-bg: var(--atlas-neutral-50, #f7f9fc);
     border-color: var(--atlas-border-color, #dee2e6);
+    /* Keep the full multi-column table readable at narrow widths by allowing
+       intentional horizontal scrolling inside the table-responsive wrapper
+       rather than squeezing/clipping columns. */
+    min-width: 900px;
 }
 
 .table thead th {

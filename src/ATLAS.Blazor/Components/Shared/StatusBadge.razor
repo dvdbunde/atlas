@@ -11,10 +11,10 @@
     {
         ApplicationStatus.Draft => ("bg-secondary", "Draft"),
         ApplicationStatus.Submitted => ("bg-primary", "Submitted"),
-        ApplicationStatus.UnderReview => ("bg-info text-dark", "Under Review"),
+        ApplicationStatus.UnderReview => ("bg-info-subtle text-info-emphasis", "Under Review"),
         ApplicationStatus.Approved => ("bg-success", "Approved"),
         ApplicationStatus.Rejected => ("bg-danger", "Rejected"),
-        ApplicationStatus.InfoRequested => ("bg-warning text-dark", "Info Requested"),
+        ApplicationStatus.InfoRequested => ("bg-warning-subtle text-warning-emphasis", "Info Requested"),
         ApplicationStatus.Resubmitted => ("bg-primary", "Resubmitted"),
         _ => ("bg-dark", Status.ToString())
     };

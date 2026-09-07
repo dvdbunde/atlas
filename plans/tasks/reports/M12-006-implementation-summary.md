@@ -21,6 +21,7 @@ surfaces, and consistent form controls. Editable form controls use the
 white ATLAS surface so they do not look disabled.
 
 Pages restyled (all in src/ATLAS.Blazor/Components/Pages/Admin/):
+
 - AdminDashboard.razor.css - operational summary cards, container, breadcrumb.
 - Operations.razor.css - operational cards, list-group density, badges.
 - Applications.razor.css, AuditLogs.razor.css, PermitTypes.razor.css,
@@ -47,6 +48,7 @@ existing detail pages retain their information and actions.
 ## Files changed
 
 New scoped CSS (14):
+
 - src/ATLAS.Blazor/Components/Pages/Admin/AdminDashboard.razor.css
 - src/ATLAS.Blazor/Components/Pages/Admin/Operations.razor.css
 - src/ATLAS.Blazor/Components/Pages/Admin/Applications.razor.css

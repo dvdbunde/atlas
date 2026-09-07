@@ -37,3 +37,19 @@
     background-color: var(--atlas-surface, #ffffff);
     border-color: var(--atlas-border-color, #dee2e6);
 }
+
+/* Permit Designer field/requirement rows: allow the label and action
+   controls to wrap gracefully at narrow widths and keep adequate
+   touch-target spacing. */
+.list-group-item {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.list-group-item .btn-group {
+    flex-shrink: 0;
+}
+
+.list-group-item .btn-group .btn {
+    min-width: 2.25rem;
+}

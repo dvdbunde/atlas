@@ -164,7 +164,7 @@
     private string HealthBadgeClass(string status) => status switch
     {
         "Healthy" => "bg-success",
-        "Degraded" => "bg-warning text-dark",
+        "Degraded" => "bg-warning-subtle text-warning-emphasis",
         "Unhealthy" => "bg-danger",
         _ => "bg-secondary"
     };
