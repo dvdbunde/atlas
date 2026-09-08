@@ -487,7 +487,7 @@ public class PermitTypeDesignerTests : BunitContext
         // The preview is a read-only, presentation-only rendering with dummy data.
         Assert.Contains("Designer preview", cut.Markup);
         Assert.Contains("Application Data", cut.Markup);
-        Assert.Contains("Sample text value", cut.Markup); // dummy value rendered
+        Assert.Contains("Sample site address and activity details", cut.Markup); // dummy value rendered
     }
 
     [Fact]
@@ -514,5 +514,55 @@ public class PermitTypeDesignerTests : BunitContext
         Assert.Contains("Site Plan", cut.Markup);
         Assert.Contains("ID Copy", cut.Markup);
         Assert.Contains("Supporting Documents", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_PresentApplicationDataAsDistinctSection()
+    {
+        var id = Guid.NewGuid();
+        var dto = SampleDto(id);
+        dto.Fields = new List<FieldDefinitionDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "Applicant Name", Type = FieldType.Text, IsRequired = true }
+        };
+        dto.DocumentRequirements = new List<FieldDefinitionDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "ID Copy", Type = FieldType.FileUpload, IsRequired = true }
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default)).ReturnsAsync(dto);
+
+        var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
+        cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
+
+        // Application Data and Supporting Documents are distinct bounded cards.
+        Assert.Contains("Application Data", cut.Markup);
+        Assert.Contains("Supporting Documents", cut.Markup);
+        Assert.Contains("Applicant Name", cut.Markup);
+        Assert.Contains("ID Copy", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_RenderRealisticSampleValues_ByFieldType()
+    {
+        var id = Guid.NewGuid();
+        var dto = SampleDto(id);
+        dto.Fields = new List<FieldDefinitionDto>
+        {
+            new() { Id = Guid.NewGuid(), Name = "Fee", Type = FieldType.Number, IsRequired = true },
+            new() { Id = Guid.NewGuid(), Name = "Description", Type = FieldType.MultilineText, IsRequired = true },
+            new() { Id = Guid.NewGuid(), Name = "Start Date", Type = FieldType.Date, IsRequired = true },
+            new() { Id = Guid.NewGuid(), Name = "Consent", Type = FieldType.Boolean, IsRequired = true },
+            new() { Id = Guid.NewGuid(), Name = "Category", Type = FieldType.Dropdown, Options = new List<string> { "A", "B" } }
+        };
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default)).ReturnsAsync(dto);
+
+        var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
+        cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
+
+        // Currency-like number field renders a plausible formatted amount.
+        Assert.Contains("€25,000", cut.Markup);
+        // Boolean renders Yes, multiline renders realistic text, date renders a formatted date.
+        Assert.Contains("Yes", cut.Markup);
+        Assert.Contains("A short description", cut.Markup);
     }
 }

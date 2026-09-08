@@ -36,17 +36,38 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
     // Dummy application number for the designer preview. Transient/in-memory only.
     private string PreviewApplicationNumber => $"ATL-{DateTime.UtcNow:yyyyMMdd}-PREVIEW";
 
-    // Generates a clearly dummy value for a preview field based on its type.
-    private static string PreviewValueFor(DynamicFormFieldViewModel field) => field.Type switch
+    // Generates a clearly dummy, realistic value for a preview field based on its type.
+    // Values are deterministic/stable and demonstrative only — they never represent a
+    // real applicant and are never persisted or submitted.
+    private static string PreviewValueFor(DynamicFormFieldViewModel field)
     {
-        FieldType.MultilineText => "Sample multi-line text entered by the applicant.",
-        FieldType.Number =>"0",
-        FieldType.Date => DateTime.Today.ToString("MMM dd, yyyy"),
-        FieldType.Boolean =>"Yes",
-        FieldType.Dropdown => field.Options.FirstOrDefault() ?? "Sample option",
-        FieldType.FileUpload =>"Sample document",
-        _ =>"Sample text value"
-    };
+        return field.Type switch
+        {
+            FieldType.MultilineText => "A short description of the intended activity, including the location and expected duration.",
+            FieldType.Number => PreviewNumberValue(field),
+            FieldType.Date => DateTime.Today.AddDays(30).ToString("MMM dd, yyyy"),
+            FieldType.Boolean => "Yes",
+            FieldType.Dropdown => field.Options.FirstOrDefault() ?? "Select an option",
+            FieldType.FileUpload => "Sample document (not an actual upload)",
+            _ => "Sample site address and activity details"
+        };
+    }
+
+    private static string PreviewNumberValue(DynamicFormFieldViewModel field)
+    {
+        // Where a currency-style field is evident (name mentions amount/fee/cost/value),
+        // show a plausible formatted amount; otherwise a plausible non-zero number.
+        var name = field.FieldName ?? field.Label;
+        if (name.IndexOf("amount", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            name.IndexOf("fee", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            name.IndexOf("cost", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            name.IndexOf("value", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return "€25,000";
+        }
+
+        return "1,200";
+    }
 
     protected override async Task OnInitializedAsync()
     {
