@@ -45,20 +45,13 @@
             <div class="alert alert-success" role="alert">
                 <h4 class="alert-heading">Draft created successfully</h4>
                 <p>Your draft application has been created. You can now continue editing, add documents, or submit the application.</p>
-                <button class="btn btn-outline-success" @onclick="DismissCreatedSuccess">
-                    Continue Editing
-                </button>
             </div>
         }
-
-        @if (_viewModel.SaveSuccess)
+        else if (_viewModel.SaveSuccess)
         {
             <div class="alert alert-success" role="alert">
                 <h4 class="alert-heading">Changes saved</h4>
                 <p>Your draft application has been updated successfully.</p>
-                <button class="btn btn-outline-success" @onclick="DismissSuccess">
-                    Continue Editing
-                </button>
             </div>
         }
 
@@ -98,32 +91,30 @@
                               Mode="FormFieldMode.Edit" 
                               AllowFileUpload="true"
                               OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))"
-                              OnDocumentDeleted="@(args => HandleDocumentDeleted(args))">
-            <div class="mt-4">
-                <button type="button"
-                        class="btn btn-primary btn-lg"
-                        disabled="@_viewModel.IsSaving"
-                        @onclick="SaveDraft">
-                    @if (_viewModel.IsSaving)
-                    {
-                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                        <span>Saving...</span>
-                    }
-                    else
-                    {
-                        <span>Save Changes</span>
-                    }
-                </button>
-            </div>
-        </DynamicFormGenerator>
-      
+                              OnDocumentDeleted="@(args => HandleDocumentDeleted(args))" />
 
-        @* Submit button — only when form is valid and application is a draft *@
-        @if (!_viewModel.IsInfoRequested)
-        {
-            <div class="mt-3 d-flex gap-2">
+        @* Compact horizontal action group — Save Changes and Submit Application *@
+        <div class="d-flex flex-wrap gap-2 align-items-center mt-4">
+            <button type="button"
+                    class="btn btn-primary"
+                    disabled="@_viewModel.IsSaving"
+                    @onclick="SaveDraft">
+                @if (_viewModel.IsSaving)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <span>Save Changes</span>
+                }
+            </button>
+
+            @* Submit button — only when form is valid and application is a draft *@
+            @if (!_viewModel.IsInfoRequested)
+            {
                 <button type="button"
-                        class="btn btn-success btn-lg"
+                        class="btn btn-success"
                         disabled="@(_viewModel.IsSubmitting || _viewModel.Fields.Any(f => f.HasErrors))"
                         aria-label="Submit application"
                         @onclick="SubmitApplication">
@@ -137,8 +128,8 @@
                         <span>Submit Application</span>
                     }
                 </button>
-            </div>
-        }               
+            }
+        </div>               
     
         @* O5: Resubmit button — only for InfoRequested applications *@
         @if (_viewModel.IsInfoRequested)

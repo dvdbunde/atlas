@@ -140,7 +140,8 @@ were supplied; they must not be invented.
 6. `M12-F — Admin pages restyled — N/A — Implementation Agent <N/A>`
 7. `M12-G — Consistency/accessibility validation complete — N/A — Tester / Code Reviewer <N/A>`
 8. `M12-H — Admin Dashboard refactor complete — N/A — Implementation Agent <N/A>`
-9. `M12-I — Milestone review and approval — N/A — David Van den Bunder <N/A>`
+9. `M12-I — Blazor page navigation and UX improvements complete — N/A — Implementation Agent <N/A>`
+10. `M12-J — Milestone review and approval — N/A — David Van den Bunder <N/A>`
 
 ## 9. Task list (hierarchical, actionable tasks with complexity estimates)
 
@@ -164,6 +165,9 @@ were supplied; they must not be invented.
 - T-008 \| Refactor the existing Admin Dashboard into an informative
     administrative overview and navigation hub \| Implementation Agent
     \| complexity: M \| deps: \[T-006\] \| done: false
+- T-009 \| Refactor and improve Citizen, Officer, and Admin Blazor page
+    navigation and UX \| Implementation Agent \| complexity: L \| deps:
+    \[T-007, T-008\] \| done: false
 
 ## 10. Risks and mitigations (table or list)
 
@@ -261,6 +265,40 @@ determination rather than introducing a separate health calculation.
 These dashboard changes must not introduce new pages, workflows,
 authorization rules, or unrelated analytics. Existing services and query
 infrastructure should be reused wherever practical.
+
+M12-009 extends the same preservation principle to targeted page-level
+navigation and UX improvements. Breadcrumbs are the canonical hierarchical
+navigation mechanism throughout the Citizen, Officer, and Admin areas;
+redundant Back buttons used solely for parent/up navigation should be
+removed. The existing hierarchy and routes remain authoritative.
+
+The Admin Users role indicator should preferably use plain role text. If
+visual differentiation is retained, the three roles must have distinct,
+accessible treatments using the existing M12 visual system.
+
+The Admin Email Templates page should use the approved single-column flow:
+fixed template list, selected template content, available placeholders,
+preview, and the existing Save, Preview, and Reset to default actions.
+No template creation functionality is introduced.
+
+The Operations Deeper Telemetry block should link to the Azure Portal for
+Azure resources that can be inspected there and to the ATLAS Grafana Cloud
+dashboards. Azure Managed Grafana must not be referenced. The Grafana
+dashboard URL should come from Blazor application configuration and is a
+non-secret value.
+
+The Permit Designer Preview should present a realistic application-style
+preview using the existing application-detail presentation where practical,
+with clearly identified dummy/preview data. Preview data must remain
+transient and must never create or persist a real application.
+
+Citizen Application Create/Edit should maintain one current save-result
+notification: a later successful save replaces the earlier draft-created
+message, and redundant Continue Editing actions are removed. Save Changes
+and Submit Application should use the common M12 button treatment and form
+a compact horizontal action group where space permits. Application data and
+supporting documents should be visually distinct while retaining all
+existing fields, validation, upload, save, and submit behaviour.
 
 The implementation should avoid invented UI. The supplied mockups
 demonstrate a visual direction, but existing page content and
@@ -382,7 +420,7 @@ specification.
 
 ## 18. Related documents & links
 
-- `plans/tasks/M12/M12-001.md` through `plans/tasks/M12/M12-008.md`
+- `plans/tasks/M12/M12-001.md` through `plans/tasks/M12/M12-009.md`
 - `plans/tasks/reports/task-implementation-summary-template.md` ---
     required format for M12 task implementation summaries.
 - Existing `.github` instructions and agents

@@ -123,6 +123,9 @@ public partial class ApplicationEdit : ComponentBase
 
             await Mediator.Send(command);
 
+            // A successful save replaces any earlier draft-created notification so only
+            // one current save-result banner is shown at a time.
+            _viewModel.CreatedSuccess = false;
             _viewModel.SaveSuccess = true;
 
             Logger.LogInformation(
@@ -266,16 +269,6 @@ public partial class ApplicationEdit : ComponentBase
             ".png" => "image/png",
             _ => "application/octet-stream"
         };
-    }
-
-    private void DismissSuccess()
-    {
-        _viewModel.SaveSuccess = false;
-    }
-
-    private void DismissCreatedSuccess()
-    {
-        _viewModel.CreatedSuccess = false;
     }
 
     private async Task SubmitApplication()

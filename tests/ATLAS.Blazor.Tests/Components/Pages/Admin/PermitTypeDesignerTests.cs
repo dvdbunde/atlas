@@ -98,7 +98,7 @@ public class PermitTypeDesignerTests : BunitContext
 
         var previewTab = cut.FindAll("button").First(b => b.TextContent.Contains("Preview"));
         previewTab.Click();
-        Assert.Contains("Live Preview", cut.Markup);
+        Assert.Contains("Designer preview", cut.Markup);
     }
 
     [Fact]
@@ -410,8 +410,10 @@ public class PermitTypeDesignerTests : BunitContext
 
         cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
 
-        var generator = cut.FindComponent<DynamicFormGenerator>();
-        Assert.NotNull(generator);
+        // The preview renders a realistic application-style presentation with the
+        // configured fields and clearly identified dummy data.
+        Assert.Contains("Designer preview", cut.Markup);
+        Assert.Contains("Application Data", cut.Markup);
         Assert.Contains("Applicant Name", cut.Markup);
         Assert.Contains("Category", cut.Markup);
     }
@@ -482,8 +484,10 @@ public class PermitTypeDesignerTests : BunitContext
         var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
         cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
 
-        var generator = cut.FindComponent<DynamicFormGenerator>();
-        Assert.Equal(FormFieldMode.ReadOnly, generator.Instance.Mode);
+        // The preview is a read-only, presentation-only rendering with dummy data.
+        Assert.Contains("Designer preview", cut.Markup);
+        Assert.Contains("Application Data", cut.Markup);
+        Assert.Contains("Sample text value", cut.Markup); // dummy value rendered
     }
 
     [Fact]
@@ -505,11 +509,10 @@ public class PermitTypeDesignerTests : BunitContext
         var cut = Render<PermitTypeDesigner>(parameters => parameters.Add(p => p.Id, id.ToString()));
         cut.FindAll("button").First(b => b.TextContent.Contains("Preview")).Click();
 
-        var generator = cut.FindComponent<DynamicFormGenerator>();
-        // Preview merges fields then document requirements (3 total).
-        Assert.Equal(3, generator.Instance.Fields.Count);
+        // Preview reflects the configured fields and document requirements.
         Assert.Contains("Applicant Name", cut.Markup);
         Assert.Contains("Site Plan", cut.Markup);
         Assert.Contains("ID Copy", cut.Markup);
+        Assert.Contains("Supporting Documents", cut.Markup);
     }
 }

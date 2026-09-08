@@ -6,6 +6,7 @@ using ATLAS.Application.Queries.Admin;
 using ATLAS.Blazor.ViewModels;
 using MediatR;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace ATLAS.Blazor.Components.Pages.Admin;
@@ -14,6 +15,11 @@ public partial class Operations : ComponentBase
 {
     [Inject] private IMediator Mediator { get; set; } = default!;
     [Inject] private ILogger<Operations> Logger { get; set; } = default!;
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    // Grafana Cloud dashboards URL, supplied through application configuration (non-secret).
+    private string GrafanaDashboardsUrl =>
+        Configuration["Monitoring:GrafanaDashboardsUrl"] ?? string.Empty;
 
     private OperationsViewModel _viewModel = new();
 

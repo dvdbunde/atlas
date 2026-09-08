@@ -42,23 +42,26 @@
     }
     else
     {
-        <div class="row">
-            <div class="col-md-4">
-                <h4>Templates</h4>
-                <div class="list-group email-template-list">
-                    @foreach (var template in _templates)
-                    {
-                        var isSelected = _selectedName == template.Name;
-                        <button type="button"
-                                class="list-group-item list-group-item-action @(isSelected ? "selected-template" : "")"
-                                @onclick="@(() => SelectTemplate(template.Name))">
-                            @template.Name
-                        </button>
-                    }
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                @* 1. Fixed list of available templates *@
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">Templates</h4>
+                        <div class="list-group email-template-list">
+                            @foreach (var template in _templates)
+                            {
+                                var isSelected = _selectedName == template.Name;
+                                <button type="button"
+                                        class="list-group-item list-group-item-action @(isSelected ? "selected-template" : "")"
+                                        @onclick="@(() => SelectTemplate(template.Name))">
+                                    @template.Name
+                                </button>
+                            }
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="col-md-8">
                 @if (_selectedName is null)
                 {
                     <EmptyState Title="Select a template"
@@ -72,59 +75,69 @@
                 }
                 else
                 {
-                    <h4>@_selectedName</h4>
+                    @* 2. Selected template content *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title">@_selectedName</h4>
 
-                    <div class="mb-2">
-                        <small class="text-muted">
-                            Supported placeholders:
-                            @foreach (var placeholder in SupportedPlaceholders)
+                            @* 3. Available placeholders *@
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    Supported placeholders:
+                                    @foreach (var placeholder in SupportedPlaceholders)
+                                    {
+                                        <span class="badge bg-secondary me-1">@("{{" + placeholder + "}}")</span>
+                                    }
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label" for="template-content">Template content</label>
+                                <textarea id="template-content" class="form-control" rows="12"
+                                          @bind="_editorContent"></textarea>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(_saveMessage))
                             {
-                                <span class="badge bg-secondary me-1">@("{{" + placeholder + "}}")</span>
+                                <div class="alert alert-success" role="alert">@_saveMessage</div>
                             }
-                        </small>
+                            @if (!string.IsNullOrEmpty(_saveError))
+                            {
+                                <div class="alert alert-danger" role="alert">@_saveError</div>
+                            }
+
+                            @* 5. Existing Save, Preview, and Reset to default actions *@
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-primary" @onclick="SaveTemplate" disabled="@_isSaving">
+                                    @(_isSaving ? "Saving…" : "Save")
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" @onclick="PreviewTemplate" disabled="@_isPreviewing">
+                                    @(_isPreviewing ? "Rendering…" : "Preview")
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" @onclick="ResetTemplate" disabled="@(_isResetting || _isSaving)">
+                                    @(_isResetting ? "Resetting…" : "Reset to default")
+                                </button>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(_resetMessage))
+                            {
+                                <div class="alert alert-success mt-3" role="alert">@_resetMessage</div>
+                            }
+                            @if (!string.IsNullOrEmpty(_resetError))
+                            {
+                                <div class="alert alert-danger mt-3" role="alert">@_resetError</div>
+                            }
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="template-content">Template content</label>
-                        <textarea id="template-content" class="form-control" rows="12"
-                                  @bind="_editorContent"></textarea>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(_saveMessage))
-                    {
-                        <div class="alert alert-success" role="alert">@_saveMessage</div>
-                    }
-                    @if (!string.IsNullOrEmpty(_saveError))
-                    {
-                        <div class="alert alert-danger" role="alert">@_saveError</div>
-                    }
-
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-primary" @onclick="SaveTemplate" disabled="@_isSaving">
-                            @(_isSaving ? "Saving…" : "Save")
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" @onclick="PreviewTemplate" disabled="@_isPreviewing">
-                            @(_isPreviewing ? "Rendering…" : "Preview")
-                        </button>
-                        <button type="button" class="btn btn-outline-danger" @onclick="ResetTemplate" disabled="@(_isResetting || _isSaving)">
-                            @(_isResetting ? "Resetting…" : "Reset to default")
-                        </button>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(_resetMessage))
-                    {
-                        <div class="alert alert-success mt-3" role="alert">@_resetMessage</div>
-                    }
-                    @if (!string.IsNullOrEmpty(_resetError))
-                    {
-                        <div class="alert alert-danger mt-3" role="alert">@_resetError</div>
-                    }
-
+                    @* 4. Template preview *@
                     @if (!string.IsNullOrEmpty(_previewOutput))
                     {
-                        <div class="mt-4">
-                            <h5>Preview</h5>
-                            <pre class="border rounded p-3 bg-light">@_previewOutput</pre>
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Preview</h5>
+                                <pre class="border rounded p-3 bg-light mb-0">@_previewOutput</pre>
+                            </div>
                         </div>
                     }
                     @if (!string.IsNullOrEmpty(_previewError))

@@ -33,6 +33,21 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
             .Select(DynamicFormFieldViewModel.FromFieldDefinition)
             .ToList();
 
+    // Dummy application number for the designer preview. Transient/in-memory only.
+    private string PreviewApplicationNumber => $"ATL-{DateTime.UtcNow:yyyyMMdd}-PREVIEW";
+
+    // Generates a clearly dummy value for a preview field based on its type.
+    private static string PreviewValueFor(DynamicFormFieldViewModel field) => field.Type switch
+    {
+        FieldType.MultilineText => "Sample multi-line text entered by the applicant.",
+        FieldType.Number =>"0",
+        FieldType.Date => DateTime.Today.ToString("MMM dd, yyyy"),
+        FieldType.Boolean =>"Yes",
+        FieldType.Dropdown => field.Options.FirstOrDefault() ?? "Sample option",
+        FieldType.FileUpload =>"Sample document",
+        _ =>"Sample text value"
+    };
+
     protected override async Task OnInitializedAsync()
     {
         _locationChangingHandler = Navigation.RegisterLocationChangingHandler(OnLocationChanging);

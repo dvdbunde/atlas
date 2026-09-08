@@ -82,7 +82,7 @@
                         <tr>
                             <td>@user.FullName</td>
                             <td>@user.Email</td>
-                            <td><span class="badge text-bg-info">@user.Role</span></td>
+                            <td>@user.Role</td>
                             <td>@(user.LastLoginDate?.ToLocalTime().ToString("g") ?? "Never")</td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="@($"/admin/users/{user.Id}")">View</a>

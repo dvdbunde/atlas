@@ -46,5 +46,4 @@ public partial class AuditLogDetail : ComponentBase
         }
     }
 
-    private void BackToList() => Navigation.NavigateTo("/admin/audit-logs");
 }

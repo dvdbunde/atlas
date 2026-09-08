@@ -243,7 +243,7 @@ public class ApplicationEditTests : BunitContext
     }
 
     [Fact]
-    public void Should_DismissSuccess_WhenContinueEditingClicked()
+    public void Should_ShowSingleSuccessNotification_AfterSave()
     {
         // Arrange
         _mediatorMock
@@ -259,15 +259,14 @@ public class ApplicationEditTests : BunitContext
         var cut = Render<ApplicationEdit>(parameters =>
             parameters.Add(p => p.Id, _applicationId));
 
-        // Act — save then dismiss
+        // Act — save
         cut.Find("button.btn-primary").Click();
-        cut.Find("button.btn-outline-success").Click();
 
-        // Assert — success message gone, save button back
+        // Assert — exactly one success notification is shown (no Continue Editing button).
         var successAlerts = cut.FindAll(".alert-success");
-        Assert.Empty(successAlerts);
-        var saveButton = cut.Find("button.btn-primary");
-        Assert.Contains("Save Changes", saveButton.TextContent);
+        Assert.Single(successAlerts);
+        Assert.Contains("Changes saved", successAlerts[0].TextContent);
+        Assert.DoesNotContain("Continue Editing", cut.Markup);
     }
 
     [Fact]

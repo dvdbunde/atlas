@@ -7,6 +7,7 @@
 using ATLAS.Application.Queries.Admin;
 using ATLAS.Blazor.Components.Pages.Admin;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
@@ -20,6 +21,16 @@ public class OperationsTests : BunitContext
     public OperationsTests()
     {
         Services.AddSingleton(_mediatorMock.Object);
+
+        // Provide the non-secret Monitoring configuration used by the Deeper
+        // Telemetry block (Grafana Cloud dashboards URL).
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Monitoring:GrafanaDashboardsUrl"] = "https://atlasmonitoringdvb.grafana.net/dashboards"
+            })
+            .Build();
+        Services.AddSingleton<IConfiguration>(config);
     }
 
     private static OperationsOverviewDto SampleOverview(
@@ -119,5 +130,21 @@ public class OperationsTests : BunitContext
 
         Assert.Contains("Something went wrong", cut.Markup);
         Assert.Contains("Try Again", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_RenderDeeperTelemetryLinks_FromConfiguration()
+    {
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOperationsOverviewQuery>(), default))
+            .ReturnsAsync(SampleOverview());
+
+        var cut = Render<Operations>();
+
+        // Azure Portal link.
+        Assert.NotNull(cut.Find("a[href='https://portal.azure.com/']"));
+        // Grafana Cloud dashboards link, sourced from configuration.
+        Assert.NotNull(cut.Find("a[href='https://atlasmonitoringdvb.grafana.net/dashboards']"));
+        // Azure Managed Grafana must not be referenced.
+        Assert.DoesNotContain("Azure Managed Grafana", cut.Markup);
     }
 }
