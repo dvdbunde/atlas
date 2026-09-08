@@ -43,6 +43,9 @@ blockers: []
     density, readability, and responsiveness.
 7. Validate the resulting UI for visual consistency, responsive
     behaviour, keyboard focus, and colour contrast.
+8. Refactor the existing Admin Dashboard into a more informative
+    administrative overview and navigation hub without introducing new
+    application functionality.
 
 ## 5. Success criteria (list; each item must be measurable and include acceptance criteria)
 
@@ -83,6 +86,9 @@ blockers: []
 - Restyle existing Citizen pages.
 - Restyle existing Officer pages.
 - Restyle existing Admin pages.
+- Refactor the existing Admin Dashboard as specified by M12-008,
+    including informative summary metrics and navigation to existing
+    Admin pages.
 - Apply the approved ATLAS colour, typography, spacing, surface,
     control, table, badge, and responsive conventions.
 - Keep Bootstrap as the underlying CSS/layout framework unless a
@@ -104,8 +110,9 @@ blockers: []
 - Changing business logic, domain models, APIs, persistence,
     authentication, or authorization.
 - Changing user workflows or information architecture.
-- Adding dashboard widgets, navigation items, actions, reports, tasks,
-    or other functionality that does not already exist.
+- Adding new dashboard functionality beyond the approved M12-008
+    administrative summary metrics and navigation links to existing
+    pages.
 - Reworking components solely to make mockups resemble a different
     application.
 - Replacing Bootstrap as a separate project.
@@ -132,7 +139,8 @@ were supplied; they must not be invented.
 5. `M12-E — Officer pages restyled — N/A — Implementation Agent <N/A>`
 6. `M12-F — Admin pages restyled — N/A — Implementation Agent <N/A>`
 7. `M12-G — Consistency/accessibility validation complete — N/A — Tester / Code Reviewer <N/A>`
-8. `M12-H — Milestone review and approval — N/A — David Van den Bunder <N/A>`
+8. `M12-H — Admin Dashboard refactor complete — N/A — Implementation Agent <N/A>`
+9. `M12-I — Milestone review and approval — N/A — David Van den Bunder <N/A>`
 
 ## 9. Task list (hierarchical, actionable tasks with complexity estimates)
 
@@ -153,6 +161,9 @@ were supplied; they must not be invented.
 - T-007 \| Perform cross-application consistency, responsive, and
     accessibility pass \| Tester / Implementation Agent \| complexity: M
     \| deps: \[T-004, T-005, T-006\] \| done: false
+- T-008 \| Refactor the existing Admin Dashboard into an informative
+    administrative overview and navigation hub \| Implementation Agent
+    \| complexity: M \| deps: \[T-006\] \| done: false
 
 ## 10. Risks and mitigations (table or list)
 
@@ -224,6 +235,33 @@ simpler; Officer pages can be information-dense; Admin pages can be
 operational and table-oriented. None of these differences justify
 rebuilding the page structures.
 
+The existing Admin Dashboard is then refactored as a focused exception
+to the otherwise styling-first approach. M12-008 may make targeted
+markup and data-query changes because the approved outcome is to make
+the dashboard more informative and useful, while retaining its role as
+an overview of existing Admin areas. The dashboard should contain six
+navigational summary blocks: Permit Types, Applications, Users, Audit
+Logs, Email Templates, and Operations. Each block links to its
+corresponding existing Admin page.
+
+Permit Types should show the total in the block title and
+active/inactive counts in the body. Applications should show the total
+in the title and only non-zero counts for the defined Draft, Submitted,
+Under Review, Info Requested, Resubmitted, Approved, and Rejected
+statuses. Users should replace the separate Citizen, Officer, and Admin
+counters and show a total plus the Citizen, Officer, and Administrator
+breakdown. Audit Logs should summarize recent activity, preferably using
+an existing last-24-hours event count and latest-event recency where the
+current data/services support those metrics. Email Templates should
+retain a simple total count because the existing functionality has no
+active/inactive distinction. Operations should provide a lightweight
+system-health summary and reuse the existing Operations health
+determination rather than introducing a separate health calculation.
+
+These dashboard changes must not introduce new pages, workflows,
+authorization rules, or unrelated analytics. Existing services and query
+infrastructure should be reused wherever practical.
+
 The implementation should avoid invented UI. The supplied mockups
 demonstrate a visual direction, but existing page content and
 functionality are authoritative. If a mockup shows an element that does
@@ -247,7 +285,10 @@ rollback-specific infrastructure is required. M12 is a frontend
 presentation change and can be reverted through the normal
 source-control workflow if a regression is identified.
 
-For each completed M12 task, the implementation agent must create an implementation summary using `plans/tasks/reports/task-implementation-summary-template.md` and save it as `plans/tasks/reports/[TASK-ID]-implementation-summary.md`.
+For each completed M12 task, the implementation agent must create an
+implementation summary using
+`plans/tasks/reports/task-implementation-summary-template.md` and save
+it as `plans/tasks/reports/[TASK-ID]-implementation-summary.md`.
 
 ## 13. Testing & validation plan
 
@@ -341,8 +382,9 @@ specification.
 
 ## 18. Related documents & links
 
-- `plans/tasks/M12/M12-001.md` through `plans/tasks/M12/M12-007.md`
-- `plans/tasks/reports/task-implementation-summary-template.md` — required format for M12 task implementation summaries.
+- `plans/tasks/M12/M12-001.md` through `plans/tasks/M12/M12-008.md`
+- `plans/tasks/reports/task-implementation-summary-template.md` ---
+    required format for M12 task implementation summaries.
 - Existing `.github` instructions and agents
 - Supplied M12 screenshot reference set
 - Approved M12 UI Design Specification from the milestone planning
