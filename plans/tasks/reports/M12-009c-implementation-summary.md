@@ -4,6 +4,8 @@
 
 Complete (automated/component-level validation passes; see Known issues / risks for the live-browser limitation).
 
+> **Correction applied (Application ModifiedDate).** The original M12-009c implementation introduced a separate `Application.LastUpdated` property and a dedicated `AddApplicationLastUpdated` migration. This was corrected to use the canonical `Entity.ModifiedDate` timestamp that `Application` already inherits. There is **no** `Application.LastUpdated` property, mapping, or migration in the final design. `Entity.Touch()` is now invoked on **every** command that successfully mutates and persists an existing Application. See the "Deviations" section for details.
+
 ## Implementation summary
 
 M12-009c implements the eight approved bug fixes and styling/layout improvements across the Admin, Officer, and Citizen Blazor UI. It is a focused follow-up to M12-009 that improves consistency, usability, data presentation, and layout while preserving existing business functionality, routes, permissions, workflows, and architecture.
@@ -16,15 +18,14 @@ The two `Active only` / `Inactive only` checkboxes were replaced with a single l
 
 **Filter layout.** The Search placeholder was shortened to "Number or citizen...", Status was kept slightly narrower, Sort was widened, and the Date From / Date To controls were made more compact. The date range is now clearly labelled `Last Updated From` / `To` with matching aria-labels.
 
-**Date-filter semantics.** The `GetAdminApplicationsQuery` handler now filters the date range by the application `LastUpdated` field instead of `SubmittedDate`. Sorting by Last Updated and the DTO mapping also use the persisted `LastUpdated` field.
+**Date-filter semantics.** The `GetAdminApplicationsQuery` handler now filters the date range by the application `ModifiedDate` (the canonical modification timestamp inherited from `Entity<T>`) instead of `SubmittedDate`. Sorting by Last Updated and the DTO mapping also use the persisted `ModifiedDate`.
 
-**Draft Last Updated.** A real persisted `LastUpdated` timestamp was added to the `Application` aggregate:
+**Draft Last Updated.** Draft applications receive a real persisted modification timestamp via the existing `Entity<T>` mechanism:
 
-- The `Application` entity now has a `LastUpdated` field set in the constructor and a `Touch()` method that refreshes it.
-- The EF Core `ApplicationConfiguration` maps `LastUpdated` as required.
-- A new migration (`20260909000000_AddApplicationLastUpdated`) adds the column, backfills existing rows with `COALESCE(ReviewedDate, SubmittedDate, GETUTCDATE())`, then makes it NOT NULL.
+- `Application` inherits `ModifiedDate` from `Entity<T>`; there is **no** separate `Application.LastUpdated` property.
+- `Entity<T>` initializes `ModifiedDate` in its constructor (so new drafts get an initial timestamp) and exposes `Touch()` to refresh it.
 - `UpdateDraftCommand` calls `application.Touch()` on every successful draft save so subsequent saves refresh Last Updated.
-- `CreateDraftCommand` sets Last Updated via the entity constructor on initial creation.
+- `CreateDraftCommand` relies on the `Entity<T>` constructor to initialize `ModifiedDate` on initial creation.
 - The Admin Application Explorer now displays the persisted timestamp for drafts instead of `N/A`.
 - Submitted date semantics are unchanged.
 
@@ -62,15 +63,21 @@ The Citizen Application Detail now displays the applicant email consistently wit
 
 ### Domain / persistence
 
-- `src/ATLAS.Domain/Entities/Application.cs` — added `LastUpdated` field (set in constructor) and `Touch()` method.
-- `src/ATLAS.Infrastructure/Data/Configurations/ApplicationConfiguration.cs` — mapped `LastUpdated` as required.
-- `src/ATLAS.Infrastructure/Migrations/20260909000000_AddApplicationLastUpdated.cs` — new migration (add column, backfill, NOT NULL).
+- `src/ATLAS.Domain/Entities/Entity.cs` — `Entity<T>` initializes `ModifiedDate` in its constructor and exposes `Touch()` to refresh it. `Application` inherits this; there is **no** `Application.LastUpdated` property and **no** dedicated `LastUpdated` database column or migration.
 
 ### Application layer
 
 - `src/ATLAS.Application/Commands/Applications/UpdateDraftCommand.cs` — call `application.Touch()` on successful draft save.
-- `src/ATLAS.Application/Queries/Admin/GetAdminApplicationsQuery.cs` — date filter, sort, and DTO mapping now use `LastUpdated`.
-- `src/ATLAS.Application/Queries/Applications/GetCitizenDashboardQuery.cs` — added `CitizenDashboardSortBy` enum and `PermitTypeId`/`Status`/`SortBy`/`SortDescending` filter/sort parameters; filtering/sorting scoped to the citizen.
+- `src/ATLAS.Application/Commands/Applications/SubmitDraftCommand.cs` — call `application.Touch()` on successful submission.
+- `src/ATLAS.Application/Commands/Applications/ResubmitApplicationCommand.cs` — call `application.Touch()` on successful resubmission.
+- `src/ATLAS.Application/Commands/Applications/AssignApplicationToMeCommand.cs` — call `application.Touch()` on successful assignment.
+- `src/ATLAS.Application/Commands/Applications/ApproveApplicationCommand.cs` — call `application.Touch()` on successful approval.
+- `src/ATLAS.Application/Commands/Applications/RejectApplicationCommand.cs` — call `application.Touch()` on successful rejection.
+- `src/ATLAS.Application/Commands/Applications/RequestInfoCommand.cs` — call `application.Touch()` on successful info request.
+- `src/ATLAS.Application/Commands/Documents/UploadDocumentCommand.cs` — call `application.Touch()` on successful document upload.
+- `src/ATLAS.Application/Commands/Documents/DeleteDocumentCommand.cs` — call `application.Touch()` on successful document deletion.
+- `src/ATLAS.Application/Queries/Admin/GetAdminApplicationsQuery.cs` — date filter, sort, and DTO mapping now use `ModifiedDate`.
+- `src/ATLAS.Application/Queries/Applications/GetCitizenDashboardQuery.cs` — added `CitizenDashboardSortBy` enum and `PermitTypeId`/`Status`/`SortBy`/`SortDescending` filter/sort parameters; filtering/sorting scoped to the citizen; Last Updated maps to `ModifiedDate`.
 - `src/ATLAS.Application/Queries/AuditLogs/GetAuditLogsQuery.cs` — resolve `UserName`/`UserEmail` via a single user-map pass (no N+1).
 - `src/ATLAS.Application/Queries/AuditLogs/GetAuditLogDetailQuery.cs` — resolve `UserName`/`UserEmail` for a single entry.
 - `src/ATLAS.Application/Queries/PermitTypes/GetPermitTypesQuery.cs` — replaced `IncludeInactive`/`ActiveOnly`/`InactiveOnly` with `PermitTypeStatusFilter` enum.
@@ -101,10 +108,19 @@ The Citizen Application Detail now displays the applicant email consistently wit
 - `tests/ATLAS.Application.Tests/Queries/GetCitizenDashboardQueryHandlerTests.cs` — added tests for Permit Type filtering, Status filtering, Application # sorting, and persisted Last Updated mapping.
 - `tests/ATLAS.Application.Tests/Queries/GetAuditLogsQueryHandlerTests.cs` — updated constructor for the new user repository; added user-name/email resolution and unresolvable-user tests.
 - `tests/ATLAS.Application.Tests/Queries/GetAuditLogDetailQueryHandlerTests.cs` — updated constructor; added user-name/email resolution and unresolvable-user tests.
-- `tests/ATLAS.Application.Tests/Queries/Admin/GetAdminApplicationsQueryHandlerTests.cs` — new file covering Last Updated date-from/date-to filtering, Last Updated sorting, and DTO mapping.
+- `tests/ATLAS.Application.Tests/Queries/Admin/GetAdminApplicationsQueryHandlerTests.cs` — new file covering Last Updated date-from/date-to filtering, Last Updated sorting, and DTO mapping (all via `ModifiedDate`).
 - `tests/ATLAS.Application.Tests/Queries/GetPermitTypesQueryHandlerTests.cs` — updated to the new `StatusFilter` semantics.
-- `tests/ATLAS.Application.Tests/Commands/CreateDraftCommandHandlerTests.cs` — added test that Last Updated is persisted on draft creation.
-- `tests/ATLAS.Application.Tests/Commands/UpdateDraftCommandHandlerTests.cs` — added test that Last Updated is refreshed on draft save.
+- `tests/ATLAS.Application.Tests/Commands/CreateDraftCommandHandlerTests.cs` — added test that `ModifiedDate` is initialized on draft creation.
+- `tests/ATLAS.Application.Tests/Commands/UpdateDraftCommandHandlerTests.cs` — added test that `ModifiedDate` is refreshed on draft save.
+- `tests/ATLAS.Application.Tests/Commands/SubmitDraftCommandHandlerTests.cs` — added tests that `ModifiedDate` advances on successful submission and is not advanced on a failed submission.
+- `tests/ATLAS.Application.Tests/Commands/ResubmitApplicationCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful resubmission.
+- `tests/ATLAS.Application.Tests/Commands/AssignApplicationToMeCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful assignment.
+- `tests/ATLAS.Application.Tests/Commands/ApproveApplicationCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful approval.
+- `tests/ATLAS.Application.Tests/Commands/RejectApplicationCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful rejection.
+- `tests/ATLAS.Application.Tests/Commands/RequestInfoCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful info request.
+- `tests/ATLAS.Application.Tests/Commands/UploadDocumentCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful document upload.
+- `tests/ATLAS.Application.Tests/Commands/DeleteDocumentCommandHandlerTests.cs` — added test that `ModifiedDate` advances on successful document deletion.
+- `tests/ATLAS.Domain.Tests/Entities/ApplicationTests.cs` — added tests that creation initializes `ModifiedDate` and that `Touch()` advances it.
 - `tests/ATLAS.Blazor.Tests/Components/Pages/CitizenDashboardTests.cs` — added test that the filter dropdowns render with labels.
 - `tests/ATLAS.Blazor.Tests/Components/Pages/Admin/AuditLogsTests.cs` — added user-name display and System fallback tests.
 - `tests/ATLAS.Blazor.Tests/Components/Pages/Admin/AuditLogDetailTests.cs` — added user-name/email display, raw-UserId omission, IP omission, and System fallback tests.
@@ -119,13 +135,13 @@ The Citizen Application Detail now displays the applicant email consistently wit
 ### Automated tests
 
 - `dotnet test ATLAS.slnx --no-build` — **all suites pass**:
-  - ATLAS.Domain.Tests: 183 passed
-  - ATLAS.Application.Tests: 296 passed
+  - ATLAS.Domain.Tests: 185 passed
+  - ATLAS.Application.Tests: 305 passed
   - ATLAS.API.Tests: 55 passed
   - ATLAS.Infrastructure.Tests: 233 passed
   - ATLAS.Blazor.Tests: 287 passed
   - ATLAS.IntegrationTests: 101 passed
-  - **Total: 1155 passed, 0 failed, 0 skipped.**
+  - **Total: 1166 passed, 0 failed, 0 skipped.**
 
 ### Rendered UI validation
 
@@ -139,9 +155,12 @@ Live-browser validation could not be performed because the affected pages requir
 - [x] Application Explorer Search, Status, Sort, Date From, and Date To widths are compact and balanced.
 - [x] Application Explorer clearly identifies the date filter as `Last Updated`.
 - [x] Application Explorer actually filters by Last Updated.
-- [x] New draft creation persists Last Updated.
+- [x] New draft creation persists Last Updated (via `Entity.ModifiedDate`).
 - [x] Subsequent draft saves update Last Updated.
 - [x] Draft Last Updated is displayed instead of `N/A` when present.
+- [x] `Application` has no separate `LastUpdated` property — `Entity.ModifiedDate` is the canonical timestamp.
+- [x] Every successful existing-Application save updates `ModifiedDate` (draft update, submission, resubmission, assignment, approval, rejection, info request, document upload/delete).
+- [x] No failed/unauthorized/invalid operation updates the persisted `ModifiedDate`.
 - [x] Admin Users Search, Role, and Sort have visible labels.
 - [x] Admin Users search retains focus through search-triggering re-renders.
 - [x] Admin Users Role selection remains visibly selected after selection/re-render.
@@ -173,22 +192,22 @@ Live-browser validation could not be performed because the affected pages requir
 ## Documentation
 
 - No new user-facing documentation is required for these styling/layout changes.
-- The Last Updated semantics change (date filter now uses Last Updated; drafts persist a Last Updated timestamp) is a data/behaviour correction; no existing documentation was found that required correction.
+- The Last Updated semantics change (date filter now uses `ModifiedDate`; drafts persist a `ModifiedDate` timestamp) is a data/behaviour correction; no existing documentation was found that required correction.
 - This implementation summary was created at `plans/tasks/reports/M12-009c-implementation-summary.md`.
 
 ## Deviations
 
-- None. All eight fixes were implemented as specified. The Permit Types query API surface changed from `IncludeInactive`/`ActiveOnly`/`InactiveOnly` to a single `StatusFilter` enum; the API controller was updated to preserve the existing `includeInactive` HTTP parameter semantics.
+- **M12-009c correction (Application ModifiedDate).** The original M12-009c implementation introduced a separate `Application.LastUpdated` property, a `Touch()` method on `Application`, an EF Core mapping, and a dedicated `AddApplicationLastUpdated` migration. During review this was identified as undesirable: `Application` already inherits `ModifiedDate` from `Entity<T>`, which is the canonical modification timestamp. The correction removes the separate `LastUpdated` concept entirely and uses the inherited `Entity.ModifiedDate` + `Entity.Touch()` mechanism. No `LastUpdated` property, mapping, or migration exists in the final design. The `Touch()` call was extended from `UpdateDraftCommand` only to **every** command that mutates and persists an existing Application (submit, resubmit, assign, approve, reject, request-info, upload-document, delete-document). The Permit Types query API surface change from `IncludeInactive`/`ActiveOnly`/`InactiveOnly` to a single `StatusFilter` enum is unchanged from the original M12-009c implementation.
 
 ## Known issues / risks
 
 - **Live-browser validation not performed.** The affected pages require authentication and no live authenticated browser session is available in this environment. Component/structural validation was performed instead. This is documented rather than claiming live-browser validation was completed.
 - **Keyboard/focus live check not performed.** Search focus retention is implemented using the established ATLAS `ElementReference` + `FocusAsync()` pattern and is covered by the component structure, but a live keyboard interaction check was not possible without an authenticated browser session.
-- **Migration not applied to a live database.** The new `AddApplicationLastUpdated` migration was authored and reviewed but not executed against a real database in this environment. It should be applied and verified as part of a normal deployment.
+- **No migration required for the correction.** Because the final design uses the pre-existing `Entity.ModifiedDate` column (already present in the schema), no new database migration is needed and no `LastUpdated` column exists. The original M12-009c `AddApplicationLastUpdated` migration was never merged into the working tree and is not part of the final design.
 - **Citizen email source.** The Citizen Application Detail populates the email from the current authenticated user's email. This is correct because the citizen only views their own application, but it relies on the current-user email matching the application's citizen email. If these ever diverge, the Admin path (which resolves the citizen by `CitizenId`) remains authoritative.
 
 ## Follow-up work
 
-- Apply and verify the `AddApplicationLastUpdated` migration against a real database.
 - Perform a live-browser rendered UI validation pass (desktop and narrow/mobile widths) for the affected pages once an authenticated session is available.
 - Perform a live keyboard/focus check for the Admin Users search field and the new filter dropdowns.
+- Confirm the `Entity.ModifiedDate` column is populated correctly for existing rows in a real database (no backfill migration is required because the column already exists).

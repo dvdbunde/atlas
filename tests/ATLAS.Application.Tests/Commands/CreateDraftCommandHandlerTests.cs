@@ -105,7 +105,7 @@ namespace ATLAS.Application.Tests.Commands
         }
 
         [Fact]
-        public async Task Handle_ValidCommand_ShouldPersistLastUpdatedOnDraft()
+        public async Task Handle_ValidCommand_ShouldInitializeModifiedDateOnDraft()
         {
             // Arrange
             var command = new CreateDraftCommand

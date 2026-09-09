@@ -152,7 +152,7 @@ namespace ATLAS.Application.Tests.Commands
         }
 
         [Fact]
-        public async Task Handle_ValidCommand_ShouldRefreshLastUpdated()
+        public async Task Handle_ValidCommand_ShouldRefreshModifiedDate()
         {
             // Arrange
             var application = new ATLAS.Domain.Entities.Application(_testUserId, _permitTypeId, "Original notes");

@@ -1061,5 +1061,38 @@ namespace ATLAS.Domain.Tests.Entities
         }
 
         #endregion
+
+        #region ModifiedDate Tests
+
+        [Fact]
+        public void Create_ShouldInitializeModifiedDate()
+        {
+            // Arrange & Act
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Assert
+            Assert.NotNull(application.ModifiedDate);
+            Assert.NotNull(application.CreatedDate);
+            Assert.True(application.ModifiedDate <= DateTime.UtcNow);
+            Assert.True(application.ModifiedDate >= DateTime.UtcNow.AddMinutes(-1));
+        }
+
+        [Fact]
+        public void Touch_ShouldAdvanceModifiedDate()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var originalModifiedDate = application.ModifiedDate;
+
+            // Act
+            application.Touch();
+
+            // Assert
+            Assert.NotNull(originalModifiedDate);
+            Assert.True(application.ModifiedDate > originalModifiedDate,
+                "Touch() should advance ModifiedDate to reflect a persisted modification");
+        }
+
+        #endregion
     }
 }

@@ -91,6 +91,7 @@ namespace ATLAS.Application.Commands.Applications
 
             // Use existing domain behavior
             application.Resubmit();
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
             await _repository.UpdateAsync(application, cancellationToken);
             await _mediator.Publish(new ApplicationResubmittedEvent(application.Id), cancellationToken);
             

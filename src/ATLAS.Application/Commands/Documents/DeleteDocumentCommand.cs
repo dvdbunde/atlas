@@ -70,6 +70,7 @@ namespace ATLAS.Application.Commands.Documents
 
             // Remove the document from the aggregate
             application.RemoveDocument(request.DocumentId);
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
 
             await _repository.UpdateAsync(application, cancellationToken);
 

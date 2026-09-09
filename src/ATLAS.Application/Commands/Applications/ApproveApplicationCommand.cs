@@ -46,6 +46,7 @@ namespace ATLAS.Application.Commands.Applications
                 return false;
 
             application.Approve(officerId, request.Comments);
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
             await _repository.UpdateAsync(application, cancellationToken);
             await _mediator.Publish(new ApplicationApprovedEvent(application.Id), cancellationToken);
             

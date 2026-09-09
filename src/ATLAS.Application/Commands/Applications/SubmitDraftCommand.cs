@@ -116,6 +116,7 @@ namespace ATLAS.Application.Commands.Applications
 
             // All validation passed, submit
             application.Submit();
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
             await _applicationRepository.UpdateAsync(application, cancellationToken);
 
             // Publish domain event to trigger audit logging and email notification

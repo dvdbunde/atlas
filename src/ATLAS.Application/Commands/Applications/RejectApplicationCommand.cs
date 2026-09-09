@@ -45,7 +45,8 @@ namespace ATLAS.Application.Commands.Applications
             if (application == null)
                 return false;
 
-            application.Reject(officerId, request.ReasonCode, request.Comments);            
+            application.Reject(officerId, request.ReasonCode, request.Comments);
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
             await _repository.UpdateAsync(application, cancellationToken);
             await _mediator.Publish(new Domain.Events.ApplicationRejectedEvent(application.Id, request.ReasonCode), cancellationToken);
             

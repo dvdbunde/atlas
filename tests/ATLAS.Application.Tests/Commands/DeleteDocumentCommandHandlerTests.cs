@@ -80,6 +80,37 @@ namespace ATLAS.Application.Tests.Commands
         }
 
         [Fact]
+        public async Task Handle_ShouldRefreshModifiedDate_WhenDeleteSucceeds()
+        {
+            // Arrange
+            var application = CreateDraftWithDocument();
+            var documentId = application.Documents.First().Id;
+            var blobUrl = application.Documents.First().BlobUrl;
+            var originalModifiedDate = application.ModifiedDate;
+
+            _mockRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockFileStorageService.Setup(s => s.DeleteAsync(blobUrl, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var command = new DeleteDocumentCommand
+            {
+                ApplicationId = application.Id,
+                DocumentId = documentId
+            };
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.Empty(application.Documents);
+            Assert.NotNull(originalModifiedDate);
+            Assert.True(application.ModifiedDate > originalModifiedDate,
+                "ModifiedDate should advance on a successful document deletion");
+            _mockRepository.Verify(r => r.UpdateAsync(application, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task Handle_ShouldLogWarning_WhenBlobNotFound()
         {
             // Arrange
