@@ -36,10 +36,10 @@ public class GetAdminApplicationsQuery : IRequest<AdminApplicationListResult>
     /// <summary>Optional permit type filter.</summary>
     public Guid? PermitTypeId { get; set; }
 
-    /// <summary>Earliest submitted date (inclusive).</summary>
+    /// <summary>Earliest Last Updated date (inclusive).</summary>
     public DateTime? DateFrom { get; set; }
 
-    /// <summary>Latest submitted date (inclusive).</summary>
+    /// <summary>Latest Last Updated date (inclusive).</summary>
     public DateTime? DateTo { get; set; }
 
     /// <summary>Sort field. Defaults to SubmittedDate.</summary>
@@ -111,12 +111,12 @@ public class GetAdminApplicationsQueryHandler : IRequestHandler<GetAdminApplicat
         if (request.PermitTypeId.HasValue)
             applications = applications.Where(a => a.PermitTypeId == request.PermitTypeId.Value);
 
-        // 4. Filter by submitted date range.
+        // 4. Filter by Last Updated date range.
         if (request.DateFrom.HasValue)
-            applications = applications.Where(a => a.SubmittedDate >= request.DateFrom);
+            applications = applications.Where(a => a.ModifiedDate >= request.DateFrom);
 
         if (request.DateTo.HasValue)
-            applications = applications.Where(a => a.SubmittedDate <= request.DateTo);
+            applications = applications.Where(a => a.ModifiedDate <= request.DateTo);
 
         // 5. Materialize for in-memory filtering (search by citizen name).
         var materialized = applications.ToList();
@@ -146,8 +146,8 @@ public class GetAdminApplicationsQueryHandler : IRequestHandler<GetAdminApplicat
         materialized = request.SortBy switch
         {
             AdminApplicationSortBy.LastUpdated => request.SortDescending
-                ? materialized.OrderByDescending(a => a.ReviewedDate ?? a.SubmittedDate).ToList()
-                : materialized.OrderBy(a => a.ReviewedDate ?? a.SubmittedDate).ToList(),
+                ? materialized.OrderByDescending(a => a.ModifiedDate).ToList()
+                : materialized.OrderBy(a => a.ModifiedDate).ToList(),
             AdminApplicationSortBy.ApplicationNumber => request.SortDescending
                 ? materialized.OrderByDescending(a => a.ApplicationNumber).ToList()
                 : materialized.OrderBy(a => a.ApplicationNumber).ToList(),
@@ -188,7 +188,7 @@ public class GetAdminApplicationsQueryHandler : IRequestHandler<GetAdminApplicat
                 Status = app.Status,
                 AssignedOfficerName = assignedOfficerName,
                 SubmittedDate = app.SubmittedDate,
-                LastUpdated = app.ReviewedDate ?? app.SubmittedDate
+                LastUpdated = app.ModifiedDate
             });
         }
 

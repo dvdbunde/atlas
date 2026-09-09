@@ -1,5 +1,6 @@
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Queries.Applications;
+using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Pages;
 using ATLAS.Domain.Enums;
 using MediatR;
@@ -216,5 +217,31 @@ public class CitizenDashboardTests : BunitContext
             var ariaLabel = link.GetAttribute("aria-label");
             Assert.NotNull(ariaLabel);
         });
+    }
+
+    [Fact]
+    public void Should_RenderFilterDropdowns_WhenLoaded()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetCitizenDashboardQuery>(), default))
+            .ReturnsAsync(CreateSampleApplications());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypesQuery>(), default))
+            .ReturnsAsync(new List<PermitTypeSummaryDto>
+            {
+                new() { Id = Guid.NewGuid(), Name = "Building Permit" }
+            });
+
+        // Act
+        var cut = Render<CitizenDashboard>();
+
+        // Assert
+        Assert.NotNull(cut.Find("#citizen-permit-type"));
+        Assert.NotNull(cut.Find("#citizen-status"));
+        Assert.NotNull(cut.Find("#citizen-sort"));
+        Assert.NotNull(cut.Find("label[for='citizen-permit-type']"));
+        Assert.NotNull(cut.Find("label[for='citizen-status']"));
+        Assert.NotNull(cut.Find("label[for='citizen-sort']"));
     }
 }

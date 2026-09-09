@@ -46,7 +46,13 @@
             <dd class="col-sm-9">@_viewModel.AuditLog.Timestamp.ToLocalTime().ToString("g")</dd>
 
             <dt class="col-sm-3">User</dt>
-            <dd class="col-sm-9">@(_viewModel.AuditLog.UserId?.ToString() ?? "System")</dd>
+            <dd class="col-sm-9">
+                @(string.IsNullOrWhiteSpace(_viewModel.AuditLog.UserName) ? "System" : _viewModel.AuditLog.UserName)
+                @if (!string.IsNullOrWhiteSpace(_viewModel.AuditLog.UserEmail))
+                {
+                    <div class="text-muted small">@_viewModel.AuditLog.UserEmail</div>
+                }
+            </dd>
 
             <dt class="col-sm-3">Action</dt>
             <dd class="col-sm-9">@_viewModel.AuditLog.Action</dd>
@@ -57,12 +63,9 @@
             <dt class="col-sm-3">Entity ID</dt>
             <dd class="col-sm-9">@_viewModel.AuditLog.EntityId</dd>
 
-            <dt class="col-sm-3">IP Address</dt>
-            <dd class="col-sm-9">@_viewModel.AuditLog.IpAddress</dd>
-
             <dt class="col-sm-3">Details</dt>
             <dd class="col-sm-9">
-                <textarea class="form-control" rows="4" readonly style="resize: vertical; white-space: pre-wrap; overflow-wrap: break-word;">@_viewModel.AuditLog.Details</textarea>
+                <textarea class="form-control audit-details-readonly" rows="4" readonly style="resize: vertical; white-space: pre-wrap; overflow-wrap: break-word;">@_viewModel.AuditLog.Details</textarea>
             </dd>
         </dl>
     }

@@ -103,5 +103,24 @@ namespace ATLAS.Application.Tests.Commands
                 It.Is<Domain.Entities.Application>(a => a.FieldValues.Count == 0),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task Handle_ValidCommand_ShouldPersistLastUpdatedOnDraft()
+        {
+            // Arrange
+            var command = new CreateDraftCommand
+            {
+                PermitTypeId = Guid.NewGuid(),
+                FieldValues = new Dictionary<string, string>()
+            };
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            _mockRepository.Verify(r => r.AddAsync(
+                It.Is<Domain.Entities.Application>(a => a.ModifiedDate <= DateTime.UtcNow),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }

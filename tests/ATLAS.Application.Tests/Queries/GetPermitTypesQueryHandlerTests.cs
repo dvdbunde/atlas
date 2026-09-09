@@ -39,7 +39,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery { IncludeInactive = true };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.All };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -63,7 +63,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery { IncludeInactive = false };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.Active };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -74,7 +74,7 @@ namespace ATLAS.Application.Tests.Queries
         }
 
         [Fact]
-        public async Task Handle_DefaultIncludeInactive_ShouldReturnOnlyActive()
+        public async Task Handle_DefaultStatusFilter_ShouldReturnAllPermitTypes()
         {
             // Arrange
             var permitTypes = new List<PermitType>
@@ -88,14 +88,13 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery(); // Default IncludeInactive = false
+            var query = new GetPermitTypesQuery(); // Default StatusFilter = All
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.Single(result);
-            Assert.All(result, pt => Assert.True(pt.IsActive));
+            Assert.Equal(2, result.Count());
         }
 
         [Fact]
@@ -119,7 +118,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery { IncludeInactive = true, SearchTerm = "building" };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.All, SearchTerm = "building" };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -143,7 +142,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery { IncludeInactive = true, ActiveOnly = true };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.Active };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -167,7 +166,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery { IncludeInactive = true, InactiveOnly = true };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.Inactive };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -191,7 +190,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(permitTypes);
 
-            var query = new GetPermitTypesQuery { IncludeInactive = true, SortBy = PermitTypeSortOption.NameAsc };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.All, SortBy = PermitTypeSortOption.NameAsc };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -212,7 +211,7 @@ namespace ATLAS.Application.Tests.Queries
             _mockRepository.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<PermitType> { permitType });
 
-            var query = new GetPermitTypesQuery { IncludeInactive = true };
+            var query = new GetPermitTypesQuery { StatusFilter = PermitTypeStatusFilter.All };
 
             // Act
             var result = await _handler.Handle(query, CancellationToken.None);
@@ -224,3 +223,4 @@ namespace ATLAS.Application.Tests.Queries
         }
     }
 }
+

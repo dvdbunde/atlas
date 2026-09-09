@@ -1,4 +1,5 @@
 using ATLAS.Application.DTOs;
+using ATLAS.Application.Interfaces;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Pages;
@@ -12,13 +13,17 @@ namespace ATLAS.Blazor.Tests.Components.Pages;
 public class ApplicationDetailTests : BunitContext
 {
     private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<ICurrentUserService> _currentUserMock;
     private readonly Guid _applicationId = Guid.NewGuid();
     private readonly Guid _permitTypeId = Guid.NewGuid();
 
     public ApplicationDetailTests()
     {
         _mediatorMock = new Mock<IMediator>();
+        _currentUserMock = new Mock<ICurrentUserService>();
+        _currentUserMock.Setup(u => u.Email).Returns("citizen@example.com");
         Services.AddSingleton(_mediatorMock.Object);
+        Services.AddSingleton(_currentUserMock.Object);
     }
 
     private ApplicationDetailDto CreateSampleSubmittedApplication()
@@ -182,6 +187,22 @@ public class ApplicationDetailTests : BunitContext
             parameters.Add(p => p.Id, _applicationId));
 
         Assert.Contains("Building a new garage", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowCitizenEmail_WhenLoaded()
+    {
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        Assert.Contains("citizen@example.com", cut.Markup);
     }
 
     [Fact]

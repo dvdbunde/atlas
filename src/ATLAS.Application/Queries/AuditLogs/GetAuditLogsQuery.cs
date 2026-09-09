@@ -48,10 +48,12 @@ namespace ATLAS.Application.Queries.AuditLogs
     public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, AuditLogListResult>
     {
         private readonly IAuditLogRepository _repository;
+        private readonly IUserRepository _userRepository;
 
-        public GetAuditLogsQueryHandler(IAuditLogRepository repository)
+        public GetAuditLogsQueryHandler(IAuditLogRepository repository, IUserRepository userRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         }
 
         public async Task<AuditLogListResult> Handle(GetAuditLogsQuery request, CancellationToken cancellationToken)
@@ -79,16 +81,29 @@ namespace ATLAS.Application.Queries.AuditLogs
 
             var result = await _repository.GetPagedAsync(filter, sort, page, cancellationToken);
 
-            var dtos = result.Items.Select(a => new AuditLogDto
+            // Resolve user display names/emails in a single pass to avoid N+1 lookups.
+            var usersById = (await _userRepository.GetAllAsync(cancellationToken))
+                .ToDictionary(u => u.Id, u => u);
+
+            var dtos = result.Items.Select(a =>
             {
-                Id = a.Id,
-                UserId = a.UserId,
-                Action = a.Action,
-                EntityType = a.EntityType,
-                EntityId = a.EntityId,
-                Details = a.Details,
-                Timestamp = a.Timestamp,
-                IpAddress = a.IpAddress
+                var userId = a.UserId;
+                var user = userId.HasValue && usersById.ContainsKey(userId.Value)
+                    ? usersById[userId.Value]
+                    : null;
+                return new AuditLogDto
+                {
+                    Id = a.Id,
+                    UserId = a.UserId,
+                    UserName = user?.GetFullName() ?? string.Empty,
+                    UserEmail = user?.Email ?? string.Empty,
+                    Action = a.Action,
+                    EntityType = a.EntityType,
+                    EntityId = a.EntityId,
+                    Details = a.Details,
+                    Timestamp = a.Timestamp,
+                    IpAddress = a.IpAddress
+                };
             }).ToList();
 
             return new AuditLogListResult

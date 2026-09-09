@@ -16,12 +16,16 @@ namespace ATLAS.Application.Tests.Queries
     public class GetAuditLogDetailQueryHandlerTests
     {
         private readonly Mock<IAuditLogRepository> _mockRepository;
+        private readonly Mock<IUserRepository> _mockUserRepository;
         private readonly GetAuditLogDetailQueryHandler _handler;
 
         public GetAuditLogDetailQueryHandlerTests()
         {
             _mockRepository = new Mock<IAuditLogRepository>();
-            _handler = new GetAuditLogDetailQueryHandler(_mockRepository.Object);
+            _mockUserRepository = new Mock<IUserRepository>();
+            _mockUserRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((User?)null);
+            _handler = new GetAuditLogDetailQueryHandler(_mockRepository.Object, _mockUserRepository.Object);
         }
 
         private static AuditLog BuildLog(Guid id, Guid? userId = null)
@@ -92,7 +96,54 @@ namespace ATLAS.Application.Tests.Queries
         [Fact]
         public void Constructor_ShouldThrowArgumentNullException_WhenRepositoryIsNull()
         {
-            Assert.Throws<ArgumentNullException>(() => new GetAuditLogDetailQueryHandler(null));
+            Assert.Throws<ArgumentNullException>(() => new GetAuditLogDetailQueryHandler(null, _mockUserRepository.Object));
+        }
+
+        [Fact]
+        public void Constructor_ShouldThrowArgumentNullException_WhenUserRepositoryIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => new GetAuditLogDetailQueryHandler(_mockRepository.Object, null));
+        }
+
+        [Fact]
+        public async Task Handle_ShouldResolveUserNameAndEmail()
+        {
+            var id = Guid.NewGuid();
+            var userId = Guid.NewGuid();
+            var user = new User(userId, "jane@example.com", "Jane", "Doe", UserRole.Citizen);
+            _mockUserRepository.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(user);
+
+            var log = BuildLog(id, userId);
+            _mockRepository
+                .Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(log);
+
+            var query = new GetAuditLogDetailQuery { Id = id };
+
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal("Jane Doe", result!.UserName);
+            Assert.Equal("jane@example.com", result.UserEmail);
+        }
+
+        [Fact]
+        public async Task Handle_UnresolvableUser_ShouldLeaveUserNameEmpty()
+        {
+            var id = Guid.NewGuid();
+            var log = BuildLog(id, Guid.NewGuid());
+            _mockRepository
+                .Setup(r => r.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(log);
+
+            var query = new GetAuditLogDetailQuery { Id = id };
+
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            Assert.NotNull(result);
+            Assert.Equal(string.Empty, result!.UserName);
+            Assert.Equal(string.Empty, result.UserEmail);
         }
     }
 }

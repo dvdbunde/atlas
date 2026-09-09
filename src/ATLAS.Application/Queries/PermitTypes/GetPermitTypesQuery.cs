@@ -15,12 +15,21 @@ namespace ATLAS.Application.Queries.PermitTypes
         NameDesc
     }
 
+    /// <summary>
+    /// Status filter for the Admin Permit Types list. Replaces the previous pair of
+    /// Active-only / Inactive-only checkboxes with a single status selection.
+    /// </summary>
+    public enum PermitTypeStatusFilter
+    {
+        All,
+        Active,
+        Inactive
+    }
+
     public class GetPermitTypesQuery : IRequest<IEnumerable<PermitTypeSummaryDto>>
     {
-        public bool IncludeInactive { get; set; } = false;
         public string? SearchTerm { get; set; }
-        public bool ActiveOnly { get; set; }
-        public bool InactiveOnly { get; set; }
+        public PermitTypeStatusFilter StatusFilter { get; set; } = PermitTypeStatusFilter.All;
         public PermitTypeSortOption SortBy { get; set; } = PermitTypeSortOption.NameAsc;
     }
 
@@ -37,15 +46,11 @@ namespace ATLAS.Application.Queries.PermitTypes
         {
             var permitTypes = (await _repository.GetAllAsync(cancellationToken)).ToList();
 
-            // Filter out inactive if not explicitly requested
-            if (!request.IncludeInactive)
+            // Status filter: All shows everything; Active / Inactive narrow the set.
+            if (request.StatusFilter == PermitTypeStatusFilter.Active)
                 permitTypes = permitTypes.Where(pt => pt.IsActive).ToList();
 
-            // Active / Inactive filters (only when explicitly requested)
-            if (request.ActiveOnly)
-                permitTypes = permitTypes.Where(pt => pt.IsActive).ToList();
-
-            if (request.InactiveOnly)
+            if (request.StatusFilter == PermitTypeStatusFilter.Inactive)
                 permitTypes = permitTypes.Where(pt => !pt.IsActive).ToList();
 
             // Search by name (case-insensitive, contains)

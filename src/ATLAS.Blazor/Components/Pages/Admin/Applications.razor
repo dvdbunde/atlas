@@ -40,7 +40,7 @@
         <div class="row g-3 mb-3 align-items-end">
             <div class="col-12 col-md-3">
                 <label class="form-label" for="app-search">Search</label>
-                <input id="app-search" type="search" class="form-control" placeholder="Search by application number or citizen name..."
+                <input id="app-search" type="search" class="form-control" placeholder="Number or citizen..."
                        value="@_viewModel.SearchTerm" @oninput="OnSearchInput" aria-label="Search applications" />
             </div>
             <div class="col-6 col-md-2">
@@ -67,14 +67,14 @@
                 </select>
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label" for="app-date-from">Date From</label>
+                <label class="form-label" for="app-date-from">Last Updated From</label>
                 <input id="app-date-from" type="date" class="form-control"
-                       value="@_viewModel.DateFrom?.ToString("yyyy-MM-dd")" @onchange="OnDateFromChanged" aria-label="Submitted date from" />
+                       value="@_viewModel.DateFrom?.ToString("yyyy-MM-dd")" @onchange="OnDateFromChanged" aria-label="Last updated from" />
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label" for="app-date-to">Date To</label>
+                <label class="form-label" for="app-date-to">To</label>
                 <input id="app-date-to" type="date" class="form-control"
-                       value="@_viewModel.DateTo?.ToString("yyyy-MM-dd")" @onchange="OnDateToChanged" aria-label="Submitted date to" />
+                       value="@_viewModel.DateTo?.ToString("yyyy-MM-dd")" @onchange="OnDateToChanged" aria-label="Last updated to" />
             </div>
             <div class="col-6 col-md-1">
                 <label class="form-label" for="app-sort">Sort</label>

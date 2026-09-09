@@ -42,3 +42,11 @@ dt {
     background-color: var(--atlas-surface, #ffffff);
     border-color: var(--atlas-border-color, #dee2e6);
 }
+
+/* Read-only Details field: light gray, clearly distinct from the page
+   background, readable, and still non-editable/resizable. */
+.audit-details-readonly {
+    background-color: var(--atlas-surface-muted, #f8f9fa);
+    color: var(--atlas-neutral-800, #343a40);
+    border-color: var(--atlas-border-color, #dee2e6);
+}

@@ -13,12 +13,24 @@ public partial class Users : ComponentBase
 
     private UsersListViewModel _viewModel = new();
 
+    private ElementReference _searchInput;
+    private bool _restoreSearchFocus;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await LoadUsers();
             StateHasChanged();
+        }
+        else if (_restoreSearchFocus)
+        {
+            _restoreSearchFocus = false;
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(100); // Wait for render
+                await _searchInput.FocusAsync();
+            });
         }
     }
 
@@ -61,6 +73,7 @@ public partial class Users : ComponentBase
     {
         _viewModel.SearchTerm = e.Value?.ToString() ?? string.Empty;
         _viewModel.PageNumber = 1;
+        _restoreSearchFocus = true;
         await LoadUsers();
         StateHasChanged();
     }

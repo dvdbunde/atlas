@@ -38,12 +38,8 @@ public partial class PermitTypes : ComponentBase
         {
             var query = new GetPermitTypesQuery
             {
-                // Include inactive unless the user explicitly narrowed to active-only.
-                // Both checkboxes unchecked => show everything (active + inactive).
-                IncludeInactive = !_viewModel.ActiveOnly,
                 SearchTerm = _viewModel.SearchTerm,
-                ActiveOnly = _viewModel.ActiveOnly,
-                InactiveOnly = _viewModel.InactiveOnly,
+                StatusFilter = _viewModel.StatusFilter,
                 SortBy = _viewModel.SortBy
             };
 
@@ -78,18 +74,11 @@ public partial class PermitTypes : ComponentBase
         StateHasChanged();
     }
 
-    private async Task OnActiveOnlyChanged(ChangeEventArgs e)
+    private async Task OnStatusFilterChanged(ChangeEventArgs e)
     {
-        _viewModel.ActiveOnly = e.Value is true;
-        if (_viewModel.ActiveOnly) _viewModel.InactiveOnly = false;
-        await LoadPermitTypes(showSpinner: false);
-        StateHasChanged();
-    }
-
-    private async Task OnInactiveOnlyChanged(ChangeEventArgs e)
-    {
-        _viewModel.InactiveOnly = e.Value is true;
-        if (_viewModel.InactiveOnly) _viewModel.ActiveOnly = false;
+        _viewModel.StatusFilter = Enum.TryParse<PermitTypeStatusFilter>(e.Value?.ToString(), out var status)
+            ? status
+            : PermitTypeStatusFilter.All;
         await LoadPermitTypes(showSpinner: false);
         StateHasChanged();
     }
