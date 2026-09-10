@@ -56,8 +56,8 @@ public class AdminApplicationDetailViewModel
     public bool IsLoaded => !IsLoading && !HasError;
 
     // Display helpers
-    public string SubmittedDateDisplay => SubmittedDate?.ToLocalTime().ToString("MMM dd, yyyy") ?? "Not submitted";
-    public string LastUpdatedDisplay => LastUpdated?.ToLocalTime().ToString("MMM dd, yyyy") ?? "N/A";
+    public string SubmittedDateDisplay => SubmittedDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Not submitted";
+    public string LastUpdatedDisplay => LastUpdated?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "N/A";
     public string AssignedOfficerDisplay => AssignedOfficerName ?? "Unassigned";
 
     public void Load(ApplicationDetailDto application, PermitTypeDto permitType)

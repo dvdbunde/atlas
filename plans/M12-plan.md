@@ -420,8 +420,8 @@ specification.
 
 ## 18. Related documents & links
 
-- `plans/tasks/M12/M12-001.md` through `plans/tasks/M12/M12-009.md`
-- `plans/tasks/reports/task-implementation-summary-template.md` ---
+- `plans/tasks/M12/M12-001.md` through `plans/tasks/M12/M12-010.md`
+- `plans/reports/task-implementation-summary-template.md` ---
     required format for M12 task implementation summaries.
 - Existing `.github` instructions and agents
 - Supplied M12 screenshot reference set

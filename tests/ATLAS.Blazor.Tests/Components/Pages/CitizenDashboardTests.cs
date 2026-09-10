@@ -1,3 +1,4 @@
+using System.Linq;
 using ATLAS.Application.DTOs;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
@@ -243,5 +244,37 @@ public class CitizenDashboardTests : BunitContext
         Assert.NotNull(cut.Find("label[for='citizen-permit-type']"));
         Assert.NotNull(cut.Find("label[for='citizen-status']"));
         Assert.NotNull(cut.Find("label[for='citizen-sort']"));
+    }
+
+    [Fact]
+    public void Should_NotShowSubmittedDateColumn_WhenLoaded()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetCitizenDashboardQuery>(), default))
+            .ReturnsAsync(CreateSampleApplications());
+
+        // Act
+        var cut = Render<CitizenDashboard>();
+
+        // Assert — the Submitted Date column header is removed
+        var headers = cut.FindAll("thead th").Select(h => h.TextContent.Trim()).ToList();
+        Assert.DoesNotContain("Submitted", headers);
+        Assert.Contains("Last Updated", headers);
+    }
+
+    [Fact]
+    public void Should_UseStandardDateFormat_ForLastUpdated_WhenLoaded()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetCitizenDashboardQuery>(), default))
+            .ReturnsAsync(CreateSampleApplications());
+
+        // Act
+        var cut = Render<CitizenDashboard>();
+
+        // Assert — Last Updated renders as dd/MM/yyyy HH:mm (no month-name abbreviation)
+        Assert.DoesNotContain(DateTime.UtcNow.AddDays(-2).ToString("MMM dd, yyyy"), cut.Markup);
     }
 }

@@ -79,7 +79,6 @@
                         <th scope="col">Application #</th>
                         <th scope="col">Permit Type</th>
                         <th scope="col">Status</th>
-                        <th scope="col">Submitted</th>
                         <th scope="col">Last Updated</th>
                         <th scope="col">Action</th>
                     </tr>
@@ -95,7 +94,6 @@
                             <td>
                                 <StatusBadge Status="@app.Status" />
                             </td>
-                            <td>@app.SubmittedDateDisplay</td>
                             <td>@app.LastUpdatedDisplay</td>
                             <td>
                                 <a href="@app.NavigationUrl"

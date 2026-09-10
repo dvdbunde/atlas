@@ -45,7 +45,7 @@ public partial class PermitTypeDesigner : ComponentBase, IAsyncDisposable
         {
             FieldType.MultilineText => "A short description of the intended activity, including the location and expected duration.",
             FieldType.Number => PreviewNumberValue(field),
-            FieldType.Date => DateTime.Today.AddDays(30).ToString("MMM dd, yyyy"),
+            FieldType.Date => DateTime.Today.AddDays(30).ToString("dd/MM/yyyy"),
             FieldType.Boolean => "Yes",
             FieldType.Dropdown => field.Options.FirstOrDefault() ?? "Select an option",
             FieldType.FileUpload => "Sample document (not an actual upload)",

@@ -15,8 +15,8 @@ public class OfficerApplicationReviewViewModel
     public bool IsAssignedToCurrentOfficer { get; set; }
     public bool CanAssignToMe => !AssignedOfficerId.HasValue;
 
-    public string SubmittedDateDisplay => Application?.SubmittedDate?.ToString("MMM dd, yyyy") ?? "Not submitted";
-    public string LastUpdatedDisplay => (Application?.ReviewedDate ?? Application?.SubmittedDate)?.ToString("MMM dd, yyyy") ?? "N/A";
+    public string SubmittedDateDisplay => Application?.SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Not submitted";
+    public string LastUpdatedDisplay => (Application?.ReviewedDate ?? Application?.SubmittedDate)?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
     public string AssignedOfficerDisplay => Application?.AssignedOfficerName ?? "Unassigned";
     public string AssignmentDisplay => !AssignedOfficerId.HasValue
         ? "Unassigned"

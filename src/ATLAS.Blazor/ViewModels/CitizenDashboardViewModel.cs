@@ -33,8 +33,8 @@ public class CitizenDashboardCardViewModel
     public ApplicationStatus Status { get; init; }
     public DateTime? SubmittedDate { get; init; }
     public DateTime? LastUpdated { get; init; }
-    public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy") ?? "Not submitted";
-    public string LastUpdatedDisplay => LastUpdated?.ToString("MMM dd, yyyy") ?? "N/A";
+    public string SubmittedDateDisplay => SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Not submitted";
+    public string LastUpdatedDisplay => LastUpdated?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
     public string ActionLabel => Status == ApplicationStatus.Draft ? "Continue Editing" : "View Details";
     public string NavigationUrl => Status == ApplicationStatus.Draft
         ? $"/applications/edit/{ApplicationId}"

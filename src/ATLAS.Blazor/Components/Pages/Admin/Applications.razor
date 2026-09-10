@@ -38,7 +38,7 @@
     else
     {
         <div class="row g-3 mb-3 align-items-end">
-            <div class="col-12 col-md-3">
+            <div class="col-12 col-md-2">
                 <label class="form-label" for="app-search">Search</label>
                 <input id="app-search" type="search" class="form-control" placeholder="Number or citizen..."
                        value="@_viewModel.SearchTerm" @oninput="OnSearchInput" aria-label="Search applications" />
@@ -76,7 +76,7 @@
                 <input id="app-date-to" type="date" class="form-control"
                        value="@_viewModel.DateTo?.ToString("yyyy-MM-dd")" @onchange="OnDateToChanged" aria-label="Last updated to" />
             </div>
-            <div class="col-6 col-md-1">
+            <div class="col-6 col-md-2">
                 <label class="form-label" for="app-sort">Sort</label>
                 <select id="app-sort" class="form-select" value="@((int)_viewModel.SortBy)" @onchange="OnSortChanged" aria-label="Sort applications">
                     <option value="@((int)AdminApplicationSortBy.SubmittedDate)">Submitted</option>
@@ -102,7 +102,6 @@
                             <th scope="col">Citizen</th>
                             <th scope="col">Status</th>
                             <th scope="col">Assigned Officer</th>
-                            <th scope="col">Submitted</th>
                             <th scope="col">Last Updated</th>
                             <th scope="col" class="text-end">Actions</th>
                         </tr>
@@ -118,8 +117,7 @@
                                     <StatusBadge Status="app.Status" />
                                 </td>
                                 <td>@(app.AssignedOfficerName ?? "—")</td>
-                                <td>@(app.SubmittedDate?.ToLocalTime().ToString("g") ?? "—")</td>
-                                <td>@(app.LastUpdated?.ToLocalTime().ToString("g") ?? "—")</td>
+                                <td>@(app.LastUpdated?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
                                 <td class="text-end">
                                     <a class="btn btn-sm btn-outline-primary" href="@($"/admin/applications/{app.ApplicationId}")">View</a>
                                 </td>

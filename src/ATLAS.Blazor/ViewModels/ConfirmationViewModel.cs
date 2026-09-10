@@ -13,7 +13,7 @@ public class ConfirmationViewModel
     public string PermitTypeName { get; set; } = string.Empty;
     public ApplicationStatus Status { get; set; }
     public DateTime? SubmittedDate { get; set; }
-    public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy h:mm tt") ?? "N/A";
+    public string SubmittedDateDisplay => SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
 
     public bool IsLoading { get; set; } = true;
     public bool HasError { get; set; }

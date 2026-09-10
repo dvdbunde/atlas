@@ -121,7 +121,7 @@
                                 <dt>Events (last 24h)</dt><dd>@s.AuditLogEventsLast24Hours</dd>
                                 @if (s.LatestAuditEventUtc is { } latest)
                                 {
-                                    <dt>Latest event</dt><dd>@latest.ToLocalTime().ToString("g")</dd>
+                                    <dt>Latest event</dt><dd>@latest.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
                                 }
                             </dl>
                         </div>
@@ -149,7 +149,7 @@
                                 </dd>
                                 @if (s.HealthCheckedAtUtc is { } checkedAt)
                                 {
-                                    <dt>Last checked</dt><dd>@checkedAt.ToLocalTime().ToString("g")</dd>
+                                    <dt>Last checked</dt><dd>@checkedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
                                 }
                             </dl>
                         </div>

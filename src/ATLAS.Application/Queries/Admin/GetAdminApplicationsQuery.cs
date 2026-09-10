@@ -42,8 +42,8 @@ public class GetAdminApplicationsQuery : IRequest<AdminApplicationListResult>
     /// <summary>Latest Last Updated date (inclusive).</summary>
     public DateTime? DateTo { get; set; }
 
-    /// <summary>Sort field. Defaults to SubmittedDate.</summary>
-    public AdminApplicationSortBy SortBy { get; set; } = AdminApplicationSortBy.SubmittedDate;
+    /// <summary>Sort field. Defaults to LastUpdated.</summary>
+    public AdminApplicationSortBy SortBy { get; set; } = AdminApplicationSortBy.LastUpdated;
 
     /// <summary>When true (default), newest items appear first.</summary>
     public bool SortDescending { get; set; } = true;

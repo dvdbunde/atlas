@@ -34,8 +34,8 @@ public class ApplicationDetailViewModel
     public string? ErrorMessage { get; set; }
     public bool IsLoaded => !IsLoading && !HasError;
     public bool HasReviews => Reviews.Count > 0;
-    public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy") ?? "N/A";
-    public string ReviewedDateDisplay => ReviewedDate?.ToString("MMM dd, yyyy") ?? "N/A";
+    public string SubmittedDateDisplay => SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
+    public string ReviewedDateDisplay => ReviewedDate?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
         public List<ApplicationActivityDto> Activities { get; set; } = new();
 
     public void Load(ApplicationDetailDto application, PermitTypeDto permitType)
@@ -192,5 +192,5 @@ public class ReviewDisplayViewModel
     public string Comments { get; init; } = string.Empty;
     public DateTime ReviewedDate { get; init; }
     public string? ReasonCode { get; init; }
-    public string ReviewedDateDisplay => ReviewedDate.ToString("MMM dd, yyyy");
+    public string ReviewedDateDisplay => ReviewedDate.ToString("dd/MM/yyyy HH:mm");
 }
