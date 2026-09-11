@@ -54,6 +54,33 @@ namespace ATLAS.Application.Tests.Commands
         }
 
         [Fact]
+        public async Task Handle_ValidCommand_ShouldRefreshModifiedDate()
+        {
+            // Arrange
+            var applicationId = Guid.NewGuid();
+            var officerId = Guid.NewGuid();
+            var application = new Entities.Application(Guid.NewGuid(), Guid.NewGuid(), "Test notes");
+            application.Submit();
+            var originalModifiedDate = application.ModifiedDate;
+
+            _mockCurrentUser.Setup(u => u.UserId).Returns(officerId);
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+
+            var command = new AssignApplicationToMeCommand { ApplicationId = applicationId };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(originalModifiedDate);
+            Assert.True(application.ModifiedDate > originalModifiedDate,
+                "ModifiedDate should advance on a successful assignment");
+            _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Entities.Application>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task Handle_AlreadyAssignedToMe_ShouldNotPublishEvent()
         {
             // Arrange

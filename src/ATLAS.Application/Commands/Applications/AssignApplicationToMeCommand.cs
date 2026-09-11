@@ -52,6 +52,7 @@ public class AssignApplicationToMeCommandHandler : IRequestHandler<AssignApplica
         var wasAlreadyAssignedToMe = application.AssignedOfficerId == officerId;
 
         application.AssignToOfficer(officerId);   // aggregate owns all assignment rules
+        application.Touch(); // Update ModifiedDate to reflect the persisted change
         await _repository.UpdateAsync(application, cancellationToken);
 
         // Single audit path: the event handler writes the AuditLog.

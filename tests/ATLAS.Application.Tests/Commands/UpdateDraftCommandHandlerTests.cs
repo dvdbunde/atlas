@@ -150,5 +150,29 @@ namespace ATLAS.Application.Tests.Commands
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _handler.Handle(null!, CancellationToken.None));
         }
+
+        [Fact]
+        public async Task Handle_ValidCommand_ShouldRefreshModifiedDate()
+        {
+            // Arrange
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, _permitTypeId, "Original notes");
+            SetupApplicationFound(application);
+
+            var originalLastUpdated = application.ModifiedDate;
+
+            var command = new UpdateDraftCommand
+            {
+                ApplicationId = _applicationId,
+                FieldValues = new Dictionary<string, string>()
+            };
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.True(application.ModifiedDate >= originalLastUpdated,
+                "Modified Date should be refreshed on a successful draft save");
+            _mockRepository.Verify(r => r.UpdateAsync(application, It.IsAny<CancellationToken>()), Times.Once);
+        }
     }
 }

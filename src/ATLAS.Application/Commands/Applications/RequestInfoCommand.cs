@@ -45,6 +45,7 @@ namespace ATLAS.Application.Commands.Applications
                 return false;
 
             application.RequestInfo(officerId, request.Message);
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
             await _repository.UpdateAsync(application, cancellationToken);
             await _mediator.Publish(new Domain.Events.ApplicationInfoRequestedEvent(application.Id, request.Message), cancellationToken);
             

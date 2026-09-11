@@ -40,16 +40,12 @@
     }
     <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
         <StatusBadge Status="@Status" />
-        <span class="text-muted small">Submitted: @SubmittedDateDisplay</span>
         <span class="text-muted small">Last Updated: @LastUpdatedDisplay</span>
         @if (!string.IsNullOrEmpty(AssignedOfficerName))
         {
             <span class="text-muted small">Officer: @AssignedOfficerName</span>
         }
         @Actions
-        <a href="@BackUrl" class="btn btn-outline-secondary btn-sm">
-            &larr; @BackText
-        </a>
     </div>
 </div>
 
@@ -75,9 +71,6 @@
 
             <dt class="col-sm-4">Status</dt>
             <dd class="col-sm-8"><StatusBadge Status="@Status" /></dd>
-
-            <dt class="col-sm-4">Submitted Date</dt>
-            <dd class="col-sm-8">@SubmittedDateDisplay</dd>
 
             @if (!string.IsNullOrEmpty(CitizenName))
             {
@@ -196,7 +189,7 @@ else
                                     <td>@doc.FileName</td>
                                     <td><span class="badge bg-secondary">@doc.DocumentType</span></td>
                                     <td>@(doc.FileSize / 1024)KB</td>
-                                    <td>@doc.UploadedDate.ToLocalTime().ToString("g")</td>
+                                    <td>@doc.UploadedDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
                                     <td class="text-end">
                                         <a href="/documents/@doc.Id/download"
                                            class="btn btn-sm btn-outline-primary"
@@ -264,17 +257,6 @@ else if (ShowEmptyReviews)
     <div class="alert alert-info" role="alert">No reviews recorded for this application yet.</div>
 }
 
-@* Officer Notes *@
-@if (ShowOfficerNotes && HasOfficerNotes)
-{
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Officer Notes</h5>
-            <p class="form-control-plaintext">@OfficerNotes</p>
-        </div>
-    </div>
-}
-
 @code {
     // ── Data Parameters ──
 
@@ -282,7 +264,6 @@ else if (ShowEmptyReviews)
     [Parameter] public string? PermitTypeName { get; set; }
     [Parameter] public string? PermitTypeDescription { get; set; }
     [Parameter, EditorRequired] public ApplicationStatus Status { get; set; }
-    [Parameter] public DateTime? SubmittedDate { get; set; }
     [Parameter] public DateTime? LastUpdated { get; set; }
     [Parameter] public string CitizenName { get; set; } = string.Empty;
     [Parameter] public string CitizenEmail { get; set; } = string.Empty;
@@ -292,12 +273,6 @@ else if (ShowEmptyReviews)
     [Parameter, EditorRequired] public IReadOnlyList<DocumentDto> Documents { get; set; } = Array.Empty<DocumentDto>();
     [Parameter, EditorRequired] public IReadOnlyList<ApplicationActivityDto> Activities { get; set; } = Array.Empty<ApplicationActivityDto>();
     [Parameter, EditorRequired] public IReadOnlyList<ReviewDisplayViewModel> Reviews { get; set; } = Array.Empty<ReviewDisplayViewModel>();
-    [Parameter] public string OfficerNotes { get; set; } = string.Empty;
-
-    // ── Navigation Parameters ──
-
-    [Parameter, EditorRequired] public string BackUrl { get; set; } = string.Empty;
-    [Parameter] public string BackText { get; set; } = "Back";
 
     // ── Render Fragment Slots ──
 
@@ -310,14 +285,11 @@ else if (ShowEmptyReviews)
     // ── Behavior Parameters ──
 
     [Parameter] public bool ShowEmptyReviews { get; set; }
-    [Parameter] public bool ShowOfficerNotes { get; set; }
 
     // ── Computed Properties ──
 
-    public string SubmittedDateDisplay => SubmittedDate?.ToLocalTime().ToString("MMM dd, yyyy") ?? "Not submitted";
-    public string LastUpdatedDisplay => LastUpdated?.ToLocalTime().ToString("MMM dd, yyyy") ?? "N/A";
+    public string LastUpdatedDisplay => LastUpdated?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "N/A";
     public bool HasReviews => Reviews.Count > 0;
-    public bool HasOfficerNotes => !string.IsNullOrWhiteSpace(OfficerNotes);
 
     private static string GetReviewDecisionLabel(ReviewDecision decision) => decision switch
     {

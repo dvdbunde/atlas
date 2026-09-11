@@ -1,0 +1,15 @@
+.admin-page-header {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--atlas-border-color, #dee2e6);
+}
+
+.admin-page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--atlas-neutral-900, #212529);
+    margin-bottom: 0.25rem;
+}
+
+.admin-page-description {
+    margin-bottom: 0;
+}

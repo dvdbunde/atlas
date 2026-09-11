@@ -59,8 +59,8 @@ public class OfficerApplicationCardViewModel
     public int DocumentCount { get; init; }
     public bool AllRequiredDocumentsUploaded { get; init; }
 
-    public string SubmittedDateDisplay => SubmittedDate?.ToString("MMM dd, yyyy") ?? "Not submitted";
-    public string LastUpdatedDisplay => LastUpdated?.ToString("MMM dd, yyyy") ?? "N/A";
+    public string SubmittedDateDisplay => SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Not submitted";
+    public string LastUpdatedDisplay => LastUpdated?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
     public string AssignedOfficerDisplay => AssignedOfficerName ?? "Unassigned";
     public string AssignmentDisplay => !AssignedOfficerId.HasValue
         ? "Unassigned"

@@ -12,15 +12,14 @@
         {
             <div class="d-flex gap-3 mb-3 align-items-start">
                 <div class="mt-1 flex-shrink-0">
-                    <span class="badge rounded-circle p-2 d-inline-flex align-items-center justify-content-center"
-                          style="width: 32px; height: 32px; @GetIconStyle(entry.ActivityType)">
+                    <span class="activity-icon @GetIconClass(entry.ActivityType)" aria-hidden="true">
                         @GetIcon(entry.ActivityType)
                     </span>
                 </div>
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-baseline">
                         <strong class="small">@entry.Title</strong>
-                        <small class="text-muted ms-2">@entry.Timestamp.ToString("MMM dd, yyyy HH:mm")</small>
+                        <small class="text-muted ms-2">@entry.Timestamp.ToString("dd/MM/yyyy HH:mm")</small>
                     </div>
                     @if (!string.IsNullOrEmpty(entry.Description))
                     {
@@ -60,16 +59,16 @@
         _                  => "•"
     };
 
-    private static string GetIconStyle(string activityType) => activityType switch
+    private static string GetIconClass(string activityType) => activityType switch
     {
-        "Created"          => "background: #e3f2fd; color: #1565c0;",
-        "Submitted"        => "background: #e8f5e9; color: #2e7d32;",
-        "Assigned"         => "background: #fff3e0; color: #e65100;",
-        "Approved"         => "background: #e8f5e9; color: #2e7d32;",
-        "Rejected"         => "background: #ffebee; color: #c62828;",
-        "InfoRequested"    => "background: #fff8e1; color: #f9a825;",
-        "Resubmitted"      => "background: #e8f5e9; color: #2e7d32;",
-        "DocumentUploaded" => "background: #f3e5f5; color: #7b1fa2;",
-        _                  => "background: #f5f5f5; color: #616161;"
+        "Created"          => "activity-icon-created",
+        "Submitted"        => "activity-icon-submitted",
+        "Assigned"         => "activity-icon-assigned",
+        "Approved"         => "activity-icon-approved",
+        "Rejected"         => "activity-icon-rejected",
+        "InfoRequested"    => "activity-icon-inforequested",
+        "Resubmitted"      => "activity-icon-resubmitted",
+        "DocumentUploaded" => "activity-icon-documentuploaded",
+        _                  => "activity-icon-default"
     };
 }

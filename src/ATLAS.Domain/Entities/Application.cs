@@ -133,6 +133,32 @@ namespace ATLAS.Domain.Entities
             AddDomainEvent(new ApplicationAssignedToOfficerEvent(Id));
         }
 
+        /// <summary>
+        /// Releases the currently assigned officer's own assignment, returning
+        /// the application to the unassigned Submitted pool.
+        /// Only the currently assigned officer may release an application that
+        /// is Under Review. Enforces the assignment-ownership rule in the domain
+        /// (not just UI authorization).
+        /// </summary>
+        /// <param name="officerId">The authenticated officer requesting the release.</param>
+        /// <exception cref="DomainException">Thrown when the application is not Under Review,
+        /// is unassigned, or is assigned to a different officer.</exception>
+        public void ReleaseAssignment(Guid officerId)
+        {
+            if (officerId == Guid.Empty)
+                throw new ArgumentException("Officer ID cannot be empty", nameof(officerId));
+
+            if (Status != ApplicationStatus.UnderReview)
+                throw new DomainException("Can only release an application that is under review");
+
+            EnsureAssignedToOfficer(officerId);
+
+            Status = ApplicationStatus.Submitted;
+            AssignedOfficerId = null;
+            AssignedDate = null;
+            AddDomainEvent(new ApplicationReleasedEvent(Id));
+        }
+
              /// <summary>
         /// Validates that the acting officer is the currently assigned officer
         /// before any Officer decision. Enforces O4 assignment-ownership rule

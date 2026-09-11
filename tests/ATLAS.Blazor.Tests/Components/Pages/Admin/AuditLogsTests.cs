@@ -100,6 +100,34 @@ public class AuditLogsTests : BunitContext
         Assert.NotNull(captured);
         Assert.Equal("login", captured!.SearchTerm);
     }
+
+    [Fact]
+    public void Should_DisplayUserName_InsteadOfRawUserId()
+    {
+        var result = SampleResult(1);
+        result.Items[0].UserName = "Jane Doe";
+        result.Items[0].UserEmail = "jane@example.com";
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetAuditLogsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        var cut = Render<AuditLogs>();
+
+        Assert.Contains("Jane Doe", cut.Markup);
+        Assert.DoesNotContain(result.Items[0].UserId.ToString(), cut.Markup);
+    }
+
+    [Fact]
+    public void Should_DisplaySystem_WhenUserUnresolved()
+    {
+        var result = SampleResult(1);
+        result.Items[0].UserName = string.Empty;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetAuditLogsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
+
+        var cut = Render<AuditLogs>();
+
+        Assert.Contains("System", cut.Markup);
+    }
 }
 
 

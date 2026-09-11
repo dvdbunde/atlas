@@ -88,16 +88,18 @@ public class UsersListTests : BunitContext
     }
 
     [Fact]
-    public void Should_DisplayRoleAsReadOnlyBadge_NotEditableControl()
+    public void Should_DisplayRoleAsReadOnlyText_NotEditableControl()
     {
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetUsersQuery>(), default))
             .ReturnsAsync(Result(SampleUsers()));
 
         var cut = Render<Users>();
 
-        // Role is rendered as a read-only badge in the table, and there is no
-        // "Change Role" / activation control on the list.
-        Assert.Contains("badge", cut.Markup);
+        // Role is rendered as plain read-only text in the table (no coloured
+        // badge), and there is no "Change Role" / activation control on the list.
+        Assert.Contains("Admin", cut.Markup);
+        Assert.Contains("Officer", cut.Markup);
+        Assert.DoesNotContain("badge", cut.Markup);
         Assert.DoesNotContain("Change Role", cut.Markup);
         Assert.DoesNotContain("Activate", cut.Markup);
         Assert.DoesNotContain("Deactivate", cut.Markup);

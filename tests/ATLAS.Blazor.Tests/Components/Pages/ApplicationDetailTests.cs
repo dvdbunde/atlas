@@ -1,4 +1,5 @@
 using ATLAS.Application.DTOs;
+using ATLAS.Application.Interfaces;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.Components.Pages;
@@ -12,13 +13,17 @@ namespace ATLAS.Blazor.Tests.Components.Pages;
 public class ApplicationDetailTests : BunitContext
 {
     private readonly Mock<IMediator> _mediatorMock;
+    private readonly Mock<ICurrentUserService> _currentUserMock;
     private readonly Guid _applicationId = Guid.NewGuid();
     private readonly Guid _permitTypeId = Guid.NewGuid();
 
     public ApplicationDetailTests()
     {
         _mediatorMock = new Mock<IMediator>();
+        _currentUserMock = new Mock<ICurrentUserService>();
+        _currentUserMock.Setup(u => u.Email).Returns("citizen@example.com");
         Services.AddSingleton(_mediatorMock.Object);
+        Services.AddSingleton(_currentUserMock.Object);
     }
 
     private ApplicationDetailDto CreateSampleSubmittedApplication()
@@ -33,6 +38,7 @@ public class ApplicationDetailTests : BunitContext
             CitizenName = "Test Citizen",
             PermitTypeName = "Building Permit",
             CitizenNotes = "Building a new garage",
+            OfficerNotes = "Internal officer review notes that should never be presented as raw text.",
             SubmittedDate = DateTime.UtcNow.AddDays(-2),
             FieldValues = new Dictionary<string, string>
             {
@@ -185,6 +191,22 @@ public class ApplicationDetailTests : BunitContext
     }
 
     [Fact]
+    public void Should_ShowCitizenEmail_WhenLoaded()
+    {
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        Assert.Contains("citizen@example.com", cut.Markup);
+    }
+
+    [Fact]
     public void Should_ShowReviews_WhenVisibleToCitizen()
     {
         _mediatorMock
@@ -292,5 +314,75 @@ public class ApplicationDetailTests : BunitContext
 
         // Assert
         Assert.Contains("No activity recorded yet.", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowSubmittedDateInHeaderOrSummary_WhenLoaded()
+    {
+        // Arrange — activity feed empty to avoid the "Submitted" activity text
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationActivityQuery>(), default))
+            .ReturnsAsync(new List<ApplicationActivityDto>());
+
+        // Act
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert — "Submitted Date" field/column is removed from header & Summary
+        Assert.DoesNotContain("Submitted:", cut.Markup);
+        Assert.DoesNotContain(">Submitted Date<", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowOfficerNotes_WhenLoaded()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationActivityQuery>(), default))
+            .ReturnsAsync(new List<ApplicationActivityDto>());
+
+        // Act
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert — Officer Notes block is not rendered even though raw notes exist in the DTO
+        Assert.DoesNotContain("Officer Notes", cut.Markup);
+        Assert.DoesNotContain("Internal officer review notes", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_ShowLastUpdated_InStandardDateFormat_WhenLoaded()
+    {
+        // Arrange
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationByIdQuery>(), default))
+            .ReturnsAsync(CreateSampleSubmittedApplication());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetPermitTypeByIdQuery>(), default))
+            .ReturnsAsync(CreateSamplePermitType());
+        _mediatorMock
+            .Setup(m => m.Send(It.IsAny<GetApplicationActivityQuery>(), default))
+            .ReturnsAsync(new List<ApplicationActivityDto>());
+
+        // Act
+        var cut = Render<ApplicationDetail>(parameters =>
+            parameters.Add(p => p.Id, _applicationId));
+
+        // Assert — "Last Updated" remains and the review date uses dd/MM/yyyy
+        Assert.Contains("Last Updated:", cut.Markup);
+        // The only review in the fixture has a ReviewedDate; it must be dd/MM/yyyy formatted (no month-name abbreviation)
+        Assert.DoesNotContain(DateTime.UtcNow.AddDays(-1).ToString("MMM dd, yyyy"), cut.Markup);
     }
 }

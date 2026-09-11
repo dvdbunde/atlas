@@ -3,6 +3,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ATLAS.Application.DTOs;
+using ATLAS.Domain.Entities;
 using ATLAS.Domain.Interfaces;
 
 namespace ATLAS.Application.Queries.AuditLogs
@@ -19,10 +20,12 @@ namespace ATLAS.Application.Queries.AuditLogs
     public class GetAuditLogDetailQueryHandler : IRequestHandler<GetAuditLogDetailQuery, AuditLogDto?>
     {
         private readonly IAuditLogRepository _repository;
+        private readonly IUserRepository _userRepository;
 
-        public GetAuditLogDetailQueryHandler(IAuditLogRepository repository)
+        public GetAuditLogDetailQueryHandler(IAuditLogRepository repository, IUserRepository userRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         }
 
         public async Task<AuditLogDto?> Handle(GetAuditLogDetailQuery request, CancellationToken cancellationToken)
@@ -31,10 +34,16 @@ namespace ATLAS.Application.Queries.AuditLogs
             if (log is null)
                 return null;
 
+            User? user = null;
+            if (log.UserId.HasValue)
+                user = await _userRepository.GetByIdAsync(log.UserId.Value, cancellationToken);
+
             return new AuditLogDto
             {
                 Id = log.Id,
                 UserId = log.UserId,
+                UserName = user?.GetFullName() ?? string.Empty,
+                UserEmail = user?.Email ?? string.Empty,
                 Action = log.Action,
                 EntityType = log.EntityType,
                 EntityId = log.EntityId,

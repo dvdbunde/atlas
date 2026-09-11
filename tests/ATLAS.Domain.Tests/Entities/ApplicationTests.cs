@@ -1061,5 +1061,128 @@ namespace ATLAS.Domain.Tests.Entities
         }
 
         #endregion
+
+        #region ModifiedDate Tests
+
+        [Fact]
+        public void Create_ShouldInitializeModifiedDate()
+        {
+            // Arrange & Act
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+
+            // Assert
+            Assert.NotNull(application.ModifiedDate);
+            Assert.NotNull(application.CreatedDate);
+            Assert.True(application.ModifiedDate <= DateTime.UtcNow);
+            Assert.True(application.ModifiedDate >= DateTime.UtcNow.AddMinutes(-1));
+        }
+
+        [Fact]
+        public void Touch_ShouldAdvanceModifiedDate()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            var originalModifiedDate = application.ModifiedDate;
+
+            // Act
+            application.Touch();
+
+            // Assert
+            Assert.NotNull(originalModifiedDate);
+            Assert.True(application.ModifiedDate > originalModifiedDate,
+                "Touch() should advance ModifiedDate to reflect a persisted modification");
+        }
+
+        #endregion
+
+        #region Release Assignment Tests
+
+        [Fact]
+        public void ReleaseAssignment_ShouldReturnToSubmitted_AndClearAssignment()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.AssignToOfficer(_officerId);
+            application.ClearDomainEvents();
+
+            // Act
+            application.ReleaseAssignment(_officerId);
+
+            // Assert
+            Assert.Equal(ApplicationStatus.Submitted, application.Status);
+            Assert.Null(application.AssignedOfficerId);
+            Assert.Null(application.AssignedDate);
+            Assert.Contains(application.DomainEvents, e => e is ApplicationReleasedEvent);
+        }
+
+        [Fact]
+        public void ReleaseAssignment_ShouldThrow_WhenNotUnderReview()
+        {
+            // Arrange — Submitted, not Under Review
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() => application.ReleaseAssignment(_officerId));
+        }
+
+        [Fact]
+        public void ReleaseAssignment_ShouldThrow_WhenUnassigned()
+        {
+            // Arrange — Under Review but unassigned
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.StartReview(_officerId);
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() => application.ReleaseAssignment(_officerId));
+        }
+
+        [Fact]
+        public void ReleaseAssignment_ShouldThrow_WhenAssignedToOtherOfficer()
+        {
+            // Arrange — assigned to a different officer
+            var otherOfficerId = Guid.NewGuid();
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.AssignToOfficer(otherOfficerId);
+
+            // Act & Assert
+            Assert.Throws<DomainException>(() => application.ReleaseAssignment(_officerId));
+        }
+
+        [Fact]
+        public void ReleaseAssignment_ShouldThrow_WhenOfficerIdEmpty()
+        {
+            // Arrange
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.AssignToOfficer(_officerId);
+
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => application.ReleaseAssignment(Guid.Empty));
+        }
+
+        [Fact]
+        public void ReleaseAssignment_ShouldAllowReassignment_ToAnotherOfficer()
+        {
+            // Arrange
+            var otherOfficerId = Guid.NewGuid();
+            var application = new Application(_citizenId, _permitTypeId, "Test notes");
+            application.Submit();
+            application.AssignToOfficer(_officerId);
+            application.ReleaseAssignment(_officerId);
+
+            // Act — another officer assigns the now-Submitted application
+            application.AssignToOfficer(otherOfficerId);
+
+            // Assert
+            Assert.Equal(ApplicationStatus.UnderReview, application.Status);
+            Assert.Equal(otherOfficerId, application.AssignedOfficerId);
+            Assert.NotNull(application.AssignedDate);
+        }
+
+        #endregion
     }
 }

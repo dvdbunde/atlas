@@ -41,13 +41,15 @@
     }
     else
     {
-        <div class="row g-3 mb-3">
+        <div class="row g-3 mb-3 align-items-end">
             <div class="col-12 col-md-6">
-                <input type="search" class="form-control" placeholder="Search by name or email"
-                       value="@_viewModel.SearchTerm" @oninput="OnSearchInput" aria-label="Search users" />
+                <label class="form-label" for="user-search">Search</label>
+                <input id="user-search" type="search" class="form-control" placeholder="Search by name or email"
+                       value="@_viewModel.SearchTerm" @oninput="OnSearchInput" aria-label="Search users" @ref="_searchInput" />
             </div>
             <div class="col-12 col-md-3">
-                <select class="form-select" @onchange="OnRoleFilterChanged" aria-label="Filter by role">
+                <label class="form-label" for="user-role">Role</label>
+                <select id="user-role" class="form-select" value="@(_viewModel.RoleFilter is null ? "" : ((int)_viewModel.RoleFilter).ToString())" @onchange="OnRoleFilterChanged" aria-label="Filter by role">
                     <option value="">All roles</option>
                     <option value="@((int)UserRole.Citizen)">Citizen</option>
                     <option value="@((int)UserRole.Officer)">Officer</option>
@@ -55,7 +57,8 @@
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <select class="form-select" @onchange="OnSortChanged" aria-label="Sort users">
+                <label class="form-label" for="user-sort">Sort</label>
+                <select id="user-sort" class="form-select" value="@_viewModel.SortBy" @onchange="OnSortChanged" aria-label="Sort users">
                     <option value="NameAsc">Name (A-Z)</option>
                     <option value="NameDesc">Name (Z-A)</option>
                     <option value="EmailAsc">Email (A-Z)</option>
@@ -82,8 +85,8 @@
                         <tr>
                             <td>@user.FullName</td>
                             <td>@user.Email</td>
-                            <td><span class="badge text-bg-info">@user.Role</span></td>
-                            <td>@(user.LastLoginDate?.ToLocalTime().ToString("g") ?? "Never")</td>
+                            <td>@user.Role</td>
+                            <td>@(user.LastLoginDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Never")</td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="@($"/admin/users/{user.Id}")">View</a>
                             </td>

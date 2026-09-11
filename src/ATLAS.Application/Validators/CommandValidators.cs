@@ -25,6 +25,10 @@ namespace ATLAS.Application.Commands.Validators
             RuleFor(x => x.ApplicationId)
                 .NotEmpty().WithMessage("ApplicationId is required");
 
+            RuleFor(x => x.Comments)
+                .NotEmpty().WithMessage("Comments are required when rejecting an application")
+                .MaximumLength(2000).WithMessage("Comments cannot exceed 2000 characters");
+
             RuleFor(x => x.ReasonCode)
                 .NotEmpty().WithMessage("Rejection reason code is required")
                 .MaximumLength(1000).WithMessage("Rejection reason code cannot exceed 1000 characters");

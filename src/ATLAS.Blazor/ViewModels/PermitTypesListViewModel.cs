@@ -11,8 +11,7 @@ public class PermitTypesListViewModel
     public string? ErrorMessage { get; set; }
 
     public string SearchTerm { get; set; } = string.Empty;
-    public bool ActiveOnly { get; set; }
-    public bool InactiveOnly { get; set; }
+    public PermitTypeStatusFilter StatusFilter { get; set; } = PermitTypeStatusFilter.All;
     public PermitTypeSortOption SortBy { get; set; } = PermitTypeSortOption.NameAsc;
 
     public bool IsEmpty => !IsLoading && !HasError && Items.Count == 0;

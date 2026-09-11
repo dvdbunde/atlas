@@ -6,11 +6,6 @@
 <PageTitle>My Applications</PageTitle>
 
 <div class="container mt-4">
-    <nav aria-label="Breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item active" aria-current="page">My Applications</li>
-        </ol>
-    </nav>
     <h1 class="mb-4">My Applications</h1>
 
     @if (_viewModel.IsLoading)
@@ -43,6 +38,40 @@
     }
     else
     {
+        <div class="row g-3 mb-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="citizen-permit-type">Permit Type</label>
+                <select id="citizen-permit-type" class="form-select" value="@(_viewModel.PermitTypeIdFilter?.ToString() ?? "")" @onchange="OnPermitTypeFilterChanged" aria-label="Filter by permit type">
+                    <option value="">All permit types</option>
+                    @foreach (var pt in _viewModel.PermitTypes)
+                    {
+                        <option value="@pt.Id">@pt.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="citizen-status">Status</label>
+                <select id="citizen-status" class="form-select" value="@(_viewModel.StatusFilter?.ToString() ?? "")" @onchange="OnStatusFilterChanged" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Submitted">Submitted</option>
+                    <option value="UnderReview">Under Review</option>
+                    <option value="InfoRequested">Info Requested</option>
+                    <option value="Resubmitted">Resubmitted</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="citizen-sort">Sort</label>
+                <select id="citizen-sort" class="form-select" value="@_viewModel.SortBy" @onchange="OnSortChanged" aria-label="Sort applications">
+                    <option value="LastUpdated">Last Updated</option>
+                    <option value="SubmittedDate">Submitted Date</option>
+                    <option value="ApplicationNumber">Application #</option>
+                </select>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
@@ -50,7 +79,6 @@
                         <th scope="col">Application #</th>
                         <th scope="col">Permit Type</th>
                         <th scope="col">Status</th>
-                        <th scope="col">Submitted</th>
                         <th scope="col">Last Updated</th>
                         <th scope="col">Action</th>
                     </tr>
@@ -66,7 +94,6 @@
                             <td>
                                 <StatusBadge Status="@app.Status" />
                             </td>
-                            <td>@app.SubmittedDateDisplay</td>
                             <td>@app.LastUpdatedDisplay</td>
                             <td>
                                 <a href="@app.NavigationUrl"

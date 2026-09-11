@@ -79,4 +79,64 @@ public class AuditLogDetailTests : BunitContext
 
         Assert.Contains("unable to load", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void Should_DisplayUserNameAndEmail_WhenResolved()
+    {
+        var id = Guid.NewGuid();
+        var dto = Sample(id);
+        dto.UserName = "Jane Doe";
+        dto.UserEmail = "jane@example.com";
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetAuditLogDetailQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
+
+        var cut = Render<AuditLogDetail>(parameters => parameters.Add(p => p.Id, id));
+
+        Assert.Contains("Jane Doe", cut.Markup);
+        Assert.Contains("jane@example.com", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotDisplayRawUserId_WhenUserNameResolved()
+    {
+        var id = Guid.NewGuid();
+        var dto = Sample(id);
+        dto.UserName = "Jane Doe";
+        dto.UserEmail = "jane@example.com";
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetAuditLogDetailQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
+
+        var cut = Render<AuditLogDetail>(parameters => parameters.Add(p => p.Id, id));
+
+        Assert.DoesNotContain(dto.UserId.ToString(), cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotDisplayIpAddress()
+    {
+        var id = Guid.NewGuid();
+        var dto = Sample(id);
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetAuditLogDetailQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
+
+        var cut = Render<AuditLogDetail>(parameters => parameters.Add(p => p.Id, id));
+
+        Assert.DoesNotContain("IP Address", cut.Markup);
+        Assert.DoesNotContain("127.0.0.1", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_DisplaySystem_WhenUserUnresolved()
+    {
+        var id = Guid.NewGuid();
+        var dto = Sample(id);
+        dto.UserName = string.Empty;
+        dto.UserEmail = string.Empty;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetAuditLogDetailQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dto);
+
+        var cut = Render<AuditLogDetail>(parameters => parameters.Add(p => p.Id, id));
+
+        Assert.Contains("System", cut.Markup);
+    }
 }

@@ -105,6 +105,55 @@ namespace ATLAS.Application.Tests.Commands
         }
 
         [Fact]
+        public async Task Handle_ShouldRefreshModifiedDate_WhenUploadSucceeds()
+        {
+            // Arrange
+            var applicationId = Guid.NewGuid();
+            var permitTypeId = Guid.NewGuid();
+            var citizenId = _testUserId;
+
+            var application = new ATLAS.Domain.Entities.Application(citizenId, permitTypeId, "Test notes");
+            application.ClearDomainEvents();
+            var originalModifiedDate = application.ModifiedDate;
+
+            var idField = typeof(ATLAS.Domain.Entities.Application)
+                .GetProperty("Id", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            idField?.SetValue(application, applicationId);
+
+            var permitType = new PermitType("Test Permit", "Description", 100m);
+            _mockVirusScanner.Setup(s => s.ScanAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new VirusScanResult { IsClean = true });
+            _mockRepository.Setup(r => r.GetByIdAsync(applicationId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            _mockPermitTypeRepository.Setup(r => r.GetByIdAsync(permitTypeId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(permitType);
+            _mockFileStorageService.Setup(s => s.UploadAsync(
+                    It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FileUploadResult("https://blob.url/doc.pdf", 1024));
+
+            var content = new MemoryStream(Encoding.UTF8.GetBytes("test content"));
+            var command = new UploadDocumentCommand
+            {
+                ApplicationId = applicationId,
+                DocumentType = "Building Plans",
+                FileContent = content,
+                FileName = "test.pdf",
+                ContentType = "application/pdf",
+                FileSize = 1024
+            };
+
+            // Act
+            var result = await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            Assert.NotNull(originalModifiedDate);
+            Assert.True(application.ModifiedDate > originalModifiedDate,
+                "ModifiedDate should advance on a successful document upload");
+            _mockRepository.Verify(r => r.UpdateAsync(application, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
         public async Task Handle_ShouldReturnFalse_WhenApplicationNotFound()
         {
             var applicationId = Guid.NewGuid();

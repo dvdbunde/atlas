@@ -408,83 +408,111 @@ public class OfficerApplicationReviewTests : BunitContext
     }
 
     [Fact]
-    public async Task Should_Approve_WhenConfirmed()
+    public async Task Should_Approve_ShowInlineConfirmation_ThenConfirm_SendsCommand()
     {
         var dto = SampleReview();
         dto.AssignedOfficerId = _currentUserMock.Object.UserId;
         dto.Status = ApplicationStatus.UnderReview;
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
             .ReturnsAsync(dto);
-        _jsRuntimeMock.Setup(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()))
-            .Returns(new ValueTask<bool>(true));
 
         var cut = Render<OfficerApplicationReview>(parameters =>
             parameters.Add(p => p.ApplicationId, _applicationId));
 
+        // Clicking Approve enters the inline confirmation state (no command yet)
         cut.Find("button.btn-success").Click();
+        _mediatorMock.Verify(m => m.Send(It.IsAny<ApproveApplicationCommand>(), default), Times.Never);
+        Assert.Contains("Approve application", cut.Markup);
 
+        // Fields and original action buttons are hidden while confirming
+        Assert.DoesNotContain("decision-comments", cut.Markup);
+        Assert.DoesNotContain("decision-reason-code", cut.Markup);
+        Assert.DoesNotContain("Request Information", cut.Markup);
+
+        // Confirm executes the approval
+        cut.Find("[data-testid='confirm-decision']").Click();
         _mediatorMock.Verify(m => m.Send(It.IsAny<ApproveApplicationCommand>(), default), Times.Once);
     }
 
     [Fact]
-    public async Task Should_NotApprove_WhenCancelled()
+    public async Task Should_Approve_Cancel_RestoresForm_AndDoesNotSendCommand()
     {
         var dto = SampleReview();
         dto.AssignedOfficerId = _currentUserMock.Object.UserId;
         dto.Status = ApplicationStatus.UnderReview;
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
             .ReturnsAsync(dto);
-        _jsRuntimeMock.Setup(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()))
-            .Returns(new ValueTask<bool>(false));
 
         var cut = Render<OfficerApplicationReview>(parameters =>
             parameters.Add(p => p.ApplicationId, _applicationId));
 
+        cut.Find("#decision-comments").Change("Looks good");
         cut.Find("button.btn-success").Click();
+        Assert.Contains("Approve application", cut.Markup);
+
+        cut.Find("[data-testid='cancel-decision']").Click();
 
         _mediatorMock.Verify(m => m.Send(It.IsAny<ApproveApplicationCommand>(), default), Times.Never);
+        // Confirmation hidden and form restored with preserved values
+        Assert.DoesNotContain("Approve application", cut.Markup);
+        Assert.Contains("decision-comments", cut.Markup);
+        Assert.Contains("Looks good", cut.Markup);
     }
 
     [Fact]
-    public async Task Should_Reject_WhenConfirmed()
+    public async Task Should_Reject_ShowInlineConfirmation_ThenConfirm_SendsCommand()
     {
         var dto = SampleReview();
         dto.AssignedOfficerId = _currentUserMock.Object.UserId;
         dto.Status = ApplicationStatus.UnderReview;
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
             .ReturnsAsync(dto);
-        _jsRuntimeMock.Setup(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()))
-            .Returns(new ValueTask<bool>(true));
 
         var cut = Render<OfficerApplicationReview>(parameters =>
             parameters.Add(p => p.ApplicationId, _applicationId));
 
-        cut.Find("button.btn-danger").Click();
+        // Provide required comments and reason code
+        cut.Find("#decision-comments").Change("Missing documentation");
+        cut.Find("#decision-reason-code").Change("INCOMPLETE");
 
+        cut.Find("button.btn-danger").Click();
+        _mediatorMock.Verify(m => m.Send(It.IsAny<RejectApplicationCommand>(), default), Times.Never);
+        Assert.Contains("Reject application", cut.Markup);
+
+        // Fields and original action buttons hidden while confirming
+        Assert.DoesNotContain("decision-comments", cut.Markup);
+        Assert.DoesNotContain("decision-reason-code", cut.Markup);
+
+        cut.Find("[data-testid='confirm-decision']").Click();
         _mediatorMock.Verify(m => m.Send(It.IsAny<RejectApplicationCommand>(), default), Times.Once);
     }
 
     [Fact]
-    public async Task Should_NotReject_WhenCancelled()
+    public async Task Should_Reject_WithoutComments_ShowsValidationError_AndNoConfirmation()
     {
         var dto = SampleReview();
         dto.AssignedOfficerId = _currentUserMock.Object.UserId;
         dto.Status = ApplicationStatus.UnderReview;
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
             .ReturnsAsync(dto);
-        _jsRuntimeMock.Setup(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()))
-            .Returns(new ValueTask<bool>(false));
 
         var cut = Render<OfficerApplicationReview>(parameters =>
             parameters.Add(p => p.ApplicationId, _applicationId));
+
+        // Reason code provided but comments missing
+        cut.Find("#decision-reason-code").Change("INCOMPLETE");
 
         cut.Find("button.btn-danger").Click();
 
         _mediatorMock.Verify(m => m.Send(It.IsAny<RejectApplicationCommand>(), default), Times.Never);
+        Assert.Contains("Comments / Instructions are required", cut.Markup);
+        Assert.DoesNotContain("Reject application", cut.Markup);
+        // Form remains visible (no confirmation state)
+        Assert.Contains("decision-comments", cut.Markup);
     }
 
     [Fact]
-    public async Task Should_RequestInfo_WithoutConfirmDialog()
+    public async Task Should_Reject_WithoutReasonCode_ShowsValidationError_AndNoConfirmation()
     {
         var dto = SampleReview();
         dto.AssignedOfficerId = _currentUserMock.Object.UserId;
@@ -495,12 +523,61 @@ public class OfficerApplicationReviewTests : BunitContext
         var cut = Render<OfficerApplicationReview>(parameters =>
             parameters.Add(p => p.ApplicationId, _applicationId));
 
-        // RequestInfo has no confirm dialog — should dispatch immediately
+        // Comments provided but reason code missing
+        cut.Find("#decision-comments").Change("Missing documentation");
+
+        cut.Find("button.btn-danger").Click();
+
+        _mediatorMock.Verify(m => m.Send(It.IsAny<RejectApplicationCommand>(), default), Times.Never);
+        Assert.Contains("Rejection Reason Code is required", cut.Markup);
+        Assert.DoesNotContain("Reject application", cut.Markup);
+        Assert.Contains("decision-comments", cut.Markup);
+    }
+
+    [Fact]
+    public async Task Should_RequestInfo_ShowInlineConfirmation_ThenConfirm_SendsCommand()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        cut.Find("#decision-comments").Change("Please provide more details");
+
+        cut.Find("button.btn-warning").Click();
+        _mediatorMock.Verify(m => m.Send(It.IsAny<RequestInfoCommand>(), default), Times.Never);
+        Assert.Contains("Request additional information", cut.Markup);
+
+        // Fields and original action buttons hidden while confirming
+        Assert.DoesNotContain("decision-comments", cut.Markup);
+        Assert.DoesNotContain("decision-reason-code", cut.Markup);
+
+        cut.Find("[data-testid='confirm-decision']").Click();
+        _mediatorMock.Verify(m => m.Send(It.IsAny<RequestInfoCommand>(), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task Should_RequestInfo_WithoutComments_ShowsValidationError_AndNoConfirmation()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
         cut.Find("button.btn-warning").Click();
 
-        _mediatorMock.Verify(m => m.Send(It.IsAny<RequestInfoCommand>(), default), Times.Once);
-        // No JS confirm interaction for RequestInfo
-        _jsRuntimeMock.Verify(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()), Times.Never);
+        _mediatorMock.Verify(m => m.Send(It.IsAny<RequestInfoCommand>(), default), Times.Never);
+        Assert.Contains("Comments / Instructions are required", cut.Markup);
+        Assert.DoesNotContain("Request additional information", cut.Markup);
+        Assert.Contains("decision-comments", cut.Markup);
     }
 
     [Fact]
@@ -509,8 +586,6 @@ public class OfficerApplicationReviewTests : BunitContext
         var dto = SampleReview();
         dto.AssignedOfficerId = _currentUserMock.Object.UserId;
         dto.Status = ApplicationStatus.UnderReview;
-        _jsRuntimeMock.Setup(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()))
-            .Returns(new ValueTask<bool>(true));
 
         // Initial load returns UnderReview (panel visible); post-decision reload returns Approved (panel hidden)
         var approvedDto = SampleReview();
@@ -524,6 +599,7 @@ public class OfficerApplicationReviewTests : BunitContext
             parameters.Add(p => p.ApplicationId, _applicationId));
 
         cut.Find("button.btn-success").Click();
+        cut.Find("[data-testid='confirm-decision']").Click();
 
         // Reload was triggered after the decision
         _mediatorMock.Verify(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default), Times.AtLeast(2));
@@ -539,8 +615,6 @@ public class OfficerApplicationReviewTests : BunitContext
         dto.Status = ApplicationStatus.UnderReview;
         _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
             .ReturnsAsync(dto);
-        _jsRuntimeMock.Setup(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()))
-            .Returns(new ValueTask<bool>(true));
         // Decision send throws (e.g. not assigned to this officer server-side)
         _mediatorMock.Setup(m => m.Send(It.IsAny<ApproveApplicationCommand>(), default))
             .ThrowsAsync(new InvalidOperationException("not assigned to you"));
@@ -549,9 +623,90 @@ public class OfficerApplicationReviewTests : BunitContext
             parameters.Add(p => p.ApplicationId, _applicationId));
 
         cut.Find("button.btn-success").Click();
+        cut.Find("[data-testid='confirm-decision']").Click();
 
         // Error state surfaced to the officer
         var alert = cut.Find(".alert-danger");
         Assert.Contains("unable to record the decision", alert.TextContent);
+    }
+
+    [Fact]
+    public void Should_ShowReleaseAssignment_WhenAssignedToCurrentOfficerAndUnderReview()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.Contains("Release Assignment", cut.Markup);
+        Assert.Contains("Assigned to you", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowReleaseAssignment_WhenUnassigned()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = null;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.DoesNotContain("Release Assignment", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowReleaseAssignment_WhenAssignedToOtherOfficer()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = Guid.NewGuid(); // different from current user
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.DoesNotContain("Release Assignment", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowReleaseAssignment_WhenNotUnderReview()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.Submitted; // not UnderReview
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.DoesNotContain("Release Assignment", cut.Markup);
+    }
+
+    [Fact]
+    public async Task Should_ReleaseAssignment_Immediately_WhenClicked()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        // No confirmation dialog — clicking Release Assignment executes immediately.
+        cut.Find("button.btn-secondary").Click();
+
+        _mediatorMock.Verify(m => m.Send(It.IsAny<ReleaseApplicationCommand>(), default), Times.Once);
+        _jsRuntimeMock.Verify(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()), Times.Never);
     }
 }

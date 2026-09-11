@@ -88,6 +88,86 @@ namespace ATLAS.Application.Tests.Validators
             Assert.Contains(result.Errors, e => e.PropertyName == "ReasonCode" && e.ErrorMessage == "Rejection reason code cannot exceed 1000 characters");
         }
 
+        [Fact]
+        public void RejectApplicationCommand_ShouldFail_WhenCommentsEmpty()
+        {
+            // Arrange
+            var validator = new RejectApplicationCommandValidator();
+            var command = new RejectApplicationCommand
+            {
+                ApplicationId = Guid.NewGuid(),
+                ReasonCode = "INCOMPLETE",
+                Comments = ""
+            };
+
+            // Act
+            var result = validator.Validate(command);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.PropertyName == "Comments" && e.ErrorMessage == "Comments are required when rejecting an application");
+        }
+
+        [Fact]
+        public void RejectApplicationCommand_ShouldPass_WhenCommentsAndReasonCodeProvided()
+        {
+            // Arrange
+            var validator = new RejectApplicationCommandValidator();
+            var command = new RejectApplicationCommand
+            {
+                ApplicationId = Guid.NewGuid(),
+                ReasonCode = "INCOMPLETE",
+                Comments = "Please provide the missing documentation."
+            };
+
+            // Act
+            var result = validator.Validate(command);
+
+            // Assert
+            Assert.True(result.IsValid);
+        }
+
+        #endregion
+
+        #region RequestInfoCommandValidator Tests
+
+        [Fact]
+        public void RequestInfoCommand_ShouldFail_WhenMessageEmpty()
+        {
+            // Arrange
+            var validator = new RequestInfoCommandValidator();
+            var command = new RequestInfoCommand
+            {
+                ApplicationId = Guid.NewGuid(),
+                Message = ""
+            };
+
+            // Act
+            var result = validator.Validate(command);
+
+            // Assert
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.PropertyName == "Message" && e.ErrorMessage == "Message is required");
+        }
+
+        [Fact]
+        public void RequestInfoCommand_ShouldPass_WhenMessageProvided()
+        {
+            // Arrange
+            var validator = new RequestInfoCommandValidator();
+            var command = new RequestInfoCommand
+            {
+                ApplicationId = Guid.NewGuid(),
+                Message = "Please provide additional documentation."
+            };
+
+            // Act
+            var result = validator.Validate(command);
+
+            // Assert
+            Assert.True(result.IsValid);
+        }
+
         #endregion
 
         #region UploadDocumentCommandValidator Tests (Security - PRD)

@@ -1,0 +1,9 @@
+.form-label {
+    color: var(--atlas-neutral-800, #343a40);
+    font-weight: 500;
+}
+
+.form-control,
+.form-select {
+    border-radius: 0.375rem;
+}

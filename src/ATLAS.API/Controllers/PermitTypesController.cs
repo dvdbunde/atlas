@@ -28,7 +28,12 @@ namespace ATLAS.API.Controllers
 
         public override async Task<ActionResult<ICollection<PermitTypeSummaryResponse>>> GetPermitTypes(bool? includeInactive = false)
         {
-            var query = new GetPermitTypesQuery { IncludeInactive = includeInactive ?? false };
+            var query = new GetPermitTypesQuery
+            {
+                StatusFilter = (includeInactive ?? false)
+                    ? PermitTypeStatusFilter.All
+                    : PermitTypeStatusFilter.Active
+            };
             var results = await _mediator.Send(query, default);
             var response = new List<PermitTypeSummaryResponse>();
             foreach (var dto in results)

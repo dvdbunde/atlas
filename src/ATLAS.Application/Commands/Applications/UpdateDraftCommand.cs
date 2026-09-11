@@ -69,6 +69,8 @@ namespace ATLAS.Application.Commands.Applications
                 }
             }
 
+            application.Touch(); // Update the ModifiedDate to reflect the update            
+
             await _repository.UpdateAsync(application, cancellationToken);
             _logger.LogInformation("Draft application {ApplicationId} updated", request.ApplicationId);
 

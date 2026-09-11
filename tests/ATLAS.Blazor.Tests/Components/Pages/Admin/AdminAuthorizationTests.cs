@@ -88,7 +88,7 @@ public class AdminAuthorizationTests : BunitContext
                 PermitTypeCount = 4,
                 ApplicationCount = 12,
                 OfficerCount = 3,
-                ActiveEmailTemplateCount = 0
+                EmailTemplateCount = 0
             });
 
         var cut = Render<AdminDashboard>();

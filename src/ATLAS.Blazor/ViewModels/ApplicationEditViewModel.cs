@@ -58,7 +58,7 @@ public class ApplicationEditViewModel
         var infoRequest = application.Reviews?
             .FirstOrDefault(r => r.Decision == ReviewDecision.RequestInfo);
         InfoRequestMessage = infoRequest?.Comments;
-        InfoRequestDateDisplay = infoRequest?.ReviewedDate.ToString("MMM dd, yyyy");
+        InfoRequestDateDisplay = infoRequest?.ReviewedDate.ToString("dd/MM/yyyy HH:mm");
         InfoRequestOfficerName = application.OfficerName;
     
         // M8 regression fix: document requirements live in a separate DTO list

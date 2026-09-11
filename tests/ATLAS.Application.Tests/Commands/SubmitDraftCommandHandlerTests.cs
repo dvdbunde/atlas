@@ -83,6 +83,42 @@ namespace ATLAS.Application.Tests.Commands
         }
 
         [Fact]
+        public async Task Handle_ValidCommand_ShouldRefreshModifiedDate()
+        {
+            // Arrange
+            SetupFound();
+            var originalModifiedDate = _testApplication.ModifiedDate;
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act
+            await _handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(originalModifiedDate);
+            Assert.True(_testApplication.ModifiedDate > originalModifiedDate,
+                "ModifiedDate should advance on a successful submission");
+            _mockAppRepository.Verify(r => r.UpdateAsync(_testApplication, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Handle_InvalidCommand_ShouldNotRefreshModifiedDate()
+        {
+            // Arrange
+            var application = new ATLAS.Domain.Entities.Application(_testUserId, _permitTypeId, "Notes");
+            application.Submit(); // Now Submitted — cannot submit again
+            _mockAppRepository.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(application);
+            var originalModifiedDate = application.ModifiedDate;
+            var command = new SubmitDraftCommand { ApplicationId = Guid.NewGuid() };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _handler.Handle(command, CancellationToken.None));
+            Assert.Equal(originalModifiedDate, application.ModifiedDate);
+            _mockAppRepository.Verify(r => r.UpdateAsync(It.IsAny<ATLAS.Domain.Entities.Application>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public async Task Handle_ValidCommand_ShouldPublishApplicationSubmittedEvent()
         {
             // Arrange

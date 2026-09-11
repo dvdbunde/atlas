@@ -80,8 +80,8 @@
                         @foreach (var log in _viewModel.Items)
                         {
                             <tr>
-                                <td>@log.Timestamp.ToLocalTime().ToString("g")</td>
-                                <td>@(log.UserId?.ToString() ?? "System")</td>
+                                <td>@log.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(string.IsNullOrWhiteSpace(log.UserName) ? "System" : log.UserName)</td>
                                 <td>@log.Action</td>
                                 <td>@log.EntityType</td>
                                 <td>@log.EntityId</td>

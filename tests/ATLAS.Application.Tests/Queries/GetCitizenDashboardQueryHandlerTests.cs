@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ATLAS.Application.Interfaces;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Domain.Entities;
+using ATLAS.Domain.Enums;
 using ATLAS.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -113,6 +114,103 @@ namespace ATLAS.Application.Tests.Queries
             // Assert
             var dto = Assert.Single(result);
             Assert.Equal("Unknown", dto.PermitTypeName);
+        }
+
+        [Fact]
+        public async Task Handle_PermitTypeFilter_ShouldReturnOnlyMatchingApplications()
+        {
+            // Arrange
+            var otherPermitTypeId = Guid.NewGuid();
+            var applications = new List<Domain.Entities.Application>
+            {
+                new Domain.Entities.Application(_testUserId, _permitTypeId, "Notes1"),
+                new Domain.Entities.Application(_testUserId, otherPermitTypeId, "Notes2")
+            };
+            _mockAppRepository.Setup(r => r.GetByCitizenIdAsync(_testUserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(applications);
+            _mockPermitTypeRepository.Setup(r => r.GetNameByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Building Permit");
+
+            var query = new GetCitizenDashboardQuery { PermitTypeId = _permitTypeId };
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, result.Count());
+            Assert.Equal(applications[0].Id, Assert.Single(result).ApplicationId);
+        }
+
+        [Fact]
+        public async Task Handle_StatusFilter_ShouldReturnOnlyMatchingApplications()
+        {
+            // Arrange
+            var draft = new Domain.Entities.Application(_testUserId, _permitTypeId, "Notes1");
+            var submitted = new Domain.Entities.Application(_testUserId, _permitTypeId, "Notes2");
+            submitted.Submit();
+            var applications = new List<Domain.Entities.Application> { draft, submitted };
+            _mockAppRepository.Setup(r => r.GetByCitizenIdAsync(_testUserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(applications);
+            _mockPermitTypeRepository.Setup(r => r.GetNameByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Building Permit");
+
+            var query = new GetCitizenDashboardQuery { Status = ApplicationStatus.Draft };
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.Equal(1, result.Count());
+            Assert.Equal(ApplicationStatus.Draft, Assert.Single(result).Status);
+        }
+
+        [Fact]
+        public async Task Handle_SortByApplicationNumber_ShouldSortAscending()
+        {
+            // Arrange
+            var applications = new List<Domain.Entities.Application>
+            {
+                new Domain.Entities.Application(_testUserId, _permitTypeId, "Notes1"),
+                new Domain.Entities.Application(_testUserId, _permitTypeId, "Notes2")
+            };
+            _mockAppRepository.Setup(r => r.GetByCitizenIdAsync(_testUserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(applications);
+            _mockPermitTypeRepository.Setup(r => r.GetNameByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Building Permit");
+
+            var query = new GetCitizenDashboardQuery
+            {
+                SortBy = CitizenDashboardSortBy.ApplicationNumber,
+                SortDescending = false
+            };
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            var numbers = result.Select(d => d.ApplicationNumber).ToList();
+            Assert.Equal(numbers.OrderBy(n => n).ToList(), numbers);
+        }
+
+        [Fact]
+        public async Task Handle_LastUpdated_ShouldUsePersistedLastUpdated()
+        {
+            // Arrange
+            var app = new Domain.Entities.Application(_testUserId, _permitTypeId, "Notes");
+            var applications = new List<Domain.Entities.Application> { app };
+            _mockAppRepository.Setup(r => r.GetByCitizenIdAsync(_testUserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(applications);
+            _mockPermitTypeRepository.Setup(r => r.GetNameByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync("Building Permit");
+
+            var query = new GetCitizenDashboardQuery();
+
+            // Act
+            var result = await _handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            var dto = Assert.Single(result);
+            Assert.Equal(app.ModifiedDate, dto.LastUpdated);
         }
     }
 }

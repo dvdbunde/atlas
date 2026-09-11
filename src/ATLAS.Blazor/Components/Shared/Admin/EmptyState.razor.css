@@ -1,0 +1,16 @@
+.admin-empty-state {
+    background-color: var(--atlas-blue-100, #d8e8f7);
+    border-color: var(--atlas-blue-500, #2b86d6);
+    color: var(--atlas-neutral-800, #343a40);
+    border-radius: 0.5rem;
+}
+
+.admin-empty-state .alert-heading {
+    color: var(--atlas-blue-700, #165ca8);
+    font-weight: 600;
+}
+
+.admin-empty-state hr {
+    border-color: var(--atlas-blue-500, #2b86d6);
+    opacity: 0.35;
+}

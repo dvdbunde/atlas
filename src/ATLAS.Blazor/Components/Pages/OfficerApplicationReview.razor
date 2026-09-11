@@ -38,7 +38,6 @@
             PermitTypeName="@_viewModel.Application.PermitTypeName"
             PermitTypeDescription="@_viewModel.Application.PermitTypeDescription"
             Status="@_viewModel.Application.Status"
-            SubmittedDate="@_viewModel.Application.SubmittedDate"
             LastUpdated="@(_viewModel.Application.ReviewedDate ?? _viewModel.Application.SubmittedDate)"
             CitizenName="@_viewModel.Application.CitizenName"
             CitizenEmail="@_viewModel.Application.CitizenEmail"
@@ -48,8 +47,6 @@
             Documents="@_viewModel.FlatDocuments"
             Activities="@_viewModel.Activities"
             Reviews="@_viewModel.MappedReviews"
-            BackUrl="/officer/dashboard"
-            BackText="Back to Dashboard"
             ShowEmptyReviews="true">
 
             <Actions>
@@ -80,36 +77,78 @@
                         <div class="card-body">
                             <h5 class="card-title">Officer Decision</h5>
 
-                            <div class="mb-3">
-                                <label class="form-label">Comments / Instructions</label>
-                                <textarea class="form-control" @bind="_viewModel.DecisionComments" rows="3"
-                                          placeholder="Provide reason or instructions for the citizen"></textarea>
-                            </div>
+                            @if (IsConfirming)
+                            {
+                                <div class="atlas-inline-confirm" role="alertdialog" aria-labelledby="atlas-confirm-title" aria-describedby="atlas-confirm-message">
+                                    <h6 id="atlas-confirm-title" class="mb-2">@ConfirmTitle</h6>
+                                    <p id="atlas-confirm-message" class="mb-3">@ConfirmMessage</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-outline-secondary" data-testid="cancel-decision" @onclick="OnConfirmCancel" disabled="@_isDeciding">Cancel</button>
+                                        <button type="button" class="@ConfirmButtonClass" data-testid="confirm-decision" @onclick="OnConfirmConfirm" disabled="@_isDeciding">
+                                            @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                            @ConfirmLabel
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label" for="decision-comments">Comments / Instructions</label>
+                                    <textarea id="decision-comments" class="form-control @(_viewModel.CommentsError is not null ? "is-invalid" : "")"
+                                              @bind="_viewModel.DecisionComments" rows="3"
+                                              placeholder="Provide reason or instructions for the citizen"></textarea>
+                                    @if (_viewModel.CommentsError is not null)
+                                    {
+                                        <div class="invalid-feedback">@_viewModel.CommentsError</div>
+                                    }
+                                </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Rejection Reason Code</label>
-                                <input class="form-control" @bind="_viewModel.DecisionReasonCode"
-                                       placeholder="Required only when rejecting (e.g. INCOMPLETE_DOCUMENTATION)" />
-                            </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="decision-reason-code">Rejection Reason Code</label>
+                                    <input id="decision-reason-code" class="form-control @(_viewModel.ReasonCodeError is not null ? "is-invalid" : "")"
+                                           @bind="_viewModel.DecisionReasonCode"
+                                           placeholder="Required only when rejecting (e.g. INCOMPLETE_DOCUMENTATION)" />
+                                    @if (_viewModel.ReasonCodeError is not null)
+                                    {
+                                        <div class="invalid-feedback">@_viewModel.ReasonCodeError</div>
+                                    }
+                                </div>
 
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-success" @onclick="Approve" disabled="@_isDeciding">
-                                    @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                    Approve
-                                </button>
-                                <button class="btn btn-danger" @onclick="Reject" disabled="@_isDeciding">
-                                    @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                    Reject
-                                </button>
-                                <button class="btn btn-warning" @onclick="RequestInfo" disabled="@_isDeciding">
-                                    @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                                    Request Information
-                                </button>
-                            </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-success" @onclick="Approve" disabled="@_isDeciding">
+                                        @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        Approve
+                                    </button>
+                                    <button class="btn btn-danger" @onclick="Reject" disabled="@_isDeciding">
+                                        @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        Reject
+                                    </button>
+                                    <button class="btn btn-warning" @onclick="RequestInfo" disabled="@_isDeciding">
+                                        @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                        Request Information
+                                    </button>
+                                    @if (_viewModel.CanReleaseAssignment)
+                                    {
+                                        <button class="btn btn-secondary" @onclick="ReleaseAssignment" disabled="@_isReleasing">
+                                            @if (_isReleasing)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                                <text>Releasing...</text>
+                                            }
+                                            else
+                                            {
+                                                <text>Release Assignment</text>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                 }
             </WorkflowActions>
+
 
             <DocumentSection>
                 <div class="card shadow-sm mb-4">
@@ -137,11 +176,11 @@
                                         }
                                         else if (req.IsRequired)
                                         {
-                                            <span class="badge bg-warning text-dark">Missing</span>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis">Missing</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-light text-muted">Not supplied</span>
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis">Not supplied</span>
                                         }
                                     </div>
                                     @if (req.UploadedDocuments.Count > 0)

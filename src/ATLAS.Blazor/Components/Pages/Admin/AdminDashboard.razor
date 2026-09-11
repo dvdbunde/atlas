@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using ATLAS.Blazor.ViewModels
 @using ATLAS.Blazor.Components.Shared.Admin
+@using ATLAS.Domain.Enums
 
 <PageTitle>Administration Dashboard</PageTitle>
 
@@ -42,55 +43,154 @@
     }
     else
     {
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+        var s = _viewModel.Summary!;
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            @* Permit Types *@
             <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted text-uppercase small">Permit Types</h5>
-                        <p class="card-text display-6">@_viewModel.Summary!.PermitTypeCount</p>
+                <a href="/admin/permit-types" class="dashboard-block">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="dashboard-block-title">Permit Types: @s.PermitTypeCount</h5>
+                            <dl class="dashboard-block-list">
+                                <dt>Active</dt><dd>@s.ActivePermitTypeCount</dd>
+                                <dt>Inactive</dt><dd>@s.InactivePermitTypeCount</dd>
+                            </dl>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
+
+            @* Applications *@
             <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted text-uppercase small">Applications</h5>
-                        <p class="card-text display-6">@_viewModel.Summary!.ApplicationCount</p>
+                <a href="/admin/applications" class="dashboard-block">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="dashboard-block-title">Applications: @s.ApplicationCount</h5>
+                            <dl class="dashboard-block-list">
+                                @foreach (var status in DashboardApplicationStatuses)
+                                {
+                                    if (s.ApplicationStatusCounts.TryGetValue(status, out var count))
+                                    {
+                                        <dt>@StatusLabel(status)</dt><dd>@count</dd>
+                                    }
+                                }
+                            </dl>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
+
+            @* Users *@
             <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted text-uppercase small">Officers</h5>
-                        <p class="card-text display-6">@_viewModel.Summary!.OfficerCount</p>
+                <a href="/admin/users" class="dashboard-block">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="dashboard-block-title">Users: @s.UserCount</h5>
+                            <dl class="dashboard-block-list">
+                                <dt>Citizens</dt><dd>@s.CitizenCount</dd>
+                                <dt>Officers</dt><dd>@s.OfficerCount</dd>
+                                <dt>Administrators</dt><dd>@s.AdminCount</dd>
+                            </dl>
+                        </div>
                     </div>
-                </div>
+                </a>
+            </div>          
+
+            @* Email Templates *@
+            <div class="col">
+                <a href="/admin/email-templates" class="dashboard-block">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="dashboard-block-title">Email Templates: @s.EmailTemplateCount</h5>
+                            <dl class="dashboard-block-list">
+                                <dt>Total</dt><dd>@s.EmailTemplateCount</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </a>
             </div>
+
+            @* Audit Logs *@
             <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted text-uppercase small">Admins</h5>
-                        <p class="card-text display-6">@_viewModel.Summary!.AdminCount</p>
+                <a href="/admin/audit-logs" class="dashboard-block">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="dashboard-block-title">Audit Logs</h5>
+                            <dl class="dashboard-block-list">
+                                <dt>Events (last 24h)</dt><dd>@s.AuditLogEventsLast24Hours</dd>
+                                @if (s.LatestAuditEventUtc is { } latest)
+                                {
+                                    <dt>Latest event</dt><dd>@latest.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                                }
+                            </dl>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
+
+            @* Operations *@
             <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted text-uppercase small">Citizens</h5>
-                        <p class="card-text display-6">@_viewModel.Summary!.CitizenCount</p>
+                <a href="/admin/operations" class="dashboard-block">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="dashboard-block-title">Operations</h5>
+                            <dl class="dashboard-block-list">
+                                <dt>System health</dt>
+                                <dd>
+                                    @if (!string.IsNullOrWhiteSpace(s.OverallHealth))
+                                    {
+                                        <span class="@HealthBadgeClass(s.OverallHealth) badge">@s.OverallHealth</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Unavailable</span>
+                                    }
+                                </dd>
+                                @if (s.HealthCheckedAtUtc is { } checkedAt)
+                                {
+                                    <dt>Last checked</dt><dd>@checkedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                                }
+                            </dl>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted text-uppercase small">Active Email Templates</h5>
-                        <p class="card-text display-6">@_viewModel.Summary!.ActiveEmailTemplateCount</p>
-                    </div>
-                </div>
+                </a>
             </div>
         </div>
     }
 </div>
+
+@code {
+    // Defined dashboard application-status set in lifecycle order, rendered
+    // deterministically. Zero-count statuses are omitted.
+    private static readonly ApplicationStatus[] DashboardApplicationStatuses =
+    {
+        ApplicationStatus.Draft,
+        ApplicationStatus.Submitted,
+        ApplicationStatus.UnderReview,
+        ApplicationStatus.InfoRequested,
+        ApplicationStatus.Resubmitted,
+        ApplicationStatus.Approved,
+        ApplicationStatus.Rejected
+    };
+
+    private static string StatusLabel(ApplicationStatus status) => status switch
+    {
+        ApplicationStatus.Draft => "Draft",
+        ApplicationStatus.Submitted => "Submitted",
+        ApplicationStatus.UnderReview => "Under Review",
+        ApplicationStatus.InfoRequested => "Info Requested",
+        ApplicationStatus.Resubmitted => "Resubmitted",
+        ApplicationStatus.Approved => "Approved",
+        ApplicationStatus.Rejected => "Rejected",
+        _ => status.ToString()
+    };
+
+    private static string HealthBadgeClass(string health) => health switch
+    {
+        "Healthy" => "bg-success",
+        "Degraded" => "bg-warning-subtle text-warning-emphasis",
+        "Unhealthy" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

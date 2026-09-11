@@ -40,7 +40,6 @@
             PermitTypeName="@_viewModel.PermitTypeName"
             PermitTypeDescription="@_viewModel.PermitTypeDescription"
             Status="@_viewModel.Status"
-            SubmittedDate="@_viewModel.SubmittedDate"
             LastUpdated="@_viewModel.LastUpdated"
             CitizenName="@_viewModel.CitizenName"
             CitizenEmail="@_viewModel.CitizenEmail"
@@ -49,10 +48,7 @@
             Fields="@_viewModel.Fields"
             Documents="@_viewModel.Documents"
             Activities="@_viewModel.Activities"
-            Reviews="@_viewModel.Reviews"
-            OfficerNotes="@_viewModel.OfficerNotes"
-            BackUrl="/dashboard"
-            BackText="Back to Dashboard">
+            Reviews="@_viewModel.Reviews">
             <InfoRequestBanner>
                 @if (_viewModel.Status == ApplicationStatus.InfoRequested)
                 {

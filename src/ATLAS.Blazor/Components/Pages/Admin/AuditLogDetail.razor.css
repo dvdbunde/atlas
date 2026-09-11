@@ -1,0 +1,52 @@
+.container {
+    max-width: 1100px;
+}
+
+.breadcrumb {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.breadcrumb-item a {
+    color: var(--atlas-blue-700, #165ca8);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.card {
+    border-color: var(--atlas-border-color, #dee2e6);
+    border-radius: 0.5rem;
+}
+
+.card-title {
+    color: var(--atlas-neutral-900, #212529);
+    font-weight: 600;
+}
+
+dt {
+    color: var(--atlas-neutral-600, #6c757d);
+    font-weight: 500;
+}
+
+.form-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--atlas-neutral-700, #495057);
+}
+
+.form-control,
+.form-select {
+    background-color: var(--atlas-surface, #ffffff);
+    border-color: var(--atlas-border-color, #dee2e6);
+}
+
+/* Read-only Details field: light gray, clearly distinct from the page
+   background, readable, and still non-editable/resizable. */
+.audit-details-readonly {
+    background-color: var(--atlas-surface-muted, #f8f9fa);
+    color: var(--atlas-neutral-800, #343a40);
+    border-color: var(--atlas-border-color, #dee2e6);
+}

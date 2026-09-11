@@ -8,17 +8,36 @@
 <PageTitle>Email Templates</PageTitle>
 
 <style>
-    .email-template-list .list-group-item-action {
+    /* Email Templates — wider single-column admin editing workspace. */
+    .email-templates-workspace {
+        max-width: 1180px;
+        margin-inline: auto;
+    }
+    .email-template-list .list-group-item {
         cursor: pointer;
+        border: 1px solid var(--bs-border-color);
     }
-    .email-template-list .selected-template {
-        background-color: #e7f1ff;
-        color: #0a58ca;
-        font-weight: 600;
-        border-color: #b6d4fe;
+    .email-template-list .list-group-item + .list-group-item {
+        border-top-width: 1px;
     }
-    .email-template-list .selected-template:focus {
-        box-shadow: none;
+    .email-template-list .list-group-item.selected-template {
+        background-color: var(--bs-primary-bg-subtle);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 1px var(--bs-primary) inset;
+    }
+    .email-template-list .list-group-item:focus-visible {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: -2px;
+    }
+    .template-content-editor {
+        font-family: var(--bs-font-monospace);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    .email-template-preview pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--bs-body-color);
     }
 </style>
 
@@ -42,64 +61,122 @@
     }
     else
     {
-        <div class="row">
-            <div class="col-md-4">
-                <h4>Templates</h4>
-                <div class="list-group email-template-list">
-                    @foreach (var template in _templates)
-                    {
-                        var isSelected = _selectedName == template.Name;
-                        <button type="button"
-                                class="list-group-item list-group-item-action @(isSelected ? "selected-template" : "")"
-                                @onclick="@(() => SelectTemplate(template.Name))">
-                            @template.Name
-                        </button>
-                    }
+        <div class="email-templates-workspace">
+
+            @* 1. Fixed list of available templates — selectable workspace section *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">Templates</h4>
+                    <p class="text-muted small mb-3">
+                        Select a system template to view, edit, and preview its content.
+                    </p>
+                    <div class="list-group email-template-list">
+                        @foreach (var template in _templates)
+                        {
+                            var isSelected = _selectedName == template.Name;
+                            <button type="button"
+                                    aria-pressed="@isSelected"
+                                    class="list-group-item list-group-item-action @(isSelected ? "selected-template" : "")"
+                                    @onclick="@(() => SelectTemplate(template.Name))">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-1">
+                                    <span class="fw-semibold">@template.Name</span>
+                                </div>
+                                <div class="text-muted small">@TemplateDescription(template)</div>
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
 
-            <div class="col-md-8">
-                @if (_selectedName is null)
-                {
-                    <EmptyState Title="Select a template"
-                                Message="Choose a template from the list to view, edit, and preview it." />
-                }
-                else if (_notFound)
-                {
-                    <div class="alert alert-warning" role="alert">
-                        The template <strong>@_selectedName</strong> could not be found.
-                    </div>
-                }
-                else
-                {
-                    <h4>@_selectedName</h4>
+            @if (_selectedName is null)
+            {
+                <EmptyState Title="Select a template"
+                            Message="Choose a template from the list to view, edit, and preview it." />
+            }
+            else if (_notFound)
+            {
+                <div class="alert alert-warning" role="alert">
+                    The template <strong>@_selectedName</strong> could not be found.
+                </div>
+            }
+            else
+            {
+                var selectedTemplate = _templates.FirstOrDefault(t => t.Name == _selectedName);
 
-                    <div class="mb-2">
-                        <small class="text-muted">
-                            Supported placeholders:
-                            @foreach (var placeholder in SupportedPlaceholders)
+                @if (!_isPreviewMode)
+                {
+                    @* == Edit mode == *@
+
+                    @* 2. Template details / editing workspace *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title mb-1">@_selectedName</h4>
+                            @if (selectedTemplate is not null)
                             {
-                                <span class="badge bg-secondary me-1">@("{{" + placeholder + "}}")</span>
+                                <p class="text-muted mb-3">@TemplateDescription(selectedTemplate)</p>
                             }
-                        </small>
+
+                            @* 3. Template content editor — auto-sized to current content *@
+                            <div class="mb-0">
+                                <label class="form-label" for="template-content">Template content</label>
+                                <textarea id="template-content" class="form-control template-content-editor"
+                                          rows="@EditorRows"
+                                          @bind="_editorContent" aria-describedby="template-content-help"></textarea>
+                                <div id="template-content-help" class="form-text">
+                                    Use the {{Placeholder}} syntax shown in Available placeholders below.
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="template-content">Template content</label>
-                        <textarea id="template-content" class="form-control" rows="12"
-                                  @bind="_editorContent"></textarea>
+                    @* 4. Available placeholders *@
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Available placeholders</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Placeholder</th>
+                                            <th scope="col">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var placeholder in SupportedPlaceholders)
+                                        {
+                                            <tr>
+                                                <td><code class="text-body">{{@placeholder}}</code></td>
+                                                <td>@PlaceholderDescription(placeholder)</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(_saveMessage))
+                    @* 4b. Current save/reset notification, if any — after placeholders, before actions *@
+                    @if (!string.IsNullOrEmpty(_saveMessage) || !string.IsNullOrEmpty(_resetMessage))
                     {
-                        <div class="alert alert-success" role="alert">@_saveMessage</div>
+                        <div class="alert alert-success" role="alert">@(_saveMessage ?? _resetMessage)</div>
                     }
                     @if (!string.IsNullOrEmpty(_saveError))
                     {
                         <div class="alert alert-danger" role="alert">@_saveError</div>
                     }
+                    @if (!string.IsNullOrEmpty(_resetError))
+                    {
+                        <div class="alert alert-danger" role="alert">@_resetError</div>
+                    }
 
-                    <div class="btn-group" role="group">
+                    @* Preview generation error — keep the editor available and stay in edit mode. *@
+                    @if (!string.IsNullOrEmpty(_previewError))
+                    {
+                        <div class="alert alert-danger mb-4" role="alert">@_previewError</div>
+                    }
+
+                    @* 5. Coherent action area — at the bottom of the edit workflow *@
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
                         <button type="button" class="btn btn-primary" @onclick="SaveTemplate" disabled="@_isSaving">
                             @(_isSaving ? "Saving…" : "Save")
                         </button>
@@ -110,29 +187,36 @@
                             @(_isResetting ? "Resetting…" : "Reset to default")
                         </button>
                     </div>
-
-                    @if (!string.IsNullOrEmpty(_resetMessage))
-                    {
-                        <div class="alert alert-success mt-3" role="alert">@_resetMessage</div>
-                    }
-                    @if (!string.IsNullOrEmpty(_resetError))
-                    {
-                        <div class="alert alert-danger mt-3" role="alert">@_resetError</div>
-                    }
-
-                    @if (!string.IsNullOrEmpty(_previewOutput))
-                    {
-                        <div class="mt-4">
-                            <h5>Preview</h5>
-                            <pre class="border rounded p-3 bg-light">@_previewOutput</pre>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(_previewError))
-                    {
-                        <div class="alert alert-danger mt-3" role="alert">@_previewError</div>
-                    }
+                    <div class="mb-4" aria-hidden="true"></div>
                 }
-            </div>
+                else
+                {
+                    @* == Preview mode — replaces the editing workspace == *@
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                                <h5 class="card-title mb-0">Preview</h5>
+                                <span class="badge bg-secondary">Preview — not sent</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(_previewOutput))
+                            {
+                                <div class="border rounded p-4 bg-body-tertiary email-template-preview">
+                                    <pre class="mb-0">@_previewOutput</pre>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(_previewError))
+                            {
+                                <div class="alert alert-danger mt-3" role="alert">@_previewError</div>
+                            }
+                            <div class="mt-3">
+                                <button type="button" class="btn btn-outline-primary" @onclick="EditTemplate">
+                                    Edit template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
         </div>
     }
 </div>

@@ -33,11 +33,64 @@ public partial class EmailTemplates : ComponentBase
     private string? _resetError;
 
     // Preview state.
+    // _isPreviewing represents the asynchronous preview-generation operation.
     private bool _isPreviewing;
+    // _isPreviewMode is the persistent UI mode that determines whether the page
+    // shows the rendered preview (true) or the editing workspace (false).
+    private bool _isPreviewMode;
     private string? _previewOutput;
     private string? _previewError;
 
     private IReadOnlyList<string> SupportedPlaceholders => KnownEmailPlaceholders.All;
+
+    // Fixed, human-friendly display descriptions for the application-owned templates.
+    // The templates themselves are fixed; these descriptions are presentation only.
+    private static IReadOnlyDictionary<string, string> TemplateDescriptions { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [KnownEmailTemplates.SubmissionConfirmation] = "Sent to the applicant when an application is submitted.",
+            [KnownEmailTemplates.ReSubmissionConfirmation] = "Sent to the applicant when a draft is resubmitted.",
+            [KnownEmailTemplates.ApprovalNotification] = "Sent to the applicant when an application is approved.",
+            [KnownEmailTemplates.RejectionNotification] = "Sent to the applicant when an application is rejected.",
+            [KnownEmailTemplates.InfoRequestNotification] = "Sent to the applicant when additional information is requested."
+        };
+
+    // Fixed, human-friendly descriptions for the supported placeholders.
+    private static IReadOnlyDictionary<string, string> PlaceholderDescriptions { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["ApplicationNumber"] = "The application reference number.",
+            ["PermitTypeName"] = "The name of the permit type.",
+            ["Status"] = "The current application status.",
+            ["CitizenName"] = "The applicant's full name.",
+            ["Message"] = "The message from the officer.",
+            ["ReasonCode"] = "The rejection reason code."
+        };
+
+    private string TemplateDescription(EmailTemplate template) =>
+        TemplateDescriptions.TryGetValue(template.Name, out var description)
+            ? description
+            : "System email template.";
+
+    private string PlaceholderDescription(string placeholder) =>
+        PlaceholderDescriptions.TryGetValue(placeholder, out var description)
+            ? description
+            : string.Empty;
+
+    // Auto-sizes the editor vertically based on the current template content so
+    // normal templates are visible without an internal scrollbar. Uses a sensible
+    // minimum for short templates and a cap so the editor never becomes enormous.
+    private int EditorRows
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_editorContent))
+                return 6;
+
+            var lines = _editorContent.Split('\n').Length;
+            return Math.Clamp(lines + 1, 6, 30);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -81,6 +134,8 @@ public partial class EmailTemplates : ComponentBase
         _previewOutput = null;
         _previewError = null;
         _isPreviewing = false;
+        // Selecting another template always returns to edit mode.
+        _isPreviewMode = false;
 
         try
         {
@@ -112,6 +167,10 @@ public partial class EmailTemplates : ComponentBase
         _isSaving = true;
         _saveMessage = null;
         _saveError = null;
+        // At most one save/reset notification is shown at any time, so a save
+        // clears any previous reset notification.
+        _resetMessage = null;
+        _resetError = null;
 
         try
         {
@@ -150,10 +209,14 @@ public partial class EmailTemplates : ComponentBase
         try
         {
             _previewOutput = await Mediator.Send(new PreviewEmailTemplateQuery(_editorContent));
+            // Only enter preview display mode after the preview generated successfully.
+            _isPreviewMode = true;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to preview email template {TemplateName}", _selectedName);
+            // Remain in edit mode; show the existing preview error.
+            _isPreviewMode = false;
             _previewError = "We were unable to render the preview. Please try again later.";
         }
         finally
@@ -161,6 +224,14 @@ public partial class EmailTemplates : ComponentBase
             _isPreviewing = false;
             StateHasChanged();
         }
+    }
+
+    // Leaves preview mode and restores the editing workspace without reloading or
+    // discarding the administrator's current (unsaved) edits.
+    private void EditTemplate()
+    {
+        _isPreviewMode = false;
+        _previewError = null;
     }
 
     private async Task ResetTemplate()
@@ -171,6 +242,10 @@ public partial class EmailTemplates : ComponentBase
         _isResetting = true;
         _resetMessage = null;
         _resetError = null;
+        // At most one save/reset notification is shown at any time, so a reset
+        // clears any previous save notification.
+        _saveMessage = null;
+        _saveError = null;
 
         try
         {

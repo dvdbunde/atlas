@@ -15,7 +15,7 @@ public class AdminApplicationExplorerViewModel
     public Guid? PermitTypeIdFilter { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
-    public AdminApplicationSortBy SortBy { get; set; } = AdminApplicationSortBy.SubmittedDate;
+    public AdminApplicationSortBy SortBy { get; set; } = AdminApplicationSortBy.LastUpdated;
 
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 20;

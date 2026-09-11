@@ -14,7 +14,9 @@ namespace ATLAS.Domain.Entities
 
         protected Entity()
         {
-            CreatedDate = DateTime.UtcNow;
+            var initialDate = DateTime.UtcNow;
+            CreatedDate = initialDate;
+            ModifiedDate = initialDate;
         }
 
         protected Entity(T id) : this()
@@ -47,6 +49,11 @@ namespace ATLAS.Domain.Entities
                 return false;
 
             return Id.Equals(other.Id);
+        }
+
+        public void Touch()
+        {
+            ModifiedDate = DateTime.UtcNow;         
         }
 
         public override int GetHashCode()

@@ -1,3 +1,4 @@
+using ATLAS.Application.Interfaces;
 using ATLAS.Application.Queries.Applications;
 using ATLAS.Application.Queries.PermitTypes;
 using ATLAS.Blazor.ViewModels;
@@ -17,6 +18,9 @@ public partial class ApplicationDetail : ComponentBase
 
     [Inject]
     private ILogger<ApplicationDetail> Logger { get; set; } = default!;
+
+    [Inject]
+    private ICurrentUserService CurrentUserService { get; set; } = default!;
 
     private ApplicationDetailViewModel _viewModel = new();
 
@@ -61,6 +65,10 @@ public partial class ApplicationDetail : ComponentBase
             }
 
             _viewModel.Load(application, permitType);
+
+            // The citizen views their own application, so the applicant email is
+            // the current authenticated user's email (consistent with Admin view).
+            _viewModel.LoadCitizenEmail(CurrentUserService.Email);
 
             await LoadActivities();
         }

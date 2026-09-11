@@ -120,6 +120,7 @@ namespace ATLAS.Application.Commands.Documents
                 request.FileSize, uploadResult.BlobUrl, uploadedById);
 
             // Step 8: Persist changes
+            application.Touch(); // Update ModifiedDate to reflect the persisted change
             await _repository.UpdateAsync(application, cancellationToken);
 
             // Step 9: Publish domain event exactly once (not in aggregate — handler manages publication)

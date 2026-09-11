@@ -14,9 +14,13 @@ public class OfficerApplicationReviewViewModel
     public Guid? AssignedOfficerId => Application?.AssignedOfficerId;
     public bool IsAssignedToCurrentOfficer { get; set; }
     public bool CanAssignToMe => !AssignedOfficerId.HasValue;
+    // True only when assigned to current officer AND status is Under Review.
+    // Self-unassignment is a workflow/assignment action, distinct from decisions.
+    public bool CanReleaseAssignment => IsAssignedToCurrentOfficer
+        && Application?.Status == ApplicationStatus.UnderReview;
 
-    public string SubmittedDateDisplay => Application?.SubmittedDate?.ToString("MMM dd, yyyy") ?? "Not submitted";
-    public string LastUpdatedDisplay => (Application?.ReviewedDate ?? Application?.SubmittedDate)?.ToString("MMM dd, yyyy") ?? "N/A";
+    public string SubmittedDateDisplay => Application?.SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Not submitted";
+    public string LastUpdatedDisplay => (Application?.ReviewedDate ?? Application?.SubmittedDate)?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";
     public string AssignedOfficerDisplay => Application?.AssignedOfficerName ?? "Unassigned";
     public string AssignmentDisplay => !AssignedOfficerId.HasValue
         ? "Unassigned"
@@ -25,9 +29,17 @@ public class OfficerApplicationReviewViewModel
     public bool HasReviews => Application?.Reviews.Count > 0;
     public string DecisionComments { get; set; } = string.Empty;
     public string DecisionReasonCode { get; set; } = string.Empty;
+    public string? CommentsError { get; set; }
+    public string? ReasonCodeError { get; set; }
     // True only when assigned to current officer AND status allows a decision.
     public bool CanDecide => IsAssignedToCurrentOfficer
         && Application?.Status == ApplicationStatus.UnderReview;
+
+    public void ClearValidationErrors()
+    {
+        CommentsError = null;
+        ReasonCodeError = null;
+    }
     public List<ApplicationActivityDto> Activities { get; set; } = new();
 
     // Mapped properties for shared layout consumption
