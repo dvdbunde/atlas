@@ -14,6 +14,10 @@ public class OfficerApplicationReviewViewModel
     public Guid? AssignedOfficerId => Application?.AssignedOfficerId;
     public bool IsAssignedToCurrentOfficer { get; set; }
     public bool CanAssignToMe => !AssignedOfficerId.HasValue;
+    // True only when assigned to current officer AND status is Under Review.
+    // Self-unassignment is a workflow/assignment action, distinct from decisions.
+    public bool CanReleaseAssignment => IsAssignedToCurrentOfficer
+        && Application?.Status == ApplicationStatus.UnderReview;
 
     public string SubmittedDateDisplay => Application?.SubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Not submitted";
     public string LastUpdatedDisplay => (Application?.ReviewedDate ?? Application?.SubmittedDate)?.ToString("dd/MM/yyyy HH:mm") ?? "N/A";

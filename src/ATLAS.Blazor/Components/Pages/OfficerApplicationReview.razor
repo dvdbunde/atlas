@@ -102,6 +102,20 @@
                                     @if (_isDeciding) { <span class="spinner-border spinner-border-sm me-1"></span> }
                                     Request Information
                                 </button>
+                                @if (_viewModel.CanReleaseAssignment)
+                                {
+                                    <button class="btn btn-secondary" @onclick="ReleaseAssignment" disabled="@_isReleasing">
+                                        @if (_isReleasing)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                                            <text>Releasing...</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Release Assignment</text>
+                                        }
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>

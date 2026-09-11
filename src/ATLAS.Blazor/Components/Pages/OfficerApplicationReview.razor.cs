@@ -21,6 +21,7 @@ public partial class OfficerApplicationReview : ComponentBase
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private bool _isAssigning;
+    private bool _isReleasing;
 
     private OfficerApplicationReviewViewModel _viewModel = new();
     private bool _dataLoaded;
@@ -110,6 +111,35 @@ public partial class OfficerApplicationReview : ComponentBase
         finally
         {
             _isAssigning = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ReleaseAssignment()
+    {
+        if (_isReleasing || _viewModel?.Application?.Id == Guid.Empty)
+        {
+            return;
+        }
+
+        _isReleasing = true;
+        _viewModel.HasError = false;
+
+        try
+        {
+            var command = new ReleaseApplicationCommand { ApplicationId = _viewModel.Application.Id };
+            await Mediator.Send(command);
+            await LoadReview();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to release application {ApplicationId}", _viewModel.Application?.Id);
+            _viewModel.HasError = true;
+            _viewModel.ErrorMessage = "We were unable to release this application. It may no longer be assigned to you or is in an invalid state.";
+        }
+        finally
+        {
+            _isReleasing = false;
             await InvokeAsync(StateHasChanged);
         }
     }

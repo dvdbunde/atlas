@@ -554,4 +554,84 @@ public class OfficerApplicationReviewTests : BunitContext
         var alert = cut.Find(".alert-danger");
         Assert.Contains("unable to record the decision", alert.TextContent);
     }
+
+    [Fact]
+    public void Should_ShowReleaseAssignment_WhenAssignedToCurrentOfficerAndUnderReview()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.Contains("Release Assignment", cut.Markup);
+        Assert.Contains("Assigned to you", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowReleaseAssignment_WhenUnassigned()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = null;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.DoesNotContain("Release Assignment", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowReleaseAssignment_WhenAssignedToOtherOfficer()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = Guid.NewGuid(); // different from current user
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.DoesNotContain("Release Assignment", cut.Markup);
+    }
+
+    [Fact]
+    public void Should_NotShowReleaseAssignment_WhenNotUnderReview()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.Submitted; // not UnderReview
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        Assert.DoesNotContain("Release Assignment", cut.Markup);
+    }
+
+    [Fact]
+    public async Task Should_ReleaseAssignment_Immediately_WhenClicked()
+    {
+        var dto = SampleReview();
+        dto.AssignedOfficerId = _currentUserMock.Object.UserId;
+        dto.Status = ApplicationStatus.UnderReview;
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(dto);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        // No confirmation dialog — clicking Release Assignment executes immediately.
+        cut.Find("button.btn-outline-secondary").Click();
+
+        _mediatorMock.Verify(m => m.Send(It.IsAny<ReleaseApplicationCommand>(), default), Times.Once);
+        _jsRuntimeMock.Verify(j => j.InvokeAsync<bool>("confirm", It.IsAny<object?[]>()), Times.Never);
+    }
 }
