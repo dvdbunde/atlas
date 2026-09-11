@@ -27,6 +27,50 @@ public partial class OfficerApplicationReview : ComponentBase
     private bool _dataLoaded;
     private bool _isDeciding;
 
+    // Pending decision action awaiting inline confirmation inside the Officer Decision block.
+    private PendingDecisionAction? _pendingAction;
+
+    private enum PendingDecisionAction
+    {
+        Approve,
+        Reject,
+        RequestInfo
+    }
+
+    private bool IsConfirming => _pendingAction.HasValue;
+
+    private string ConfirmTitle => _pendingAction switch
+    {
+        PendingDecisionAction.Approve => "Approve application",
+        PendingDecisionAction.Reject => "Reject application",
+        PendingDecisionAction.RequestInfo => "Request additional information",
+        _ => string.Empty
+    };
+
+    private string ConfirmMessage => _pendingAction switch
+    {
+        PendingDecisionAction.Approve => $"Approve application {_viewModel.Application?.ApplicationNumber ?? ""}? This will mark the application as approved.",
+        PendingDecisionAction.Reject => $"Reject application {_viewModel.Application?.ApplicationNumber ?? ""}? This is a workflow decision and may notify the citizen.",
+        PendingDecisionAction.RequestInfo => $"Request additional information for application {_viewModel.Application?.ApplicationNumber ?? ""}? The citizen will be asked to provide more details.",
+        _ => string.Empty
+    };
+
+    private string ConfirmLabel => _pendingAction switch
+    {
+        PendingDecisionAction.Approve => "Approve",
+        PendingDecisionAction.Reject => "Reject",
+        PendingDecisionAction.RequestInfo => "Request Information",
+        _ => string.Empty
+    };
+
+    private string ConfirmButtonClass => _pendingAction switch
+    {
+        PendingDecisionAction.Approve => "btn btn-success",
+        PendingDecisionAction.Reject => "btn btn-danger",
+        PendingDecisionAction.RequestInfo => "btn btn-warning",
+        _ => "btn btn-primary"
+    };
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_dataLoaded)
@@ -172,36 +216,103 @@ public partial class OfficerApplicationReview : ComponentBase
 
     private async Task Approve()
     {
-        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Approve this application?"))
-        {
-            return;
-        }
-
-        await Decide(() => Mediator.Send(new ApproveApplicationCommand
-        {
-            ApplicationId = _viewModel.Application!.Id,
-            Comments = _viewModel.DecisionComments
-        }));
+        // Comments are optional for approval; no rejection reason is applicable.
+        _viewModel.DecisionReasonCode = string.Empty;
+        _viewModel.ClearValidationErrors();
+        _pendingAction = PendingDecisionAction.Approve;
     }
 
     private async Task Reject()
     {
-        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Reject this application? This cannot be undone."))
+        // Comments and a valid rejection reason code are mandatory for rejection.
+        _viewModel.ClearValidationErrors();
+        if (!ValidateReject())
         {
             return;
         }
 
-        await Decide(() => Mediator.Send(new RejectApplicationCommand
-        {
-            ApplicationId = _viewModel.Application!.Id,
-            ReasonCode = _viewModel.DecisionReasonCode,
-            Comments = _viewModel.DecisionComments
-        }));
+        _pendingAction = PendingDecisionAction.Reject;
     }
 
-    private Task RequestInfo() => Decide(() => Mediator.Send(new RequestInfoCommand
+    private async Task RequestInfo()
     {
-        ApplicationId = _viewModel.Application!.Id,
-        Message = _viewModel.DecisionComments
-    }));
+        // Comments are mandatory for requesting information; no rejection reason is applicable.
+        _viewModel.DecisionReasonCode = string.Empty;
+        _viewModel.ClearValidationErrors();
+        if (!ValidateRequestInfo())
+        {
+            return;
+        }
+
+        _pendingAction = PendingDecisionAction.RequestInfo;
+    }
+
+    private bool ValidateReject()
+    {
+        var valid = true;
+
+        if (string.IsNullOrWhiteSpace(_viewModel.DecisionComments))
+        {
+            _viewModel.CommentsError = "Comments / Instructions are required when rejecting an application.";
+            valid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_viewModel.DecisionReasonCode))
+        {
+            _viewModel.ReasonCodeError = "Rejection Reason Code is required when rejecting an application.";
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    private bool ValidateRequestInfo()
+    {
+        if (string.IsNullOrWhiteSpace(_viewModel.DecisionComments))
+        {
+            _viewModel.CommentsError = "Comments / Instructions are required when requesting additional information.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private void OnConfirmCancel()
+    {
+        _pendingAction = null;
+    }
+
+    private async Task OnConfirmConfirm()
+    {
+        var action = _pendingAction;
+        _pendingAction = null;
+
+        switch (action)
+        {
+            case PendingDecisionAction.Approve:
+                await Decide(() => Mediator.Send(new ApproveApplicationCommand
+                {
+                    ApplicationId = _viewModel.Application!.Id,
+                    Comments = _viewModel.DecisionComments
+                }));
+                break;
+            case PendingDecisionAction.Reject:
+                await Decide(() => Mediator.Send(new RejectApplicationCommand
+                {
+                    ApplicationId = _viewModel.Application!.Id,
+                    ReasonCode = _viewModel.DecisionReasonCode,
+                    Comments = _viewModel.DecisionComments
+                }));
+                break;
+            case PendingDecisionAction.RequestInfo:
+                await Decide(() => Mediator.Send(new RequestInfoCommand
+                {
+                    ApplicationId = _viewModel.Application!.Id,
+                    Message = _viewModel.DecisionComments
+                }));
+                break;
+            default:
+                break;
+        }
+    }
 }

@@ -1,0 +1,287 @@
+# M12-012 — Officer Decision Actions and Confirmation Dialogs
+
+## Objective
+
+Refine the officer application-detail decision workflow so officers can safely and consistently perform actions on applications under review.
+
+The task must:
+
+- Enforce action-specific input rules for Approve, Reject, and Request Information.
+- Show decision actions only when the application is eligible.
+- Use an ATLAS-styled inline confirmation state inside the existing Officer Decision block for decision actions.
+- Preserve Release Assignment as an immediate, non-destructive action without confirmation.
+- Avoid regressions in assignment, workflow, audit, notification, authorization, and persistence behavior.
+
+## Context
+
+The officer application-detail screen currently exposes:
+
+- Approve
+- Reject
+- Request Information
+- Release Assignment
+
+The form contains:
+
+- Comments / Instructions
+- Rejection Reason Code
+
+Required business rules:
+
+| Action | Comments / Instructions | Rejection Reason Code | Confirmation |
+| --- | --- | --- | --- |
+| Approve | Optional | Not allowed / must not be submitted | ATLAS-styled confirmation |
+| Reject | Mandatory | Mandatory | ATLAS-styled confirmation |
+| Request Information | Mandatory | Not allowed / must not be submitted | ATLAS-styled confirmation |
+| Release Assignment | Not applicable | Not applicable | No confirmation |
+
+Release Assignment is reversible through reassignment. It must immediately clear the assigned officer and assigned date and return the application to Submitted.
+
+Decision actions must be available only when:
+
+- The user is an authorized officer.
+- The application is assigned to the current officer.
+- The application status is Under Review.
+
+The implementation must use existing ATLAS commands, handlers, domain rules, authorization, auditing, persistence, notification, and UI patterns.
+
+## Requirements
+
+### 1. Officer decision action visibility
+
+1. Show the Officer Decision action area only when the application is Under Review, assigned to the authenticated officer, and the user is authorized.
+2. Show the four eligible actions together:
+   - Approve
+   - Reject
+   - Request Information
+   - Release Assignment
+3. Do not expose these actions for other statuses, unassigned applications, applications assigned to another officer, or unauthorized users.
+4. Preserve read-only detail behavior for ineligible applications.
+5. Do not alter officer queue or assignment behavior unless required for correct detail-screen eligibility.
+
+### 2. Approve
+
+1. Comments / Instructions are optional.
+2. Rejection Reason Code is not applicable.
+3. Any rejection reason value must not be submitted with the approval command or affect approval validation.
+4. Clicking Approve first runs the existing approval validation. If validation succeeds, enter the inline confirmation state before execution.
+5. The confirmation state must identify the action and application, explain the consequence briefly, and provide explicit Approve and Cancel actions.
+6. Confirming executes the existing approval workflow.
+7. Cancelling causes no state change, audit event, notification, or command execution and restores the fields and four action buttons.
+8. Prevent duplicate submissions while processing.
+
+### 3. Reject
+
+1. Comments / Instructions are mandatory.
+2. Rejection Reason Code is mandatory and must be valid.
+3. Validation must prevent execution and should occur before opening confirmation.
+4. Validation messages must be clear, field-associated, and consistent with ATLAS.
+5. The reason code cannot substitute for comments.
+6. With valid input, clicking Reject enters the inline confirmation state inside the Officer Decision block.
+7. When confirmation is shown, hide both input fields and all four original action buttons. The confirmation state must identify the application, explain that rejection is a workflow decision that may notify the citizen, and provide Reject and Cancel actions.
+8. Confirming executes the existing rejection workflow with the validated comments and reason code.
+9. Cancelling causes no mutation, audit event, notification, or command execution.
+10. Prevent duplicate submissions while processing.
+
+### 4. Request Information
+
+1. Comments / Instructions are mandatory.
+2. Rejection Reason Code is not applicable.
+3. Any rejection reason value must not be submitted with the request-information command or affect validation.
+4. Missing comments must prevent execution.
+5. With valid input, clicking Request Information enters the inline confirmation state inside the Officer Decision block.
+6. When confirmation is shown, hide both input fields and all four original action buttons. The confirmation state must identify the application, explain that additional information is being requested from the citizen, and provide Request Information and Cancel actions.
+7. Confirming executes the existing request-information workflow with the validated comments.
+8. Cancelling causes no mutation, audit event, notification, or command execution.
+9. Prevent duplicate submissions while processing.
+
+### 5. Release Assignment
+
+1. Keep Release Assignment in the Officer Decision action group for the current officer on an Under Review application.
+2. Use a filled, neutral button treatment consistent with neighboring actions, with dark/black text, consistent sizing, spacing, focus styling, and responsive behavior.
+3. Do not use a browser-native confirmation popup.
+4. Execute the existing release-assignment workflow immediately.
+5. The workflow must clear AssignedOfficerId, clear AssignedDate, and return the application to Submitted while preserving all other data.
+6. Preserve existing authorization, auditing, persistence, and notification behavior.
+7. Preserve the ability for another officer to assign the submitted application through the existing flow.
+
+### 6. Inline confirmation state
+
+1. Do not use window.confirm(), confirm(), a browser-native popup, a JavaScript modal, or JSInterop for Approve, Reject, or Request Information.
+2. Implement the confirmation interaction using ordinary Blazor component state and conditional Razor rendering inside the existing Officer Decision block.
+3. In the normal state, show Comments / Instructions, Rejection Reason Code, and all four action buttons.
+4. After the selected action passes its existing validation, hide Comments / Instructions, hide Rejection Reason Code, and hide all four original action buttons.
+5. In that confirmation state, show an action-specific ATLAS-styled heading, concise message, Cancel button, and the relevant confirm button.
+6. Use these action-specific labels:
+   - Approve application / Approve
+   - Reject application / Reject
+   - Request additional information / Request Information
+7. If validation fails, remain in the normal state and preserve the existing validation messages, locations, and styling. Do not show confirmation.
+8. Cancel must perform no command or mutation, hide the confirmation state, restore the fields and four original buttons, and preserve entered values.
+9. Confirmation and Cancel controls must have consistent ATLAS styling, visible keyboard focus, sensible tab order, and accessible text.
+10. Show the established loading/disabled state while the confirmed command executes.
+11. On successful completion, follow existing workflow navigation and notification conventions.
+12. Use the established ATLAS error-handling pattern for command errors; do not swallow errors.
+
+### 7. Form state and validation
+
+1. Enforce business rules both in the UI and at the appropriate application/domain boundary.
+2. Do not rely only on disabled or hidden controls.
+3. Ensure stale rejection-reason values cannot be carried into Approve or Request Information.
+4. Preserve entered comments and reason-code values while confirmation is shown and when Cancel restores the form.
+5. The confirmation state must only be shown when there are no validation messages for the selected action. Normalize/reset action-specific state appropriately.
+6. Prevent repeated clicks and concurrent workflow operations.
+
+### 8. Architecture and regression safety
+
+1. Use existing CQRS/MediatR commands, handlers, domain methods, authorization, audit, persistence, and notification mechanisms.
+2. Do not duplicate business logic in Razor.
+3. Do not directly mutate persistence entities from the UI or bypass domain invariants.
+4. Preserve canonical Entity.ModifiedDate and existing Touch() conventions for successful state changes.
+5. Preserve mandatory state-change auditing.
+6. Preserve server-side authorization.
+7. Do not alter unrelated citizen, admin, or officer workflows.
+
+## Relevant files / areas
+
+The implementation agent must inspect the repository and identify the exact current paths. Likely areas include:
+
+- Current officer application-detail Razor component, likely under `src/ATLAS.Blazor/Pages/`.
+- Related code-behind, partial class, view model, and services.
+- `src/ATLAS.Blazor/Components/Shared/ApplicationDetail/`
+- Existing approval, rejection, request-information, assignment, and release-assignment commands and handlers.
+- Application domain entity, state-transition logic, validators, and authorization policies.
+- Audit, event, notification, and email handling.
+- Existing ATLAS modal/dialog, alert, validation, and button patterns.
+- Existing officer detail component tests and application command/domain/integration tests.
+- `plans/M12-plan.md`
+- Applicable `.github` instructions and agents.
+- `plans/tasks/M12/M12-012.md`
+- `plans/tasks/reports/M12/`
+
+Do not assume the likely paths are exact; repository inspection is authoritative.
+
+## Acceptance criteria
+
+- [ ] Officer Decision actions are shown only for an authorized current assignee when status is Under Review.
+- [ ] Approve succeeds with empty Comments / Instructions.
+- [ ] Approve does not require or submit Rejection Reason Code.
+- [ ] Reject cannot execute without Comments / Instructions and a valid Rejection Reason Code.
+- [ ] Request Information cannot execute without Comments / Instructions.
+- [ ] Request Information does not require or submit Rejection Reason Code.
+- [ ] Approve enters an action-specific ATLAS-styled inline confirmation state only after validation succeeds.
+- [ ] Reject enters an action-specific ATLAS-styled inline confirmation state only after validation succeeds.
+- [ ] Request Information enters an action-specific ATLAS-styled inline confirmation state only after validation succeeds.
+- [ ] No generic browser-native confirmation, JavaScript modal, or JSInterop is used for these actions.
+- [ ] When confirmation is shown, the two form fields and all four original action buttons are hidden.
+- [ ] Inline confirmation states provide clear confirm/cancel actions and are keyboard accessible.
+- [ ] Existing validation messages remain visible and unchanged when validation fails, and no confirmation state is shown.
+- [ ] Cancelling performs no command, mutation, audit event, or notification and restores the fields/buttons with their entered values.
+- [ ] Confirming each action executes the existing correct workflow with the correct values.
+- [ ] Duplicate submissions are prevented.
+- [ ] Release Assignment remains available to the current officer in Under Review.
+- [ ] Release Assignment uses a filled, neutral, dark-text ATLAS button.
+- [ ] Release Assignment executes without confirmation.
+- [ ] Release Assignment clears AssignedOfficerId and AssignedDate and returns status to Submitted.
+- [ ] Another officer can subsequently assign the released application.
+- [ ] Existing authorization, auditing, notifications, persistence, assignment, and decision flows remain intact.
+- [ ] Business validation is enforced beyond the UI where appropriate.
+- [ ] No unrelated workflows or screens are changed.
+- [ ] Automated tests cover validation, visibility, inline confirmation state, cancel/confirm behavior, command invocation, authorization/state eligibility, and release regression cases.
+- [ ] `dotnet build ATLAS.slnx` succeeds with no new errors or warnings.
+- [ ] Relevant and complete automated test suites pass.
+- [ ] Authenticated rendered-browser validation covers desktop, responsive layout, validation, dialog open/cancel/confirm, keyboard focus, and loading states.
+- [ ] Implementation summary exists at `plans/tasks/reports/M12/M12-012-implementation-summary.md`.
+
+## Testing
+
+- [ ] Inspect existing test patterns before implementation.
+- [ ] Add/update domain and application tests for:
+  - Approval with empty comments.
+  - Approval with no rejection reason submission.
+  - Rejection requiring comments.
+  - Rejection requiring a valid reason code.
+  - Request Information requiring comments.
+  - Request Information with no rejection reason submission.
+  - Invalid status, assignment, and authorization conditions.
+- [ ] Add/update command-handler tests for successful and unsuccessful execution.
+- [ ] Verify successful state changes preserve auditing and modified-date conventions.
+- [ ] Add/update Release Assignment tests verifying:
+  - Assigned officer is cleared.
+  - Assigned date is cleared.
+  - Status becomes Submitted.
+  - Other application data is preserved.
+  - Subsequent reassignment remains possible.
+- [ ] Add/update Blazor/component tests for action visibility, validation-message preservation, inline confirmation open/cancel/confirm behavior, field/button hiding and restoration, preservation of entered values, correct command values, rejection-reason exclusion, no release confirmation, and duplicate-click prevention.
+- [ ] Add integration tests where required for authorization, persistence, status transitions, assignment clearing, auditing, and notifications.
+- [ ] Run targeted tests.
+- [ ] Run the complete solution test suite.
+- [ ] Run `dotnet build ATLAS.slnx`.
+- [ ] Perform authenticated rendered-browser validation at desktop and narrow responsive widths.
+- [ ] Verify keyboard navigation, focus order, visible focus, inline confirmation semantics, Cancel behavior, and loading/disabled states.
+- [ ] Record exact commands and results in the implementation summary.
+
+## Documentation
+
+- [ ] Create `plans/tasks/reports/M12/M12-012-implementation-summary.md`.
+- [ ] Record implementation summary, files changed, tests, commands/results, other validation, acceptance status, documentation changes, deviations, risks, and follow-up work.
+- [ ] Update other documentation only if a reusable dialog pattern or user-facing workflow rule requires it.
+- [ ] If no additional documentation is needed, state: `None required beyond the implementation summary.`
+
+## Constraints
+
+- Follow the current ATLAS architecture and all applicable `.github` instructions and agents.
+- Treat this task file and the current repository as authoritative.
+- Use design-first and test-first practices.
+- Keep scope limited to M12-012.
+- Do not redesign the officer application-detail screen.
+- Do not introduce a new UI framework, modal library, or broad component architecture.
+- Prefer existing ATLAS components, Bootstrap conventions, design tokens, and CSS patterns.
+- Do not use native browser confirmation dialogs for Approve, Reject, or Request Information.
+- Do not add confirmation for Release Assignment.
+- Do not change the meaning of existing statuses or assignment relationships.
+- Do not weaken server-side authorization.
+- Preserve auditability, notification behavior, persistence rules, and `Entity.ModifiedDate`/`Touch()` conventions.
+- Avoid unrelated refactoring, formatting, dependency, or schema changes.
+- Follow trunk-based development, short-lived branches, small commits, conventional commits, and normal PR/CI gates.
+- Do not claim completion if required acceptance criteria, tests, build validation, or browser validation failed. Document incomplete items clearly.
+
+## Notes
+
+Recommended UX decision:
+
+- Use an action-specific inline confirmation state inside the Officer Decision block for Approve, Reject, and Request Information because each changes workflow state and may have citizen-facing consequences.
+- Keep the confirmation content concise, calm, and explicit rather than alarmist.
+- Suggested titles:
+  - Approve application
+  - Reject application
+  - Request additional information
+- Suggested confirm labels:
+  - Approve
+  - Reject
+  - Request Information
+- Use Cancel as the non-committing action.
+- Release Assignment should remain immediate because it is reversible through reassignment.
+- First inspect whether the current component uses a shared form model, separate commands, or a combined decision command. Fit the implementation to the existing structure.
+- If backend commands permit invalid combinations of comments/reason codes, correct validation at the appropriate application/domain boundary rather than relying only on UI state.
+
+## Completion and handoff
+
+When the task is implemented, the implementation agent must create an implementation summary at:
+
+`plans/tasks/reports/M12/M12-012-implementation-summary.md`
+
+The implementation summary must contain:
+
+- Implementation summary
+- Files changed
+- Tests added or changed
+- Tests executed and results
+- Other validation performed and results
+- Acceptance criteria status
+- Documentation changes
+- Deviations from the task
+- Known issues or remaining risks
+- Any follow-up work identified
+
+The implementation agent must not claim the task is complete if required acceptance criteria or validation have failed. Failed or incomplete items must be clearly identified in the implementation summary.

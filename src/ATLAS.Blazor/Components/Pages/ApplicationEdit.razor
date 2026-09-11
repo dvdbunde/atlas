@@ -93,7 +93,7 @@
                               OnFileSelected="@((DynamicFormFieldViewModel f) => HandleFileSelected(f))"
                               OnDocumentDeleted="@(args => HandleDocumentDeleted(args))" />
 
-        @* Compact horizontal action group — Save Changes and Submit Application *@
+        @* Action group — Save, Submit, or Resubmit *@
         <div class="d-flex flex-wrap gap-2 align-items-center mt-4 mb-4 pb-2">
             <button type="button"
                     class="btn btn-primary"
@@ -110,8 +110,20 @@
                 }
             </button>
 
-            @* Submit button — only when form is valid and application is a draft *@
-            @if (!_viewModel.IsInfoRequested)
+            @if (_viewModel.IsInfoRequested)
+            {
+                <button type="button"
+                        class="btn btn-success"
+                        @onclick="ResubmitApplication"
+                        disabled="@(_viewModel.IsResubmitting || _viewModel.Fields.Any(f => f.HasErrors))">
+                    @if (_viewModel.IsResubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    }
+                    <span>Resubmit Application</span>
+                </button>
+            }
+            else
             {
                 <button type="button"
                         class="btn btn-success"
@@ -129,41 +141,27 @@
                     }
                 </button>
             }
-        </div>               
-    
-        @* O5: Resubmit button — only for InfoRequested applications *@
-        @if (_viewModel.IsInfoRequested)
+        </div>
+
+        @if (_viewModel.IsResubmitting)
         {
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-primary btn-lg"
-                        @onclick="ResubmitApplication"
-                        disabled="@(_viewModel.IsResubmitting || _viewModel.Fields.Any(f => f.HasErrors))">
-                    @if (_viewModel.IsResubmitting)
-                    {
-                        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                    }
-                    Resubmit Application
-                </button>
+            <div class="mt-3 text-muted" role="status">
+                Resubmitting your application...
             </div>
-    
-            @if (_viewModel.IsResubmitting)
-            {
-                <div class="mt-3 text-muted" role="status">Resubmitting your application...</div>
-            }
-    
-            @if (_viewModel.ResubmitHasError)
-            {
-                <div class="alert alert-danger mt-3" role="alert">
-                    @_viewModel.ResubmitErrorMessage
-                </div>
-            }
-    
-            @if (_viewModel.ResubmitSuccess)
-            {
-                <div class="alert alert-success mt-3" role="alert">
-                    Your application has been resubmitted successfully. It will be reviewed by the officer.
-                </div>
-            }
+        }
+
+        @if (_viewModel.ResubmitHasError)
+        {
+            <div class="alert alert-danger mt-3" role="alert">
+                @_viewModel.ResubmitErrorMessage
+            </div>
+        }
+
+        @if (_viewModel.ResubmitSuccess)
+        {
+            <div class="alert alert-success mt-3" role="alert">
+                Your application has been resubmitted successfully. It will be reviewed by the officer.
+            </div>
         }
 
         @if (_viewModel.IsSaving)

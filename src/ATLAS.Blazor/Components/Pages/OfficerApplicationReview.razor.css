@@ -54,3 +54,21 @@
 ::deep .card .card-body > div.bg-light {
     background-color: var(--atlas-surface-muted, #f8f9fa) !important;
 }
+
+/* Inline confirmation state inside the Officer Decision block */
+::deep .atlas-inline-confirm {
+    background-color: var(--atlas-surface-muted, #f8f9fa);
+    border: 1px solid var(--atlas-border-color, #dee2e6);
+    border-left: 4px solid var(--atlas-blue-500, #2b86d6);
+    border-radius: var(--atlas-radius, 0.5rem);
+    padding: 1rem 1.25rem;
+}
+
+::deep .atlas-inline-confirm h6 {
+    color: var(--atlas-neutral-900, #212529);
+    font-weight: 600;
+}
+
+::deep .atlas-inline-confirm p {
+    color: var(--atlas-neutral-700, #495057);
+}

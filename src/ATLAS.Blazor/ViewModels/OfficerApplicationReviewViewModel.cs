@@ -29,9 +29,17 @@ public class OfficerApplicationReviewViewModel
     public bool HasReviews => Application?.Reviews.Count > 0;
     public string DecisionComments { get; set; } = string.Empty;
     public string DecisionReasonCode { get; set; } = string.Empty;
+    public string? CommentsError { get; set; }
+    public string? ReasonCodeError { get; set; }
     // True only when assigned to current officer AND status allows a decision.
     public bool CanDecide => IsAssignedToCurrentOfficer
         && Application?.Status == ApplicationStatus.UnderReview;
+
+    public void ClearValidationErrors()
+    {
+        CommentsError = null;
+        ReasonCodeError = null;
+    }
     public List<ApplicationActivityDto> Activities { get; set; } = new();
 
     // Mapped properties for shared layout consumption
