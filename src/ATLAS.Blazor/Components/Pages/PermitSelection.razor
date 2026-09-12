@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "Citizen")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
+@using System.Globalization
 
 <PageTitle>Select Permit Type</PageTitle>
 
@@ -55,7 +56,7 @@
                             @if (permit.HasCost)
                             {
                                 <p class="card-text">
-                                    <strong>Fee:</strong> @permit.Fee.ToString("C")
+                                    @permit.Fee.ToString("C", CultureInfo.GetCultureInfo("nl-BE"))
                                 </p>
                             }
                         </div>

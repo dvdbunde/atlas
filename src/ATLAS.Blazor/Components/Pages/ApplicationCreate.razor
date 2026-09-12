@@ -41,9 +41,9 @@
                     Fields="@_viewModel.Fields" 
                     Mode="FormFieldMode.Edit"
                     AllowFileUpload="false">
-            <div class="mt-4">
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-4 mb-4 pb-2">
                 <button type="button"
-                        class="btn btn-primary btn-lg"
+                        class="btn btn-primary"
                         disabled="@_viewModel.IsSaving"
                         @onclick="SaveDraft">
                     @if (_viewModel.IsSaving)

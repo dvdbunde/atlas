@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using ATLAS.Blazor.Components.Shared.Admin
+@using System.Globalization
 
 <PageTitle>Permit Types</PageTitle>
 
@@ -90,7 +91,7 @@
                             <tr>
                                 <td>@pt.Name</td>
                                 <td>@pt.Description</td>
-                                <td>@pt.Fee.ToString("C")</td>
+                                <td>@pt.Fee.ToString("C", CultureInfo.GetCultureInfo("nl-BE"))</td>
                                 <td>
                                     @if (pt.IsActive)
                                     {

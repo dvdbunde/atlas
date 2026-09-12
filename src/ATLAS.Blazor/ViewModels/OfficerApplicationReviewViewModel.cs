@@ -42,8 +42,13 @@ public class OfficerApplicationReviewViewModel
     }
     public List<ApplicationActivityDto> Activities { get; set; } = new();
 
-    // Mapped properties for shared layout consumption
+    // Mapped properties for shared layout consumption.
+    // Only genuine application fields are shown under "Submitted Application Data".
+    // Document requirements (e.g. "Proof of Address") are stored as field values too,
+    // so exclude any value whose name matches a permit-type document requirement.
     public List<FieldDisplayViewModel> Fields => Application?.FieldValues
+        .Where(fv => !DocumentRequirements.Any(dr =>
+            dr.DocumentType.Equals(fv.Key, StringComparison.OrdinalIgnoreCase)))
         .Select(fv => new FieldDisplayViewModel
         {
             Label = fv.Key,
