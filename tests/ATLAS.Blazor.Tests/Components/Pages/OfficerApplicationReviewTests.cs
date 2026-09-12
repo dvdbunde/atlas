@@ -175,6 +175,45 @@ public class OfficerApplicationReviewTests : BunitContext
         Assert.Empty(cut.FindAll("textarea"));
     }
 
+    [Fact]
+    public void Should_NotShowDocumentRequirements_InSubmittedApplicationData()
+    {
+        // Document requirements are stored as field values too (e.g. "Proof of Address").
+        // They must appear only in the Documents section, never under Submitted Application Data.
+        var review = SampleReview();
+        review.DocumentRequirements.Add(new OfficerDocumentRequirementDto
+        {
+            DocumentType = "Proof of Address",
+            IsRequired = true,
+            IsSatisfied = true,
+            UploadedDocuments = new List<OfficerDocumentDto>
+            {
+                new() { Id = Guid.NewGuid(), FileName = "bill.pdf", ContentType = "application/pdf", FileSize = 2048, UploadedDate = DateTime.UtcNow }
+            }
+        });
+        review.FieldValues.Add(new OfficerFieldValueDto
+        {
+            FieldName = "Proof of Address",
+            Label = "Proof of Address",
+            Value = "DOC-REQ-LEAK",
+            FieldType = FieldType.Text
+        });
+        review.Application.FieldValues["Proof of Address"] = "DOC-REQ-LEAK";
+        _mediatorMock.Setup(m => m.Send(It.IsAny<GetOfficerApplicationReviewQuery>(), default))
+            .ReturnsAsync(review);
+
+        var cut = Render<OfficerApplicationReview>(parameters =>
+            parameters.Add(p => p.ApplicationId, _applicationId));
+
+        // Genuine application fields still render
+        Assert.Contains("PropertyAddress", cut.Markup);
+        Assert.Contains("123 Main St", cut.Markup);
+        // Document requirement renders in the Documents section
+        Assert.Contains("Proof of Address", cut.Markup);
+        // ...but its field value must NOT leak into Submitted Application Data
+        Assert.DoesNotContain("DOC-REQ-LEAK", cut.Markup);
+    }
+
     // ----- Document requirements -----
 
     [Fact]
