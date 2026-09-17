@@ -94,6 +94,6 @@ Replace manually maintained controllers with NSwag-generated controllers using:
 
 - **REF-001**: [ADR-001: Clean Architecture](adr-001-clean-architecture.md)
 - **REF-002**: [ADR-002: CQRS with MediatR](adr-002-cqrs-mediatr.md)
-- **REF-003**: [OpenAPI Specification](../openapi/atlas-api.yaml)
+- **REF-003**: [OpenAPI Specification](../../openapi/atlas-api.yaml)
 - **REF-004**: [NSwag Documentation](https://github.com/RicoSuter/NSwag)
-- **REF-005**: [Phase 4 Plan](../../memories/session/plan.md)
+- **REF-005**: [Phase 4 Plan](../../plans/README.md)

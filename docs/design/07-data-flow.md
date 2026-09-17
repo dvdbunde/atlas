@@ -118,10 +118,10 @@ sequenceDiagram
     Blob-->>Blazor: Document stream (PDF/JPG/PNG)
     Blazor-->>Officer: Display application details + documents
 
-    Officer->>Blazor: Add internal notes (not visible to citizen)
-    Blazor->>API: PATCH /api/applications/{id}/notes {notes}
+    Officer->>Blazor: Review the application and, where supported by the current implementation, record review comments or decision information
+    Blazor->>API: Invoke the applicable review/decision operation with its supported comments and reason fields
     API->>Repo: UpdateAsync(application)
-    Repo->>SQL: UPDATE Applications SET OfficerNotes=@Notes
+    Repo->>SQL: Persist the applicable review or decision data
     SQL-->>Repo: Success
     Repo-->>API: Success
     API-->>Blazor: 200 OK

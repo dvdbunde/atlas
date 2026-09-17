@@ -6,3 +6,5 @@ This directory contains engineering processes and standards (e.g., code reviews,
 
 - [Code Review Guidelines](code-review-guidelines.md)
 - [Pull Request Guidelines](pull-request-guidelines.md)
+- [Contract Governance](contract-governance.md)
+- The historical Milestone 08 revised roadmap is retained in the project archive; see [plans/archive/](../../plans/archive/README.md) for archived planning material.

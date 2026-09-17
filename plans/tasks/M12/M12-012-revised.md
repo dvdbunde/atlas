@@ -1,5 +1,7 @@
 # M12-012 — Officer Decision Actions and Confirmation Dialogs
 
+> **Status:** Authoritative revised specification. This file supersedes the original [`M12-012.md`](M12-012.md) confirmation-dialog specification.
+
 ## Objective
 
 Refine the officer application-detail decision workflow so officers can safely and consistently perform actions on applications under review.

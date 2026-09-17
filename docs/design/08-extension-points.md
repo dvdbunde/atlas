@@ -1,5 +1,7 @@
 # Future Extension Points
 
+> **Document status:** This document is intentionally forward-looking. The “Current State” sections describe the baseline known when the extension analysis was written; the extension proposals are not commitments for M13 or later milestones.
+
 ## Overview
 
 This document identifies future extension points for ATLAS based on the current Clean Architecture + CQRS + DDD foundation. These extensions align with the MVP out-of-scope items and future business needs identified in the [ATLAS PRD](../PRDs/atlas-mvp-prd.md).

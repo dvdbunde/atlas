@@ -45,7 +45,7 @@
 
 When the task is implemented, the implementation agent must create an implementation summary at:
 
-`plans/reports/[MILESTONE]/[TASK-ID]-implementation-summary.md`
+`plans/tasks/reports/[MILESTONE]/[TASK-ID]-implementation-summary.md`
 
 The implementation summary must contain:
 

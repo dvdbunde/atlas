@@ -1,5 +1,7 @@
 # Aggregate Roots
 
+> **Document status:** This document is an architectural baseline/reference. Verify implementation-specific details against the current code and current-state architecture before treating them as normative deployment or workflow instructions.
+
 ## Overview
 
 Aggregate Roots are central entities in Domain-Driven Design that enforce invariants and control access to a cluster of related objects. This document defines the aggregate roots for ATLAS and their boundaries.

@@ -73,7 +73,7 @@ The business Audit Log remains a separate source of permanent business history.
 The environment-specific access is configured by:
 
 ```text
-infra/bootstrap-revised.ps1
+infra/bootstrap.ps1
 ```
 
 The bootstrap resolves `atlas-grafana-$Environment`, obtains its service principal object ID and creates/verifies the Reader assignment at the supplied `$ResourceGroup` scope.

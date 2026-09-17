@@ -1,5 +1,7 @@
 # Bounded Contexts
 
+> **Document status:** This document is an architectural baseline/reference. Verify implementation-specific details against the current code and current-state architecture before treating them as normative deployment or workflow instructions.
+
 ## Overview
 
 Bounded Contexts are a central pattern in Domain-Driven Design (DDD) that define explicit boundaries around a specific domain model. Each bounded context has its own ubiquitous language, domain model, and rules.

@@ -395,7 +395,7 @@ Run:
 ```powershell
 $GitHubClientId = "<ATLAS GitHub Actions Application (Client) ID>"
 
-.\infra\bootstrap-revised.ps1 `
+.\infra\bootstrap.ps1 `
     -ResourceGroup atlas-dev-rg `
     -DeploymentName main `
     -GitHubClientId $GitHubClientId `
@@ -485,17 +485,17 @@ This phase validates that the complete CI/CD pipeline functions correctly and th
 
 ### Step 9 – Execute the Deployment Pipeline
 
-After the Pull Request has been approved, merged into the `main` branch and the CI validation has completed successfully, verify that the deployment workflows execute automatically in the following order:
+After the Pull Request has been approved, merged into the `main` branch and the CI validation has completed successfully, verify that the packaging and deployment workflows execute in the following order:
 
 ```text
+CI (`ci.yml`)
+    ↓
 01-package.yml
     ↓
 02-deploy-dev.yml
-    ↓
-03-smoke-tests.yml
 ```
 
-Each workflow should complete successfully before the next workflow begins.
+`01-package.yml` packages and publishes the API and Blazor container images. `02-deploy-dev.yml` deploys those images to the development App Services and performs the deployment-time database/configuration steps defined in the workflow.
 
 Verify that:
 
@@ -580,7 +580,7 @@ Confirm that:
 
 ### Step 13 – Verify Smoke Tests
 
-Confirm that the `03-smoke-tests.yml` workflow completed successfully.
+Confirm that the deployment validation checks described in this runbook have completed successfully. The repository currently contains `ci.yml`, `01-package.yml`, and `02-deploy-dev.yml`; it does not contain a `03-smoke-tests.yml` workflow.
 
 Typical validation includes:
 
@@ -675,7 +675,7 @@ Verify:
 - [ ] Pull Request merged into `main`
 - [ ] `01-package.yml` completed successfully
 - [ ] `02-deploy-dev.yml` completed successfully
-- [ ] `03-smoke-tests.yml` completed successfully
+- [ ] Deployment validation completed using the checks in this runbook
 - [ ] API reachable
 - [ ] Swagger accessible
 - [ ] Blazor application accessible

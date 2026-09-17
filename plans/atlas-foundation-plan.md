@@ -20,7 +20,7 @@
 
 ## Overview
 
-This roadmap outlines the implementation plan for ATLAS MVP as defined in [atlas-mvp-prd.md](docs/PRDs/atlas-mvp-prd.md). The plan follows:
+This roadmap outlines the implementation plan for ATLAS MVP as defined in [atlas-mvp-prd.md](../docs/PRDs/atlas-mvp-prd.md). The plan follows:
 
 - **Clean Architecture** (ADR-001)
 - **CQRS with MediatR** (ADR-002)
@@ -538,17 +538,17 @@ flowchart TD
 
 **References**:
 
-- [ATLAS MVP PRD](docs/PRDs/atlas-mvp-prd.md) - Functional Requirements F-01 through F-23
-- [ADR-001: Clean Architecture](docs/ADRs/adr-001-clean-architecture.md)
-- [ADR-002: CQRS with MediatR](docs/ADRs/adr-002-cqrs-mediatr.md)
-- [ADR-003: Azure SQL & Blob Storage](docs/ADRs/adr-003-azure-sql-blob.md)
-- [ADR-004: Domain-Driven Design](docs/ADRs/adr-004-domain-driven-design.md) - **DOMAIN MODEL DEFINITION**
-- [ADR-005: Blazor Server](docs/ADRs/adr-005-blazor-web-app.md)
-- [ADR-006: GitHub Actions](docs/ADRs/adr-006-github-actions.md)
-- [ADR-007: Bicep](docs/ADRs/adr-007-bicep.md)
-- [ADR-008: Microsoft Entra ID](docs/ADRs/adr-008-microsoft-entra-id.md)
-- [ADR-015: Document Storage Architecture](docs/ADRs/adr-015-document-storage-architecture.md)
-- [Quality & Coverage Policy](.github/copilot-instructions.md#quality-policy)
+- [ATLAS MVP PRD](../docs/PRDs/atlas-mvp-prd.md) - Functional Requirements F-01 through F-23
+- [ADR-001: Clean Architecture](../docs/ADRs/adr-001-clean-architecture.md)
+- [ADR-002: CQRS with MediatR](../docs/ADRs/adr-002-cqrs-mediatr.md)
+- [ADR-003: Azure SQL & Blob Storage](../docs/ADRs/adr-003-azure-sql-blob.md)
+- [ADR-004: Domain-Driven Design](../docs/ADRs/adr-004-domain-driven-design.md) - **DOMAIN MODEL DEFINITION**
+- [ADR-005: Blazor Server](../docs/ADRs/adr-005-blazor-web-app.md)
+- [ADR-006: GitHub Actions](../docs/ADRs/adr-006-github-actions.md)
+- [ADR-007: Bicep](../docs/ADRs/adr-007-bicep.md)
+- [ADR-008: Microsoft Entra ID](../docs/ADRs/adr-008-microsoft-entra-id.md)
+- [ADR-015: Document Storage Architecture](../docs/ADRs/adr-015-document-storage-architecture.md)
+- [Quality & Coverage Policy](../.github/copilot-instructions.md#quality-policy)
 
 **Corrections Made in v1.2**:
 

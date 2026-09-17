@@ -168,7 +168,7 @@ public class ApplicationsController : ControllerBase
    - **Domain Events** - Publish events from handlers, decoupled event handling
    - **Reduced Coupling** - Controllers depend on MediatR, not concrete handlers
 5. **Performance Optimization** - Read models can be denormalized for specific queries
-6. **Future-Proof** - Easy to add read model projections (see [Extension Points](..\design\08-extension-points.md#3-reporting--analytics))
+6. **Future-Proof** - Easy to add read model projections (see [Extension Points](../design/08-extension-points.md#3-reporting--analytics))
 
 ### Negative
 
