@@ -1,6 +1,6 @@
 # ATLAS Azure Foundation
 
-This document describes the current Azure foundation established in M9 and extended by M10 and M11.
+This document describes the current Azure foundation established in M9 and extended by M10, M11, and subsequent operational/documentation work. M12 primarily affected the presentation layer and did not introduce a replacement infrastructure architecture.
 
 ## Phase Scope
 
@@ -53,7 +53,7 @@ All deployments are intentionally **idempotent**. Re-running the deployment reco
 infra/
 ├── main.bicep                    # Entry point — orchestrates all modules
 ├── main.parameters.dev.json      # Development environment parameters
-├── bootstrap-revised.ps1         # Post-deployment configuration & verification
+├── bootstrap.ps1                 # Post-deployment configuration & verification
 ├── telemetry/
 │   ├── atlas-operations.workbook.json         # O6 Workbook definition
 │   └── atlas-operations.grafana-dashboard.json # O6 Grafana dashboard definition
@@ -110,7 +110,7 @@ ACS ──────────────────┘                   
   logs are excluded because Application Insights already captures request
   telemetry, and Blob Storage diagnostics are configured on the account's
   `blobServices/default` child resource where those categories are exposed.
-- **Azure Managed Grafana** is the primary operational dashboard platform.
+- **Grafana Cloud** is the current operational visualization platform; the Azure Managed Grafana material below is retained as historical design context.
   Dashboards themselves are a later phase (O5/O6); O2 delivers the provisioned,
   authorized instance only.
 
@@ -126,7 +126,7 @@ No Grafana API key or static Azure credential is stored in the repository.
 
 The following legacy section documents the earlier Azure Managed Grafana design retained for architectural history. It is not the current M11 deployment path.
 
-### Grafana identity and RBAC
+### Historical Grafana identity and RBAC
 
 Grafana uses a **system-assigned managed identity** — no API keys, passwords,
 or stored credentials. Two built-in role assignments grant read access to
@@ -790,3 +790,7 @@ structured Azure CLI JSON output:
 - The business Audit Log is never used as an alert source.
 - No alert-management UI, incident management, or automatic remediation.
 - No new metrics, dashboards, or workbooks were introduced by O7.
+
+## Current-state qualification
+
+This document combines implemented infrastructure, deployment/bootstrap procedures, and retained historical design material. The Grafana Cloud decision is authoritative for the current operational-visualization approach; sections explicitly identified as legacy or historical should not be interpreted as current deployment instructions. Live Azure resource state must be verified in the target subscription when performing an operational deployment or audit.

@@ -21,10 +21,12 @@ markup adjustments rather than rebuilding the UI.
 
 ``` yaml
 owner: David Van den Bunder <N/A> — Product Owner
-state: proposed
-last_updated: 2026-09-02
+state: complete
+last_updated: 2026-09-17
 blockers: []
 ```
+
+> **Completion note:** M12 has been implemented and accepted. The milestone delivered the planned UI restyling and usability improvements while preserving existing application workflows. See the M12 task implementation summaries under `plans/tasks/reports/M12/` for task-level validation and known limitations.
 
 ## 4. Objectives (ordered list, 1-10 items)
 

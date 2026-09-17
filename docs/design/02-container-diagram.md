@@ -1,5 +1,7 @@
 # Container Diagram
 
+> **Document status:** This document is an architectural baseline/reference. Verify implementation-specific details against the current code and current-state architecture before treating them as normative deployment or workflow instructions.
+
 ## Overview
 
 This diagram shows the internal containers (deployable units) that make up ATLAS and how they interact with each other and external systems.

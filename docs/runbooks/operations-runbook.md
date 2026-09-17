@@ -1,8 +1,8 @@
-# ATLAS Operational Runbook — Milestone 11
+# ATLAS Operational Runbook — Current Operations Reference
 
 Practical operator guide for troubleshooting the ATLAS application in a live Azure environment.
 
-This runbook is based on the M11 observability/operations work and the live Azure verification performed against the deployed ATLAS environment.
+This runbook documents the current operational procedures and observability baseline established during the M11 observability/operations work and subsequent repository updates. Statements describing live verification are retained as historical verification evidence and should be rechecked after changes to telemetry, infrastructure, or deployment configuration.
 
 ## 1. Observability map
 
@@ -19,7 +19,7 @@ This runbook is based on the M11 observability/operations work and the live Azur
 | Alerts | Azure Monitor → Alerts | Detection and notification state |
 | Alert notification | Action Group | Whether an alert notification was actually delivered |
 
-The Operations Workbook is provisioned as part of M11 and remains pending final functional validation. Grafana Cloud is the deployed operational dashboard surface.
+The Operations Workbook is provisioned as part of the observability infrastructure. Its final functional-validation status should be confirmed against the deployed environment before it is treated as an operational source. Grafana Cloud is documented as the deployed operational dashboard surface.
 
 Azure Monitor/Application Insights and Log Analytics are the authoritative operational data sources.
 
@@ -128,7 +128,7 @@ exceptions
 
 ## 5. Application Insights — ATLAS custom metrics
 
-The live deployment was verified to emit these ATLAS metrics:
+The documented live verification established that the deployment emitted these ATLAS metrics:
 
 - `atlas.applications.transitions`
 - `atlas.command.duration`
@@ -179,7 +179,7 @@ customMetrics
 | order by Count desc
 ```
 
-During the live M11 scenario, the application lifecycle was successfully exercised:
+During the documented live verification scenario, the application lifecycle was successfully exercised:
 
 - Created: `1`
 - Submitted: `1`
@@ -191,7 +191,7 @@ This confirms the transition telemetry was being emitted by the deployed applica
 
 ## 7. Command duration and performance
 
-The live deployment was verified to emit `atlas.command.duration`.
+The documented live verification established that the deployment emitted `atlas.command.duration`.
 
 Basic command performance query:
 
@@ -315,7 +315,7 @@ dependencies
 
 ## 9. Email telemetry
 
-The live deployment was verified to emit:
+The documented live verification established that the deployment emitted:
 
 - `atlas.email.sends`
 - `atlas.email.duration`
@@ -417,7 +417,7 @@ Use this when the problem appears to be at the Azure resource/platform level rat
 
 ## 12. Alert verification
 
-The M11 alerting setup includes the following alert classes:
+The documented alerting setup includes the following alert classes:
 
 ### Availability — Sev 1
 
@@ -527,7 +527,7 @@ Confirm the configured notification receiver actually receives the alert.
 
 Return the application/metric to normal and confirm the alert changes back to **Resolved**.
 
-The M11 live testing successfully demonstrated the command-latency alert firing and the notification email being received.
+The documented live testing successfully demonstrated the command-latency alert firing and the notification email being received.
 
 ---
 
@@ -628,15 +628,15 @@ AzureDiagnostics
 - The ATLAS Operations Portal is a convenience/overview surface; investigate raw telemetry when diagnosing incidents.
 - The Operations Portal does not manage or suppress alerts.
 - Alerting is detection/notification only.
-- There is no automatic restart, scaling, or incident remediation performed by the M11 alerting system.
+- There is no automatic restart, scaling, or incident remediation performed by the alerting system described in this runbook.
 - The Azure Monitor Workbook is provisioned but remains pending final functional validation.
 - Grafana Cloud is deployed as the operational dashboard surface; Azure Managed Grafana is not required.
 
 ---
 
-## 18. Live M11 verification baseline
+## 18. Historical live verification baseline
 
-The following was confirmed against the live deployment during M11 verification:
+The following was confirmed against the live deployment during the documented M11 verification. These are historical observations, not a guarantee that the current deployed environment remains unchanged:
 
 - ATLAS application lifecycle telemetry was emitted.
 - `atlas.applications.transitions` was observed.

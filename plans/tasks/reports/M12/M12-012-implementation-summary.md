@@ -6,6 +6,8 @@ Complete (automated/component-level validation passes; see Known issues / risks 
 
 ## Implementation summary
 
+**Task specification:** [`plans/tasks/M12/M12-012-revised.md`](../../M12/M12-012-revised.md) is the authoritative revised specification for this implementation. The original `M12-012.md` is retained as historical context.
+
 M12-012 refines the officer application-detail decision workflow so officers can safely and consistently perform Approve, Reject, and Request Information actions, with action-specific input validation and an ATLAS-styled inline confirmation state. Release Assignment remains an immediate, non-destructive action without confirmation.
 
 This implementation is a **minimal revision** of the previous M12-012 work. The earlier approach used a reusable `ConfirmDialog` component built on the native HTML `<dialog>` element. Per the revised task file (`plans/tasks/M12/M12-012-revised.md`), that dialog approach was replaced with an **inline confirmation state rendered inside the existing Officer Decision block** using ordinary Blazor component state and conditional Razor rendering. No JavaScript, JSInterop, browser-native confirmation, modal library, or new UI framework is used for Approve, Reject, or Request Information.

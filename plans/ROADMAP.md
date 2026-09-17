@@ -14,7 +14,7 @@ Usage: Add one badge per item to convey current status.
 
 ## Milestones (Completed)
 
-All milestones M1 through M8 have been implemented and merged as of July 2026.
+Milestones M1 through M8 were implemented and merged as of July 2026. M9 through M12 are documented below as subsequent completed milestones.
 
 | Milestone | Description | Status |
 | --------- | ----------- | ------ |
@@ -100,7 +100,7 @@ All milestones M1 through M8 have been implemented and merged as of July 2026.
 
 ## Milestone 11 — Observability & Operations
 
-**Status**: ![In Progress](https://img.shields.io/badge/status-In%20Progress-blue)
+**Status**: ![Done](https://img.shields.io/badge/status-Done-brightgreen)
 
 **Goal**: Provide production observability, operational dashboards, health monitoring, and actionable Azure Monitor alerting.
 
@@ -116,9 +116,30 @@ All milestones M1 through M8 have been implemented and merged as of July 2026.
 - Operations Portal observability views
 - Operations Workbook definition and deployment
 
-**Remaining:**
+**Validation note:**
 
-- Final functional validation of the Azure Monitor Operations Workbook
+- The M11 documentation records final Operations Workbook functional validation as a remaining item at the time of writing. Confirm the latest live validation record before treating this as an open implementation task.
+
+---
+
+## Milestone 12 — UI Restyling & Usability Improvements
+
+**Status**: ![Done](https://img.shields.io/badge/status-Done-brightgreen)
+
+**Goal**: Improve the visual consistency, clarity, and usability of the existing Citizen, Officer, and Admin experiences without changing the underlying application workflows.
+
+**Implemented:**
+
+- Consistent visual styling across Citizen, Officer, and Admin areas
+- Shared layout and presentation improvements
+- Application-detail and review-page refinements
+- Improved workflow-action presentation
+- Date/time display standardization
+- Removal of redundant or misleading UI elements
+- Officer assignment and decision-action refinements
+- Citizen edit and resubmission layout improvements
+
+M12 did not introduce a new application workflow or replace the existing Information Requested/resubmission process.
 
 ---
 
@@ -150,6 +171,6 @@ All milestones M1 through M8 have been implemented and merged as of July 2026.
 ## References
 
 - **Product Requirements**: `docs/PRDs/atlas-mvp-prd.md`
-- **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-018)
-- **Current Architecture Snapshot**: `docs/architecture/current-state.md`
+- **Architecture Decisions**: `docs/ADRs/` (ADR-001 through ADR-024)
+- **Current Architecture Snapshot**: `docs/architecture/current-state.md` (post-M12)
 - **Future Extension Points**: `docs/design/08-extension-points.md`

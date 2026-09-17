@@ -52,6 +52,10 @@ All diagrams use [Mermaid](https://mermaid.js.org/) syntax for version-controlle
 - **Sequence Diagrams** - Data flow and process interactions
 - **Context Maps** - Bounded context relationships
 
+## Document Status
+
+The diagrams and design descriptions provide architectural and conceptual reference. They should be read together with the current-state architecture document and the ADRs. Where a design document describes future extension points, that content is prospective and should not be interpreted as an implemented feature unless confirmed by the current-state documentation or source code.
+
 ## Related Documentation
 
 - [Product Requirements Document](../PRDs/atlas-mvp-prd.md) - MVP requirements and user stories

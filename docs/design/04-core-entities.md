@@ -1,5 +1,7 @@
 # Core Entities
 
+> **Document status:** This document is an architectural baseline/reference. Verify implementation-specific details against the current code and current-state architecture before treating them as normative deployment or workflow instructions.
+
 ## Overview
 
 This document defines the core entities in the ATLAS domain model. Each entity follows Domain-Driven Design (DDD) principles with a unique identity, encapsulated state, and behavior that enforces business rules.

@@ -50,11 +50,11 @@ After completing a task, the implementation agent creates an implementation summ
 
 The filename uses the task identifier:
 
-`plans/tasks/reports/<TASK-ID>-implementation-summary.md`
+`plans/tasks/reports/<MILESTONE>/<TASK-ID>-implementation-summary.md`
 
 For example:
 
-`plans/tasks/reports/M12-001-implementation-summary.md`
+`plans/tasks/reports/M12/M12-001-implementation-summary.md`
 
 The implementation summary is the formal feedback from the implementation agent to the planning/architecture process.
 
@@ -68,7 +68,7 @@ It records:
 - deviations from the task;
 - remaining issues, risks, or follow-up work.
 
-Use `reports/implementation-summary-template.md` as the starting point for implementation summaries.
+Use `plans/tasks/reports/task-implementation-summary-template.md` as the starting point for implementation summaries.
 
 The implementation summary can be supplied to ChatGPT for implementation review without requiring the full implementation conversation to be reproduced.
 

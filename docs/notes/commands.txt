@@ -16,7 +16,7 @@ az deployment group create   --resource-group atlas-dev-rg --template-file .\inf
 
 ## Azure - Bootstrap / Role Assignments (PowerShell)
 $GitHubClientId = "4226094a-bba0-4cf2-9464-25e22391c158"
-.\infra\bootstrap-revised.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId -Environment dev
+.\infra\bootstrap.ps1 -ResourceGroup atlas-dev-rg -DeploymentName main -GitHubClientId $GitHubClientId -Environment dev
 
  $subscriptionId = az account show --query id --output tsv       
 

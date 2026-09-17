@@ -84,6 +84,8 @@ $AcrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 $StorageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 $KeyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 $CommunicationEmailServiceOwnerRoleId = '09976791-48a7-449e-bb21-39d1a415f350'
+$ReaderRoleId = 'acdd72a7-3385-48ef-bd42-f606fba81ae7'
+$GrafanaAppRegistrationPrefix = 'atlas-grafana'
 
 # --------------------------------------------------------------------------
 # Helper functions
@@ -258,7 +260,7 @@ function Get-GitHubServicePrincipal {
 }
 
 # --------------------------------------------------------------------------
-# Phase 3a – Configure GitHub AcrPush
+# Phase 2 – Configure GitHub AcrPush
 # --------------------------------------------------------------------------
 function Ensure-AcrPushRoleAssignment {
     param(
@@ -268,7 +270,7 @@ function Ensure-AcrPushRoleAssignment {
         [string]$KeyVaultName
     )
 
-    Write-Step "Phase 3a – Configuring AcrPush for $PrincipalName"
+    Write-Step "Phase 2 – Configuring GitHub Actions access"
 
     # ----------------------------------------------------------------------
     # GitHub Actions -> Key Vault Secrets User
@@ -349,14 +351,14 @@ function Ensure-AcrPushRoleAssignment {
 }
 
 # --------------------------------------------------------------------------
-# Phase 3b – Configure Developer Storage Access
+# Phase 2 – Configure Developer Storage Access
 # --------------------------------------------------------------------------
 function Ensure-DeveloperStorageAccess {
     param(
         [string]$StorageAccountResourceId
     )
 
-    Write-Step "Phase 3b – Configuring developer Blob Storage access"
+    Write-Step "Phase 2 – Configuring developer Blob Storage access"
 
     $currentUser = az ad signed-in-user show --output json | ConvertFrom-Json
 
@@ -391,7 +393,7 @@ function Ensure-DeveloperStorageAccess {
 }
 
 # --------------------------------------------------------------------------
-# Phase 3c – Configure Azure Communication Services permissions
+# Phase 2 – Configure Azure Communication Services permissions
 # --------------------------------------------------------------------------
 function Ensure-AcsPermissions {
     param(
@@ -405,7 +407,7 @@ function Ensure-AcsPermissions {
         [string]$BlazorPrincipalId
     )
 
-    Write-Step "Phase 3c – Configuring Azure Communication Services permissions"
+    Write-Step "Phase 2 – Configuring Azure Communication Services permissions"
 
     foreach ($app in @(
         [PSCustomObject]@{
@@ -453,7 +455,118 @@ function Ensure-AcsPermissions {
 }
 
 # --------------------------------------------------------------------------
-# Phase 4a – Verify Managed Identities
+# Phase 2 – Configure Grafana Entra Application Reader access
+# --------------------------------------------------------------------------
+
+function Ensure-GrafanaReaderAccess {
+    param(
+        [Parameter(Mandatory)]
+        [string]$ResourceGroup,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('dev', 'test', 'prod')]
+        [string]$Environment
+    )
+
+    Write-Step "Phase 2 – Configuring Grafana Reader access"
+
+    $appRegistrationName = "$GrafanaAppRegistrationPrefix-$Environment"
+
+    # ----------------------------------------------------------------------
+    # Resolve the Entra application registration
+    # ----------------------------------------------------------------------
+
+    $apps = az ad app list `
+        --display-name $appRegistrationName `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True `
+        ($null -ne $apps -and @($apps).Count -eq 1) `
+        "Expected exactly one Entra application registration named '$appRegistrationName'."
+
+    $app = @($apps)[0]
+
+    Assert-True `
+        (-not [string]::IsNullOrWhiteSpace($app.appId)) `
+        "Entra application '$appRegistrationName' has no Application (client) ID."
+
+    Write-Pass "Grafana Entra application resolved: $appRegistrationName"
+
+    # ----------------------------------------------------------------------
+    # Resolve the corresponding service principal
+    # ----------------------------------------------------------------------
+
+    $grafanaSp = az ad sp show `
+        --id $app.appId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True `
+        ($null -ne $grafanaSp -and -not [string]::IsNullOrWhiteSpace($grafanaSp.id)) `
+        "Service principal for Entra application '$appRegistrationName' could not be resolved."
+
+    Write-Pass "Grafana service principal resolved (Object ID: $($grafanaSp.id))"
+
+    # ----------------------------------------------------------------------
+    # Resolve the actual resource-group scope
+    # ----------------------------------------------------------------------
+
+    $resourceGroupId = az group show `
+        --name $ResourceGroup `
+        --query id `
+        --output tsv 2>$null
+
+    Assert-True `
+        (-not [string]::IsNullOrWhiteSpace($resourceGroupId)) `
+        "Resource group '$ResourceGroup' could not be resolved."
+
+    # ----------------------------------------------------------------------
+    # Check existing Reader assignment
+    # ----------------------------------------------------------------------
+
+    $existing = az role assignment list `
+        --assignee-object-id $grafanaSp.id `
+        --scope $resourceGroupId `
+        --role $ReaderRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if ($null -ne $existing -and @($existing).Count -gt 0) {
+        Write-Pass "$appRegistrationName already has Reader on $ResourceGroup"
+        return
+    }
+
+    # ----------------------------------------------------------------------
+    # Create Reader assignment
+    # ----------------------------------------------------------------------
+
+    az role assignment create `
+        --assignee-object-id $grafanaSp.id `
+        --assignee-principal-type ServicePrincipal `
+        --role $ReaderRoleId `
+        --scope $resourceGroupId `
+        --output none
+
+    Assert-True ($LASTEXITCODE -eq 0) `
+        "Failed to assign Reader to $appRegistrationName on $ResourceGroup."
+
+    # ----------------------------------------------------------------------
+    # Immediate verification
+    # ----------------------------------------------------------------------
+
+    $verify = az role assignment list `
+        --assignee-object-id $grafanaSp.id `
+        --scope $resourceGroupId `
+        --role $ReaderRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    Assert-True `
+        ($null -ne $verify -and @($verify).Count -gt 0) `
+        "Reader role assignment for $appRegistrationName could not be verified."
+
+    Write-Pass "$appRegistrationName granted Reader on $ResourceGroup"
+}
+
+# --------------------------------------------------------------------------
+# Phase 3 – Verify Managed Identities
 # --------------------------------------------------------------------------
 function Verify-ManagedIdentities {
     param(
@@ -461,7 +574,7 @@ function Verify-ManagedIdentities {
         [string]$BlazorAppName
     )
 
-    Write-Step "Phase 4a – Verifying Managed Identities"
+    Write-Step "Phase 3 – Verifying App Service managed identities"
 
     foreach ($appName in @($ApiAppName, $BlazorAppName)) {
         $app = az webapp show `
@@ -480,7 +593,7 @@ function Verify-ManagedIdentities {
 }
 
 # --------------------------------------------------------------------------
-# Phase 4b – Configure App Service ACR Pull Authentication
+# Phase 3 – Configure App Service ACR Pull Authentication
 # --------------------------------------------------------------------------
 function Ensure-AppServiceAcrPullConfiguration {
     param(
@@ -488,7 +601,7 @@ function Ensure-AppServiceAcrPullConfiguration {
         [string]$BlazorAppName
     )
 
-    Write-Step "Phase 4b – Configuring App Service ACR pull authentication"
+    Write-Step "Phase 3 – Configuring App Service ACR pull authentication"
 
     foreach ($appName in @($ApiAppName, $BlazorAppName)) {
         az webapp config set `
@@ -518,7 +631,7 @@ function Ensure-AppServiceAcrPullConfiguration {
 }
 
 # --------------------------------------------------------------------------
-# Phase 5 – Configure and Verify ACR Permissions
+# Phase 4 – Configure and Verify ACR Permissions
 # --------------------------------------------------------------------------
 function Verify-AcrPermissions {
     param(
@@ -528,7 +641,7 @@ function Verify-AcrPermissions {
         [string]$BlazorPrincipalId
     )
 
-    Write-Step "Phase 5 – Verifying ACR permissions"
+    Write-Step "Phase 4 – Verifying ACR permissions"
 
     # GitHub AcrPush
     $ghPush = az role assignment list `
@@ -598,7 +711,7 @@ function Verify-AcrPermissions {
 }
 
 # --------------------------------------------------------------------------
-# Phase 6 – Verify Key Vault Integration
+# Phase 4 – Verify Key Vault Integration
 # --------------------------------------------------------------------------
 function Verify-KeyVaultIntegration {
     param(
@@ -608,7 +721,7 @@ function Verify-KeyVaultIntegration {
         [string]$BlazorPrincipalId
     )
 
-    Write-Step "Phase 6 – Verifying Key Vault integration"
+    Write-Step "Phase 4 – Verifying Key Vault integration"
 
     # Key Vault exists and uses RBAC authorization
     $vault = az keyvault show `
@@ -687,7 +800,7 @@ function Verify-KeyVaultIntegration {
 }
 
 # --------------------------------------------------------------------------
-# Phase 7 – Verify Storage Managed Identity Integration
+# Phase 4 – Verify Storage Managed Identity Integration
 # --------------------------------------------------------------------------
 function Verify-StorageManagedIdentity {
     param(
@@ -696,7 +809,7 @@ function Verify-StorageManagedIdentity {
         [string]$BlazorPrincipalId
     )
 
-    Write-Step "Phase 7 – Verifying Storage Managed Identity integration"
+    Write-Step "Phase 4 – Verifying Storage Managed Identity integration"
 
     # API App Service -> Storage Blob Data Contributor
     $apiRole = az role assignment list `
@@ -724,7 +837,7 @@ function Verify-StorageManagedIdentity {
 }
 
 # --------------------------------------------------------------------------
-# Phase 8a – Configure Azure Communication Services sender address
+# Phase 3 – Configure Azure Communication Services sender address
 # --------------------------------------------------------------------------
 function Configure-AcsSenderAddress {
     param(
@@ -741,7 +854,7 @@ function Configure-AcsSenderAddress {
         [string]$BlazorAppName
     )
 
-    Write-Step "Configuring Azure Communication Services sender address"
+    Write-Step "Phase 3 – Configuring Azure Communication Services sender address"
 
     #
     # Resolve the Azure-managed sender domain
@@ -790,31 +903,86 @@ function Configure-AcsSenderAddress {
             [string]$AppName
         )
 
-        $currentSender = az webapp config appsettings list `
-            --resource-group $ResourceGroup `
-            --name $AppName `
-            --query "[?name=='Email__Acs__SenderAddress'].value | [0]" `
-            -o tsv
+        $maxAttempts = 5
+        $retryDelaySeconds = 5
 
-        if ($currentSender -eq $senderAddress) {
-            Write-Pass "$AppName already configured."
-            return
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+
+            Write-Host "Configuring sender address on $AppName (attempt $attempt/$maxAttempts)..."
+
+            az webapp config appsettings set `
+                --resource-group $ResourceGroup `
+                --name $AppName `
+                --settings "Email__Acs__SenderAddress=$senderAddress" `
+                --only-show-errors | Out-Null
+
+            if ($LASTEXITCODE -ne 0) {
+                if ($attempt -eq $maxAttempts) {
+                    Write-Fail "$AppName failed to update Email__Acs__SenderAddress."
+                    exit $EXIT_INFRASTRUCTURE
+                }
+
+                Start-Sleep -Seconds $retryDelaySeconds
+                continue
+            }
+
+            # Read the value back from Azure and verify that the setting
+            # is actually present before continuing.
+            $verifiedSender = az webapp config appsettings list `
+                --resource-group $ResourceGroup `
+                --name $AppName `
+                --query "[?name=='Email__Acs__SenderAddress'].value | [0]" `
+                -o tsv `
+                --only-show-errors
+
+            if ($LASTEXITCODE -eq 0 -and $verifiedSender -eq $senderAddress) {
+                Write-Pass "$AppName sender address configured."
+                break
+            }
+
+            if ($attempt -eq $maxAttempts) {
+                Write-Fail "$AppName sender address could not be verified after $maxAttempts attempts."
+                exit $EXIT_INFRASTRUCTURE
+            }
+
+            Start-Sleep -Seconds $retryDelaySeconds
         }
 
-        az webapp config appsettings set `
-            --resource-group $ResourceGroup `
-            --name $AppName `
-            --settings Email__Acs__SenderAddress="$senderAddress" `
-            --only-show-errors | Out-Null
-
-        Write-Pass "$AppName updated."
-
+        # Restart only after the setting has definitely been confirmed.
         az webapp restart `
             --resource-group $ResourceGroup `
             --name $AppName `
             --only-show-errors | Out-Null
 
+        if ($LASTEXITCODE -ne 0) {
+            Write-Fail "$AppName restart failed."
+            exit $EXIT_INFRASTRUCTURE
+        }
+
         Write-Pass "$AppName restarted."
+
+        # Verify once more after restart.
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+
+            $verifiedSender = az webapp config appsettings list `
+                --resource-group $ResourceGroup `
+                --name $AppName `
+                --query "[?name=='Email__Acs__SenderAddress'].value | [0]" `
+                -o tsv `
+                --only-show-errors
+
+            if ($LASTEXITCODE -eq 0 -and $verifiedSender -eq $senderAddress) {
+                Write-Pass "$AppName sender address verified after restart."
+                return
+            }
+
+            if ($attempt -lt $maxAttempts) {
+                Start-Sleep -Seconds $retryDelaySeconds
+            }
+        }
+
+        Write-Fail "$AppName sender address verification failed after restart."
+        exit $EXIT_INFRASTRUCTURE
     }
 
     #
@@ -825,7 +993,7 @@ function Configure-AcsSenderAddress {
 }
 
 # --------------------------------------------------------------------------
-# Phase 8b – Verify App Service Configuration
+# Phase 3 – Verify App Service Configuration
 # --------------------------------------------------------------------------
 function Verify-AppServiceConfiguration {
     param(
@@ -834,17 +1002,23 @@ function Verify-AppServiceConfiguration {
         [string]$KeyVaultName
     )
 
-    Write-Step "Phase 8 - Verifying App Service configuration"
+    Write-Step "Phase 3 – Verifying App Service configuration"
 
     foreach ($appName in @($ApiAppName, $BlazorAppName)) {
 
-        $settings = az webapp config appsettings list `
+        $settingsJson = az webapp config appsettings list `
             --name $appName `
             --resource-group $ResourceGroup `
-            --output json 2>$null | ConvertFrom-Json
+            --output json `
+            --only-show-errors
+
+        Assert-True ($LASTEXITCODE -eq 0) `
+            "Unable to read App Service settings for '$appName'."
+
+        $settings = $settingsJson | ConvertFrom-Json
 
         Assert-True ($null -ne $settings) `
-            "Unable to read App Service settings for '$appName'."
+            "Unable to parse App Service settings for '$appName'."
 
         $settingMap = @{}
 
@@ -906,7 +1080,7 @@ function Verify-AppServiceConfiguration {
 }
 
 # --------------------------------------------------------------------------
-# Phase 9 – Verify SQL
+# Phase 4 – Verify SQL
 # --------------------------------------------------------------------------
 function Verify-SqlInfrastructure {
     param(
@@ -914,7 +1088,7 @@ function Verify-SqlInfrastructure {
         [string]$SqlDatabaseName
     )
 
-    Write-Step "Phase 9 – Verifying SQL infrastructure"
+    Write-Step "Phase 4 – Verifying SQL infrastructure"
 
     # SQL Server exists
     $server = az sql server show `
@@ -950,7 +1124,7 @@ function Verify-SqlInfrastructure {
 }
 
 # --------------------------------------------------------------------------
-# Phase 10 – Verify Infrastructure Resources
+# Phase 4 – Verify Infrastructure Resources
 # --------------------------------------------------------------------------
 function Verify-InfrastructureResources {
     param(
@@ -968,11 +1142,7 @@ function Verify-InfrastructureResources {
         [string]$CommunicationEmailServiceName
     )
 
-    Write-Step "Phase 10 – Verifying infrastructure resources"
-
-    Write-Host "Resource Group : $ResourceGroup"
-    Write-Host "CommunicationServiceName : $CommunicationServiceName"
-    Write-Host "CommunicationEmailServiceName : $CommunicationEmailServiceName"
+    Write-Step "Phase 4 – Verifying core infrastructure resources" 
 
     $results = @()
 
@@ -1098,6 +1268,9 @@ function Verify-InfrastructureResources {
             Write-Fail "$($r.Name) – $($r.Detail)"
             $allPassed = $false
         }
+        else {
+            Write-Pass "$($r.Name) – $($r.Detail)"
+        }
     }
 
     if (-not $allPassed) {
@@ -1108,7 +1281,7 @@ function Verify-InfrastructureResources {
 }
 
 # --------------------------------------------------------------------------
-# Phase 11 – Verify Azure Monitor Integration (O2)
+# Phase 5 – Verify Azure Monitor Integration (O2)
 # --------------------------------------------------------------------------
 function Verify-AzureMonitorIntegration {
     param(
@@ -1125,10 +1298,12 @@ function Verify-AzureMonitorIntegration {
         [string]$SqlDatabaseName,
         [string]$StorageAccountName,
         [string]$KeyVaultName,
-        [string]$CommunicationServiceName
+        [string]$CommunicationServiceName,
+        [string]$CommunicationServiceResourceId,
+        [string]$Environment
     )
 
-    Write-Step "Phase 11 – Verifying Azure Monitor integration (O2)"
+    Write-Step "Phase 5 – Verifying Azure Monitor integration (O2)"
 
     $subscriptionId = az account show --query id --output tsv
     $results = @()
@@ -1236,51 +1411,53 @@ function Verify-AzureMonitorIntegration {
 
     Write-Pass "ACS diagnostic setting 'Email_Logs' verified with required email categories"
 
-    # --- Managed Grafana ---
-    $grafana = az resource show `
-        --resource-group $ResourceGroup `
-        --resource-type "Microsoft.Dashboard/grafana" `
-        --name $GrafanaName `
-        --output json 2>$null | ConvertFrom-Json
-
-    $grafanaExists = $null -ne $grafana -and $grafana.properties.provisioningState -eq "Succeeded"
-
-    $results += [PSCustomObject]@{
-        Name   = "Managed Grafana provisioned"
-        Status = $grafanaExists
-        Detail = if ($grafanaExists) { $GrafanaName } else { "$GrafanaName not Succeeded" }
-    }
-
-    # --- Grafana managed identity + RBAC ---
-    $grafanaIdentityOk = $false
-    if ($grafanaExists -and -not [string]::IsNullOrWhiteSpace($GrafanaPrincipalId)) {
-        # Monitoring Reader on the resource group grants metric/list access.
-        $monitoringReaderDefId = "43d0d8ad-25c7-4714-9337-8ba259a9fe05"
-        $assignments = az role assignment list `
-            --assignee $GrafanaPrincipalId `
+    if ($Environment -ne 'dev') {
+        # --- Managed Grafana ---
+        $grafana = az resource show `
             --resource-group $ResourceGroup `
+            --resource-type "Microsoft.Dashboard/grafana" `
+            --name $GrafanaName `
             --output json 2>$null | ConvertFrom-Json
 
-        $grafanaIdentityOk = ($assignments | Where-Object {
-            $_.roleDefinitionId -like "*$monitoringReaderDefId"
-        }) -ne $null
+        $grafanaExists = $null -ne $grafana -and $grafana.properties.provisioningState -eq "Succeeded"
 
-        # Log Analytics Reader on the workspace grants KQL query access.
-        $laReaderDefId = "73c42c96-874c-492b-b04d-ab87d138a893"
-        $laAssignments = az role assignment list `
-            --assignee $GrafanaPrincipalId `
-            --scope $LogAnalyticsWorkspaceId `
-            --output json 2>$null | ConvertFrom-Json
+        $results += [PSCustomObject]@{
+            Name   = "Managed Grafana provisioned"
+            Status = $grafanaExists
+            Detail = if ($grafanaExists) { $GrafanaName } else { "$GrafanaName not Succeeded" }
+        }
 
-        $grafanaIdentityOk = $grafanaIdentityOk -and (($laAssignments | Where-Object {
-            $_.roleDefinitionId -like "*$laReaderDefId"
-        }) -ne $null)
-    }
+        # --- Grafana managed identity + RBAC ---
+        $grafanaIdentityOk = $false
+        if ($grafanaExists -and -not [string]::IsNullOrWhiteSpace($GrafanaPrincipalId)) {
+            # Monitoring Reader on the resource group grants metric/list access.
+            $monitoringReaderDefId = "43d0d8ad-25c7-4714-9337-8ba259a9fe05"
+            $assignments = az role assignment list `
+                --assignee $GrafanaPrincipalId `
+                --resource-group $ResourceGroup `
+                --output json 2>$null | ConvertFrom-Json
 
-    $results += [PSCustomObject]@{
-        Name   = "Managed Grafana RBAC"
-        Status = $grafanaIdentityOk
-        Detail = if ($grafanaIdentityOk) { "Monitoring Reader + Log Analytics Reader assigned" } else { "expected role assignments missing" }
+            $grafanaIdentityOk = ($assignments | Where-Object {
+                $_.roleDefinitionId -like "*$monitoringReaderDefId"
+            }) -ne $null
+
+            # Log Analytics Reader on the workspace grants KQL query access.
+            $laReaderDefId = "73c42c96-874c-492b-b04d-ab87d138a893"
+            $laAssignments = az role assignment list `
+                --assignee $GrafanaPrincipalId `
+                --scope $LogAnalyticsWorkspaceId `
+                --output json 2>$null | ConvertFrom-Json
+
+            $grafanaIdentityOk = $grafanaIdentityOk -and (($laAssignments | Where-Object {
+                $_.roleDefinitionId -like "*$laReaderDefId"
+            }) -ne $null)
+        }
+
+        $results += [PSCustomObject]@{
+            Name   = "Managed Grafana RBAC"
+            Status = $grafanaIdentityOk
+            Detail = if ($grafanaIdentityOk) { "Monitoring Reader + Log Analytics Reader assigned" } else { "expected role assignments missing" }
+        }
     }
 
     # Report failures immediately (consistent with Phase 10 behavior).
@@ -1303,7 +1480,7 @@ function Verify-AzureMonitorIntegration {
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Phase 11b - Provision & Verify O6 Visualization Resources
+# Phase 6 - Provision & Verify O6 Visualization Resources
 #              (Workbook verified via ARM; Grafana dashboard provisioned and
 #               verified via the Managed Grafana dashboard API)
 #
@@ -1392,117 +1569,149 @@ function Invoke-GrafanaDashboardProvisioning {
     return $response.uid
 }
 
-function Verify-O6Visualization {
+function Provision-O6GrafanaDashboard {
     param(
-        [string]$ResourceGroup,
-        [string]$OperationsWorkbookName,
         [string]$GrafanaName,
         [string]$GrafanaEndpoint,
         [string]$GrafanaResourceId,
         [string]$LogAnalyticsWorkspaceId,
-        [string]$DashboardJsonPath,
-        [string]$ExpectedDashboardUid = 'atlas-operations'
+        [string]$DashboardJsonPath
     )
 
-    Write-Step "Phase 11b - Verifying O6 visualization resources (Workbook + Grafana dashboard)"
+    Write-Step "Phase 6 – Provisioning Grafana Operations Dashboard"
+
+    $grafanaEditorRoleId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+    $currentUser = az ad signed-in-user show --output json 2>$null | ConvertFrom-Json
+    if ($null -eq $currentUser -or [string]::IsNullOrWhiteSpace($currentUser.id)) {
+        Write-Fail "Grafana bootstrap identity RBAC: could not determine the current Azure CLI identity."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    $editorAssignments = az role assignment list `
+        --assignee-object-id $currentUser.id `
+        --scope $GrafanaResourceId `
+        --role $grafanaEditorRoleId `
+        --output json 2>$null | ConvertFrom-Json
+
+    if (@($editorAssignments).Count -eq 0) {
+        Write-Fail "Grafana bootstrap identity RBAC: current Azure CLI user does not have Grafana Editor on $GrafanaName."
+        exit $EXIT_INFRASTRUCTURE
+    }
+
+    Write-Pass "Grafana bootstrap identity RBAC - current Azure CLI user has Grafana Editor on $GrafanaName"
+
+    $uid = Invoke-GrafanaDashboardProvisioning `
+        -GrafanaEndpoint $GrafanaEndpoint `
+        -WorkspaceId $LogAnalyticsWorkspaceId `
+        -DashboardJsonPath $DashboardJsonPath
+
+    Write-Pass "Grafana Operations Dashboard provisioned - $uid"
+    return $uid
+}
+
+function Verify-O6Visualization {
+    param(
+        [string]$ResourceGroup,
+        [string]$OperationsWorkbookName,     
+        [string]$ApplicationInsightsName,   
+        [string]$GrafanaName,
+        [string]$GrafanaEndpoint,
+        [string]$GrafanaResourceId,
+        [string]$Environment,
+        [string]$ExpectedDashboardUid = 'atlas-operations'        
+    )
+
+    Write-Step "Phase 6 – Verifying O6 visualization resources"
 
     $results = @()
 
-    # --- ATLAS Operations Workbook exists with expected display name ---
+    # --- Operations Workbook: ALWAYS verify ---
     $workbook = az resource show `
         --resource-group $ResourceGroup `
         --resource-type "Microsoft.Insights/workbooks" `
         --name $OperationsWorkbookName `
         --output json 2>$null | ConvertFrom-Json
 
-    $workbookOk = $null -ne $workbook -and $workbook.properties.displayName -eq "ATLAS Operations"
+    $subscriptionId = az account show --query id --output tsv 2>$null
+
+    $expectedApplicationInsightsResourceId =
+        "/subscriptions/$subscriptionId/resourceGroups/$ResourceGroup/providers/Microsoft.Insights/components/$ApplicationInsightsName"
+
+    $workbookOk =
+        $null -ne $workbook -and
+        $workbook.properties.displayName -eq "ATLAS Operations" -and
+        $workbook.properties.sourceId -eq $expectedApplicationInsightsResourceId
 
     $results += [PSCustomObject]@{
         Name   = "Operations Workbook"
         Status = $workbookOk
-        Detail = if ($workbookOk) { "ATLAS Operations" } else { "$OperationsWorkbookName missing or wrong display name" }
-    }
+        Detail = if ($workbookOk) {
+            "ATLAS Operations -> $expectedApplicationInsightsResourceId"
+        }
+        else {
+            if ($null -eq $workbook) {
+                "$OperationsWorkbookName missing"
+            }
+            elseif ($workbook.properties.displayName -ne "ATLAS Operations") {
+                "wrong display name"
+            }
+            else {
+                "wrong or missing sourceId: '$($workbook.properties.sourceId)'"
+            }
+        }
+    }    
 
-    # ----------------------------------------------------------------------
-    # Grafana RBAC preflight: the dashboard is provisioned via the Managed
-    # Grafana data-plane API using the signed-in Azure CLI user's identity,
-    # which must have Grafana Editor on the Grafana resource. Verify BEFORE
-    # attempting the API call so a missing prerequisite fails clearly instead
-    # of surfacing as an opaque HTTP 403.
-    # ----------------------------------------------------------------------
-    $grafanaEditorRoleId = 'a79a5197-3a5c-4973-a920-486035ffd60f'
+    # --- Managed Grafana: test/prod only ---
+    if ($Environment -ne 'dev') {
+        $grafanaExists = az resource show `
+            --resource-group $ResourceGroup `
+            --resource-type "Microsoft.Dashboard/grafana" `
+            --name $GrafanaName `
+            --output json 2>$null | ConvertFrom-Json
 
-    # 1. Current signed-in identity's Microsoft Entra object ID.
-    $currentUser = az ad signed-in-user show --output json 2>$null | ConvertFrom-Json
-    if ($null -eq $currentUser -or [string]::IsNullOrWhiteSpace($currentUser.id)) {
-        Write-Fail "Grafana bootstrap identity RBAC: could not determine the current Azure CLI identity."
-        exit $EXIT_INFRASTRUCTURE
-    }
-    $currentPrincipalId = $currentUser.id
+        $grafanaOk = $null -ne $grafanaExists
 
-    # 2. The principal must have Grafana Editor scoped to the exact Grafana resource.
-    # (The deployment assigns Grafana Editor to the signed-in user automatically;
-    # this check confirms it is present before provisioning.)
-    $editorAssignments = az role assignment list `
-        --assignee-object-id $currentPrincipalId `
-        --scope $GrafanaResourceId `
-        --role $grafanaEditorRoleId `
-        --output json 2>$null | ConvertFrom-Json
+        $results += [PSCustomObject]@{
+            Name   = "Managed Grafana"
+            Status = $grafanaOk
+            Detail = if ($grafanaOk) { $GrafanaName } else { "$GrafanaName missing" }
+        }
 
-    $rbacOk = @($editorAssignments).Count -gt 0
+        $token = az account get-access-token `
+            --resource https://dashboard.azure.com `
+            --query accessToken --output tsv
 
-    $results += [PSCustomObject]@{
-        Name   = "Grafana bootstrap identity RBAC"
-        Status = $rbacOk
-        Detail = if ($rbacOk) { "current Azure CLI user has Grafana Editor on $GrafanaName" } else { "current Azure CLI user does not have Grafana Editor on $GrafanaName" }
-    }
+        if ([string]::IsNullOrWhiteSpace($token)) {
+            Write-Fail "Grafana authentication failed during verification."
+            exit $EXIT_INFRASTRUCTURE
+        }
 
-    if (-not $rbacOk) {
-        Write-Fail "$($results[-1].Name) - $($results[-1].Detail)"
-        exit $EXIT_INFRASTRUCTURE
-    }
+        try {
+            $fetched = Invoke-RestMethod `
+                -Method Get `
+                -Uri "$($GrafanaEndpoint.TrimEnd('/'))/api/dashboards/uid/$ExpectedDashboardUid" `
+                -Headers @{ Authorization = "Bearer $token" } `
+                -ErrorAction Stop
+        }
+        catch {
+            Write-Fail "Grafana dashboard verification failed (dashboard could not be retrieved)."
+            exit $EXIT_INFRASTRUCTURE
+        }
 
-    Write-Pass "$($results[-1].Name) - $($results[-1].Detail)"
+        $dashboardOk =
+            ($null -ne $fetched) -and
+            ($fetched.dashboard.uid -eq $ExpectedDashboardUid) -and
+            (@($fetched.dashboard.panels).Count -gt 0)
 
-    # --- Grafana dashboard: provision (idempotent create/update), then verify ---
-    $uid = Invoke-GrafanaDashboardProvisioning `
-        -GrafanaEndpoint $GrafanaEndpoint `
-        -WorkspaceId $LogAnalyticsWorkspaceId `
-        -DashboardJsonPath $DashboardJsonPath
-
-    # Verification: fetch the dashboard back through the API and confirm it is
-    # present, has the expected identity, and contains a non-empty definition.
-    $token = az account get-access-token `
-        --resource https://dashboard.azure.com `
-        --query accessToken --output tsv
-
-    if ([string]::IsNullOrWhiteSpace($token)) {
-        Write-Fail "Grafana authentication failed during verification."
-        exit $EXIT_INFRASTRUCTURE
-    }
-
-    try {
-        $fetched = Invoke-RestMethod `
-            -Method Get `
-            -Uri "$($GrafanaEndpoint.TrimEnd('/'))/api/dashboards/uid/$uid" `
-            -Headers @{ Authorization = "Bearer $token" } `
-            -ErrorAction Stop
-    }
-    catch {
-        Write-Fail "Grafana dashboard verification failed (dashboard could not be retrieved)."
-        exit $EXIT_INFRASTRUCTURE
-    }
-
-    $dashboardOk =
-        ($null -ne $fetched) -and
-        ($fetched.dashboard.uid -eq $ExpectedDashboardUid) -and
-        (-not [string]::IsNullOrWhiteSpace(($fetched.dashboard | ConvertTo-Json -Depth 10))) -and
-        (@($fetched.dashboard.panels).Count -gt 0)
-
-    $results += [PSCustomObject]@{
-        Name   = "Grafana Operations Dashboard"
-        Status = $dashboardOk
-        Detail = if ($dashboardOk) { "$ExpectedDashboardUid provisioned and verified at $($GrafanaEndpoint.TrimEnd('/'))" } else { "verification failed after provisioning" }
+        $results += [PSCustomObject]@{
+            Name   = "Grafana Operations Dashboard"
+            Status = $dashboardOk
+            Detail = if ($dashboardOk) {
+                "$ExpectedDashboardUid provisioned and verified at $($GrafanaEndpoint.TrimEnd('/'))"
+            } else {
+                "verification failed"
+            }
+        }
     }
 
     $allPassed = $true
@@ -1523,7 +1732,7 @@ function Verify-O6Visualization {
 }
 
 # --------------------------------------------------------------------------
-# Phase 11c - Provision availability metric alerts
+# Phase 7 – Provision availability metric alerts
 # --------------------------------------------------------------------------
 function Ensure-AvailabilityMetricAlerts {
     param(
@@ -1534,7 +1743,7 @@ function Ensure-AvailabilityMetricAlerts {
         [string]$BlazorAppServiceName
     )
 
-    Write-Step "Phase 11c - Provisioning availability metric alerts"
+    Write-Step "Phase 7 – Provisioning availability metric alerts"
 
     $subscriptionId = az account show --query id --output tsv 2>$null
 
@@ -1632,7 +1841,7 @@ function Ensure-AvailabilityMetricAlerts {
 }
 
 # --------------------------------------------------------------------------
-# Phase 11c - Verify O7 Alerting (Action Group + alert rules)
+# Phase 7 – Verify O7 Alerting (Action Group + alert rules)
 # --------------------------------------------------------------------------
 function Verify-O7Alerting {
     param(
@@ -1641,7 +1850,7 @@ function Verify-O7Alerting {
         [array]$ExpectedAlerts
     )
 
-    Write-Step "Phase 11c - Verifying O7 alerting resources"
+    Write-Step "Phase 7 – Verifying O7 alerting resources"
 
     $results = @()
 
@@ -1791,7 +2000,7 @@ function Verify-O7Alerting {
 
     return $results
 }
-# Phase 12 – Write Summary
+# Phase 8 – Write Summary
 # --------------------------------------------------------------------------
 function Write-Summary {
     param(
@@ -1850,7 +2059,7 @@ function Write-Summary {
 
 # ==========================================================================
 # Main
-# ==========================================================================
+# ========================================================================== 
 Write-Host "ATLAS Infrastructure Bootstrap" -ForegroundColor Cyan
 Write-Host "Resource Group : $ResourceGroup"
 Write-Host "Deployment     : $DeploymentName"
@@ -1861,78 +2070,61 @@ Write-Host ""
 Assert-AzureCliInstalled
 Assert-AzureLogin
 
-# Phase 1
+# Phase 1 – Deployment
 $outputs = Get-DeploymentOutputs -ResourceGroup $ResourceGroup -DeploymentName $DeploymentName
 
-# Phase 2
+# Phase 2 – Access & RBAC
 $githubSp = Get-GitHubServicePrincipal -ClientId $GitHubClientId
-
-# Phase 3a
 Ensure-AcrPushRoleAssignment `
     -PrincipalId $githubSp.id `
     -Scope $outputs.containerRegistryResourceId `
     -PrincipalName "GitHub Actions" `
     -KeyVaultName $outputs.keyVaultName
-
-# Phase 3b
 Ensure-DeveloperStorageAccess `
-    -StorageAccountResourceId $outputs.storageAccountResourceId    
-
-# Phase 3c
+    -StorageAccountResourceId $outputs.storageAccountResourceId
 Ensure-AcsPermissions `
     -CommunicationServiceResourceId $outputs.communicationServiceResourceId `
     -ApiPrincipalId $outputs.apiPrincipalId `
-    -BlazorPrincipalId $outputs.blazorPrincipalId    
+    -BlazorPrincipalId $outputs.blazorPrincipalId
+Ensure-GrafanaReaderAccess `
+    -ResourceGroup $ResourceGroup `
+    -Environment $Environment    
 
-# Phase 4a
+# Phase 3 – App Services
 Verify-ManagedIdentities `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName
-
-# Phase 4b
 Ensure-AppServiceAcrPullConfiguration `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName
-
-# Phase 5
-Verify-AcrPermissions `
-    -AcrResourceId $outputs.containerRegistryResourceId `
-    -GitHubPrincipalId $githubSp.id `
-    -ApiPrincipalId $outputs.apiPrincipalId `
-    -BlazorPrincipalId $outputs.blazorPrincipalId
-
-# Phase 6
-Verify-KeyVaultIntegration `
-    -KeyVaultName $outputs.keyVaultName `
-    -GitHubPrincipalId $githubSp.id `
-    -ApiPrincipalId $outputs.apiPrincipalId `
-    -BlazorPrincipalId $outputs.blazorPrincipalId
-
-# Phase 7
-Verify-StorageManagedIdentity `
-    -StorageAccountResourceId $outputs.storageAccountResourceId `
-    -ApiPrincipalId $outputs.apiPrincipalId `
-    -BlazorPrincipalId $outputs.blazorPrincipalId
-
-# Phase 8a
 Configure-AcsSenderAddress `
     -ResourceGroup $ResourceGroup `
     -EmailServiceName $outputs.communicationEmailServiceName `
     -ApiAppName $outputs.apiAppServiceName `
-    -BlazorAppName $outputs.blazorAppServiceName    
-
-# Phase 8b
+    -BlazorAppName $outputs.blazorAppServiceName
 Verify-AppServiceConfiguration `
     -ApiAppName $outputs.apiAppServiceName `
     -BlazorAppName $outputs.blazorAppServiceName `
     -KeyVaultName $outputs.keyVaultName
 
-# Phase 9
+# Phase 4 – Core Infrastructure
+Verify-AcrPermissions `
+    -AcrResourceId $outputs.containerRegistryResourceId `
+    -GitHubPrincipalId $githubSp.id `
+    -ApiPrincipalId $outputs.apiPrincipalId `
+    -BlazorPrincipalId $outputs.blazorPrincipalId
+Verify-KeyVaultIntegration `
+    -KeyVaultName $outputs.keyVaultName `
+    -GitHubPrincipalId $githubSp.id `
+    -ApiPrincipalId $outputs.apiPrincipalId `
+    -BlazorPrincipalId $outputs.blazorPrincipalId
+Verify-StorageManagedIdentity `
+    -StorageAccountResourceId $outputs.storageAccountResourceId `
+    -ApiPrincipalId $outputs.apiPrincipalId `
+    -BlazorPrincipalId $outputs.blazorPrincipalId
 Verify-SqlInfrastructure `
     -SqlServerName $outputs.sqlServerName `
     -SqlDatabaseName $outputs.sqlDatabaseName
-
-# Phase 10
 $infraResults = Verify-InfrastructureResources `
     -ContainerRegistryName $outputs.containerRegistryName `
     -AppServicePlanName $outputs.appServicePlanName `
@@ -1947,7 +2139,7 @@ $infraResults = Verify-InfrastructureResources `
     -CommunicationServiceName $outputs.communicationServiceName `
     -CommunicationEmailServiceName $outputs.communicationEmailServiceName
 
-# Phase 11 (O2 – Azure Monitor Integration)
+# Phase 5 – Azure Monitor
 $monitorResults = Verify-AzureMonitorIntegration `
     -ResourceGroup $ResourceGroup `
     -LogAnalyticsWorkspaceName $outputs.logAnalyticsWorkspaceName `
@@ -1962,19 +2154,32 @@ $monitorResults = Verify-AzureMonitorIntegration `
     -SqlDatabaseName $outputs.sqlDatabaseName `
     -StorageAccountName $outputs.storageAccountName `
     -KeyVaultName $outputs.keyVaultName `
-    -CommunicationServiceName $outputs.communicationServiceName
+    -CommunicationServiceName $outputs.communicationServiceName `
+    -CommunicationServiceResourceId $outputs.communicationServiceResourceId `
+    -Environment $Environment
 
-# Phase 11b - Provision & verify O6 visualization resources (Workbook + Grafana dashboard)
+# Phase 6 – Visualization
+$dashboardJsonPath = Join-Path $PSScriptRoot 'telemetry/atlas-operations.grafana-dashboard.json'
+
+if ($Environment -ne 'dev') {
+    Provision-O6GrafanaDashboard `
+        -GrafanaName $outputs.grafanaName `
+        -GrafanaEndpoint $outputs.grafanaEndpoint `
+        -GrafanaResourceId $outputs.grafanaResourceId `
+        -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
+        -DashboardJsonPath $dashboardJsonPath | Out-Null
+}
+
 $monitorResults += Verify-O6Visualization `
     -ResourceGroup $ResourceGroup `
     -OperationsWorkbookName $outputs.operationsWorkbookName `
+    -ApplicationInsightsName $outputs.applicationInsightsName `
     -GrafanaName $outputs.grafanaName `
     -GrafanaEndpoint $outputs.grafanaEndpoint `
     -GrafanaResourceId $outputs.grafanaResourceId `
-    -LogAnalyticsWorkspaceId $outputs.logAnalyticsWorkspaceId `
-    -DashboardJsonPath (Join-Path $PSScriptRoot 'telemetry/atlas-operations.grafana-dashboard.json')
+    -Environment $Environment
 
-# Phase 11c - Provision availability metric alerts
+# Phase 7 – Alerting
 Ensure-AvailabilityMetricAlerts `
     -ResourceGroup $ResourceGroup `
     -Environment $Environment `
@@ -1982,23 +2187,20 @@ Ensure-AvailabilityMetricAlerts `
     -ApiAppServiceName $outputs.apiAppServiceName `
     -BlazorAppServiceName $outputs.blazorAppServiceName
 
-# Phase 11c - Verify O7 alerting resources (Action Group + alert rules)
-# Scope expectations use the exact deployment outputs where available so a
-# rule targeting the wrong App Service / App Insights is detected precisely.
 $o7ExpectedAlerts = @(
     @{ Name = "atlas-$Environment-api-availability";    Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.apiAppServiceName)" },
     @{ Name = "atlas-$Environment-blazor-availability"; Type = "metric";      ScopeExact = "/subscriptions/$((az account show --query id --output tsv))/resourceGroups/$ResourceGroup/providers/Microsoft.Web/sites/$($outputs.blazorAppServiceName)" },
-    @{ Name = $outputs.exceptionSpikeAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
-    @{ Name = $outputs.emailFailureAlertName;       Type = "log";         ScopeContains = "Microsoft.Insights/components" },
-    @{ Name = $outputs.commandLatencyAlertName;     Type = "log";         ScopeContains = "Microsoft.Insights/components" },
-    @{ Name = $outputs.serviceHealthAlertName;      Type = "activitylog"; ScopeStartsWith = "/subscriptions/$((az account show --query id --output tsv))" }
+    @{ Name = $outputs.exceptionSpikeAlertName;          Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.emailFailureAlertName;            Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.commandLatencyAlertName;          Type = "log";         ScopeContains = "Microsoft.Insights/components" },
+    @{ Name = $outputs.serviceHealthAlertName;           Type = "activitylog"; ScopeStartsWith = "/subscriptions/$((az account show --query id --output tsv))" }
 )
 $alertResults = Verify-O7Alerting `
     -ResourceGroup $ResourceGroup `
     -ActionGroupName $outputs.actionGroupName `
     -ExpectedAlerts $o7ExpectedAlerts
 
-# Phase 12
+# Phase 8 – Summary
 Write-Summary -DeploymentOutputs $outputs -InfrastructureResults $infraResults -MonitorResults ($monitorResults + $alertResults)
 
 exit $EXIT_SUCCESS

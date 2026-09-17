@@ -1,3 +1,7 @@
+# ATLAS backlog / working notes
+
+> These are retained working notes. Items are not automatically current commitments; completed, deferred, or superseded items should be reconciled when planning a future milestone.
+
 Metrics, logging config + visualization
 Change look & feel + styling
 Remove Publish in commands and replace with adddomainevent + 1 publish in unitofwork

@@ -1,5 +1,7 @@
 # Domain Model
 
+> **Document status:** This document is an architectural baseline/reference. Verify implementation-specific details against the current code and current-state architecture before treating them as normative deployment or workflow instructions.
+
 ## Overview
 
 The ATLAS domain model represents the core business concepts for the permit processing platform. This model follows Domain-Driven Design (DDD) principles with clearly defined entities, value objects, aggregates, and their relationships.

@@ -16,6 +16,13 @@ Plans are used to:
 
 - Small feature plan: `plans/examples/plan-small.md`
 
+## Current Planning Documents
+
+- [Roadmap](ROADMAP.md) — Milestone roadmap and sequencing
+- [ATLAS Foundation Plan](atlas-foundation-plan.md) — Foundational project plan
+- [M12 Plan](M12-plan.md) — UI restyling and usability improvements
+- [Plan Template](plan-template.md) — Template for new plans
+
 ## Tasks
 
 Implementation tasks derived from plans are maintained in `plans/tasks/`.
@@ -36,11 +43,11 @@ Task files should:
 
 Use the format:
 
-`plans/tasks/<milestone>-<number>.md`
+`plans/tasks/<milestone>/<number>.md`
 
 For example:
 
-`plans/tasks/M12-001.md`
+`plans/tasks/M12/M12-001.md`
 
 ## Archive
 

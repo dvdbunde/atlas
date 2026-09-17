@@ -1,22 +1,26 @@
-# ATLAS Current State Architecture — Post M11
+# ATLAS Current State Architecture — Post M12
 
 **Date**: September 1, 2026
-**Purpose**: Establish an authoritative architectural baseline for the current implementation after M9, M10, and M11 observability/operations work.
+**Purpose**: Establish an authoritative architectural baseline for the current implementation after M9, M10, M11 observability/operations work, and M12 UI/usability improvements.
 
 ---
 
 ## 1. Overview
 
-ATLAS (Automated Tracking & Licensing Application System) is a permit processing platform for local government. The current implementation includes the M9 Azure foundation, M10 Azure Communication Services email integration, and the M11 observability/operations foundation.
+ATLAS (Automated Tracking & Licensing Application System) is a permit processing platform for local government. The current implementation includes the M9 Azure foundation, M10 Azure Communication Services email integration, the M11 observability/operations foundation, and the completed M12 UI/usability improvements.
 
 **Key facts:**
 
-- **Status**: MVP application implemented; M9 and M10 complete; M11 implemented with final Operations Workbook validation remaining
+- **Status**: MVP application implemented; M9, M10, M11, and M12 complete; live operational validation remains environment-dependent
 - **Deployment**: Azure App Service for API and Blazor, Azure SQL Database, Azure Blob Storage, Azure Key Vault, and Azure Container Registry; LocalDB/Azurite/Kestrel remain supported for local development
 - **Authentication**: Microsoft Entra ID (all user types)
 - **Storage**: LocalDB (SQL Server), Azurite (Blob Storage), Azure Communication Services (email)
 
 ---
+
+## M12 Current-State Note
+
+M12 delivered UI restyling and usability improvements across citizen, officer, and administration experiences. These changes are presentation-layer improvements and do not replace the established application lifecycle, authorization model, document handling, audit/activity model, or Information Requested/resubmission workflow.
 
 ## 2. Implemented Technology Stack
 
