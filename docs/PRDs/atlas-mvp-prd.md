@@ -1,8 +1,8 @@
 # Product Requirements Document (PRD)
 
-#> **Document status:** Historical product baseline. This PRD records the original MVP scope, requirements, assumptions, and success metrics. It is retained for traceability and is not a complete description of all functionality added after the MVP milestones. For current implementation status, see [`plans/ROADMAP.md`](../../plans/ROADMAP.md) and [`docs/architecture/current-state.md`](../architecture/current-state.md).
+> **Document status:** Historical product baseline. This PRD records the original MVP scope, requirements, assumptions, and success metrics. It is retained for traceability and is not a complete description of all functionality added after the MVP milestones. For current implementation status, see [`plans/ROADMAP.md`](../../plans/ROADMAP.md) and [`docs/architecture/current-state.md`](../architecture/current-state.md).
 
-# ATLAS - Case Management & Permit Processing Platform MVP
+## ATLAS - Case Management & Permit Processing Platform MVP
 
 ### 0. Revision History
 

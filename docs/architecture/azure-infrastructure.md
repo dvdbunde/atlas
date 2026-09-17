@@ -791,7 +791,6 @@ structured Azure CLI JSON output:
 - No alert-management UI, incident management, or automatic remediation.
 - No new metrics, dashboards, or workbooks were introduced by O7.
 
-
 ## Current-state qualification
 
 This document combines implemented infrastructure, deployment/bootstrap procedures, and retained historical design material. The Grafana Cloud decision is authoritative for the current operational-visualization approach; sections explicitly identified as legacy or historical should not be interpreted as current deployment instructions. Live Azure resource state must be verified in the target subscription when performing an operational deployment or audit.
